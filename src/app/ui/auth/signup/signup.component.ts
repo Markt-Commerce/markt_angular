@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { confirmPasswordValidator } from '../../validators/confirm-password';
+import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
 
 @Component({
