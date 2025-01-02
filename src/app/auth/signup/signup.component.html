@@ -1,4 +1,4 @@
-<section class="signup-container pt-8 flex items-center gap-32">
+<section class="signup-container pt-8 flex items-center">
   <!-- Image Section -->
   <div class="image-section w-1-2 flex justify-center items-center">
     <img
@@ -67,13 +67,14 @@
             }}"
             formControlName="name"
             class="input-field mt-4"
+            name="name"
           />
           @if(name.invalid && (name.dirty || name.touched)){
           <div class="error-message">
             @if(name.hasError('required')){
             <div>Name is required</div>
             } @if(name.hasError('minlength')){
-            <div>Name must be at least 3 characters.</div>
+            <div>Name must be at least 3 characters</div>
             }
           </div>
           }
@@ -84,13 +85,14 @@
             placeholder="Password"
             formControlName="password"
             class="input-field mt-4"
+            name="password"
           />
           @if(password.invalid && (password.dirty || password.touched)){
           <div class="error-message">
             @if(password.hasError('required')){
             <div>Password is required</div>
             } @if(password.hasError('minlength')){
-            <div>Minimum password length is 6.</div>
+            <div>Minimum password length is 6</div>
             }
           </div>
           }
@@ -101,14 +103,15 @@
             placeholder="Re-enter Password"
             formControlName="confirmPassword"
             class="input-field mt-4"
+            name="confirmPassword"
           />
           @if(signupForm.hasError('passwordsMismatch') && (confirmPassword.dirty
           || confirmPassword.touched)){
           <div class="error-message">
             @if(confirmPassword.hasError('required')){
-            <div>You must re-enter your password.</div>
+            <div>You must re-enter your password</div>
             } @if(signupForm.hasError('passwordsMismatch')){
-            <div>Must be the same as the password you entered above.</div>
+            <div>Must be the same as the password you entered above</div>
             }
           </div>
           }
@@ -123,7 +126,20 @@
             placeholder="@username"
             formControlName="username"
             class="input-field mt-4"
+            name="username"
           />
+          @if(username.invalid && (username.dirty || username.touched)){
+          <div class="error-message">
+            @if(username.hasError('required')){
+            <div>Username is required</div>
+            }@if(username.hasError('pattern')){
+            <div>
+              Username must start with {{ "@" }} and can only contain letters,
+              numbers, underscores, or dots.
+            </div>
+            }
+          </div>
+          }
         </div>
         <div>
           <input
@@ -131,7 +147,17 @@
             placeholder="Email"
             formControlName="email"
             class="input-field mt-4"
+            name="email"
           />
+          @if(email.invalid && (email.dirty || email.touched)){
+          <div class="error-message">
+            @if(email.hasError('required')){
+            <div>Email is required</div>
+            }@if(email.hasError('email')){
+            <div>Enter a valid email</div>
+            }
+          </div>
+          }
         </div>
         <div>
           <input
@@ -139,7 +165,17 @@
             placeholder="Phone Number"
             formControlName="phone"
             class="input-field mt-4"
+            name="phoneNumber"
           />
+          @if(phone.invalid && (phone.dirty || phone.touched)){
+          <div class="error-message">
+            @if(phone.hasError('required')){
+            <div>Phone number is required</div>
+            }@if(phone.hasError('pattern')){
+            <div>Enter a valid phone number (e.g. 09157935312)</div>
+            }
+          </div>
+          }
         </div>
         @if(accountType.value==='seller'){
         <div>
@@ -148,6 +184,7 @@
             placeholder="Directions to the shop"
             formControlName="shopDirections"
             class="input-field mt-4"
+            name="shopDirections"
           />
         </div>
         <div>
@@ -156,6 +193,7 @@
             placeholder="Shop Category"
             formControlName="shopCategory"
             class="input-field mt-4"
+            name="shopCategory"
           />
         </div>
         <div>
@@ -163,6 +201,7 @@
             placeholder="Shop Description"
             formControlName="shopDescription"
             class="input-field mt-4"
+            name="shopDescription"
           ></textarea>
         </div>
         }
@@ -176,6 +215,7 @@
             placeholder="House Number"
             formControlName="houseNumber"
             class="input-field mt-4"
+            name="houseNumber"
           />
         </div>
         <div>
@@ -184,6 +224,7 @@
             placeholder="Street"
             formControlName="street"
             class="input-field mt-4"
+            name="street"
           />
         </div>
         <div>
@@ -192,6 +233,7 @@
             placeholder="City"
             formControlName="city"
             class="input-field mt-4"
+            name="city"
           />
         </div>
         <div>
@@ -212,17 +254,54 @@
             type="text"
             placeholder="Card Number"
             class="input-field mt-4"
+            formControlName="cardNumber"
+            name="cardNumber"
           />
+          @if(cardNumber.invalid && (cardNumber.dirty || cardNumber.touched)){
+          <div class="error-message">
+            @if(cardNumber.hasError('required')){
+            <div>Card number is required</div>
+            } @if(cardNumber.hasError('pattern')){
+            <div>Enter a valid card number</div>
+            }
+          </div>
+          }
         </div>
         <div>
           <input
             type="text"
-            placeholder="Card Expiry"
+            placeholder="Card Expiry (MM/YY)"
             class="input-field mt-4"
+            formControlName="cardExpiry"
+            name="cardExpiry"
           />
+          @if(cardExpiry.invalid && (cardExpiry.dirty || cardExpiry.touched)){
+          <div class="error-message">
+            @if(cardExpiry.hasError('required')){
+            <div>Card expiry date is required</div>
+            } @if(cardExpiry.hasError('pattern')){
+            <div>Enter a valid expiry date (MM/YY)</div>
+            }
+          </div>
+          }
         </div>
         <div>
-          <input type="text" placeholder="CVV" class="input-field mt-4" />
+          <input
+            type="text"
+            placeholder="CVV"
+            class="input-field mt-4"
+            formControlName="cvv"
+            name="cvv"
+          />
+          @if(cvv.invalid && (cvv.dirty || cvv.touched)){
+          <div class="error-message">
+            @if(cvv.hasError('required')){
+            <div>CVV is required</div>
+            } @if(cvv.hasError('pattern')){
+            <div>Enter a valid 3-digit CVV</div>
+            }
+          </div>
+          }
         </div>
       </div>
 

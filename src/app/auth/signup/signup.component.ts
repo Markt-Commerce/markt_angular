@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
-  FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -36,16 +35,17 @@ export class SignupComponent {
       shopDescription: [''],
       shopDirections: [''],
       shopCategory: [''],
+      location: [''],
       houseNumber: [''],
       street: [''],
       city: [''],
-      location: [''],
-      paymentDetails: this.formBuilder.array([]),
+      cardNumber: ['', [Validators.pattern('^[0-9]{13,16}$')]],
+      cardExpiry: ['', [Validators.pattern('^(0[1-9]|1[0-2])/[0-9]{2}$')]],
+      cvv: ['', [Validators.pattern('^[0-9]{3}$')]],
     },
     { validators: confirmPasswordValidator() }
   );
 
-  // Getter for controls
   get accountType(): AbstractControl {
     return this.signupForm.controls['accountType'];
   }
@@ -67,6 +67,24 @@ export class SignupComponent {
   get phone(): AbstractControl {
     return this.signupForm.controls['phone'];
   }
+  get cvv(): AbstractControl {
+    return this.signupForm.controls['cvv'];
+  }
+  get cardExpiry(): AbstractControl {
+    return this.signupForm.controls['cardExpiry'];
+  }
+  get cardNumber(): AbstractControl {
+    return this.signupForm.controls['cardNumber'];
+  }
+  get city(): AbstractControl {
+    return this.signupForm.controls['city'];
+  }
+  get street(): AbstractControl {
+    return this.signupForm.controls['street'];
+  }
+  get houseNumber(): AbstractControl {
+    return this.signupForm.controls['houseNumber'];
+  }
 
   nextStep() {
     if (this.currentStep < 4) {
@@ -80,7 +98,6 @@ export class SignupComponent {
     }
   }
 
-  // Form submission
   onCreateAccount() {
     if (this.signupForm.valid) {
       console.log('Form submitted:', this.signupForm.value);
@@ -94,6 +111,7 @@ export class SignupComponent {
           location: `${position.coords.latitude}, ${position.coords.longitude}`,
         });
       });
+      console.log(this.signupForm.controls['location'].value);
     }
   }
 }
