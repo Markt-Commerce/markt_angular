@@ -3,6 +3,7 @@ import { MarketplaceHomepageComponent } from './marketplace/marketplace-homepage
 import { SignupComponent } from './ui/auth/signup/signup.component';
 
 export const routes: Routes = [
-  { path: '', component: MarketplaceHomepageComponent }, // Default landing page
+  { path: '', redirectTo: 'marketplace/homepage', pathMatch: 'full' },
+  { path: 'marketplace/homepage', component: MarketplaceHomepageComponent },
   { path: 'create', component: SignupComponent, title: 'Create Account' },
 ];

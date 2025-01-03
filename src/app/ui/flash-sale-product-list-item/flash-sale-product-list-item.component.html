@@ -1,0 +1,38 @@
+<div
+  class="product-container cursor-pointer"
+  (mouseover)="hover = true"
+  (mouseleave)="hover = false"
+>
+  <div class="product-image-wrapper flex">
+    <div>
+      <img src="/assets/{{ imgSrc }}" alt="" />
+      <button class="add-to-cart-btn cursor-pointer" *ngIf="hover">
+        Add to Cart
+      </button>
+      <span class="discount-percentage rounded text-sm mt-2 ml-2"
+        >-{{ calculateDiscountPercentage() }}%</span
+      >
+      <div class="mt-2 icon-grp mr-2 flex flex-col gap-2">
+        <div>
+          <img src="/assets/small-fave-icon.svg" alt="small favorite icon" />
+        </div>
+        <div>
+          <img src="/assets/small-eye.svg" alt="small every icon" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="product-info mt-4 flex flex-col gap-2">
+    <h6 class="product-name text-base">{{ productName }}</h6>
+    <p class="flex items-center gap-2">
+      <span class="discounted-price">${{ discountedPrice }}</span>
+      <span class="original-price">${{ originalPrice }}</span>
+    </p>
+    <div class="star-rating items-center">
+      <span *ngFor="let star of stars; let i = index" class="star">
+        <img src="/assets/full-star.svg" alt="full star" />
+      </span>
+      <span class="text-xs ml-2 text-gray-500">({{ ratingValue }})</span>
+    </div>
+  </div>
+</div>

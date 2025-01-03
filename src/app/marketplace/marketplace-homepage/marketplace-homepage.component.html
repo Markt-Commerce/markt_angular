@@ -1,31 +1,97 @@
 <app-header></app-header>
-<div class="hero-section">
-  <div class="category-lists ml-16 pt-4">
-    <ul class="mr-4 flex flex-col gap-4">
+<!-- HERO SECTION -->
+<div class="hero">
+  <div class="categories ml-16 pt-4">
+    <ul class="category-list mr-4 flex flex-col gap-4">
       <li>
-        <a href="" class="flex justify-between items-center"
-          ><span>Woman’s Fashion</span>
+        <a href="" class="category-link flex justify-between items-center">
+          <span>Woman’s Fashion</span>
           <span
-            ><img src="/assets/small-next-btn.svg" alt="go to button" /></span
-        ></a>
+            ><img src="/assets/small-next-btn.svg" alt="go to button"
+          /></span>
+        </a>
       </li>
       <li>
-        <a href="" class="flex justify-between items-center">
-          <span> Men’s Fashion </span>
+        <a href="" class="category-link flex justify-between items-center">
+          <span>Men’s Fashion</span>
           <span
-            ><img src="/assets/small-next-btn.svg" alt="go to button" /></span
-        ></a>
+            ><img src="/assets/small-next-btn.svg" alt="go to button"
+          /></span>
+        </a>
       </li>
-      <li><a href="">Electronics</a></li>
-      <li><a href="">Home & Lifestyle</a></li>
-      <li><a href="">Medicine</a></li>
-      <li><a href="">Sports & Outdoor</a></li>
-      <li><a href="">Baby's & Toys</a></li>
-      <li><a href="">Groceries & Pets</a></li>
-      <li><a href="">Health & Beauty</a></li>
+      <li><a href="" class="category-link">Electronics</a></li>
+      <li><a href="" class="category-link">Home & Lifestyle</a></li>
+      <li><a href="" class="category-link">Medicine</a></li>
+      <li><a href="" class="category-link">Sports & Outdoor</a></li>
+      <li><a href="" class="category-link">Baby's & Toys</a></li>
+      <li><a href="" class="category-link">Groceries & Pets</a></li>
+      <li><a href="" class="category-link">Health & Beauty</a></li>
     </ul>
   </div>
-  <div class="hero-banner-wrapper ml-16 mt-4">
+  <div class="hero-banner ml-16 mt-4">
     <img src="/assets/marketplace-main-banner.png" alt="main banner" />
   </div>
 </div>
+
+<!-- FLASH SALES SECTION -->
+<section class="flash-sales ml-16 mt-16 mr-16">
+  <div class="flash-header flex gap-4 items-center">
+    <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+    <h6 class="flash-title text-lg">Today's</h6>
+  </div>
+  <div class="flash-content mt-8 mb-8">
+    <div class="flash-info flex">
+      <h5 class="flash-heading text-4xl">Flash Sales</h5>
+      <app-flash-sale-timer></app-flash-sale-timer>
+    </div>
+    <div class="flash-navigation flex items-center justify-end gap-2">
+      <img
+        src="/assets/Fill With Left Arrow.svg"
+        class="cursor-pointer"
+        alt="left arrow"
+      />
+      <img
+        src="/assets/Fill with Right Arrow.svg"
+        class="cursor-pointer"
+        alt="right arrow"
+      />
+    </div>
+  </div>
+  <div class="flash-products flex justify-between mb-16">
+    <app-flash-sale-product-list-item
+      imgSrc="sam-moghadam-khamseh-kvmdsTrGOBM-unsplash 1.png"
+      productName="S-Series Comfort Chair"
+      [discountedPrice]="375"
+      [originalPrice]="400"
+      ratingValue="99"
+    ></app-flash-sale-product-list-item>
+    <app-flash-sale-product-list-item
+      imgSrc="g27cq4-500x500 1.png"
+      productName="IPS LCD Gaming Monitor"
+      [discountedPrice]="370"
+      [originalPrice]="400"
+      ratingValue="99"
+    ></app-flash-sale-product-list-item>
+    <app-flash-sale-product-list-item
+      imgSrc="ak-900-01-500x500 1.png"
+      productName="AK-900 Wired Keyboard"
+      [discountedPrice]="960"
+      [originalPrice]="1160"
+      ratingValue="75"
+    ></app-flash-sale-product-list-item>
+    <app-flash-sale-product-list-item
+      imgSrc="g92-2-500x500 1.png"
+      productName="HAVIT HV-G92 Gamepad"
+      [discountedPrice]="120"
+      [originalPrice]="160"
+      ratingValue="88"
+    ></app-flash-sale-product-list-item>
+  </div>
+  <div class="view-all flex items-center justify-center mb-16">
+    <button class="view-all-btn text-sm cursor-pointer rounded">
+      View All Products
+    </button>
+  </div>
+</section>
+
+<app-footer></app-footer>
