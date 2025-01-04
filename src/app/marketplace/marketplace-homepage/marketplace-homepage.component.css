@@ -27,24 +27,28 @@
 .category-list li .category-link:hover span img {
   transform: translateX(5px);
 }
-.flash-sales .flash-header .flash-title {
+
+.section {
+  border-bottom: 1px solid rgba(128, 128, 128, 0.432);
+}
+.section .section-header .section-title {
   color: var(--primary-color);
   font-weight: 500;
 }
-.flash-sales .flash-content {
+.section .section-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
-.flash-info {
+.section-info {
   justify-content: space-between;
   align-items: flex-end;
 }
-.flash-navigation {
+.section-navigation {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
 }
-.flash-heading {
+.section-heading {
   font-weight: 600;
 }
 .view-all-btn {
@@ -55,14 +59,57 @@
   border: none;
   outline: none;
   transition: all 0.3s ease-in-out;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 .view-all-btn:hover {
   transform: scale(1.05);
   background-color: #d45d00;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 .view-all-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.music-experience-banner {
+  background-color: black;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 3em;
+  height: 500px;
+  width: 1170px;
+}
+.music-experience-banner > div > p {
+  color: #00ff66;
+}
+
+.buy-now-timer {
+  gap: 1rem;
+}
+
+.timer-overlay {
+  color: white;
+  font-size: 3rem;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.buy-now-btn {
+  background-color: #00ff66;
+  padding: 1em 2.8em;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.buy-now-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.buy-now-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }

@@ -517,6 +517,9 @@ blockquote {
 .text-4xl {
   font-size: 2.25rem;
 }
+.text-5xl {
+  font-size: 3.5rem;
+}
 
 .font-light {
   font-weight: 300;

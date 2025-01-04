@@ -2,13 +2,13 @@ import { NgFor, NgIf } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'app-flash-sale-product-list-item',
+  selector: 'app-product-list-item',
   standalone: true,
   imports: [NgFor, NgIf],
-  templateUrl: './flash-sale-product-list-item.component.html',
-  styleUrl: './flash-sale-product-list-item.component.css',
+  templateUrl: './product-list-item.component.html',
+  styleUrl: './product-list-item.component.css',
 })
-export class FlashSaleProductListItemComponent {
+export class ProductListItemComponent {
   @Input() imgSrc!: string;
   @Input() originalPrice!: number;
   @Input() discountedPrice!: number;
