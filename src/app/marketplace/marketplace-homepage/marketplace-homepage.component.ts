@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { HeaderComponent } from '../../ui/header/header.component';
 import { FlashSaleTimerComponent } from '../../ui/flash-sale-timer/flash-sale-timer.component';
 
@@ -43,7 +43,7 @@ export class MarketplaceHomepageComponent {
     AOS.init({
       duration: 500,
       easing: 'ease-in-out',
-      once: false,
+      once: true,
     });
   }
 
@@ -68,5 +68,18 @@ export class MarketplaceHomepageComponent {
         this.seconds = 0;
       }
     }, 1000);
+  }
+
+  showBackToTop: boolean = false;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    const scrollPosition =
+      window.scrollY || document.documentElement.scrollTop || 0;
+    this.showBackToTop = scrollPosition > 100; //  button shows only if our user scrolled 100px down
+  }
+
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
