@@ -179,14 +179,24 @@
     <p>Categories</p>
     <h3 class="text-white text-5xl mt-4">Enhance Your Music Experience</h3>
     <!--  -->
-    <div class="buy-now-timer mt-8 mb-8">
-      <div>
-        <div class="timer-overlay">
-          <span class="time">{{ hours }}:{{ minutes }}:{{ seconds }}</span>
-        </div>
+    <div class="timer-container mt-8 mb-8">
+      <div class="time-section">
+        <span class="time-value">{{ days }}</span>
+        <span class="time-label">Days</span>
+      </div>
+      <div class="time-section">
+        <span class="time-value">{{ hours }}</span>
+        <span class="time-label">Hours</span>
+      </div>
+      <div class="time-section">
+        <span class="time-value">{{ minutes }}</span>
+        <span class="time-label">Minutes</span>
+      </div>
+      <div class="time-section">
+        <span class="time-value">{{ seconds }}</span>
+        <span class="time-label">Seconds</span>
       </div>
     </div>
-
     <!--  -->
     <div>
       <button class="buy-now-btn text-white text-sm cursor-pointer rounded">

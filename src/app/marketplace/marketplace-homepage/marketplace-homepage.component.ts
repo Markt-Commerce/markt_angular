@@ -19,7 +19,7 @@ import { ProductListItemComponent } from '../../ui/product-list-item/product-lis
   templateUrl: './marketplace-homepage.component.html',
   styleUrl: './marketplace-homepage.component.css',
 })
-export class MarketplaceHomepageComponent implements OnInit {
+export class MarketplaceHomepageComponent {
   categories: string[] = [
     'Phones',
     'Computers',
@@ -29,40 +29,37 @@ export class MarketplaceHomepageComponent implements OnInit {
     'Gaming',
   ];
 
-  hours: string = '00';
-  minutes: string = '00';
-  seconds: string = '00';
+  days: number = 0;
+  hours: number = 0;
+  minutes: number = 0;
+  seconds: number = 0;
 
-  private targetTime: Date = new Date();
+  private targetDate: Date = new Date('2025-01-31T23:59:59'); // We set our target date here
 
   ngOnInit(): void {
-    this.targetTime.setHours(this.targetTime.getHours() + 1);
-
-    this.startCountdown();
+    this.startTimer();
   }
 
-  private startCountdown(): void {
+  private startTimer(): void {
     setInterval(() => {
-      const now = new Date().getTime();
-      const distance = this.targetTime.getTime() - now;
+      const currentTime = new Date().getTime();
+      const difference = this.targetDate.getTime() - currentTime;
 
-      if (distance > 0) {
-        this.hours = this.formatTime(
-          Math.floor((distance / (1000 * 60 * 60)) % 24)
+      if (difference > 0) {
+        this.days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        this.hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
         );
-        this.minutes = this.formatTime(
-          Math.floor((distance / (1000 * 60)) % 60)
+        this.minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60)
         );
-        this.seconds = this.formatTime(Math.floor((distance / 1000) % 60));
+        this.seconds = Math.floor((difference % (1000 * 60)) / 1000);
       } else {
-        this.hours = '00';
-        this.minutes = '00';
-        this.seconds = '00';
+        this.days = 0;
+        this.hours = 0;
+        this.minutes = 0;
+        this.seconds = 0;
       }
     }, 1000);
-  }
-
-  private formatTime(time: number): string {
-    return time < 10 ? `0${time}` : `${time}`;
   }
 }

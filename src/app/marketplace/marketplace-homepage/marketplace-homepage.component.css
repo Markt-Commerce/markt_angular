@@ -81,17 +81,6 @@
   color: #00ff66;
 }
 
-.buy-now-timer {
-  gap: 1rem;
-}
-
-.timer-overlay {
-  color: white;
-  font-size: 3rem;
-  font-weight: bold;
-  pointer-events: none;
-}
-
 .buy-now-btn {
   background-color: #00ff66;
   padding: 1em 2.8em;
@@ -106,10 +95,34 @@
 
 .buy-now-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .buy-now-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.timer-container {
+  display: flex;
+  gap: 15px;
+}
+
+.time-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 50%;
+  width: 68px;
+  height: 68px;
+}
+
+.time-label {
+  font-size: 0.65rem;
+}
+
+.time-value {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
 }
