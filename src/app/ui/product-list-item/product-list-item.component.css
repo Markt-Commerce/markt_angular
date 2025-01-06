@@ -44,14 +44,20 @@
   opacity: 1;
 }
 
-.discount-percentage {
-  background-color: var(--primary-color);
+.discount-percentage,
+.new {
   color: white;
   padding: 0.1em 0.6em;
   position: absolute;
   top: 0;
   left: 0;
   animation: bounce 0.8s ease-in-out infinite alternate;
+}
+.discount-percentage {
+  background-color: var(--primary-color);
+}
+.new {
+  background-color: #00ff66;
 }
 
 @keyframes bounce {
@@ -84,7 +90,8 @@
   background-color: #f0f0f0;
 }
 
-.discounted-price {
+.discounted-price,
+.price {
   color: var(--primary-color);
 }
 

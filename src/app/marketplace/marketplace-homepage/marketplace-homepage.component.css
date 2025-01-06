@@ -28,7 +28,7 @@
   transform: translateX(5px);
 }
 
-.section {
+.has-bottom-border {
   border-bottom: 1px solid rgba(128, 128, 128, 0.432);
 }
 .section .section-header .section-title {
@@ -43,11 +43,26 @@
   justify-content: space-between;
   align-items: flex-end;
 }
+
 .section-navigation {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
 }
+
+.navigation-btn {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.navigation-btn:hover {
+  transform: scale(1.2) rotate(15deg);
+  opacity: 0.8;
+}
+
+.navigation-btn:active {
+  transform: scale(1) rotate(0);
+}
+
 .section-heading {
   font-weight: 600;
 }
@@ -122,7 +137,12 @@
 }
 
 .time-value {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: bold;
   color: #000;
+}
+
+.new-products {
+  flex-wrap: wrap;
+  row-gap: 2.5em;
 }

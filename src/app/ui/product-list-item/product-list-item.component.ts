@@ -14,6 +14,8 @@ export class ProductListItemComponent {
   @Input() discountedPrice!: number;
   @Input() ratingValue!: string;
   @Input() productName!: string;
+  @Input() hasDiscount!: boolean;
+  @Input() new: boolean = false;
 
   stars: number[] = [1, 2, 3, 4, 5];
   hover: boolean = false;

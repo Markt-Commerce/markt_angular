@@ -34,7 +34,7 @@
 </div>
 
 <!-- FLASH SALES SECTION -->
-<section class="section ml-16 mt-16 mr-16">
+<section class="section ml-16 mt-16 mr-16 has-bottom-border">
   <div class="section-header flex gap-4 items-center">
     <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
     <h6 class="section-title text-lg">Today's</h6>
@@ -47,12 +47,12 @@
     <div class="section-navigation gap-2">
       <img
         src="/assets/Fill With Left Arrow.svg"
-        class="cursor-pointer"
+        class="cursor-pointer navigation-btn"
         alt="left arrow"
       />
       <img
         src="/assets/Fill with Right Arrow.svg"
-        class="cursor-pointer"
+        class="cursor-pointer navigation-btn"
         alt="right arrow"
       />
     </div>
@@ -63,7 +63,8 @@
       productName="S-Series Comfort Chair"
       [discountedPrice]="375"
       [originalPrice]="400"
-      ratingValue="99"
+      ratingValue="29"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="g27cq4-500x500 1.png"
@@ -71,6 +72,7 @@
       [discountedPrice]="370"
       [originalPrice]="400"
       ratingValue="99"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="ak-900-01-500x500 1.png"
@@ -78,6 +80,7 @@
       [discountedPrice]="960"
       [originalPrice]="1160"
       ratingValue="75"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="g92-2-500x500 1.png"
@@ -85,6 +88,7 @@
       [discountedPrice]="120"
       [originalPrice]="160"
       ratingValue="88"
+      [hasDiscount]="true"
     ></app-product-list-item>
   </div>
   <div class="view-all flex items-center justify-center mb-16">
@@ -95,7 +99,7 @@
 </section>
 
 <!-- CATEGORIES SECTION -->
-<section class="section ml-16 mt-16 mr-16">
+<section class="section ml-16 mt-16 mr-16 has-bottom-border">
   <div class="section-header flex gap-4 items-center">
     <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
     <h6 class="section-title text-lg">Categories</h6>
@@ -107,12 +111,12 @@
     <div class="section-navigation gap-2">
       <img
         src="/assets/Fill With Left Arrow.svg"
-        class="cursor-pointer"
+        class="cursor-pointer navigation-btn"
         alt="left arrow"
       />
       <img
         src="/assets/Fill with Right Arrow.svg"
-        class="cursor-pointer"
+        class="cursor-pointer navigation-btn"
         alt="right arrow"
       />
     </div>
@@ -148,6 +152,7 @@
       [discountedPrice]="260"
       [originalPrice]="360"
       ratingValue="99"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="547953_9C2ST_8746_001_082_0000_Light-Gucci-Savoy-medium-duffle-bag 1.png"
@@ -155,6 +160,7 @@
       [discountedPrice]="960"
       [originalPrice]="1160"
       ratingValue="123"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="gammaxx-l240-argb-1-500x500 1.png"
@@ -162,6 +168,7 @@
       [discountedPrice]="160"
       [originalPrice]="170"
       ratingValue="45"
+      [hasDiscount]="true"
     ></app-product-list-item>
     <app-product-list-item
       imgSrc="sam-moghadam-khamseh-L_7MQsHl_aU-unsplash 1.png"
@@ -169,6 +176,7 @@
       [discountedPrice]="360"
       [originalPrice]="400"
       ratingValue="65"
+      [hasDiscount]="true"
     ></app-product-list-item>
   </div>
 </section>
@@ -208,4 +216,90 @@
     <img src="/assets/JBL speaker Frame .svg" alt="speaker jbl" />
   </div>
 </div>
+
+<!-- OUR PRODUCTS SECTION -->
+<section class="section ml-16 mt-16 mr-16">
+  <div class="section-header flex gap-4 items-center">
+    <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+    <h6 class="section-title text-lg">Our Products</h6>
+  </div>
+  <div class="section-content mt-8 mb-16">
+    <div class="section-info">
+      <h5 class="section-heading text-4xl">Explore Our Products</h5>
+    </div>
+    <div class="section-navigation gap-2">
+      <img
+        src="/assets/Fill With Left Arrow.svg"
+        class="cursor-pointer navigation-btn"
+        alt="left arrow"
+      />
+      <img
+        src="/assets/Fill with Right Arrow.svg"
+        class="cursor-pointer navigation-btn"
+        alt="right arrow"
+      />
+    </div>
+  </div>
+
+  <div class="products new-products flex justify-between mb-16">
+    <app-product-list-item
+      imgSrc="71RdoeXxtrL 1.svg"
+      productName="Breed Dry Dog Food"
+      [originalPrice]="360"
+      ratingValue="35"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="eos-250d-03-500x500 1.svg"
+      productName="CANON EOS DSLR Camera"
+      [originalPrice]="1160"
+      ratingValue="46"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="ideapad-gaming-3i-01-500x500 1.svg"
+      productName="ASUS FHD Gaming Laptop"
+      [originalPrice]="170"
+      ratingValue="54"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="curology-j7pKVQrTUsM-unsplash 1.svg"
+      productName="Curology Product Set "
+      [originalPrice]="400"
+      ratingValue="65"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="New-Mercedes-Benz-Gtr-Licensed-Ride-on-Car-Kids-Electric-Toy-Car 1.svg"
+      productName="Kids Electric Car"
+      [originalPrice]="400"
+      ratingValue="85"
+      [hasDiscount]="false"
+      [new]="true"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="Copa_Sense 1.svg"
+      productName="Jr. Zoom Soccer Cleats"
+      [originalPrice]="400"
+      ratingValue="72"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="GP11_PRD3 1.svg"
+      productName="GP11 Shooter USB Gamepad"
+      [originalPrice]="400"
+      ratingValue="90"
+      [hasDiscount]="false"
+      [new]="true"
+    ></app-product-list-item>
+    <app-product-list-item
+      imgSrc="698717_Z8A1X_3475_001_100_0000_Light-Reversible-quilted-satin-jacket 1.svg"
+      productName="Quilted Satin Jacket"
+      [originalPrice]="400"
+      ratingValue="23"
+      [hasDiscount]="false"
+    ></app-product-list-item>
+  </div>
+</section>
 <app-footer></app-footer>
