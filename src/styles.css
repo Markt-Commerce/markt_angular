@@ -287,6 +287,9 @@ blockquote {
 .mr-16 {
   margin-right: 4rem;
 }
+.mr-32 {
+  margin-right: 8rem;
+}
 
 .mb-1 {
   margin-bottom: 0.25rem;
@@ -306,6 +309,9 @@ blockquote {
 
 .mb-16 {
   margin-bottom: 4rem;
+}
+.mb-32 {
+  margin-bottom: 8rem;
 }
 
 .ml-1 {

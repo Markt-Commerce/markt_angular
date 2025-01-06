@@ -6,6 +6,8 @@ import { FooterComponent } from '../../ui/footer/footer.component';
 import { CategoryListItemComponent } from '../../ui/category-list-item/category-list-item.component';
 import { ProductListItemComponent } from '../../ui/product-list-item/product-list-item.component';
 
+import * as AOS from 'aos';
+
 @Component({
   selector: 'app-marketplace-homepage',
   standalone: true,
@@ -38,6 +40,11 @@ export class MarketplaceHomepageComponent {
 
   ngOnInit(): void {
     this.startTimer();
+    AOS.init({
+      duration: 500,
+      easing: 'ease-in-out',
+      once: false,
+    });
   }
 
   private startTimer(): void {

@@ -179,16 +179,15 @@
 }
 
 .details a {
-    text-underline-offset: 0.5em;
-    text-decoration: underline;
-    transition: color 0.3s, transform 0.3s;
-  }
+  text-underline-offset: 0.5em;
+  text-decoration: underline;
+  transition: color 0.3s, transform 0.3s;
+}
 
-  .details a:hover {
-    color: var(--primary-color);
-    transform: scale(1.01);
-  }
-
+.details a:hover {
+  color: var(--primary-color);
+  transform: scale(1.01);
+}
 
 .left-item {
   background-color: black;
@@ -250,4 +249,12 @@
 .grid-banner div:hover img {
   transform: scale(1.05);
   transition: transform 0.3s ease-in-out;
+}
+
+.service {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
+  flex-direction: column;
 }
