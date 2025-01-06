@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { HeaderComponent } from '../../ui/header/header.component';
 import { FlashSaleTimerComponent } from '../../ui/flash-sale-timer/flash-sale-timer.component';
 

@@ -146,3 +146,108 @@
   flex-wrap: wrap;
   row-gap: 2.5em;
 }
+
+.grid-banner {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-banner > div {
+  position: relative;
+}
+
+.details {
+  position: absolute;
+  color: white;
+  bottom: 0;
+  left: 0;
+  padding-left: 2em;
+  padding-bottom: 2em;
+}
+
+.details h5 {
+  font-weight: bold;
+  font-size: 1em;
+  margin-bottom: 1em;
+}
+.details p {
+  font-size: 0.9em;
+  margin-bottom: 1em;
+  max-width: 15em;
+}
+
+.details a {
+    text-underline-offset: 0.5em;
+    text-decoration: underline;
+    transition: color 0.3s, transform 0.3s;
+  }
+
+  .details a:hover {
+    color: var(--primary-color);
+    transform: scale(1.01);
+  }
+
+
+.left-item {
+  background-color: black;
+  grid-column: 1/3;
+  grid-row: 1/3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 4.5em;
+}
+
+.right-top-item {
+  background-color: #0d0d0d;
+  grid-column: 3/5;
+  grid-row: 1/2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 10px;
+}
+
+.right-bottom-left-item {
+  background-color: #000000;
+  grid-column: 3/4;
+  grid-row: 2/3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.right-bottom-right-item {
+  background-color: #000000;
+  grid-column: 4/5;
+  grid-row: 2/3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid-banner img {
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.3s ease, opacity 0.5s ease;
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.grid-banner div:hover img {
+  transform: scale(1.05);
+  transition: transform 0.3s ease-in-out;
+}
