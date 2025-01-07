@@ -1,65 +1,59 @@
-<footer class="bg-black text-white">
-  <div class="footer-main-content flex justify-between gap-8 pt-16 pb-16">
-    <div class="col-1 flex flex-col gap-4">
-      <div><img src="/assets/markt-logo.svg" alt="Markt logo" /></div>
-      <p class="text-lg mb-2">Subscribe</p>
-      <p class="text-sm">Get 10% off your first order</p>
-      <div class="input-wrapper">
-        <input
-          type="email"
-          placeholder="Enter your email"
-          class="text-white input-field rounded"
-        />
-        <img src="/assets/send-icon.svg" alt="Send Icon" class="send-icon" />
-      </div>
-    </div>
-    <div class="col-2 flex flex-col gap-4">
-      <p class="text-lg mb-2">Support</p>
-      <a class="text-sm">12, Hollywoodrath Rise Hollystown Dublin</a>
-      <a class="text-sm">{{ "support@marktcommerce.com" }}</a>
-      <a class="text-sm">+1234-56-7890</a>
-    </div>
-    <div class="col-3 flex flex-col gap-4">
-      <p class="text-lg mb-2">Account</p>
-      <a class="text-sm">My Account</a>
-      <a class="text-sm">Login / Register</a>
-      <a class="text-sm">Cart</a>
-      <a class="text-sm">Wishlist</a>
-      <a class="text-sm">Shop</a>
-    </div>
-    <div class="col-4 flex flex-col gap-4">
-      <p class="text-lg mb-2">Quick Link</p>
-      <a class="text-sm">Privacy Policy</a>
-      <a class="text-sm">Terms of Use</a>
-      <a class="text-sm">FAQ</a>
-      <a class="text-sm">Contact</a>
-    </div>
-    <div class="col-5 flex flex-col gap-4">
-      <p class="text-lg mb-2">Follow On all Social Media Handles</p>
-      <a class="text-xs text-gray-200">Get Updates on New Products</a>
-      <ul class="social-icons flex gap-4">
-        <li>
-          <img src="/assets/facebook-icon.svg" alt="Facebook icon" class="social-icon" />
-        </li>
-        <li>
-          <img src="/assets/twitter-icon.svg" alt="Twitter icon" class="social-icon" />
-        </li>
-        <li>
-          <img src="/assets/instagram-icon.svg" alt="Instagram icon" class="social-icon" />
-        </li>
-        <li>
-          <img src="/assets/linkedin-icon.svg" alt="LinkedIn icon" class="social-icon" />
-        </li>
-      </ul>
-
-    </div>
+<footer class=" bg-black py-[2rem] w-full px-[4rem] mx-auto text-white flex-col justify-center items-center space-y-5">
+  <div class="grid md:grid-cols-5 grid-cols-1 md:h-[50vh] py-[2rem] mx-auto md:space-y-0 space-y-5">
+        <div class=" flex-col justify-center items-center space-y-5">
+             <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+             <img src="/assets/markt-logo.svg" class="h-8 object-cover" alt="Markt Logo" />
+             </a>
+             <h1 class="font-semibold text-xl">Subscribe</h1>
+             <div class="text-light text-sm opacity-80">Get 10% off your first order</div>
+             <form action="">
+                  <div class="relative mb-6 w-5/6 border-gray-100">
+                       <div class="absolute inset-y-0 end-1 flex items-center justify-center cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-300">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                            </svg>
+                       </div>
+                       <input type="email" id="input-group-1" class="bg-transparent w-full text-sm rounded border-gray-100 p-2.5 pr-5 focus:ring-secRed focus:border-secRed  placeholder-gray-400" placeholder="Enter your email">
+                  </div>
+             </form>
+        </div>
+        <div class=" flex-col justify-center items-center space-y-5 ">
+             <h1 class="font-semibold text-xl">Support</h1>
+             <ul class="flex-col space-y-2 ">
+                  <li class="text-light text-sm opacity-80">12, Hollywoodrath rise Hollystown Dublin</li>
+                  <li><a href="#" class="text-light text-sm opacity-80">{{ "support@marktcommerce.com" }}</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">+1234-56-7890</a></li>
+             </ul>
+        </div>
+        <div class=" flex-col justify-center items-center space-y-5 ">
+             <h1 class="font-semibold text-xl">Account</h1>
+             <ul class="flex-col space-y-2 ">
+                  <li><a href="#" class="text-light text-sm opacity-80">My Account</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Login</a> / <a href="#" class="text-light text-sm opacity-80">Register</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Cart</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Wishlist</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Shop</a></li>
+             </ul>
+        </div>
+        <div class=" flex-col justify-center items-center space-y-5 ">
+             <h1 class="font-semibold text-xl">Quick Link</h1>
+             <ul class="flex-col space-y-2 ">
+                  <li><a href="#" class="text-light text-sm opacity-80">Privacy Policy</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Terms of Use</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">FAQ</a></li>
+                  <li><a href="#" class="text-light text-sm opacity-80">Contact</a></li>
+             </ul>
+        </div>
+        <div class=" flex-col justify-center items-center space-y-5 ">
+             <h1 class="font-semibold text-xl">Follow On all Social Media Handles </h1>
+             <div class="text-light text-sm opacity-80">Get Updates on New Products</div>
+             <div class="flex justify-between w-4/5 items-center space-x-3">
+                  <i class="fa fa-facebook" aria-hidden="true"></i>
+                  <a href="#" ><i class="fa fa-twitter" aria-hidden="true"></i> </a>
+                  <a href="#" ><i class="fa fa-instagram" aria-hidden="true"></i> </a>
+                  <a href="#" ><i class="fa fa-linkedin" aria-hidden="true"></i> </a>
+             </div>
+        </div>
   </div>
-  <div>
-    <p class="flex items-center justify-center p-4 gap-2">
-      <img src="/assets/copyright-icon.svg" alt="Copyright Icon" />
-      <span class="text-gray-500"
-        >Copyright Markt {{ currentYear }}. All right reserved</span
-      >
-    </p>
-  </div>
+  <div class="text-center opacity-20 mx-auto md:text-sm text-xs"> <i class="fa fa-copyright" aria-hidden="true"></i> Copyright Markt 2024. All right reserved </div>
 </footer>

@@ -1,0 +1,57 @@
+<app-header></app-header>
+
+<header class="flex justify-between items-center container md:px-[4rem] px-[2rem] py-[2rem]">
+  <!-- Breadcrumb -->
+  <nav class="flex justify-between" aria-label="Breadcrumb">
+       <ol class="inline-flex items-center">
+            <li>
+                 <a href="/" class="text-gray-400 hover:text-gray-500">Home</a>
+            </li>
+            <span class="mx-2 text-gray-400">/</span>
+            <li aria-current="page">
+                 <a class="text-gray-900 hover:text-gray-500">Contact</a>
+            </li>
+       </ol>
+  </nav>
+</header>
+
+<div class="md:px-[4rem] px-[2rem] pb-[4rem] md:flex justify-center items-center md:h-[75vh] gap-6">
+  <div class="h-full basis-3/12 flex-col space-y-10 justify-start items-start shadoww p-6 text-sm">
+       <div class="flex-col space-y-4">
+            <div class="text-lg font-medium mb-4 flex items-center gap-4">
+                 <div class="text-secWhite p-0 bg-secRed w-7 h-7 flex justify-center items-center rounded-full"> <i class="fa fa-phone" aria-hidden="true"></i> </div>
+                 <div>Call To Us</div>
+            </div>
+            <p>We are available 24/7, 7 days a week.</p>
+            <p>Phone: +8801611112222</p>
+       </div>
+       <div class="border-gray-800 border-t pt-8 flex-col space-y-4">
+            <div class="text-lg font-medium mb-4 flex items-center gap-4">
+                 <div class="text-secWhite p-0 bg-secRed w-7 h-7 flex justify-center items-center rounded-full"> <i class="fa fa-envelope" aria-hidden="true"></i> </div>
+                 <div>Write To US</div>
+            </div>
+            <p>Fill out our form and we will contact you within 24 hours.</p>
+            <p>Email: {{ "customer@marktcommerce.com" }}</p>
+            <p>Email: {{ "support@marktcommerce.com" }}</p>
+       </div>
+  </div>
+  <div class="h-full md:basis-9/12 md:p-12 p-6 shadoww ">
+       <div class="">
+            <form>
+                 <div class="grid gap-6 md:grid-cols-3 mb-6">
+                      <input type="text" id="first_name" class="bg-gray-100 border-none text-gray-900 text-base  rounded focus:ring-secRed focus:border-secRed block w-full p-4" placeholder="Your Yame" required />
+                      <input type="email" id="email" class="bg-gray-100 border-none text-gray-900 text-base      rounded focus:ring-secRed focus:border-secRed block w-full p-4" placeholder="Your Email" required />
+                      <input type="tel" id="phone" class="bg-gray-100 border-none text-gray-900 text-base   rounded focus:ring-secRed focus:border-secRed block w-full p-4" placeholder="Your Phone" pattern="[0-9]{3}-[0-9]{2}-[0-9]{3}" required />
+                 </div>
+                 <div class="mb-6">
+                      <textarea id="message" rows="6" class="bg-gray-100 border-none text-gray-900 text-base     rounded focus:ring-secRed focus:border-secRed block w-full p-4 resize-none" placeholder="Your Message"></textarea>
+                 </div>
+                 <div class="flex justify-end mb-6">
+                      <button type="submit" class="text-white bg-secRed font-medium rounded text-sm w-full sm:w-auto md:px-12 md:py-4 px-4 py-2 text-center">Send Message</button>
+                 </div>
+            </form>
+       </div>
+  </div>
+</div>
+
+<app-footer></app-footer>
