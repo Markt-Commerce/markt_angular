@@ -1,0 +1,485 @@
+<div class="wrapper">
+  <app-header></app-header>
+  <!-- HERO SECTION -->
+  <div class="hero" data-aos="fade-up">
+    <div
+      class="categories ml-16 pt-4"
+      data-aos="fade-right"
+      data-aos-delay="200"
+    >
+      <ul class="category-list mr-4 flex flex-col gap-4">
+        <li>
+          <a href="" class="category-link flex justify-between items-center">
+            <span>Woman’s Fashion</span>
+            <span
+              ><img src="/assets/small-next-btn.svg" alt="go to button"
+            /></span>
+          </a>
+        </li>
+        <li>
+          <a href="" class="category-link flex justify-between items-center">
+            <span>Men’s Fashion</span>
+            <span
+              ><img src="/assets/small-next-btn.svg" alt="go to button"
+            /></span>
+          </a>
+        </li>
+        <li><a href="" class="category-link">Electronics</a></li>
+        <li><a href="" class="category-link">Home & Lifestyle</a></li>
+        <li><a href="" class="category-link">Medicine</a></li>
+        <li><a href="" class="category-link">Sports & Outdoor</a></li>
+        <li><a href="" class="category-link">Baby's & Toys</a></li>
+        <li><a href="" class="category-link">Groceries & Pets</a></li>
+        <li><a href="" class="category-link">Health & Beauty</a></li>
+      </ul>
+    </div>
+    <div class="hero-banner ml-16 mt-4" data-aos="zoom-in" data-aos-delay="300">
+      <img src="/assets/marketplace-main-banner.png" alt="main banner" />
+    </div>
+  </div>
+
+  <!-- FLASH SALES SECTION -->
+  <section
+    class="section ml-16 mt-16 mr-16 has-bottom-border"
+    data-aos="fade-up"
+  >
+    <div
+      class="section-header flex gap-4 items-center"
+      data-aos="fade-down"
+      data-aos-delay="100"
+    >
+      <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+      <h6 class="section-title text-lg">Today's</h6>
+    </div>
+    <div
+      class="section-content mt-8 mb-16"
+      data-aos="fade-up"
+      data-aos-delay="200"
+    >
+      <div class="section-info flex">
+        <h5 class="section-heading text-4xl">Flash Sales</h5>
+        <app-flash-sale-timer></app-flash-sale-timer>
+      </div>
+      <div
+        class="section-navigation gap-2"
+        data-aos="fade-left"
+        data-aos-delay="200"
+      >
+        <img
+          src="/assets/Fill With Left Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="left arrow"
+        />
+        <img
+          src="/assets/Fill with Right Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="right arrow"
+        />
+      </div>
+    </div>
+    <div class="products flex justify-between mb-16">
+      <app-product-list-item
+        imgSrc="sam-moghadam-khamseh-kvmdsTrGOBM-unsplash 1.png"
+        productName="S-Series Comfort Chair"
+        [discountedPrice]="375"
+        [originalPrice]="400"
+        ratingValue="29"
+        [hasDiscount]="true"
+        data-aos="zoom-in"
+        data-aos-delay="300"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="g27cq4-500x500 1.png"
+        productName="IPS LCD Gaming Monitor"
+        [discountedPrice]="370"
+        [originalPrice]="400"
+        ratingValue="99"
+        [hasDiscount]="true"
+        data-aos="zoom-in"
+        data-aos-delay="400"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="ak-900-01-500x500 1.png"
+        productName="AK-900 Wired Keyboard"
+        [discountedPrice]="960"
+        [originalPrice]="1160"
+        ratingValue="75"
+        [hasDiscount]="true"
+        data-aos="zoom-in"
+        data-aos-delay="500"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="g92-2-500x500 1.png"
+        productName="HAVIT HV-G92 Gamepad"
+        [discountedPrice]="120"
+        [originalPrice]="160"
+        ratingValue="88"
+        [hasDiscount]="true"
+        data-aos="zoom-in"
+        data-aos-delay="600"
+      ></app-product-list-item>
+    </div>
+    <div class="view-all flex items-center justify-center mb-16">
+      <button class="view-all-btn text-sm cursor-pointer rounded">
+        View All Products
+      </button>
+    </div>
+  </section>
+
+  <!-- CATEGORIES SECTION -->
+  <section
+    class="section category-sec ml-16 mt-16 mr-16 has-bottom-border"
+    data-aos="fade-up"
+    data-aos-delay="100"
+  >
+    <div class="section-header flex gap-4 items-center">
+      <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+      <h6 class="section-title text-lg">Categories</h6>
+    </div>
+    <div
+      class="section-content mt-8 mb-16"
+      data-aos="fade-up"
+      data-aos-delay="200"
+    >
+      <div class="section-info">
+        <h5 class="section-heading text-4xl">Browse By Category</h5>
+      </div>
+      <div class="section-navigation gap-2">
+        <img
+          src="/assets/Fill With Left Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="left arrow"
+        />
+        <img
+          src="/assets/Fill with Right Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="right arrow"
+        />
+      </div>
+    </div>
+
+    <div class="flex justify-between mb-16">
+      @for(category of categories; track category){
+      <app-category-list-item
+        [categoryName]="category"
+        data-aos="flip-left"
+        data-aos-delay="200"
+      ></app-category-list-item>
+      }
+    </div>
+  </section>
+
+  <!-- BEST SELLING SECTION -->
+  <section
+    class="section ml-16 mt-16 mr-16"
+    data-aos="fade-up"
+    data-aos-delay="100"
+  >
+    <div class="section-header flex gap-4 items-center">
+      <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+      <h6 class="section-title text-lg">This Month</h6>
+    </div>
+    <div class="section-content mt-8 mb-16">
+      <div class="section-info" data-aos="fade-right" data-aos-delay="200">
+        <h5 class="section-heading text-4xl">Best Selling Products</h5>
+      </div>
+      <div class="section-navigation flex">
+        <button class="view-all-btn text-sm cursor-pointer rounded">
+          View All
+        </button>
+      </div>
+    </div>
+    <div class="products flex justify-between mb-16">
+      <app-product-list-item
+        imgSrc="672462_ZAH9D_5626_002_100_0000_Light-The-North-Face-x-Gucci-coat 1.png"
+        productName="The north coat"
+        [discountedPrice]="260"
+        [originalPrice]="360"
+        ratingValue="99"
+        [hasDiscount]="true"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="547953_9C2ST_8746_001_082_0000_Light-Gucci-Savoy-medium-duffle-bag 1.png"
+        productName="Gucci duffle bag"
+        [discountedPrice]="960"
+        [originalPrice]="1160"
+        ratingValue="123"
+        [hasDiscount]="true"
+        data-aos="fade-up"
+        data-aos-delay="200"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="gammaxx-l240-argb-1-500x500 1.png"
+        productName="RGB liquid CPU Cooler"
+        [discountedPrice]="160"
+        [originalPrice]="170"
+        ratingValue="45"
+        [hasDiscount]="true"
+        data-aos="fade-up"
+        data-aos-delay="300"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="sam-moghadam-khamseh-L_7MQsHl_aU-unsplash 1.png"
+        productName="Small BookSelf"
+        [discountedPrice]="360"
+        [originalPrice]="400"
+        ratingValue="65"
+        [hasDiscount]="true"
+        data-aos="fade-up"
+        data-aos-delay="400"
+      ></app-product-list-item>
+    </div>
+  </section>
+
+  <!-- MUSIC EXPERIENCE SECTION -->
+  <div
+    class="music-experience-banner ml-16 mt-16 mr-16 mb-16"
+    data-aos="fade-up"
+    data-aos-delay="200"
+  >
+    <div class="">
+      <p>Categories</p>
+      <h3 class="text-white text-5xl mt-4">Enhance Your Music Experience</h3>
+      <!--  -->
+      <div class="timer-container mt-8 mb-8">
+        <div class="time-section" data-aos="fade-left" data-aos-delay="200">
+          <span class="time-value">{{ days }}</span>
+          <span class="time-label">Days</span>
+        </div>
+        <div class="time-section" data-aos="fade-left" data-aos-delay="200">
+          <span class="time-value">{{ hours }}</span>
+          <span class="time-label">Hours</span>
+        </div>
+        <div class="time-section" data-aos="fade-left" data-aos-delay="200">
+          <span class="time-value">{{ minutes }}</span>
+          <span class="time-label">Minutes</span>
+        </div>
+        <div class="time-section" data-aos="fade-left" data-aos-delay="200">
+          <span class="time-value">{{ seconds }}</span>
+          <span class="time-label">Seconds</span>
+        </div>
+      </div>
+      <!--  -->
+      <div>
+        <button
+          class="buy-now-btn text-white text-sm cursor-pointer rounded"
+          data-aos="zoom-in"
+          data-aos-delay="300"
+        >
+          Buy Now!
+        </button>
+      </div>
+    </div>
+    <div>
+      <img src="/assets/JBL speaker Frame .svg" alt="speaker jbl" />
+    </div>
+  </div>
+
+  <!-- OUR PRODUCTS SECTION -->
+  <section
+    class="section ml-16 mt-16 mr-16"
+    data-aos="fade-up"
+    data-aos-delay="100"
+  >
+    <div class="section-header flex gap-4 items-center" data-aos="fade-down">
+      <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+      <h6 class="section-title text-lg">Our Products</h6>
+    </div>
+    <div class="section-content mt-8 mb-16">
+      <div class="section-info" data-aos="fade-right" data-aos-delay="200">
+        <h5 class="section-heading text-4xl">Explore Our Products</h5>
+      </div>
+      <div class="section-navigation gap-2">
+        <img
+          src="/assets/Fill With Left Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="left arrow"
+        />
+        <img
+          src="/assets/Fill with Right Arrow.svg"
+          class="cursor-pointer navigation-btn"
+          alt="right arrow"
+        />
+      </div>
+    </div>
+
+    <div class="products new-products flex justify-between mb-16">
+      <app-product-list-item
+        imgSrc="71RdoeXxtrL 1.svg"
+        productName="Breed Dry Dog Food"
+        [originalPrice]="360"
+        ratingValue="35"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="100"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="eos-250d-03-500x500 1.svg"
+        productName="CANON EOS DSLR Camera"
+        [originalPrice]="1160"
+        ratingValue="46"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="200"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="ideapad-gaming-3i-01-500x500 1.svg"
+        productName="ASUS FHD Gaming Laptop"
+        [originalPrice]="170"
+        ratingValue="54"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="300"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="curology-j7pKVQrTUsM-unsplash 1.svg"
+        productName="Curology Product Set "
+        [originalPrice]="400"
+        ratingValue="65"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="400"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="New-Mercedes-Benz-Gtr-Licensed-Ride-on-Car-Kids-Electric-Toy-Car 1.svg"
+        productName="Kids Electric Car"
+        [originalPrice]="400"
+        ratingValue="85"
+        [hasDiscount]="false"
+        [new]="true"
+        data-aos="zoom-in"
+        data-aos-delay="500"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="Copa_Sense 1.svg"
+        productName="Jr. Zoom Soccer Cleats"
+        [originalPrice]="400"
+        ratingValue="72"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="500"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="GP11_PRD3 1.svg"
+        productName="GP11 Shooter USB Gamepad"
+        [originalPrice]="400"
+        ratingValue="90"
+        [hasDiscount]="false"
+        [new]="true"
+        data-aos="zoom-in"
+        data-aos-delay="700"
+      ></app-product-list-item>
+      <app-product-list-item
+        imgSrc="698717_Z8A1X_3475_001_100_0000_Light-Reversible-quilted-satin-jacket 1.svg"
+        productName="Quilted Satin Jacket"
+        [originalPrice]="400"
+        ratingValue="23"
+        [hasDiscount]="false"
+        data-aos="zoom-in"
+        data-aos-delay="800"
+      ></app-product-list-item>
+    </div>
+    <div
+      class="view-all flex items-center justify-center mb-16"
+      data-aos="fade-up"
+      data-aos-delay="900"
+    >
+      <button class="view-all-btn text-sm cursor-pointer rounded">
+        View All Products
+      </button>
+    </div>
+  </section>
+  <!-- FEATURED / NEW ARRIVAL SECTION -->
+  <section
+    class="section ml-16 mt-16 mr-16"
+    data-aos="fade-up"
+    data-aos-delay="100"
+  >
+    <div class="section-header flex gap-4 items-center">
+      <span><img src="/assets/Rectangle 17.svg" alt="" /></span>
+      <h6 class="section-title text-lg">Featured</h6>
+    </div>
+    <div class="section-content mt-8 mb-16">
+      <div class="section-info">
+        <h5 class="section-heading text-4xl">New Arrival</h5>
+      </div>
+    </div>
+
+    <div class="grid-banner gap-2 mb-16">
+      <div class="left-item" data-aos="zoom-in" data-aos-delay="200">
+        <img
+          src="/assets/ps5-slim-goedkope-playstation_large 1.svg"
+          alt="ps5"
+        />
+
+        <div class="details">
+          <h5>PlayStation 5</h5>
+          <p>Black and White version of the PS5 coming out on sale.</p>
+          <a href="">Shop Now</a>
+        </div>
+      </div>
+      <div class="right-top-item" data-aos="fade-left" data-aos-delay="400">
+        <img
+          src="/assets/attractive-woman-wearing-hat-posing-black-background 1.svg"
+          alt="A woman"
+        />
+        <div class="details">
+          <h5>Women's Collections</h5>
+          <p>Featured woman collections that give you another vibe.</p>
+          <a href="">Shop Now</a>
+        </div>
+      </div>
+      <div class="right-bottom-left-item">
+        <img
+          src="/assets/69-694768_amazon-echo-png-clipart-transparent-amazon-echo-png 1.svg"
+          alt="bluetooth device"
+        />
+        <div class="details">
+          <h5>Speakers</h5>
+          <p>Amazon wireless speakers</p>
+          <a href="">Shop Now</a>
+        </div>
+      </div>
+      <div class="right-bottom-right-item">
+        <img
+          src="/assets/652e82cd70aa6522dd785109a455904c.svg"
+          alt="A perfume"
+        />
+        <div class="details">
+          <h5>Perfume</h5>
+          <p>GUCCI INTENSE OUD EDP</p>
+          <a href="">Shop Now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES SECTION -->
+  <div
+    class="services flex justify-between ml-32 mt-32 mr-32 mb-32 items-center"
+  >
+    <div class="service" data-aos="flip-left">
+      <img src="/assets/delivery-services.svg" alt=" truck" />
+      <h5>FREE AND FAST DELIVERY</h5>
+      <p>Free delivery for all orders over $140</p>
+    </div>
+    <div class="service" data-aos="flip-up" data-aos-delay="200">
+      <img src="/assets/customer-services.svg" alt="headphone" />
+      <h5>24/7 CUSTOMER SERVICE</h5>
+      <p>Friendly 24/7 customer support</p>
+    </div>
+    <div class="service" data-aos="flip-right" data-aos-delay="400">
+      <img src="/assets/guarantee-services.svg" alt=" security logo" />
+      <h5>MONEY BACK GUARANTEE</h5>
+      <p>We return money within 30 days</p>
+    </div>
+
+    @if(showBackToTop){
+    <div id="back-to-top" (click)="scrollToTop()">
+      <img src="/assets/up-arrow.svg" alt="up arrow" />
+    </div>
+    }
+  </div>
+</div>

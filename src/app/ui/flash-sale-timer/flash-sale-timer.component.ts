@@ -39,6 +39,6 @@ export class FlashSaleTimerComponent {
         this.minutes = 0;
         this.seconds = 0;
       }
-    }, 1000); // Update every second
+    }, 1000);
   }
 }

@@ -1,5 +1,8 @@
 /* POPPINS FONT IMPORT */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"); */
+
+/*  Livvic FONT IMPORT*/
+@import url("https://fonts.googleapis.com/css2?family=Livvic:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap");
 
 /* ============================= */
 
@@ -28,11 +31,13 @@ html {
 
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "Livvic", sans-serif;
   background-color: #fff;
   color: #000;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  overflow-x: hidden;
 }
 
 ul,
@@ -287,6 +292,9 @@ blockquote {
 .mr-16 {
   margin-right: 4rem;
 }
+.mr-32 {
+  margin-right: 8rem;
+}
 
 .mb-1 {
   margin-bottom: 0.25rem;
@@ -306,6 +314,9 @@ blockquote {
 
 .mb-16 {
   margin-bottom: 4rem;
+}
+.mb-32 {
+  margin-bottom: 8rem;
 }
 
 .ml-1 {
@@ -516,6 +527,9 @@ blockquote {
 
 .text-4xl {
   font-size: 2.25rem;
+}
+.text-5xl {
+  font-size: 3.5rem;
 }
 
 .font-light {
