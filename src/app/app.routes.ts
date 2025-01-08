@@ -1,9 +1,20 @@
 import { Routes } from '@angular/router';
-import { MarketplaceHomepageComponent } from './marketplace/marketplace-homepage/marketplace-homepage.component';
+
 import { SignupComponent } from './ui/auth/signup/signup.component';
+import { OrderComponent } from './pages/order/order.component';
+import { MarketplaceComponent } from './pages/marketplace/marketplace.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'marketplace/homepage', pathMatch: 'full' },
-  { path: 'marketplace/homepage', component: MarketplaceHomepageComponent },
-  { path: 'create', component: SignupComponent, title: 'Create Account' },
+  { path: '', redirectTo: 'marketplace', pathMatch: 'full' },
+  {
+    path: 'marketplace',
+    component: MarketplaceComponent,
+    title: 'Markt | Marketplace',
+  },
+  {
+    path: 'create',
+    component: SignupComponent,
+    title: 'Markt | Create account',
+  },
+  { path: 'order', component: OrderComponent, title: 'Markt | Your orders' },
 ];

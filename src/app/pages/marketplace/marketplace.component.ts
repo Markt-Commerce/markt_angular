@@ -9,19 +9,18 @@ import { ProductListItemComponent } from '../../ui/product-list-item/product-lis
 import * as AOS from 'aos';
 
 @Component({
-  selector: 'app-marketplace-homepage',
+  selector: 'app-marketplace',
   standalone: true,
   imports: [
     HeaderComponent,
     FlashSaleTimerComponent,
     ProductListItemComponent,
-    FooterComponent,
     CategoryListItemComponent,
   ],
-  templateUrl: './marketplace-homepage.component.html',
-  styleUrl: './marketplace-homepage.component.css',
+  templateUrl: './marketplace.component.html',
+  styleUrl: './marketplace.component.css',
 })
-export class MarketplaceHomepageComponent {
+export class MarketplaceComponent {
   categories: string[] = [
     'Phones',
     'Computers',
