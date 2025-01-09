@@ -23,8 +23,10 @@
     </li>
   </ul>
 
-  <div class="tab-content">
-    <p *ngIf="activeTabIndex === 0">All Orders Content</p>
+  <div class="tab-content mt-8">
+    <div *ngIf="activeTabIndex === 0">
+      <app-order-tab-item></app-order-tab-item>
+    </div>
     <p *ngIf="activeTabIndex === 1">Delivered Orders Content</p>
     <p *ngIf="activeTabIndex === 2">Not Yet Shipped Orders Content</p>
     <p *ngIf="activeTabIndex === 3">Cancelled Orders Content</p>

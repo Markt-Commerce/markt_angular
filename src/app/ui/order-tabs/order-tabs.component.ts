@@ -1,10 +1,11 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
+import { OrderTabItemComponent } from "../order-tab-item/order-tab-item.component";
 
 @Component({
   selector: 'app-order-tabs',
   standalone: true,
-  imports: [NgIf, NgFor],
+  imports: [NgIf, NgFor, OrderTabItemComponent],
   templateUrl: './order-tabs.component.html',
   styleUrl: './order-tabs.component.css',
 })

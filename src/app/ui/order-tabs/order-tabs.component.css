@@ -19,8 +19,8 @@
   position: relative;
   transition: color 0.3s ease-in-out;
   display: flex;
-  justify-content: space-between; /* Ensures space between text and dropdown */
-  align-items: center; /* Aligns the items vertically */
+  justify-content: space-between;
+  align-items: center;
 }
 
 .tab-item:hover {
@@ -43,7 +43,7 @@
 
 .dropdown-icon {
   cursor: pointer;
-  margin-left: 10px; /* Adds some space between the tab text and dropdown icon */
+  margin-left: 10px;
 }
 
 .dropdown-menu {
