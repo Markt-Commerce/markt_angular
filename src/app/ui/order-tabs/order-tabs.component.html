@@ -24,8 +24,43 @@
   </ul>
 
   <div class="tab-content mt-8">
-    <div *ngIf="activeTabIndex === 0">
-      <app-order-tab-item></app-order-tab-item>
+    <div *ngIf="activeTabIndex === 0" class="flex gap-8 flex-col">
+      <app-order-tab-item
+        sellerName="Sumsung"
+        orderId="20/b"
+        purchaseDate="24 Dec, 2023"
+        deliveryDate="2 Jan, 2024"
+        [products]="[{
+            name: 'Z Fold 40 Sumsung',
+            quantity: 1,
+            color: 'Purple',
+            price: 600,
+            image: '/assets/sumsung.svg',
+          }]"
+      ></app-order-tab-item>
+
+      <app-order-tab-item
+        sellerName="Sumsung"
+        orderId="20-A"
+        purchaseDate="24 Dec, 2023"
+        deliveryDate="1 Jan, 2024"
+        [products]="[
+      {
+        name: 'Bike',
+        quantity: 2,
+        color: 'Gold & Black',
+        price: 50,
+        image: '/assets/child-bike.svg',
+      },
+      {
+        name: 'TikTok Mini Toy Gun 3D STL File 356',
+        quantity: 4,
+        color: 'Pink',
+        price: 100,
+        image: '/assets/toy-gun.svg',
+      },
+    ]"
+      ></app-order-tab-item>
     </div>
     <p *ngIf="activeTabIndex === 1">Delivered Orders Content</p>
     <p *ngIf="activeTabIndex === 2">Not Yet Shipped Orders Content</p>

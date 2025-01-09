@@ -1,0 +1,140 @@
+.order {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
+  animation: fade-in 0.5s ease-in-out;
+}
+
+.order__info {
+  background-color: #e5e5e5;
+  border-radius: 1em;
+  padding: 1.5em;
+}
+
+.order__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5em;
+  font-weight: bold;
+  padding-bottom: 1em;
+  border-bottom: 2px dashed #333;
+}
+
+.order__header p {
+  display: flex;
+  gap: 1em;
+}
+
+.order__product {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5em;
+  margin-top: 1.5em;
+}
+
+.order__product-image-wrapper {
+  flex-shrink: 0;
+}
+
+.order__product-image {
+  object-fit: cover;
+  border-radius: 0.5em;
+}
+
+.order__product-details {
+  flex: 1;
+  display: flex;
+  gap: 4.5em;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.order__product-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.order__product-meta {
+  display: flex;
+  gap: 2em;
+}
+
+.order__product-meta div {
+  font-size: 0.9rem;
+}
+
+.order__product-quantity,
+.order__product-color {
+  font-weight: bold;
+}
+.order__product-quantity > span:last-child,
+.order__product-color > span:last-child {
+  margin-left: 0.5em;
+  padding: 0.2em 0.8em;
+  border: 1px solid grey;
+}
+
+.order__product-price {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.order__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3em;
+}
+
+.order__action {
+  padding: 0.5em 1.5em;
+  border-radius: 0.7em;
+  width: 100%;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.order__action--primary {
+  color: white;
+  background-color: var(--primary-color);
+  border: none;
+}
+
+.order__action--primary:hover {
+  background-color: white;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  transform: scale(1.02);
+  font-weight: bold;
+}
+
+.order__action--secondary {
+  color: var(--primary-color);
+  background-color: transparent;
+  border: 1px solid var(--primary-color);
+}
+
+.order__action--secondary:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: scale(1.02);
+  font-weight: bold;
+}
+
+.order__product + .order__product {
+  margin-top: 1.5em;
+  border-top: 1px dashed #ccc;
+  padding-top: 1.5em;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
