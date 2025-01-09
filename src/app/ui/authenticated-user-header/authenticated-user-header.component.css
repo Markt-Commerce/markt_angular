@@ -21,12 +21,6 @@
   border-radius: 8px;
   background-color: #f9f9f9;
   padding: 0 12px;
-  transition: all 0.3s ease;
-}
-
-.search-box:hover,
-.search-box:focus-within {
-  border-color: var(--primary-color);
 }
 
 .search-icon {

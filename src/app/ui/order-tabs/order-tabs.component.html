@@ -1,0 +1,33 @@
+<div class="tabs-container">
+  <ul class="tabs-list">
+    <li
+      *ngFor="let tab of tabs; let i = index"
+      [class.active]="activeTabIndex === i"
+      (click)="switchTab(i)"
+      class="tab-item"
+    >
+      {{ tab.name }}
+      <span *ngIf="tab.badgeCount" class="badge">{{ tab.badgeCount }}</span>
+      <img
+        *ngIf="tab.hasDropdown"
+        src="/assets/dropdown-icon.svg"
+        alt="Dropdown icon"
+        (click)="toggleDropdown($event)"
+        class="dropdown-icon"
+      />
+      <div *ngIf="tab.hasDropdown && showDropdown" class="dropdown-menu">
+        <ul>
+          <li *ngFor="let option of dropdownOptions">{{ option }}</li>
+        </ul>
+      </div>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <p *ngIf="activeTabIndex === 0">All Orders Content</p>
+    <p *ngIf="activeTabIndex === 1">Delivered Orders Content</p>
+    <p *ngIf="activeTabIndex === 2">Not Yet Shipped Orders Content</p>
+    <p *ngIf="activeTabIndex === 3">Cancelled Orders Content</p>
+    <p *ngIf="activeTabIndex === 4">Last 30 Days Orders Content</p>
+  </div>
+</div>
