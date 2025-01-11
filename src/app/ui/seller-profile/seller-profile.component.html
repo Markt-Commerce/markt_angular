@@ -1,0 +1,187 @@
+<app-side-bar></app-side-bar>
+
+<div class="pb-0 sm:ml-64">
+  <div class="p-4">
+    <div class="mt-10">
+      <h1 class="font-bold text-3xl">Profile</h1>
+      <p class="text-lg font-medium">You can add your credit and debit card details here for future purchases.</p>
+    </div>
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-2 mt-4">
+      <div class="flex flex-col gap-4 ">
+        <div class="flex flex-col border border-gray-100 mx-auto rounded-xl ">
+          <h2 class="text-lg font-bold text-black mb-4 border-b border-gray-200 p-3">Info</h2>
+          <div class="flex  items-center justify-center p-4">
+            <div class="flex basis-1/3 flex-col items-center justify-center space-x-4">
+              <!-- Profile Image -->
+              <div class="flex-shrink-0">
+                <div class="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    class="w-12 h-12 text-white"
+                  >
+                    <path
+                      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <!-- User Details -->
+              <div>
+                <h3 class="text-sm text-black/50">Full Name</h3>
+                <h3 class="font-bold text-black">Username</h3>
+                <div class="flex space-x-2 text-blue-500 mt-1">
+                  <button class="text-sm hover:underline">Edit</button>
+                  <span>|</span>
+                  <button class="text-sm hover:underline">Remove</button>
+                </div>
+              </div>
+            </div>
+            <!-- Contact Info -->
+            <div class="basis-2/3">
+              <div class="flex items-center text-sm space-x-2 text-gray-600 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path opacity="0.2" d="M21.0005 5.25L12.0005 13.5L3.00049 5.25H21.0005Z" fill="#E07575"/>
+                  <path d="M21 5.25L12 13.5L3 5.25" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M3 5.25H21V18C21 18.1989 20.921 18.3897 20.7803 18.5303C20.6397 18.671 20.4489 18.75 20.25 18.75H3.75C3.55109 18.75 3.36032 18.671 3.21967 18.5303C3.07902 18.3897 3 18.1989 3 18V5.25Z" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M10.3636 12L3.2312 18.538" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M20.7688 18.5381L13.6364 12" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Email: {{"info@marketplace.com"}}</span>
+              </div>
+              <div class="flex items-center text-sm space-x-2 text-gray-600 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path opacity="0.2" d="M8.66965 11.7014C9.44762 13.2919 10.7369 14.5753 12.3309 15.346C12.4475 15.4013 12.5765 15.4252 12.7052 15.4155C12.8339 15.4058 12.9579 15.3627 13.0648 15.2905L15.4119 13.7254C15.5157 13.6562 15.6352 13.6139 15.7594 13.6025C15.8837 13.5911 16.0088 13.6109 16.1235 13.66L20.5144 15.5419C20.6636 15.6052 20.7881 15.7154 20.8693 15.8556C20.9504 15.9959 20.9838 16.1588 20.9643 16.3197C20.8255 17.4057 20.2956 18.4039 19.4739 19.1273C18.6521 19.8508 17.5948 20.2499 16.5 20.25C13.1185 20.25 9.87548 18.9067 7.48439 16.5156C5.0933 14.1245 3.75 10.8815 3.75 7.49997C3.75006 6.40513 4.14918 5.34786 4.87264 4.5261C5.5961 3.70435 6.59428 3.17448 7.68028 3.03569C7.84117 3.01622 8.00403 3.04956 8.14432 3.1307C8.28461 3.21183 8.39473 3.33636 8.4581 3.48552L10.3416 7.88032C10.3903 7.994 10.4101 8.11796 10.3994 8.24116C10.3886 8.36437 10.3475 8.48299 10.2798 8.58647L8.72011 10.9696C8.64912 11.0768 8.60716 11.2006 8.59831 11.3288C8.58947 11.4571 8.61405 11.5855 8.66965 11.7014Z" fill="#E07575"/>
+                  <path d="M8.66965 11.7014C9.44762 13.2919 10.7369 14.5753 12.3309 15.346C12.4475 15.4013 12.5765 15.4252 12.7052 15.4155C12.8339 15.4058 12.9579 15.3627 13.0648 15.2905L15.4119 13.7254C15.5157 13.6562 15.6352 13.6139 15.7594 13.6025C15.8837 13.5911 16.0088 13.6109 16.1235 13.66L20.5144 15.5419C20.6636 15.6052 20.7881 15.7154 20.8693 15.8556C20.9504 15.9959 20.9838 16.1588 20.9643 16.3197C20.8255 17.4057 20.2956 18.4039 19.4739 19.1273C18.6521 19.8508 17.5948 20.2499 16.5 20.25C13.1185 20.25 9.87548 18.9067 7.48439 16.5156C5.0933 14.1245 3.75 10.8815 3.75 7.49997C3.75006 6.40513 4.14918 5.34786 4.87264 4.5261C5.5961 3.70435 6.59428 3.17448 7.68028 3.03569C7.84117 3.01622 8.00403 3.04956 8.14432 3.1307C8.28461 3.21183 8.39473 3.33636 8.4581 3.48552L10.3416 7.88032C10.3903 7.994 10.4101 8.11796 10.3994 8.24116C10.3886 8.36437 10.3475 8.48299 10.2798 8.58647L8.72011 10.9696C8.64912 11.0768 8.60716 11.2006 8.59831 11.3288C8.58947 11.4571 8.61405 11.5855 8.66965 11.7014V11.7014Z" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14.9454 3.75C16.2169 4.09194 17.3761 4.76196 18.3071 5.69294C19.2381 6.62392 19.9081 7.78319 20.25 9.05462" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14.1687 6.64844C14.9316 6.8536 15.6271 7.25561 16.1857 7.8142C16.7443 8.37279 17.1463 9.06835 17.3515 9.83121" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Phone: +1-202-435-0151</span>
+              </div>
+              <div class="flex items-center text-sm space-x-2 text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path opacity="0.2" d="M12 2.25C10.0109 2.25 8.10323 3.04018 6.6967 4.4467C5.29018 5.85323 4.5 7.76088 4.5 9.75C4.5 16.5 12 21.75 12 21.75C12 21.75 19.5 16.5 19.5 9.75C19.5 7.76088 18.7098 5.85323 17.3033 4.4467C15.8968 3.04018 13.9891 2.25 12 2.25ZM12 12.75C11.4067 12.75 10.8266 12.5741 10.3333 12.2444C9.83994 11.9148 9.45542 11.4462 9.22836 10.8981C9.0013 10.3499 8.94189 9.74667 9.05764 9.16473C9.1734 8.58279 9.45912 8.04824 9.87868 7.62868C10.2982 7.20912 10.8328 6.9234 11.4147 6.80764C11.9967 6.69189 12.5999 6.7513 13.1481 6.97836C13.6962 7.20542 14.1648 7.58994 14.4944 8.08329C14.8241 8.57664 15 9.15666 15 9.75C15 10.5456 14.6839 11.3087 14.1213 11.8713C13.5587 12.4339 12.7956 12.75 12 12.75Z" fill="#E07575"/>
+                  <path d="M5.25 21.75H18.75" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 12.75C13.6569 12.75 15 11.4069 15 9.75C15 8.09315 13.6569 6.75 12 6.75C10.3431 6.75 9 8.09315 9 9.75C9 11.4069 10.3431 12.75 12 12.75Z" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M19.5 9.75C19.5 16.5 12 21.75 12 21.75C12 21.75 4.5 16.5 4.5 9.75C4.5 7.76088 5.29018 5.85322 6.6967 4.4467C8.10322 3.04018 10.0109 2.25 12 2.25C13.9891 2.25 15.8968 3.04018 17.3033 4.4467C18.7098 5.85322 19.5 7.76088 19.5 9.75V9.75Z" stroke="#DB4444" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Location: Home# 1024/N, Road# 17/A, Adabor, Dhaka-1207, United States</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="w-full border border-gray-100 mx-auto rounded-xl p-4">
+          <!-- Header Section -->
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-sm font-medium text-gray-500">Overall Sales</h2>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-2xl font-bold text-black">$348,253.65</span>
+                <span class="text-sm text-green-500 flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    class="w-4 h-4"
+                  >
+                    <path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                  </svg>
+                  13.02%
+                </span>
+              </div>
+            </div>
+            <div>
+              <button
+                class="px-4 py-2 bg-gray-100 text-black text-sm rounded-md flex items-center"
+              >
+                This Month
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  class="w-4 h-4 ml-2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <!-- Chart Section -->
+          <div class="w-full">
+            <div class="relative h-48 w-full">
+              <!-- Placeholder for Chart -->
+              <canvas id="salesChart" class="w-full h-full"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Orders Completed -->
+      <div class=" border border-gray-100 min-h-screen mx-auto rounded-xl">
+        <div class="p-3 border-b border-gray-200">
+          <h1 class="text-lg font-semibold">Orders Completed</h1>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-gray-100">
+                <th>No.</th>
+                <th>Date Paid</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EKG41</td>
+                <td>10 Dec, 2021</td>
+                <td>$129.99 USD</td>
+                <td>
+                  <button type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                      <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>EKG76</td>
+                <td>10 Dec, 2021</td>
+                <td>$129.99 USD</td>
+                <td>
+                  <button type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                      <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>EKG56</td>
+                <td>10 Dec, 2021</td>
+                <td>$129.99 USD</td>
+                <td>
+                  <button type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                      <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm0 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <!-- Repeat other rows similarly -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
+
