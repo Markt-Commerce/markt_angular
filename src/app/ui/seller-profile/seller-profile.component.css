@@ -5,7 +5,7 @@ tbody tr:last-child {
   border: none !important;
 }
 tbody tr button {
-  @apply p-2 rounded-full 
+  @apply p-2 rounded-full; 
 }
 tbody td {
   @apply py-3 px-4 text-gray-700;
