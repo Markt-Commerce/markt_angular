@@ -1,0 +1,319 @@
+<app-side-bar></app-side-bar>
+
+<div class="pb-0 sm:ml-64">
+  <div class="p-4">
+    <div class="mt-10">
+      <h1 class="font-bold text-3xl">Dashboard</h1>
+      <p class="text-lg font-medium">You can add your credit and debit card details here for future purchases.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 grid-cols-1 gap-2 mt-4">
+      <!-- Overall Sales -->
+      <div class="w-full border border-gray-100 mx-auto rounded-xl p-4">
+        <!-- Header Section -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-sm font-medium text-gray-500">Overall Sales</h2>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold text-black">$348,253.65</span>
+              <span class="text-sm text-green-500 flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  class="w-4 h-4"
+                >
+                  <path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                </svg>
+                13.02%
+              </span>
+            </div>
+          </div>
+          <div>
+            <button
+              class="px-4 py-2 bg-gray-100 text-black text-sm rounded-md flex items-center"
+            >
+              This Month
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                class="w-4 h-4 ml-2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Chart Section -->
+        <div class="w-full">
+          <app-overall-sales></app-overall-sales>
+        </div>
+      </div>
+
+      <!-- sales cards -->
+      <div class="w-full grid grid-cols-2 gap-2">
+        <!-- Total Sales -->
+        <div class="flex flex-col bg-secRed rounded-lg p-4 gap-2">
+          <div class="basis-1/5 flex justify-between items-center">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="35" height="34" viewBox="0 0 35 34" fill="none">
+                <path d="M29.2446 12.6914C28.2954 11.6431 26.8646 11.0339 24.8812 10.8214V9.74478C24.8812 7.80394 24.0596 5.93394 22.6146 4.63061C21.1554 3.29894 19.2571 2.67561 17.2879 2.85978C13.9022 3.18561 11.0546 6.45811 11.0546 9.99978V10.8214C9.07132 11.0339 7.64048 11.6431 6.69132 12.6914C5.31715 14.2214 5.35965 16.2614 5.51548 17.6781L6.50715 25.5689C6.80465 28.3314 7.92382 31.1647 14.0155 31.1647H21.9204C28.0121 31.1647 29.1312 28.3314 29.4287 25.5831L30.4204 17.6639C30.5762 16.2614 30.6187 14.2214 29.2446 12.6914ZM17.4862 4.82894C18.9029 4.70144 20.2487 5.14061 21.2971 6.08978C22.3312 7.02478 22.9121 8.35644 22.9121 9.74478V10.7364H13.0238V9.99978C13.0238 7.47811 15.1063 5.05561 17.4862 4.82894ZM17.9679 26.3197C15.0071 26.3197 12.5988 23.9114 12.5988 20.9506C12.5988 17.9897 15.0071 15.5814 17.9679 15.5814C20.9287 15.5814 23.3371 17.9897 23.3371 20.9506C23.3371 23.9114 20.9287 26.3197 17.9679 26.3197Z" fill="white"/>
+                <path d="M17.1585 23.5733C16.8893 23.5733 16.6201 23.4741 16.4076 23.2616L15.0051 21.8591C14.5943 21.4483 14.5943 20.7683 15.0051 20.3574C15.416 19.9466 16.096 19.9466 16.5068 20.3574L17.1868 21.0374L19.4535 18.9408C19.8785 18.5441 20.5585 18.5724 20.9551 18.9974C21.3518 19.4224 21.3235 20.1024 20.8985 20.4991L17.881 23.2899C17.6685 23.4741 17.4135 23.5733 17.1585 23.5733Z" fill="white"/>
+              </svg>
+            </div>
+            <div class="backdrop-blur bg-secWhite/40 p-1 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+              </svg>
+            </div>
+          </div>
+          <div class="basis-3/5 flex flex-col justify-between text-secWhite">
+            <h6 class="text-base">Total Sales</h6>
+            <h2 class="text-2xl font-bold">#86,784.93</h2>
+          </div>
+          <div class="basis-1/5 flex justify-between items-center text-secWhite text-xs">
+            <div class="flex gap-2 items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1.19445 7.65184C0.993112 7.65184 0.791774 7.57766 0.632823 7.41871C0.325517 7.1114 0.325517 6.60276 0.632823 6.29545L4.02375 2.90449C4.1933 2.73495 4.41583 2.65017 4.65955 2.67137C4.89268 2.69256 5.10462 2.81972 5.24237 3.02106C5.8396 3.91964 7.11 4.04634 7.87294 3.28341L10.1593 0.997081C10.4666 0.689775 10.9752 0.689775 11.2825 0.997081C11.5898 1.30439 11.5898 1.81303 11.2825 2.12034L6.83188 6.57097C6.66234 6.74052 6.43981 6.82529 6.19608 6.80409C5.96295 6.7829 5.75102 6.65574 5.61326 6.4544C5.01603 5.55582 3.74563 5.42913 2.98271 6.19206L1.75608 7.41871C1.59713 7.57766 1.39579 7.65184 1.19445 7.65184Z" fill="white"/>
+                <path d="M10.7305 4.47253C10.296 4.47253 9.93575 4.11224 9.93575 3.67778C9.93575 2.94622 9.34271 2.35318 8.61116 2.35318C8.1767 2.35318 7.81641 1.99289 7.81641 1.55843C7.81641 1.12396 8.1767 0.763672 8.61116 0.763672H10.7305C11.165 0.763672 11.5253 1.12396 11.5253 1.55843V3.67778C11.5253 4.11224 11.165 4.47253 10.7305 4.47253Z" fill="white"/>
+              </svg>
+             <span class="font-extralight">13.02%</span>
+            </div>
+            <div>
+              From Jan
+            </div>
+          </div>
+        </div>
+        <!-- Avg. Oder Value -->
+        <div class="flex flex-col bg-secRed rounded-lg p-4 gap-2">
+          <div class="basis-1/5 flex justify-between items-center">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 35 35" fill="none">
+                <path d="M31.3014 18.5005V21.3593C31.3014 22.1365 30.6667 22.7749 29.8802 22.7749H27.2173C25.7271 22.7749 24.3611 21.6785 24.237 20.1797C24.1542 19.3054 24.4853 18.4866 25.0648 17.9176C25.5753 17.3903 26.279 17.085 27.0517 17.085H29.8802C30.6667 17.085 31.3014 17.7233 31.3014 18.5005Z" fill="white"/>
+                <path d="M22.1674 20.3601C22.0432 18.9029 22.5675 17.4735 23.6161 16.4327C24.4992 15.5306 25.7272 15.0032 27.0518 15.0032H27.8382C28.2246 15.0032 28.5419 14.6841 28.4867 14.2955C28.1142 11.6032 25.7962 9.52148 23.0228 9.52148H9.22514C6.17584 9.52148 3.70605 12.0056 3.70605 15.0726V24.7871C3.70605 27.8542 6.17584 30.3383 9.22514 30.3383H23.0228C25.81 30.3383 28.1142 28.2566 28.4867 25.5643C28.5419 25.1757 28.2246 24.8565 27.8382 24.8565H27.2174C24.5958 24.8565 22.3882 22.8859 22.1674 20.3601ZM18.8835 17.5013H10.6049C10.0392 17.5013 9.57008 17.0433 9.57008 16.4604C9.57008 15.8776 10.0392 15.4196 10.6049 15.4196H18.8835C19.4492 15.4196 19.9184 15.8914 19.9184 16.4604C19.9184 17.0294 19.4492 17.5013 18.8835 17.5013Z" fill="white"/>
+                <path d="M20.553 6.50961C20.9117 6.88431 20.5944 7.43942 20.0701 7.43942H9.26647C7.76252 7.43942 6.35515 7.88352 5.18235 8.6468C4.64423 8.99375 3.91296 8.61904 4.17511 8.02229C4.94778 6.20429 6.75528 4.94141 8.83874 4.94141H16.5931C18.1936 4.94141 19.6147 5.5104 20.553 6.50961Z" fill="white"/>
+              </svg>
+            </div>
+            <div class="backdrop-blur bg-secWhite/40 p-1 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+              </svg>
+            </div>
+          </div>
+          <div class="basis-3/5 flex flex-col justify-between text-secWhite">
+            <h6 class="text-base">Avg. Order Value</h6>
+            <h2 class="text-2xl font-bold">#234.14</h2>
+          </div>
+          <div class="basis-1/5 flex justify-between items-center text-secWhite text-xs">
+            <div class="flex gap-2 items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1.19445 7.65184C0.993112 7.65184 0.791774 7.57766 0.632823 7.41871C0.325517 7.1114 0.325517 6.60276 0.632823 6.29545L4.02375 2.90449C4.1933 2.73495 4.41583 2.65017 4.65955 2.67137C4.89268 2.69256 5.10462 2.81972 5.24237 3.02106C5.8396 3.91964 7.11 4.04634 7.87294 3.28341L10.1593 0.997081C10.4666 0.689775 10.9752 0.689775 11.2825 0.997081C11.5898 1.30439 11.5898 1.81303 11.2825 2.12034L6.83188 6.57097C6.66234 6.74052 6.43981 6.82529 6.19608 6.80409C5.96295 6.7829 5.75102 6.65574 5.61326 6.4544C5.01603 5.55582 3.74563 5.42913 2.98271 6.19206L1.75608 7.41871C1.59713 7.57766 1.39579 7.65184 1.19445 7.65184Z" fill="white"/>
+                <path d="M10.7305 4.47253C10.296 4.47253 9.93575 4.11224 9.93575 3.67778C9.93575 2.94622 9.34271 2.35318 8.61116 2.35318C8.1767 2.35318 7.81641 1.99289 7.81641 1.55843C7.81641 1.12396 8.1767 0.763672 8.61116 0.763672H10.7305C11.165 0.763672 11.5253 1.12396 11.5253 1.55843V3.67778C11.5253 4.11224 11.165 4.47253 10.7305 4.47253Z" fill="white"/>
+              </svg>
+             <span class="font-extralight">13.02%</span>
+            </div>
+            <div>
+              From Jan
+            </div>
+          </div>
+        </div>
+        <!-- Online Session -->
+        <div class="flex flex-col rounded-lg p-4 gap-2 border">
+          <div class="basis-1/5 flex justify-between items-center">
+            <div>
+              <svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.99361 2.84375H25.7328C30.7761 2.84375 32.0369 4.10458 32.0369 9.13375V18.1013C32.0369 23.1446 30.7761 24.3912 25.7469 24.3912H9.99361C4.96445 24.4054 3.70361 23.1446 3.70361 18.1154V9.13375C3.70361 4.10458 4.96445 2.84375 9.99361 2.84375Z" stroke="#DB4444" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.8701 24.4053V31.1769" stroke="#DB4444" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.70361 18.4277H32.0369" stroke="#E94C2A" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.4951 31.1777H24.2451" stroke="#E94C2A" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"/><rect x="4.26953" y="3.41113" width="27.2" height="15.3" rx="1" fill="#DB4444"/>
+              </svg>
+            </div>
+            <div class="backdrop-blur bg-gray-200 p-1 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+              </svg>
+            </div>
+          </div>
+          <div class="basis-3/5 flex flex-col justify-between text-[#606060]">
+            <h6 class="text-base">Online Session</h6>
+            <h2 class="text-2xl font-bold">#143,422</h2>
+          </div>
+          <div class="basis-1/5 flex justify-between items-center text-[#606060] text-xs">
+            <div class="flex gap-2 items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="#16C098">
+                <path d="M1.19445 7.65184C0.993112 7.65184 0.791774 7.57766 0.632823 7.41871C0.325517 7.1114 0.325517 6.60276 0.632823 6.29545L4.02375 2.90449C4.1933 2.73495 4.41583 2.65017 4.65955 2.67137C4.89268 2.69256 5.10462 2.81972 5.24237 3.02106C5.8396 3.91964 7.11 4.04634 7.87294 3.28341L10.1593 0.997081C10.4666 0.689775 10.9752 0.689775 11.2825 0.997081C11.5898 1.30439 11.5898 1.81303 11.2825 2.12034L6.83188 6.57097C6.66234 6.74052 6.43981 6.82529 6.19608 6.80409C5.96295 6.7829 5.75102 6.65574 5.61326 6.4544C5.01603 5.55582 3.74563 5.42913 2.98271 6.19206L1.75608 7.41871C1.59713 7.57766 1.39579 7.65184 1.19445 7.65184Z" fill="#16C098"/>
+                <path d="M10.7305 4.47253C10.296 4.47253 9.93575 4.11224 9.93575 3.67778C9.93575 2.94622 9.34271 2.35318 8.61116 2.35318C8.1767 2.35318 7.81641 1.99289 7.81641 1.55843C7.81641 1.12396 8.1767 0.763672 8.61116 0.763672H10.7305C11.165 0.763672 11.5253 1.12396 11.5253 1.55843V3.67778C11.5253 4.11224 11.165 4.47253 10.7305 4.47253Z" fill="#16C098"/>
+              </svg>
+             <span class="font-extralight text-[#16C098]">13.02%</span>
+            </div>
+            <div>
+              From Jan
+            </div>
+          </div>
+        </div>
+        <!-- Conversion Rate -->
+        <div class="flex flex-col rounded-lg p-4 gap-2 border">
+          <div class="basis-1/5 flex justify-between items-center">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34" fill="none">
+                <path d="M16.592 3.64394L13.2413 11.4437H9.89061C9.33448 11.4437 8.79224 11.4854 8.26392 11.5967L9.65425 8.25986L9.70987 8.13473L9.79329 7.91228C9.835 7.81496 9.86281 7.73154 9.90452 7.66202C11.5173 3.92201 13.3247 2.75412 16.592 3.64394Z" fill="#DB4444"/><path d="M26.0325 11.8194L26.0047 11.8055C25.1705 11.5691 24.3224 11.444 23.4604 11.444H14.7568L17.8851 4.17252L17.9268 4.0752C18.1215 4.14471 18.33 4.24204 18.5386 4.31155L21.6112 5.60457C23.3213 6.31364 24.517 7.05052 25.2539 7.94034C25.379 8.10718 25.4902 8.26011 25.6015 8.44086C25.7266 8.63551 25.8239 8.83015 25.8795 9.0387C25.9352 9.16383 25.9769 9.27506 26.0047 9.40019C26.2132 10.1093 26.2271 10.9157 26.0325 11.8194Z" fill="#DB4444"/><path d="M17.3977 25.1245H17.7453C18.1624 25.1245 18.51 24.7491 18.51 24.2903C18.51 23.7064 18.3431 23.623 17.9816 23.4839L17.3977 23.2754V25.1245Z" fill="#007ABD"/><path d="M25.4209 13.8074C24.7952 13.6266 24.1418 13.5293 23.4605 13.5293H9.89081C8.94538 13.5293 8.05556 13.71 7.22136 14.0715C4.80217 15.1143 3.10596 17.5196 3.10596 20.3141V23.0253C3.10596 23.359 3.13376 23.6788 3.17547 24.0124C3.48135 28.4337 5.84492 30.7973 10.2662 31.0893C10.586 31.131 10.9058 31.1588 11.2533 31.1588H22.098C27.2422 31.1588 29.9534 28.7118 30.2176 23.8456C30.2315 23.5814 30.2454 23.3034 30.2454 23.0253V20.3141C30.2454 17.2415 28.2016 14.6555 25.4209 13.8074ZM18.4553 22.1216C19.0948 22.344 19.9569 22.8168 19.9569 24.2905C19.9569 25.5557 18.9697 26.5707 17.7462 26.5707H17.3986V26.8765C17.3986 27.2797 17.0789 27.5995 16.6757 27.5995C16.2725 27.5995 15.9527 27.2797 15.9527 26.8765V26.5707H15.8276C14.4928 26.5707 13.3945 25.4445 13.3945 24.0542C13.3945 23.651 13.7142 23.3312 14.1174 23.3312C14.5206 23.3312 14.8404 23.651 14.8404 24.0542C14.8404 24.6381 15.2853 25.1247 15.8276 25.1247H15.9527V22.775L14.896 22.3997C14.2565 22.1772 13.3945 21.7045 13.3945 20.2307C13.3945 18.9655 14.3816 17.9506 15.6051 17.9506H15.9527V17.6447C15.9527 17.2415 16.2725 16.9217 16.6757 16.9217C17.0789 16.9217 17.3986 17.2415 17.3986 17.6447V17.9506H17.5238C18.8585 17.9506 19.9569 19.0767 19.9569 20.4671C19.9569 20.8703 19.6371 21.1901 19.2339 21.1901C18.8307 21.1901 18.5109 20.8703 18.5109 20.4671C18.5109 19.8831 18.066 19.3965 17.5238 19.3965H17.3986V21.7462L18.4553 22.1216Z" fill="#DB4444"/><path d="M14.8396 20.2307C14.8396 20.8146 15.0064 20.8981 15.3679 21.0371L15.9519 21.2456V19.3965H15.6043C15.1733 19.3965 14.8396 19.7719 14.8396 20.2307Z" fill="#007ABD"/>
+              </svg>
+            </div>
+            <div class="backdrop-blur bg-gray-200 p-1 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+              </svg>
+            </div>
+          </div>
+          <div class="basis-3/5 flex flex-col justify-between text-[#606060]">
+            <h6 class="text-base">Conversion Rate</h6>
+            <h2 class="text-2xl font-bold">#82.94%</h2>
+          </div>
+          <div class="basis-1/5 flex justify-between items-center text-[#606060] text-xs">
+            <div class="flex gap-2 items-center text-secRed">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="#e94c2a">
+                <path d="M1.19445 7.65184C0.993112 7.65184 0.791774 7.57766 0.632823 7.41871C0.325517 7.1114 0.325517 6.60276 0.632823 6.29545L4.02375 2.90449C4.1933 2.73495 4.41583 2.65017 4.65955 2.67137C4.89268 2.69256 5.10462 2.81972 5.24237 3.02106C5.8396 3.91964 7.11 4.04634 7.87294 3.28341L10.1593 0.997081C10.4666 0.689775 10.9752 0.689775 11.2825 0.997081C11.5898 1.30439 11.5898 1.81303 11.2825 2.12034L6.83188 6.57097C6.66234 6.74052 6.43981 6.82529 6.19608 6.80409C5.96295 6.7829 5.75102 6.65574 5.61326 6.4544C5.01603 5.55582 3.74563 5.42913 2.98271 6.19206L1.75608 7.41871C1.59713 7.57766 1.39579 7.65184 1.19445 7.65184Z" fill="#e94c2a"/>
+                <path d="M10.7305 4.47253C10.296 4.47253 9.93575 4.11224 9.93575 3.67778C9.93575 2.94622 9.34271 2.35318 8.61116 2.35318C8.1767 2.35318 7.81641 1.99289 7.81641 1.55843C7.81641 1.12396 8.1767 0.763672 8.61116 0.763672H10.7305C11.165 0.763672 11.5253 1.12396 11.5253 1.55843V3.67778C11.5253 4.11224 11.165 4.47253 10.7305 4.47253Z" fill="#e94c2a"/>
+              </svg>
+             <span class="font-extralight text-secRed">13.02%</span>
+            </div>
+            <div>
+              From Jan
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-4 mt-4">
+      <!-- Selling Products -->
+      <div class="basis-4/5 p-4 border rounded-lg">
+        <!-- Header -->
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-semibold">Selling Products</h2>
+          <div class="flex items-center space-x-2">
+            <button class="p-2 bg-gray-100 rounded-lg shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M20.5999 4.09961V6.29961C20.5999 7.09961 20.0999 8.09961 19.5999 8.59961L15.2999 12.3996C14.6999 12.8996 14.2999 13.8996 14.2999 14.6996V18.9996C14.2999 19.5996 13.8999 20.3996 13.3999 20.6996L11.9999 21.5996C10.6999 22.3996 8.89988 21.4996 8.89988 19.8996V14.5996C8.89988 13.8996 8.49989 12.9996 8.09989 12.4996L7.62989 12.0096C7.31989 11.6796 7.25989 11.1796 7.50989 10.7896L12.6299 2.56961C12.8099 2.27961 13.1299 2.09961 13.4799 2.09961H18.5999C19.6999 2.09961 20.5999 2.99961 20.5999 4.09961Z" fill="#59595A"/>
+                <path d="M10.3499 3.62961L6.7999 9.31961C6.4599 9.86961 5.6799 9.94961 5.2299 9.47961L4.2999 8.49961C3.7999 7.99961 3.3999 7.09961 3.3999 6.49961V4.19961C3.3999 2.99961 4.2999 2.09961 5.3999 2.09961H9.4999C10.2799 2.09961 10.7599 2.95961 10.3499 3.62961Z" fill="#59595A"/>
+              </svg>
+            </button>
+            <button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center">
+              <span> 8 Jan - 2 Feb</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+              </svg>              
+            </button>
+          </div>
+        </div>
+        <!-- Table -->
+        <table class="w-full mt-6 text-left border-collapse">
+          <thead>
+            <tr class="border-b">
+              <th class="py-3 text-sm font-medium text-gray-600">Product Name</th>
+              <th class="py-3 text-sm font-medium text-gray-600">Price</th>
+              <th class="py-3 text-sm font-medium text-gray-600">Sold</th>
+              <th class="py-3 text-sm font-medium text-gray-600">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b">
+              <td class="py-4 flex items-center space-x-4">
+                <img src="https://via.placeholder.com/40" alt="iPhone 14 Pro Max" class="w-10 h-10 rounded-md">
+                <span>iPhone 14 Pro Max 512GB (Gold)</span>
+              </td>
+              <td class="py-4 text-sm font-medium text-gray-800">$1399</td>
+              <td class="py-4 text-sm text-gray-600">1243 pcs</td>
+              <td class="py-4">
+                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+              </td>
+            </tr>
+            <tr class="border-b">
+              <td class="py-4 flex items-center space-x-4">
+                <img src="https://via.placeholder.com/40" alt="iPhone 13" class="w-10 h-10 rounded-md">
+                <span>iPhone 13 512GB (Purple)</span>
+              </td>
+              <td class="py-4 text-sm font-medium text-gray-800">$1099</td>
+              <td class="py-4 text-sm text-gray-600">433 pcs</td>
+              <td class="py-4">
+                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-4 flex items-center space-x-4">
+                <img src="https://via.placeholder.com/40" alt="Google Pixel 7 Pro" class="w-10 h-10 rounded-md">
+                <span>Google Pixel 7 Pro 128GB (Black)</span>
+              </td>
+              <td class="py-4 text-sm font-medium text-gray-800">$899</td>
+              <td class="py-4 text-sm text-gray-600">2343 pcs</td>
+              <td class="py-4">
+                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Top countries -->
+      <div class="basis-1/5 p-4 border rounded-lg">
+        <!-- Header -->
+        <h2 class="text-lg font-semibold mb-4">Top Countries</h2>
+        <!-- List -->
+        <ul class="space-y-3">
+          <li class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium">1</span>
+              <img src="/assets/flags/usa.png" alt="USA Flag" class="w-6 h-6 rounded-full">
+              <span class="text-sm">USA</span>
+            </div>
+            <span class="text-sm font-medium">16%</span>
+          </li>
+          <li class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium">2</span>
+              <img src="/assets/flags/Australia.png" alt="Australia Flag" class="w-6 h-6 rounded-full">
+              <span class="text-sm">Australia</span>
+            </div>
+            <span class="text-sm font-medium">15%</span>
+          </li>
+          <li class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium">3</span>
+              <img src="/assets/flags/uk.png" alt="UK Flag" class="w-6 h-6 rounded-full">
+              <span class="text-sm">UK</span>
+            </div>
+            <span class="text-sm font-medium">15%</span>
+          </li>
+          <li class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium">4</span>
+              <img src="/assets/flags/Germany.png" alt="Germany Flag" class="w-6 h-6 rounded-full">
+              <span class="text-sm">Germany</span>
+            </div>
+            <span class="text-sm font-medium">14%</span>
+          </li>
+          <li class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium">5</span>
+              <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span class="text-xs font-semibold text-gray-500">O</span>
+              </div>
+              <span class="text-sm">Other</span>
+            </div>
+            <span class="text-sm font-medium">13%</span>
+          </li>
+        </ul>
+        <!-- Load More Button -->
+        <button class="mt-6 w-full px-4 py-2 bg-gray-100 text-sm font-medium text-gray-600 rounded-lg shadow-sm">
+          Load More
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
+
