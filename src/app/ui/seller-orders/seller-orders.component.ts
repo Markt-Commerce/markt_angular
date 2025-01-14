@@ -10,6 +10,4 @@ import { EachSellerOrderComponent } from '../each-seller-order/each-seller-order
   templateUrl: './seller-orders.component.html',
   styleUrl: './seller-orders.component.css'
 })
-export class SellerOrdersComponent {
-
-}
+export class SellerOrdersComponent {}

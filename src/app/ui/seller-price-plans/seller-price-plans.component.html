@@ -1,0 +1,201 @@
+<app-side-bar></app-side-bar>
+
+<div class="pb-0 sm:ml-64">
+  <div class="p-4">
+    <div class="mt-10">
+      <h1 class="font-bold text-3xl">Plans</h1>
+      <p class="text-lg font-medium">Returned orders by customers.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 grid-cols-1 gap-20 mt-4 pr-8 px-4">
+      <!-- Basic -->
+      <div class="bg-black h-max text-white rounded-lg shadow-lg w-full p-6 mx-auto text-center">
+        <!-- Icon -->
+        <div class="mb-4">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto">
+          <path opacity="0.2" d="M12 29.999L14 19.999L6 16.999L20 1.99902L18 11.999L26 14.999L12 29.999Z" fill="#E94C2A"/>
+          <path d="M12 29.999L14 19.999L6 16.999L20 1.99902L18 11.999L26 14.999L12 29.999Z" stroke="#E94C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Plan Name -->
+        <h2 class="text-lg font-semibold">Basic</h2>
+
+        <!-- Price -->
+        <p class="text-4xl font-bold my-2">$19.99</p>
+        <p class="text-sm text-gray-400">/PER YEAR</p>
+
+        <!-- Button -->
+        <button  class="bg-secRed text-white px-6 py-2 mt-4 rounded-lg flex items-center justify-center gap-2 mx-auto">
+          Get Started
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        </button>
+
+        <!-- Features -->
+        <ul class="text-sm text-left mt-6 space-y-2">
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Upgraded profile
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Multi-shot & video
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Instant creative portfolio
+          </li>
+        </ul>
+      </div>
+      <!-- Standard -->
+      <div class="bg-black h-max text-white rounded-lg shadow-lg w-full p-6 mx-auto text-center relative">
+        <div class="absolute inline-flex items-center justify-center px-4 py-1 text-xs font-light text-white bg-red-500 rounded-full -top-2 left-10 ">Popular</div>
+        <!-- Icon -->
+        <div class="mb-4">
+          <svg width="32" height="32" viewBox="0 0 32 32" class="h-6 w-6 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.2" d="M9.83796 20.8765C8.64889 19.9478 7.6858 18.7616 7.02108 17.4072C6.35636 16.0527 6.00731 14.5652 6.00015 13.0565C5.9702 7.6362 10.34 3.13044 15.7589 3.0029C17.8587 2.95234 19.9212 3.56423 21.6537 4.75179C23.3862 5.93934 24.7008 7.64226 25.411 9.61899C26.1212 11.5957 26.191 13.7459 25.6104 15.7645C25.0299 17.7831 23.8284 19.5677 22.1766 20.8651C21.8127 21.147 21.5178 21.5079 21.3139 21.9205C21.1101 22.3332 21.0028 22.7868 21 23.247L21 24.0001C21 24.2653 20.8947 24.5196 20.7071 24.7072C20.5196 24.8947 20.2652 25.0001 20 25.0001H12C11.7348 25.0001 11.4804 24.8947 11.2929 24.7072C11.1053 24.5196 11 24.2653 11 24.0001L11 23.2462C10.9988 22.7889 10.8936 22.3379 10.6923 21.9273C10.491 21.5167 10.1988 21.1574 9.83796 20.8765V20.8765Z" fill="white"/>
+          <path d="M11 29H21" stroke="#E94C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 25V18" stroke="#E94C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 14L16 18L20 14" stroke="#E94C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.83796 20.8765C8.64889 19.9478 7.6858 18.7616 7.02108 17.4072C6.35636 16.0527 6.00731 14.5652 6.00015 13.0565C5.9702 7.6362 10.34 3.13044 15.7589 3.0029C17.8587 2.95234 19.9212 3.56423 21.6537 4.75179C23.3862 5.93934 24.7008 7.64226 25.411 9.61899C26.1212 11.5957 26.191 13.7459 25.6104 15.7645C25.0299 17.7831 23.8284 19.5677 22.1766 20.8651C21.8127 21.147 21.5178 21.5079 21.3139 21.9205C21.1101 22.3332 21.0028 22.7868 21 23.247L21 24.0001C21 24.2653 20.8947 24.5196 20.7071 24.7072C20.5196 24.8947 20.2652 25.0001 20 25.0001H12C11.7348 25.0001 11.4804 24.8947 11.2929 24.7072C11.1053 24.5196 11 24.2653 11 24.0001L11 23.2462C10.9988 22.7889 10.8936 22.3379 10.6923 21.9273C10.491 21.5167 10.1988 21.1574 9.83796 20.8765V20.8765Z" stroke="#E94C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Plan Name -->
+        <h2 class="text-lg font-semibold">Standard</h2>
+
+        <!-- Price -->
+        <p class="text-4xl font-bold my-2">$49.99</p>
+        <p class="text-sm text-gray-400">/PER YEAR</p>
+
+        <!-- Button -->
+        <button  class="bg-secRed text-white px-6 py-2 mt-4 rounded-lg flex items-center justify-center gap-2 mx-auto">
+          Get Started
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        </button>
+
+        <hr class="my-10 bg-secWhite">
+
+        <!-- Features -->
+        <ul class="text-sm text-left mt-6 space-y-2">
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Upgraded profile
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Multi-shot & video
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Instant creative portfolio
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Sell goods
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            ‘Hire me/us’ button on shots
+          </li>
+        </ul>
+      </div>
+      <!-- Premium -->
+      <div class="bg-black h-max text-white rounded-lg shadow-lg w-full p-6 mx-auto text-center relative">
+        <div class="absolute inline-flex items-center justify-center px-4 py-1 text-xs font-light text-white bg-red-500 rounded-full -top-2 left-10 ">Corporate</div>
+        <!-- Icon -->
+        <div class="mb-4">
+          <svg width="32" height="32" viewBox="0 0 32 32" class="h-6 w-6 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.2" d="M5.89046 19.1026L8.52159 15.9453C8.72044 18.3281 9.47539 20.9572 11.0341 23.812L7.78406 26.412L8.15648 26.8775L7.78406 26.412C7.75091 26.4386 7.71155 26.4562 7.66969 26.4633C7.62783 26.4704 7.58486 26.4667 7.54482 26.4526C7.50478 26.4385 7.46899 26.4144 7.44082 26.3827C7.41266 26.3509 7.39304 26.3125 7.38384 26.271L7.38383 26.271L5.83848 19.3169L5.83847 19.3169C5.83018 19.2796 5.83055 19.2409 5.83957 19.2037C5.84858 19.1666 5.86599 19.132 5.89045 19.1026L5.89046 19.1026Z" fill="#1C1C1C" stroke="#1C1C1C" stroke-width="1.5"/>
+          <path opacity="0.2" d="M20.8905 23.7222C22.4492 20.8674 23.2041 18.2383 23.403 15.8554L26.0341 19.0128L26.0341 19.0128C26.0586 19.0422 26.076 19.0767 26.085 19.1139C26.094 19.151 26.0944 19.1897 26.0861 19.227L26.0861 19.2271L24.5407 26.1812L24.5407 26.1812C24.5315 26.2226 24.5119 26.2611 24.4837 26.2928C24.4556 26.3246 24.4198 26.3487 24.3797 26.3628C24.3397 26.3769 24.2967 26.3805 24.2549 26.3734C24.213 26.3664 24.1736 26.3487 24.1405 26.3222L20.8905 23.7222Z" fill="#1C1C1C" stroke="#1C1C1C" stroke-width="1.5"/>
+          <path d="M18 28H14" stroke="#DB4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15.3714 2.47053C12.9974 4.3723 5.05688 11.9717 12.0001 24.0002H20.0001C26.7989 11.9802 18.9746 4.38305 16.6255 2.47458C16.4484 2.33063 16.2273 2.25172 15.9991 2.25098C15.771 2.25025 15.5494 2.32773 15.3714 2.47053V2.47053Z" stroke="#DB4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9.23307 13.9199L5.3143 18.6225C5.21641 18.7399 5.14677 18.8783 5.11072 19.0268C5.07466 19.1754 5.07316 19.3303 5.10633 19.4796L6.6517 26.4337C6.68854 26.5995 6.76698 26.7531 6.87964 26.8802C6.9923 27.0073 7.13546 27.1035 7.29563 27.16C7.4558 27.2164 7.6277 27.2311 7.79512 27.2027C7.96254 27.1743 8.11998 27.1037 8.25258 26.9976L11.9997 23.9999" stroke="#DB4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22.6914 13.8301L26.6854 18.6229C26.7833 18.7404 26.853 18.8787 26.889 19.0273C26.9251 19.1759 26.9266 19.3308 26.8934 19.48L25.348 26.4342C25.3112 26.5999 25.2328 26.7536 25.1201 26.8807C25.0074 27.0077 24.8643 27.104 24.7041 27.1604C24.5439 27.2168 24.372 27.2315 24.2046 27.2031C24.0372 27.1747 23.8798 27.1042 23.7472 26.9981L20 24.0004" stroke="#DB4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 13.5C16.8284 13.5 17.5 12.8284 17.5 12C17.5 11.1716 16.8284 10.5 16 10.5C15.1716 10.5 14.5 11.1716 14.5 12C14.5 12.8284 15.1716 13.5 16 13.5Z" fill="#DB4444"/>
+          </svg>
+
+        </div>
+
+        <!-- Plan Name -->
+        <h2 class="text-lg font-semibold">Premium</h2>
+
+        <!-- Price -->
+        <p class="text-4xl font-bold my-2">$99.99</p>
+        <p class="text-sm text-gray-400">/PER YEAR</p>
+
+        <!-- Button -->
+        <button  class="bg-secRed text-white px-6 py-2 mt-4 rounded-lg flex items-center justify-center gap-2 mx-auto">
+          Get Started
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        </button>
+
+        <hr class="my-10 bg-secWhite">
+
+        <!-- Features -->
+        <ul class="text-sm text-left mt-6 space-y-2">
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Upgraded profile
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Multi-shot & video
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Instant creative portfolio
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Sell goods
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            ‘Hire me/us’ button on shots
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Freelance job board exclusive
+          </li>
+          <li class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+            </svg>
+            Daily freelance projects email
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
