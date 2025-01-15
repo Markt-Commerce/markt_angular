@@ -8,6 +8,7 @@ import { SellerDashboardComponent } from './ui/seller-dashboard/seller-dashboard
 import { SellerOrdersComponent } from './ui/seller-orders/seller-orders.component';
 import { SellerPricePlansComponent } from './ui/seller-price-plans/seller-price-plans.component';
 import { HelpDeskMainComponent } from './ui/help-desk-main/help-desk-main.component';
+import { HelpDeskFaqsComponent } from './ui/help-desk-faqs/help-desk-faqs.component';
 
 export const routes: Routes = [
   { path: "signup", component: SignupComponent },
@@ -17,5 +18,6 @@ export const routes: Routes = [
   { path: "seller/orders", component: SellerOrdersComponent },
   { path: "seller/pricing", component: SellerPricePlansComponent },
   { path: "seller/help", component: HelpDeskMainComponent },
+  { path: "seller/faqs", component: HelpDeskFaqsComponent },
   { path: '**', redirectTo: 'error' },
 ];
