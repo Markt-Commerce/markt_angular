@@ -1,0 +1,169 @@
+<app-side-bar></app-side-bar>
+
+<div class="pb-0 sm:ml-64">
+  <div class="p-4">
+    <div class="flex items-center justify-between mt-10">
+      <div>
+        <h1 class="text-3xl font-bold">Orders</h1>
+        <p class="text-lg font-medium">Returned orders by customers.</p>
+      </div>
+      <div>
+        <button class="uppercase bg-secRed text-secWhite px-8 font-medium py-2 rounded-lg hover:bg-red-700 transition">Download All</button>
+      </div>
+    </div>
+
+    <div class="p-5 space-x-4">
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown1" class="inline-flex items-center px-3 py-1 text-sm font-medium text-center text-black rounded-lg bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite" type="button">Name <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown2" class="inline-flex items-center px-3 py-1 text-sm font-medium text-center text-black rounded-lg bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite" type="button">Seen <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown3" class="inline-flex items-center px-3 py-1 text-sm font-medium text-center text-black rounded-lg bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite" type="button">Date <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+
+      <!-- Dropdown menu 1 -->
+      <div id="dropdown1" class="z-10 hidden divide-y divide-gray-100 rounded-lg shadow bg-secWhite w-44 ">
+          <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+            </li>
+          </ul>
+      </div>
+
+      <!-- Dropdown menu 2 -->
+      <div id="dropdown2" class="z-10 hidden divide-y divide-gray-100 rounded-lg shadow bg-secWhite w-44 ">
+        <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Dropdown menu 3 -->
+      <div id="dropdown3" class="z-10 hidden divide-y divide-gray-100 rounded-lg shadow bg-secWhite w-44 ">
+        <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4 mt-4 w-[100%]">
+      <div class="overflow-hidden bg-white rounded-lg shadow-md">
+        <div class="p-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold">Board</h2>
+        </div>
+        <table class="min-w-full bg-white">
+          <thead>
+            <tr>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">No.</th>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">Client</th>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">Price</th>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">Date</th>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">Status</th>
+              <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase border-b border-gray-200 bg-gray-50">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hover:bg-gray-100 border-b">
+              <td class="px-6 py-4 whitespace-nowrap">EKG464SJFN17</td>
+              <td class="flex items-center gap-2 px-6 py-4 whitespace-nowrap">
+                <img src="https://flagcdn.com/w320/gb.png" alt="UK" class="w-6 h-4 rounded">
+                <span>Wade Warren</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">$887.00</td>
+              <td class="px-6 py-4 whitespace-nowrap">15 Dec, 2017</td>
+              <td class="px-6 py-4 whitespace-nowrap flex items-center gap-2 font-light">
+                <div class="bg-yellow-300 h-2 w-2 rounded-full"></div>Pending
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <button class="text-secRed hover:bg-secRed hover:text-secWhite py-2 px-4 bg-secWhite flex items-center justify-center gap-2 rounded-lg"> <div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                  <path fill-rule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                </svg>
+                </div> Download</button>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-100 border-b">
+              <td class="px-6 py-4 whitespace-nowrap">EKG464SJFN17</td>
+              <td class="flex items-center gap-2 px-6 py-4 whitespace-nowrap">
+                <img src="https://flagcdn.com/w320/gb.png" alt="UK" class="w-6 h-4 rounded">
+                <span>Wade Warren</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">$887.00</td>
+              <td class="px-6 py-4 whitespace-nowrap">15 Dec, 2017</td>
+              <td class="px-6 py-4 whitespace-nowrap flex items-center gap-2 font-light">
+                <div class="bg-red-700 h-2 w-2 rounded-full"></div>Denied
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <button class="text-secRed hover:bg-secRed hover:text-secWhite py-2 px-4 bg-secWhite flex items-center justify-center gap-2 rounded-lg"> <div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                  <path fill-rule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                </svg>
+                </div> Download</button>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-100 border-b">
+              <td class="px-6 py-4 whitespace-nowrap">EKG464SJFN17</td>
+              <td class="flex items-center gap-2 px-6 py-4 whitespace-nowrap">
+                <img src="https://flagcdn.com/w320/gb.png" alt="UK" class="w-6 h-4 rounded">
+                <span>Wade Warren</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">$887.00</td>
+              <td class="px-6 py-4 whitespace-nowrap">15 Dec, 2017</td>
+              <td class="px-6 py-4 whitespace-nowrap flex items-center gap-2 font-light">
+                <div class="bg-green-700 h-2 w-2 rounded-full"></div>Paid
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <button class="text-secRed hover:bg-secRed hover:text-secWhite py-2 px-4 bg-secWhite flex items-center justify-center gap-2 rounded-lg"> <div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                  <path fill-rule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                </svg>
+                </div> Download</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flex items-center justify-between p-4 border-t bg-gray-50">
+          <span class="text-sm text-gray-600">Showing 1 to 8 of 16 entries</span>
+          <div class="flex gap-2">
+            <button class="px-2 py-1 text-gray-600 hover:bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#e94c2a" class="size-4">
+              <path fill-rule="evenodd" d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+            </svg></button>
+            <button class="px-2 py-1 text-gray-600  hover:font-medium hover:bg-gray-200 rounded-full">01</button>
+            <button class="px-2 py-1 text-white bg-secRed rounded-full">02</button>
+            <button class="px-2 py-1 text-gray-600  hover:font-medium hover:bg-gray-200 rounded-full">03</button>
+            <button class="px-2 py-1 text-gray-600  hover:font-medium hover:bg-gray-200 rounded-full">04</button>
+            <button class="px-2 py-1 text-gray-600  hover:font-medium hover:bg-gray-200 rounded-full">05</button>
+            <button class="px-2 py-1 text-gray-600  hover:font-medium hover:bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#e94c2a" class="size-4">
+              <path fill-rule="evenodd" d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+            </svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>
