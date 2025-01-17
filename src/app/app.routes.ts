@@ -10,6 +10,7 @@ import { SellerPricePlansComponent } from './ui/seller-price-plans/seller-price-
 import { HelpDeskMainComponent } from './ui/help-desk-main/help-desk-main.component';
 import { HelpDeskFaqsComponent } from './ui/help-desk-faqs/help-desk-faqs.component';
 import { SellerBillingComponent } from './ui/seller-billing/seller-billing.component';
+import { MessagesChatComponent } from './ui/messages-chat/messages-chat.component';
 
 export const routes: Routes = [
   { path: "signup", component: SignupComponent },
@@ -21,5 +22,6 @@ export const routes: Routes = [
   { path: "seller/help", component: HelpDeskMainComponent },
   { path: "seller/faqs", component: HelpDeskFaqsComponent },
   { path: "seller/billing", component: SellerBillingComponent },
+  { path: "seller/messages", component: MessagesChatComponent },
   { path: '**', redirectTo: 'error' },
 ];
