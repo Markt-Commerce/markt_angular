@@ -13,6 +13,8 @@ import { SellerBillingComponent } from './ui/seller-billing/seller-billing.compo
 import { MessagesChatComponent } from './ui/messages-chat/messages-chat.component';
 import { SellerInvoicesComponent } from './ui/seller-invoices/seller-invoices.component';
 import { SellerReturnsComponent } from './ui/seller-returns/seller-returns.component';
+import { SellerListingsComponent } from './ui/seller-listings/seller-listings.component';
+import { MessagesListingComponent } from './ui/messages-listing/messages-listing.component';
 
 export const routes: Routes = [
   { path: "signup", component: SignupComponent },
@@ -24,8 +26,10 @@ export const routes: Routes = [
   { path: "seller/help", component: HelpDeskMainComponent },
   { path: "seller/faqs", component: HelpDeskFaqsComponent },
   { path: "seller/billing", component: SellerBillingComponent },
-  { path: "seller/messages", component: MessagesChatComponent },
+  { path: "seller/message", component: MessagesChatComponent },
   { path: "seller/invoice", component: SellerInvoicesComponent },
   { path: "seller/returns", component: SellerReturnsComponent },
+  { path: "seller/listing", component: SellerListingsComponent },
+  { path: "seller/messages", component: MessagesListingComponent },
   { path: '**', redirectTo: 'error' },
 ];

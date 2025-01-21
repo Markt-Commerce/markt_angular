@@ -6,7 +6,7 @@
       <h1 class="font-bold text-3xl">Dashboard</h1>
       <p class="text-lg font-medium">You can add your credit and debit card details here for future purchases.</p>
     </div>
-    
+
     <div class="grid md:grid-cols-2 grid-cols-1 gap-2 mt-4">
       <!-- Overall Sales -->
       <div class="w-full border border-gray-100 mx-auto rounded-xl p-4">
@@ -206,56 +206,58 @@
               <span> 8 Jan - 2 Feb</span>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-              </svg>              
+              </svg>
             </button>
           </div>
         </div>
-        <!-- Table -->
-        <table class="w-full mt-6 text-left border-collapse">
-          <thead>
-            <tr class="border-b">
-              <th class="py-3 text-sm font-medium text-gray-600">Product Name</th>
-              <th class="py-3 text-sm font-medium text-gray-600">Price</th>
-              <th class="py-3 text-sm font-medium text-gray-600">Sold</th>
-              <th class="py-3 text-sm font-medium text-gray-600">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="border-b">
-              <td class="py-4 flex items-center space-x-4">
-                <img src="https://via.placeholder.com/40" alt="iPhone 14 Pro Max" class="w-10 h-10 rounded-md">
-                <span>iPhone 14 Pro Max 512GB (Gold)</span>
-              </td>
-              <td class="py-4 text-sm font-medium text-gray-800">$1399</td>
-              <td class="py-4 text-sm text-gray-600">1243 pcs</td>
-              <td class="py-4">
-                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
-              </td>
-            </tr>
-            <tr class="border-b">
-              <td class="py-4 flex items-center space-x-4">
-                <img src="https://via.placeholder.com/40" alt="iPhone 13" class="w-10 h-10 rounded-md">
-                <span>iPhone 13 512GB (Purple)</span>
-              </td>
-              <td class="py-4 text-sm font-medium text-gray-800">$1099</td>
-              <td class="py-4 text-sm text-gray-600">433 pcs</td>
-              <td class="py-4">
-                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
-              </td>
-            </tr>
-            <tr>
-              <td class="py-4 flex items-center space-x-4">
-                <img src="https://via.placeholder.com/40" alt="Google Pixel 7 Pro" class="w-10 h-10 rounded-md">
-                <span>Google Pixel 7 Pro 128GB (Black)</span>
-              </td>
-              <td class="py-4 text-sm font-medium text-gray-800">$899</td>
-              <td class="py-4 text-sm text-gray-600">2343 pcs</td>
-              <td class="py-4">
-                <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <!-- Table -->
+          <table class="w-full mt-6 text-left border-collapse">
+            <thead>
+              <tr class="border-b">
+                <th class="py-3 text-sm font-medium text-gray-600">Product Name</th>
+                <th class="py-3 text-sm font-medium text-gray-600">Price</th>
+                <th class="py-3 text-sm font-medium text-gray-600">Sold</th>
+                <th class="py-3 text-sm font-medium text-gray-600">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b">
+                <td class="py-4 flex items-center space-x-4">
+                  <img src="https://via.placeholder.com/40" alt="iPhone 14 Pro Max" class="w-10 h-10 rounded-md">
+                  <span>iPhone 14 Pro Max 512GB (Gold)</span>
+                </td>
+                <td class="py-4 text-sm font-medium text-gray-800">$1399</td>
+                <td class="py-4 text-sm text-gray-600">1243 pcs</td>
+                <td class="py-4">
+                  <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+                </td>
+              </tr>
+              <tr class="border-b">
+                <td class="py-4 flex items-center space-x-4">
+                  <img src="https://via.placeholder.com/40" alt="iPhone 13" class="w-10 h-10 rounded-md">
+                  <span>iPhone 13 512GB (Purple)</span>
+                </td>
+                <td class="py-4 text-sm font-medium text-gray-800">$1099</td>
+                <td class="py-4 text-sm text-gray-600">433 pcs</td>
+                <td class="py-4">
+                  <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="py-4 flex items-center space-x-4">
+                  <img src="https://via.placeholder.com/40" alt="Google Pixel 7 Pro" class="w-10 h-10 rounded-md">
+                  <span>Google Pixel 7 Pro 128GB (Black)</span>
+                </td>
+                <td class="py-4 text-sm font-medium text-gray-800">$899</td>
+                <td class="py-4 text-sm text-gray-600">2343 pcs</td>
+                <td class="py-4">
+                  <span class="px-3 py-1 text-sm text-green-700 bg-green-100 rounded-full">In Stock</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <!-- Top countries -->
       <div class="basis-1/5 p-4 border rounded-lg">
