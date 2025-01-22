@@ -4,6 +4,7 @@ import { SignupComponent } from './ui/auth/signup/signup.component';
 import { OrderComponent } from './pages/order/order.component';
 import { MarketplaceComponent } from './pages/marketplace/marketplace.component';
 import { CartComponent } from './pages/cart/cart.component';
+import { CheckoutComponent } from './pages/checkout/checkout.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'marketplace', pathMatch: 'full' },
@@ -20,4 +21,5 @@ export const routes: Routes = [
   },
   { path: 'order', component: OrderComponent, title: 'Markt | Your orders' },
   { path: 'cart', component: CartComponent, title: 'Markt | Your cart' },
+  { path: 'checkout', component: CheckoutComponent, title: 'Markt | Checkout' },
 ];

@@ -8,6 +8,10 @@
 .breadcrumb {
   margin-bottom: 4em;
   font-size: 0.9rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .cart-header {
