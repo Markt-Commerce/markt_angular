@@ -45,6 +45,7 @@
 .has-bottom-border {
   border-bottom: 1px solid rgba(128, 128, 128, 0.432);
 }
+
 .section .section-header .section-title {
   color: var(--primary-color);
   font-weight: 500;

@@ -2,11 +2,8 @@ import { Component, HostListener } from '@angular/core';
 import { HeaderComponent } from '../../ui/header/header.component';
 import { FlashSaleTimerComponent } from '../../ui/flash-sale-timer/flash-sale-timer.component';
 
-import { FooterComponent } from '../../ui/footer/footer.component';
 import { CategoryListItemComponent } from '../../ui/category-list-item/category-list-item.component';
 import { ProductListItemComponent } from '../../ui/product-list-item/product-list-item.component';
-
-import * as AOS from 'aos';
 
 @Component({
   selector: 'app-marketplace',
@@ -36,15 +33,6 @@ export class MarketplaceComponent {
   seconds: number = 0;
 
   private targetDate: Date = new Date('2025-01-31T23:59:59'); // We set our target date here
-
-  ngOnInit(): void {
-    this.startTimer();
-    AOS.init({
-      duration: 500,
-      easing: 'ease-in-out',
-      once: true,
-    });
-  }
 
   private startTimer(): void {
     setInterval(() => {
