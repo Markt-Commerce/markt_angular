@@ -6,6 +6,7 @@ import { MarketplaceComponent } from './pages/marketplace/marketplace.component'
 import { CartComponent } from './pages/cart/cart.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
+import { MyAccountComponent } from './pages/my-account/my-account.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'marketplace', pathMatch: 'full' },
@@ -27,5 +28,10 @@ export const routes: Routes = [
     path: 'product-details',
     component: ProductDetailsComponent,
     title: 'Markt | Product Details',
+  },
+  {
+    path: 'my-account',
+    component: MyAccountComponent,
+    title: 'Markt | Your Account',
   },
 ];

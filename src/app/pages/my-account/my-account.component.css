@@ -1,0 +1,165 @@
+.wrapper {
+  padding: 4em 6em;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.breadcrumb {
+  margin-bottom: 4em;
+  font-size: 0.9rem;
+  display: flex;
+
+  justify-content: space-between;
+}
+
+.breadcrumb > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.grid__section {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  grid-template-rows: auto;
+}
+
+.left__column {
+  grid-column: 1/2;
+}
+
+.right__column {
+  grid-column: 2/-1;
+
+  width: 870px;
+  height: 630px;
+  flex-shrink: 0;
+
+  border-radius: 4px;
+
+  box-shadow: 0px 1px 13px 0px rgba(0, 0, 0, 0.05);
+
+  padding: 2em 4.5em;
+}
+
+h3 {
+  color: var(--primary-color);
+  margin-bottom: 1em;
+}
+
+.name__column,
+.email__and__address {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 50px;
+}
+
+.name__column > div,
+.email__and__address > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+input {
+  padding-inline: 1em;
+}
+
+.type1__input {
+  width: 330px;
+  height: 50px;
+  flex-shrink: 0;
+
+  border-radius: 4px;
+  background: var(--Secondary, #f5f5f5);
+}
+
+.type2__input {
+  width: 100%;
+  height: 50px;
+  flex-shrink: 0;
+
+  border-radius: 4px;
+  background: var(--Secondary, #f5f5f5);
+}
+
+label {
+  font-weight: bold;
+}
+
+.email__and__address {
+  margin-top: 1em;
+}
+
+.password__changes {
+  margin-top: 1em;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 32px;
+  margin-top: 1em;
+}
+
+.actions button:first-child {
+}
+
+.actions button:last-child {
+  background-color: var(--primary-color);
+  color: white;
+
+  display: flex;
+  padding: 16px 48px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  border-radius: 4px;
+  background: var(--Button2, rgba(233, 75, 38, 0.81));
+}
+
+.active {
+  color: var(--primary-color);
+}
+
+.main__menu {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.main__menu > p {
+  font-weight: bold;
+}
+
+.sub__menus {
+  padding-left: 1em;
+}
+
+.menu {
+  font-size: 0.9em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+a {
+  display: block;
+  cursor: pointer;
+}
