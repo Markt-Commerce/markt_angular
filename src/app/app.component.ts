@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { OnInit } from '@angular/core';
+import { initFlowbite } from 'flowbite';
 
 import { HeaderComponent } from './ui/header/header.component';
 import { FooterComponent } from "./ui/footer/footer.component";
@@ -12,6 +14,9 @@ import { CommonModule } from '@angular/common';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'markt';
+  ngOnInit(): void {
+    initFlowbite();
+  }
 }

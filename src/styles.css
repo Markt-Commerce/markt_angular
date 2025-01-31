@@ -1,6 +1,14 @@
 /* POPPINS FONT IMPORT */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+
+/* ============================= */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 /* ============================= */
 
 /* CSS VARIABLES */
@@ -56,6 +64,13 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
   width: 100%;
+}
+aside ul h4{
+  @apply uppercase font-bold text-xs text-gray-500
+}
+.imActive{
+  background: #e94d2a6a;
+box-shadow: 3px 0px 0px 0px #DB4444 inset;
 }
 
 button,
