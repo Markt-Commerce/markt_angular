@@ -1,0 +1,82 @@
+<app-side-bar></app-side-bar>
+
+<div class="pb-0 sm:ml-64">
+  <div class="p-4">
+    <div class="mt-10 flex justify-between items-center">
+      <div>
+        <h1 class="font-bold text-3xl">Orders</h1>
+        <p class="text-lg font-medium">Returned orders by customers.</p>
+      </div>
+      <div>
+        <button class="uppercase bg-secRed text-secWhite px-4 py-2 rounded-lg hover:bg-red-700 transition">add order</button>
+      </div>
+    </div>
+
+    <div class="p-5 space-x-4">
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown1" class="text-black bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite font-medium rounded-lg text-sm px-3 py-1 text-center inline-flex items-center" type="button">Type <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown2" class="text-black bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite font-medium rounded-lg text-sm px-3 py-1 text-center inline-flex items-center" type="button">Month <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+      <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown3" class="text-black bg-secWhite hover:bg-secWhite focus:ring-4 focus:outline-none focus:ring-secWhite font-medium rounded-lg text-sm px-3 py-1 text-center inline-flex items-center" type="button">Urgency <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+      </button>
+
+      <!-- Dropdown menu 1 -->
+      <div id="dropdown1" class="z-10 hidden bg-secWhite divide-y divide-gray-100 rounded-lg shadow w-44 ">
+          <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+            </li>
+          </ul>
+      </div>
+
+      <!-- Dropdown menu 2 -->
+      <div id="dropdown2" class="z-10 hidden bg-secWhite divide-y divide-gray-100 rounded-lg shadow w-44 ">
+        <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Dropdown menu 3 -->
+      <div id="dropdown3" class="z-10 hidden bg-secWhite divide-y divide-gray-100 rounded-lg shadow w-44 ">
+        <ul class="py-2 text-sm text-gray-700 " aria-labelledby="dropdownDefaultButton">
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+          </li>
+          <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4 mt-4 w-[100%]">
+      <app-each-seller-order></app-each-seller-order>
+      <app-each-seller-order></app-each-seller-order>
+    </div>
+  </div>
+
+  <app-footer></app-footer>
+</div>

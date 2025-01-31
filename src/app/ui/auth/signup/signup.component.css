@@ -1,7 +1,6 @@
 .img-wrapper {
   flex-basis: 50%;
 }
-
 .signup-container {
   justify-content: space-between;
   align-items: center;
@@ -47,12 +46,19 @@ h1 {
   padding: 0.5em 1em;
 }
 
-.next-btn {
+.next-btn,
+button {
+  width: 23.125em;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.create-account-btn {
   background-color: var(--primary-color);
   color: white;
 }
 
-.next-btn:hover {
+.next-btn:hover,
+.create-account-btn:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
@@ -144,4 +150,7 @@ a:hover {
 
 .radio-input:hover {
   border-color: #fb923c;
+}
+.input-field.ng-valid.ng-touched {
+  border-color: green;
 }

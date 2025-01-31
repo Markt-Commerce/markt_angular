@@ -1,15 +1,28 @@
-<header
-  class="bg-black w-full text-white sticky flex items-center justify-center gap-64"
->
-  <div class="flex items-center gap-4">
-    <p>Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!</p>
-    <a href="" target="_blank" class="font-bold underline text-white"
-      >ShopNow</a
-    >
-  </div>
+<nav class="bg-black md:py-3 text-white flex md:justify-between sm:jusify-center items-center text-xs md:px-32 px-5 text-center mx-auto">
+  <div class="md:block hidden"></div>
+  <div><span>Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!</span><a href="" class="underline ml-3 font-bold">Shop Now</a></div>
   <div>
-    <select name="language" id="language">
-      <option value="english">English</option>
-    </select>
+       <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown" class="text-white text-sm text-center inline-flex items-center " type="button">English <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+       </svg>
+       </button>
   </div>
-</header>
+</nav>
+
+<!-- Dropdown menu -->
+<div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded shadow w-44">
+ <ul class="py-2 text-sm text-gray-700" aria-labelledby="dropdownDefaultButton">
+   <li>
+     <a href="#" class="block px-4 py-2 ">English</a>
+   </li>
+   <li>
+     <a href="#" class="block px-4 py-2 ">French</a>
+   </li>
+   <li>
+     <a href="#" class="block px-4 py-2 ">Yoruba</a>
+   </li>
+   <li>
+     <a href="#" class="block px-4 py-2 ">Spanish</a>
+   </li>
+ </ul>
+</div>

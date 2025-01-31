@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { OnInit } from '@angular/core';
+import { initFlowbite } from 'flowbite';
 
 import { HeaderComponent } from './ui/header/header.component';
 import { FooterComponent } from './ui/footer/footer.component';
@@ -14,14 +16,14 @@ import * as AOS from 'aos';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'markt';
-
   ngOnInit(): void {
     AOS.init({
       duration: 500,
       easing: 'ease-in-out',
       once: true,
     });
+    initFlowbite();
   }
 }
