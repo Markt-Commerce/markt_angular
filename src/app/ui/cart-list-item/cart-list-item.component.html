@@ -1,0 +1,13 @@
+<div class="cart-item">
+  <div class="product">
+    <div class="product-image">
+      <img src="/assets/{{ product.image }}.svg" alt="LCD Monitor" />
+    </div>
+    <div class="product-name">{{ product.name }}</div>
+  </div>
+  <div class="price">${{ product.price }}</div>
+  <div class="quantity">
+    <input type="number" value="{{ product.quantity }}" min="1" />
+  </div>
+  <div class="subtotal">${{ product.price * product.quantity }}</div>
+</div>

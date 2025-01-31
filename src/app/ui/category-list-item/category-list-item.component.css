@@ -1,0 +1,21 @@
+.category-container {
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  width: 170px;
+  height: 145px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.category-container:hover {
+  transform: scale(1.05);
+}
+
+.category-container img {
+  transition: transform 0.3s ease-in-out;
+}
+
+.category-container:hover img {
+  transform: scale(1.1);
+}

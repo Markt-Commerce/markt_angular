@@ -1,0 +1,60 @@
+<app-header></app-header>
+<div class="wrapper">
+  <div class="breadcrumb">
+    <span class="text-gray-500">Home / </span>
+    <span class="font-bold">Cart</span>
+  </div>
+
+  <header class="cart-header">
+    <div>Product</div>
+    <div>Price</div>
+    <div>Quantity</div>
+    <div>Subtotal</div>
+  </header>
+
+  <app-cart-list-item
+    [product]="{
+      name: 'LCD Monitor',
+      price: 650,
+      quantity: 1,
+      image: 'lcd-tv'
+    }"
+  ></app-cart-list-item>
+  <app-cart-list-item
+    [product]="{
+      name: 'H1 Gamepad',
+      price: 550,
+      quantity: 2,
+      image: 'gamepad'
+    }"
+  ></app-cart-list-item>
+
+  <div class="action-buttons">
+    <button>Return To Shop</button>
+    <button>Update Cart</button>
+  </div>
+
+  <div class="checkout">
+    <div class="coupon">
+      <div>
+        <input type="text" placeholder="Coupon Code" />
+        <button>Apply Coupon</button>
+      </div>
+    </div>
+    <div class="checkout__summary">
+      <h5>Cart Total</h5>
+      <div class="checkout__subtotal">
+        <span>Subtotal</span>
+        <span>$1750</span>
+      </div>
+      <div class="checkout__shipping">
+        <span>Shipping</span>
+        <span>Free</span>
+      </div>
+      <div class="checkout__total"><span>Total</span> <span>$1750</span></div>
+      <p class="checkout__btn__wrapper">
+        <button class="checkout__btn">Proceed to checkout</button>
+      </p>
+    </div>
+  </div>
+</div>
