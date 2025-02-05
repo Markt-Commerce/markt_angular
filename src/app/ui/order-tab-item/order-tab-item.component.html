@@ -1,0 +1,51 @@
+<div class="order">
+  <div class="order__info">
+    <header class="order__header">
+      <p class="order__seller">
+        <span>From</span>
+        <span class="order__seller-name">{{ sellerName }}</span>
+      </p>
+      <p class="order__id">
+        <span>Order ID</span>
+        <span class="order__id-value">{{ orderId }}</span>
+      </p>
+      <p class="order__purchase-date">
+        <span>Purchased</span>
+        <span class="order__purchase-value">{{ purchaseDate }}</span>
+      </p>
+      <p class="order__delivery-date">
+        <span>Est Delivery</span>
+        <span class="order__delivery-value">{{ deliveryDate }}</span>
+      </p>
+    </header>
+    <div *ngFor="let product of products" class="order__product">
+      <div class="order__product-image-wrapper">
+        <img
+          [src]="product.image"
+          [alt]="product.name"
+          class="order__product-image"
+        />
+      </div>
+      <div class="order__product-details">
+        <p class="order__product-name">{{ product.name }}</p>
+        <div class="order__product-meta">
+          <div class="order__product-quantity">
+            <span>Quantity</span>
+            <span>{{ product.quantity }}</span>
+          </div>
+          <div class="order__product-color">
+            <span>Color</span>
+            <span>{{ product.color }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="order__product-price">${{ product.price }}</div>
+    </div>
+  </div>
+  <div class="order__actions">
+    <button class="order__action order__action--primary">BUY AGAIN</button>
+    <button class="order__action order__action--secondary">
+      HELP WITH ORDER
+    </button>
+  </div>
+</div>
