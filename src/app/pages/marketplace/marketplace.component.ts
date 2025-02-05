@@ -27,6 +27,11 @@ export class MarketplaceComponent {
     'Gaming',
   ];
 
+
+  /**
+   * this functionality should be added to a dedicated service for reusability
+   * a function that takes in the due date and sets the timer
+   */
   days: number = 0;
   hours: number = 0;
   minutes: number = 0;
