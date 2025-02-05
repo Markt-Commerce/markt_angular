@@ -10,7 +10,14 @@ export const ApiStore = {
     'orders',
     'product_request',
     'user',
+    'chat'
   ],
+  /**
+   * this function merges the possible route endpoints with the api url 
+   * @param endpoint 
+   * @param points 
+   * @returns 
+   */
   mergeEndpoint: (endpoint: string, ...points: string[]) => {
     return (
       ApiStore.api +
