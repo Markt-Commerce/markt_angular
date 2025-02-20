@@ -7,8 +7,9 @@ import {
 } from '@angular/forms';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
-import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { UserService } from "../../../services/services";
+import { SignUpTypeChangeService } from '../../../services/utilities/signupTypeConv';
 
 @Component({
   selector: 'app-signup',
@@ -19,6 +20,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class SignupComponent {
   private formBuilder = inject(FormBuilder);
+  private userService = inject(UserService);
+  private signUpTypeChange = inject(SignUpTypeChangeService);
 
   currentStep = 1;
 
@@ -103,6 +106,10 @@ export class SignupComponent {
   onCreateAccount() {
     if (this.signupForm.valid) {
       console.log('Form submitted:', this.signupForm.value);
+      console.log('Account type:', this.accountType.value);
+      if (this.accountType.value == "buyer") this.userService.registerBuyer(this.signUpTypeChange.convertDataToBuyerType(this.signupForm.value)).subscribe((data) => {});
+      if (this.accountType.value == "seller") this.userService.registerSeller(this.signUpTypeChange.convertDataToSellerType(this.signupForm.value)).subscribe((data) => {});
+
     }
   }
 

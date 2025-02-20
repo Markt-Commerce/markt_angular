@@ -1,6 +1,7 @@
 import { User } from './user.model';
 
 export interface Buyer extends User {
+  buyername: string;
   password: string;
   shipping_address: string;
 }
