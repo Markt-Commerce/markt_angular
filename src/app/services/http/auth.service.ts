@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { EMPTY, Observable, catchError, retry, tap, of } from 'rxjs';
 import { ApiStore } from "../apiSpecificData";
 import { ClassicResponse, UserLogin, UserLoginResponse } from '../../api/models';
 
@@ -13,15 +13,15 @@ export class AuthService {
 
   http = inject(HttpClient)
 
-  authenticateUser(authData:UserLogin):Observable<HttpResponse<UserLoginResponse>>{
+  authenticateUser(authData:UserLogin):Observable<HttpResponse<UserLoginResponse> | HttpErrorResponse>{
     return this.http.post<UserLoginResponse>(ApiStore.mergeEndpoint("auth","login"),authData,{
       observe:"response"
     }).pipe(
       tap((data)=>console.log(data)),
       retry(3),
-      catchError(err => {
+      catchError((err: HttpErrorResponse) => {
         console.error(err);
-        return EMPTY;
+        return of(err);
       })
     )
   }

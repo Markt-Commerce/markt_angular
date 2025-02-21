@@ -1,0 +1,75 @@
+<section class="signup-container pt-8 flex items-center">
+    <!-- Image Section -->
+    <div class="image-section w-1-2 flex justify-center items-center">
+      <img
+        src="/assets/auth-side-image.svg"
+        alt="Login Image"
+        class="h-80"
+      />
+    </div>
+  
+    <!--  Form Section -->
+    <div class="form-wrapper flex flex-col w-1-2 justify-center">
+        <h1 class="font-medium text-2xl mb-4">Login into your account</h1>
+  
+        <form [formGroup]="loginForm" (ngSubmit)="login()">
+            <p style="color: red;">{{errormessage}}</p><!-- test would change style properties properly later -->
+            <div  class="step">
+                <div class="account-type flex justify-center pt-4">
+                    <div class="flex gap-8 mt-2">
+                    <label class="flex items-center">
+                        <input
+                        type="radio"
+                        name="accountType"
+                        value="buyer"
+                        formControlName="accountType"
+                        class="radio-input"
+                        />
+                        <span class="ml-2">Buyer Account</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input
+                        type="radio"
+                        name="accountType"
+                        value="seller"
+                        formControlName="accountType"
+                        class="radio-input"
+                        />
+                        <span class="ml-2">Seller Account</span>
+                    </label>
+                    </div>
+                </div>
+                <div>
+                    <input
+                      type="text"
+                      placeholder="{{
+                        accountType.value === 'buyer' ? 'Buyer email' : 'Seller email'
+                      }}"
+                      formControlName="email"
+                      class="input-field mt-4"
+                      name="name"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      formControlName="password"
+                      class="input-field mt-4"
+                      name="password"
+                    />
+                  </div>
+                  <div class="mt-8 flex step-btn-grp items-center justify-center">
+                      <button
+                        type="button"
+                        class="next-btn buttons text-center bg-primary text-white rounded cursor-pointer"
+                        (click)="login()"
+                      >
+                        Login as {{ accountType.value }}
+                      </button>
+                  </div>
+            </div>
+        </form>
+    </div>
+</section>
+

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { SignupComponent } from './ui/auth/signup/signup.component';
+import { LoginComponent } from './ui/auth/login/login.component';
 import { OrderComponent } from './pages/order/order.component';
 import { MarketplaceComponent } from './pages/marketplace/marketplace.component';
 import { CartComponent } from './pages/cart/cart.component';
@@ -34,6 +35,7 @@ export const routes: Routes = [
     component: SignupComponent,
     title: 'Markt | Create account',
   },
+  {path: 'login', component: LoginComponent, title: 'Markt | Login'},
   { path: 'order', component: OrderComponent, title: 'Markt | Your orders' },
   { path: 'cart', component: CartComponent, title: 'Markt | Your cart' },
   { path: 'checkout', component: CheckoutComponent, title: 'Markt | Checkout' },

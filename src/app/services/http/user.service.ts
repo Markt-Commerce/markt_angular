@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { EMPTY, Observable, catchError, retry, tap, of } from 'rxjs';
 import { ApiStore } from '../apiSpecificData';
 import {
   BuyerRegister,
@@ -17,7 +17,7 @@ export class UserService {
 
   registerBuyer(
     registerData: BuyerRegister
-  ): Observable<HttpResponse<BuyerResponse>> {
+  ): Observable<HttpResponse<BuyerResponse> | HttpErrorResponse> {
     return this.http
       .post<BuyerResponse>(
         ApiStore.mergeEndpoint('auth', 'register', 'buyer'),
@@ -27,16 +27,16 @@ export class UserService {
       .pipe(
         tap((data) => console.log(data)),
         retry(3),
-        catchError((err) => {
+        catchError((err:HttpErrorResponse) => {
           console.error(err);
-          return EMPTY;
+          return of(err);
         })
       );
   }
 
   registerSeller(
     registerData: SellerRegister
-  ): Observable<HttpResponse<SellerResponse>> {
+  ): Observable<HttpResponse<SellerResponse> | HttpErrorResponse> {
     return this.http
       .post<SellerResponse>(
         ApiStore.mergeEndpoint('auth', 'register', 'seller'),
@@ -48,7 +48,7 @@ export class UserService {
         retry(3),
         catchError((err) => {
           console.error(err);
-          return EMPTY;
+          return of(err);
         })
       );
   }

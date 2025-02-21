@@ -5,6 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +20,8 @@ import { SignUpTypeChangeService } from '../../../services/utilities/signupTypeC
   styleUrl: './signup.component.css',
 })
 export class SignupComponent {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private formBuilder = inject(FormBuilder);
   private userService = inject(UserService);
   private signUpTypeChange = inject(SignUpTypeChangeService);
@@ -103,12 +106,27 @@ export class SignupComponent {
     }
   }
 
+  errormessage: string = '';
+
+  setErrorMessageTimeout(error: string) {
+    this.errormessage = error;
+    setTimeout(() => {
+      this.errormessage = '';
+    }, 5000);
+  }
+
   onCreateAccount() {
     if (this.signupForm.valid) {
       console.log('Form submitted:', this.signupForm.value);
       console.log('Account type:', this.accountType.value);
-      if (this.accountType.value == "buyer") this.userService.registerBuyer(this.signUpTypeChange.convertDataToBuyerType(this.signupForm.value)).subscribe((data) => {});
-      if (this.accountType.value == "seller") this.userService.registerSeller(this.signUpTypeChange.convertDataToSellerType(this.signupForm.value)).subscribe((data) => {});
+      if (this.accountType.value == "buyer") this.userService.registerBuyer(this.signUpTypeChange.convertDataToBuyerType(this.signupForm.value)).subscribe((data) => {
+        if (data.status == 409) this.setErrorMessageTimeout("User with this email already exists");
+        if (data.status == 200) this.router.navigate(['/login']);
+      });
+      if (this.accountType.value == "seller") this.userService.registerSeller(this.signUpTypeChange.convertDataToSellerType(this.signupForm.value)).subscribe((data) => {
+        if (data.status == 409) this.setErrorMessageTimeout("User with this email already exists");
+        if (data.status == 200) this.router.navigate(['/login']);
+      });
 
     }
   }

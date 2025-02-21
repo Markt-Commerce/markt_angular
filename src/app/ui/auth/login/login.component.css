@@ -1,0 +1,157 @@
+.img-wrapper {
+    flex-basis: 50%;
+  }
+  .signup-container {
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .form-wrapper {
+    flex-basis: 50%;
+    text-align: center;
+  }
+  
+  form {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  form > div {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  h1 {
+    font-size: 2em;
+    letter-spacing: 1px;
+  }
+  
+  .input-field {
+    width: 23.125em;
+    padding: 10px;
+    font-size: 1em;
+    border-bottom: 1px solid #ccc;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .input-field:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.02);
+  }
+  
+  .buttons {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    padding: 0.5em 1em;
+  }
+  
+  .next-btn,
+  button {
+    width: 23.125em;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .create-account-btn {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .next-btn:hover,
+  .create-account-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .google-btn {
+    border: 1px solid rgba(0, 0, 0, 0.4);
+  }
+  
+  .location-btn {
+    border: 2px solid var(--primary-color);
+    padding: 0.5em 1em;
+    color: #fb923c;
+    background-color: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .create-account-btn {
+    padding: 0.5em 1em;
+    color: white;
+    background-color: var(--primary-color);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .location-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  }
+  .create-account-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .back-btn:hover {
+    background-color: #fb923c71;
+    transform: scale(1.01);
+  }
+  
+  .google-btn:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  a {
+    text-underline-offset: 6px;
+    transition: color 0.3s ease-in-out;
+  }
+  
+  a:hover {
+    color: var(--primary-color);
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  
+  .input-field.ng-invalid.ng-touched {
+    border-color: red;
+  }
+  
+  .radio-input {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .radio-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .radio-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+  }
+  
+  .radio-input:hover {
+    border-color: #fb923c;
+  }
+  .input-field.ng-valid.ng-touched {
+    border-color: green;
+  }
+  

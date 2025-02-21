@@ -32,6 +32,7 @@
     <h1 class="font-medium text-2xl mb-4">Create an account</h1>
 
     <form [formGroup]="signupForm" (ngSubmit)="onCreateAccount()">
+      <p style="color: red;">{{errormessage}}</p><!-- test would change style properties properly later -->
       <!-- Step 1: Welcome Page -->
       <div *ngIf="currentStep === 1" class="step">
         <div class="account-type flex justify-center pt-4">
