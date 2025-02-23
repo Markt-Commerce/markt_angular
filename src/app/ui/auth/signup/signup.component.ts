@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +15,7 @@ import { SignUpTypeChangeService } from '../../../services/utilities/signupTypeC
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, FormsModule],
+  imports: [ReactiveFormsModule, NgIf, FormsModule, RouterLink],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
@@ -121,11 +121,11 @@ export class SignupComponent {
       console.log('Account type:', this.accountType.value);
       if (this.accountType.value == "buyer") this.userService.registerBuyer(this.signUpTypeChange.convertDataToBuyerType(this.signupForm.value)).subscribe((data) => {
         if (data.status == 409) this.setErrorMessageTimeout("User with this email already exists");
-        if (data.status == 200) this.router.navigate(['/login']);
+        if (data.status >= 200 && data.status < 300) this.router.navigate(['/login']);
       });
       if (this.accountType.value == "seller") this.userService.registerSeller(this.signUpTypeChange.convertDataToSellerType(this.signupForm.value)).subscribe((data) => {
         if (data.status == 409) this.setErrorMessageTimeout("User with this email already exists");
-        if (data.status == 200) this.router.navigate(['/login']);
+        if (data.status >= 200 && data.status < 300) this.router.navigate(['/login']);
       });
 
     }
