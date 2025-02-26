@@ -1,6 +1,8 @@
 import { NgFor, NgIf } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { OrderTabItemComponent } from "../order-tab-item/order-tab-item.component";
+import { OrderService } from "../../services/services"
+import { Order } from '../../api/models';
 
 @Component({
   selector: 'app-order-tabs',
@@ -9,7 +11,19 @@ import { OrderTabItemComponent } from "../order-tab-item/order-tab-item.componen
   templateUrl: './order-tabs.component.html',
   styleUrl: './order-tabs.component.css',
 })
-export class OrderTabsComponent {
+export class OrderTabsComponent implements OnInit {
+
+  orderService = inject(OrderService)
+
+  ngOnInit(): void {
+    this.orderService.getBuyerOrders("").subscribe((data)=>{
+      this.buyerorders = data
+    })//write code to get all the buyer id
+  }
+
+  buyerorders:Order[] = []
+
+
   tabs = [
     { name: 'Orders All', badgeCount: 3, hasDropdown: false },
     { name: 'Delivered', badgeCount: null, hasDropdown: false },
