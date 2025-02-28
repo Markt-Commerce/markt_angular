@@ -9,6 +9,7 @@ import { Router, RouterLink } from '@angular/router';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from "../../../services/services";
+import { usersignalstore } from '../../../services/userstore.service';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ export class LoginComponent {
   private router = inject(Router);
   private formBuilder = inject(FormBuilder);
   private authService = inject(AuthService);
+  private UserSignalStore = inject(usersignalstore)
 
   errormessage: string = '';
 
@@ -59,7 +61,10 @@ export class LoginComponent {
         password: this.password.value,
         username: ""
       }).subscribe((data) => {
-        if (data.status >= 200 && data.status < 300) this.router.navigate(['/marketplace']);
+        if (data.ok) {
+          this.UserSignalStore.setuser(this.accountType.value,this.email.value,data.body?.id || "","");
+          this.router.navigate(['/marketplace']);
+        }
         else if (data.status == 401) this.setErrorMessageTimeout("Invalid credentials");
         else this.setErrorMessageTimeout("An error occured, please try again");
       });
@@ -69,7 +74,11 @@ export class LoginComponent {
         password: this.password.value,
         username: ""
       }).subscribe((data) => {
-        if (data.status >= 200 && data.status < 300) this.router.navigate(['/seller/dashboard']);
+        if (data.ok) {
+          
+          this.UserSignalStore.setuser(this.accountType.value,this.email.value,data.body?.id || "","");
+          this.router.navigate(['/seller/dashboard']);
+        }
         else if (data.status == 401) this.setErrorMessageTimeout("Invalid credentials");
         else this.setErrorMessageTimeout("An error occured, please try again");
       });

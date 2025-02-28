@@ -19,6 +19,7 @@ export interface UserLogin {
 export interface UserLoginResponse {
   current_role: string;
   message: string;
+  id:string;
 }
 
 export interface UserProfile {

@@ -20,7 +20,7 @@ const initialState:UserState = {
   longtitude:0.0
 }
 
-export const signalstore = signalStore(
+export const usersignalstore = signalStore(
   withState<UserState>(initialState),
   withMethods((store)=>({
     setuser(userType:string,userName:string,userId:string,userProfileImage:string){

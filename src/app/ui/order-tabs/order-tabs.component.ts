@@ -3,7 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { OrderTabItemComponent } from "../order-tab-item/order-tab-item.component";
 import { OrderService } from "../../services/services"
 import { Order } from '../../api/models';
-
+import { usersignalstore } from '../../services/userstore.service';
 @Component({
   selector: 'app-order-tabs',
   standalone: true,
@@ -14,9 +14,11 @@ import { Order } from '../../api/models';
 export class OrderTabsComponent implements OnInit {
 
   orderService = inject(OrderService)
+  UserSignalStore = inject(usersignalstore)
+
 
   ngOnInit(): void {
-    this.orderService.getBuyerOrders("").subscribe((data)=>{
+    this.orderService.getBuyerOrders(this.UserSignalStore.user_id()).subscribe((data)=>{
       this.buyerorders = data
     })//write code to get all the buyer id
   }
