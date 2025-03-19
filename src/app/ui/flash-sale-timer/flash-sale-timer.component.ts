@@ -13,7 +13,7 @@ export class FlashSaleTimerComponent {
   minutes: number = 0;
   seconds: number = 0;
 
-  private targetDate: Date = new Date('2025-01-31T23:59:59'); // We set our target date here
+  private targetDate: Date = new Date('2025-03-28T23:59:59'); // We set our target date here
 
   ngOnInit(): void {
     this.startTimer();

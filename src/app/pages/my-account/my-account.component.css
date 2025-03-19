@@ -119,9 +119,6 @@ label {
   margin-top: 1em;
 }
 
-.actions button:first-child {
-}
-
 .actions button:last-child {
   background-color: var(--primary-color);
   color: white;

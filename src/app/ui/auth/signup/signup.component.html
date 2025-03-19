@@ -321,6 +321,7 @@
             class="next-btn buttons text-center bg-primary text-white rounded cursor-pointer"
             (click)="nextStep()"
             *ngIf="currentStep < 4"
+            [disabled]="!isStepValid(currentStep)"
           >
             Next
           </button>
@@ -330,6 +331,7 @@
             type="submit"
             class="btn-primary create-account-btn rounded mt-4"
             *ngIf="currentStep === 4"
+            [disabled]="signupForm.invalid"
           >
             Create Account
           </button>

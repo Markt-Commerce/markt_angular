@@ -154,3 +154,12 @@ a:hover {
 .input-field.ng-valid.ng-touched {
   border-color: green;
 }
+
+.next-btn:disabled,
+.create-account-btn:disabled,
+.back-btn:disabled,
+.location-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

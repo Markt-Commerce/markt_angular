@@ -7,7 +7,6 @@ import {
 } from '@angular/forms';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
-import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -38,12 +37,18 @@ export class SignupComponent {
       shopDirections: [''],
       shopCategory: [''],
       location: [''],
-      houseNumber: [''],
-      street: [''],
-      city: [''],
-      cardNumber: ['', [Validators.pattern('^[0-9]{13,16}$')]],
-      cardExpiry: ['', [Validators.pattern('^(0[1-9]|1[0-2])/[0-9]{2}$')]],
-      cvv: ['', [Validators.pattern('^[0-9]{3}$')]],
+      houseNumber: ['', Validators.required],
+      street: ['', Validators.required],
+      city: ['', Validators.required],
+      cardNumber: [
+        '',
+        [Validators.required, Validators.pattern('^[0-9]{13,16}$')],
+      ],
+      cardExpiry: [
+        '',
+        [Validators.required, Validators.pattern('^(0[1-9]|1[0-2])/[0-9]{2}$')],
+      ],
+      cvv: ['', [Validators.required, Validators.pattern('^[0-9]{3}$')]],
     },
     { validators: confirmPasswordValidator() }
   );
@@ -114,6 +119,42 @@ export class SignupComponent {
         });
       });
       console.log(this.signupForm.controls['location'].value);
+    }
+  }
+
+  isStepValid(step: number): boolean {
+    switch (step) {
+      case 1:
+        return (
+          this.signupForm.controls['accountType'].valid &&
+          this.signupForm.controls['name'].valid &&
+          this.signupForm.controls['password'].valid &&
+          this.signupForm.controls['confirmPassword'].valid &&
+          !this.signupForm.hasError('passwordsMismatch')
+        );
+      case 2:
+        const baseInfoValid =
+          this.signupForm.controls['username'].valid &&
+          this.signupForm.controls['email'].valid &&
+          this.signupForm.controls['phone'].valid;
+        if (this.accountType.value === 'seller') {
+          return (
+            baseInfoValid &&
+            this.signupForm.controls['shopDirections'].valid &&
+            this.signupForm.controls['shopCategory'].valid &&
+            this.signupForm.controls['shopDescription'].valid
+          );
+        }
+        return baseInfoValid;
+      case 3:
+        return (
+          this.signupForm.controls['houseNumber'].valid &&
+          this.signupForm.controls['street'].valid &&
+          this.signupForm.controls['city'].valid
+        );
+
+      default:
+        return false;
     }
   }
 }
