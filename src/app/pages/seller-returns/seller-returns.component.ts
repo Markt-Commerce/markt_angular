@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { SideBarComponent } from '../side-bar/side-bar.component';
-import { FooterComponent } from '../footer/footer.component';
+import { SideBarComponent } from '../../ui/side-bar/side-bar.component';
+import { FooterComponent } from '../../ui/footer/footer.component';
 
 @Component({
   selector: 'app-seller-returns',
   standalone: true,
-  imports: [ SideBarComponent, FooterComponent ],
+  imports: [SideBarComponent, FooterComponent],
   templateUrl: './seller-returns.component.html',
   styleUrl: './seller-returns.component.css'
 })

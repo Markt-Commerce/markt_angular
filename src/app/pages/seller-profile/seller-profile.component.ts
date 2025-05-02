@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { SideBarComponent } from '../side-bar/side-bar.component';
-import { FooterComponent } from '../footer/footer.component';
-import { OverallSalesComponent } from '../overall-sales/overall-sales.component';
+import { SideBarComponent } from '../../ui/side-bar/side-bar.component';
+import { FooterComponent } from '../../ui/footer/footer.component';
+import { OverallSalesComponent } from '../../ui/overall-sales/overall-sales.component';
 
 @Component({
   selector: 'app-seller-profile',
@@ -11,4 +11,4 @@ import { OverallSalesComponent } from '../overall-sales/overall-sales.component'
   styleUrl: './seller-profile.component.css',
 })
 
-export class SellerProfileComponent {}
+export class SellerProfileComponent { }

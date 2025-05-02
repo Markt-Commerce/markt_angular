@@ -9,17 +9,17 @@ import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
 import { MyAccountComponent } from './pages/my-account/my-account.component';
 import { ErrorComponent } from './ui/error/error.component';
-import { SellerProfileComponent } from './ui/seller-profile/seller-profile.component';
-import { SellerDashboardComponent } from './ui/seller-dashboard/seller-dashboard.component';
-import { SellerOrdersComponent } from './ui/seller-orders/seller-orders.component';
+import { SellerProfileComponent } from './pages/seller-profile/seller-profile.component';
+import { SellerDashboardComponent } from './pages/seller-dashboard/seller-dashboard.component';
+import { SellerOrdersComponent } from './pages/seller-orders/seller-orders.component';
 import { SellerPricePlansComponent } from './ui/seller-price-plans/seller-price-plans.component';
 import { HelpDeskMainComponent } from './ui/help-desk-main/help-desk-main.component';
 import { HelpDeskFaqsComponent } from './ui/help-desk-faqs/help-desk-faqs.component';
-import { SellerBillingComponent } from './ui/seller-billing/seller-billing.component';
+import { SellerBillingComponent } from './pages/seller-billing/seller-billing.component';
 import { MessagesChatComponent } from './ui/messages-chat/messages-chat.component';
-import { SellerInvoicesComponent } from './ui/seller-invoices/seller-invoices.component';
-import { SellerReturnsComponent } from './ui/seller-returns/seller-returns.component';
-import { SellerListingsComponent } from './ui/seller-listings/seller-listings.component';
+import { SellerInvoicesComponent } from './pages/seller-invoices/seller-invoices.component';
+import { SellerReturnsComponent } from './pages/seller-returns/seller-returns.component';
+import { SellerListingsComponent } from './pages/seller-listings/seller-listings.component';
 import { MessagesListingComponent } from './ui/messages-listing/messages-listing.component';
 
 export const routes: Routes = [
@@ -35,7 +35,7 @@ export const routes: Routes = [
     component: SignupComponent,
     title: 'Markt | Create account',
   },
-  {path: 'login', component: LoginComponent, title: 'Markt | Login'},
+  { path: 'login', component: LoginComponent, title: 'Markt | Login' },
   { path: 'order', component: OrderComponent, title: 'Markt | Your orders' },
   { path: 'cart', component: CartComponent, title: 'Markt | Your cart' },
   { path: 'checkout', component: CheckoutComponent, title: 'Markt | Checkout' },
@@ -50,7 +50,7 @@ export const routes: Routes = [
     title: 'Markt | Your Account',
   },
   { path: 'error', component: ErrorComponent },
-  { path: 'seller/profile', component: SellerProfileComponent},
+  { path: 'seller/profile', component: SellerProfileComponent },
   { path: "seller/dashboard", component: SellerDashboardComponent },
   { path: "seller/orders", component: SellerOrdersComponent },
   { path: "seller/pricing", component: SellerPricePlansComponent },
