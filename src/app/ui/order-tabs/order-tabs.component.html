@@ -7,7 +7,7 @@
       class="tab-item"
     >
       {{ tab.name }}
-      <span *ngIf="tab.badgeCount" class="badge">{{ tab.badgeCount }}</span>
+      <span *ngIf="tab.badgeCount && tab.badgeCount > 0" class="badge">{{ tab.badgeCount }}</span>
       <img
         *ngIf="tab.hasDropdown"
         src="/assets/dropdown-icon.svg"
@@ -23,48 +23,35 @@
     </li>
   </ul>
 
-  <div class="tab-content mt-8">
-    <div *ngIf="activeTabIndex === 0" class="flex gap-8 flex-col">
-      <app-order-tab-item
-        sellerName="Sumsung"
-        orderId="20/b"
-        purchaseDate="24 Dec, 2023"
-        deliveryDate="2 Jan, 2024"
-        [products]="[{
-            name: 'Z Fold 40 Sumsung',
-            quantity: 1,
-            color: 'Purple',
-            price: 600,
-            image: '/assets/sumsung.svg',
-          }]"
-      ></app-order-tab-item>
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-container mt-8">
+    <p>Loading orders...</p>
+  </div>
 
+  <!-- Tab content with real data -->
+  <div *ngIf="!loading" class="tab-content mt-8">
+    <div class="flex gap-8 flex-col">
+      <!-- Display orders for current active tab -->
+      <div *ngIf="getCurrentTabOrders().length === 0" class="empty-state">
+        <p class="text-gray-500">No orders found for this category.</p>
+      </div>
+      
       <app-order-tab-item
-        sellerName="Sumsung"
-        orderId="20-A"
-        purchaseDate="24 Dec, 2023"
-        deliveryDate="1 Jan, 2024"
-        [products]="[
-      {
-        name: 'Bike',
-        quantity: 2,
-        color: 'Gold & Black',
-        price: 50,
-        image: '/assets/child-bike.svg',
-      },
-      {
-        name: 'TikTok Mini Toy Gun 3D STL File 356',
-        quantity: 4,
-        color: 'Pink',
-        price: 100,
-        image: '/assets/toy-gun.svg',
-      },
-    ]"
+        *ngFor="let order of getCurrentTabOrders()"
+        [sellerName]="'Seller ID: ' + order.seller_id"
+        [orderId]="order.id.toString()"
+        [purchaseDate]="formatDate(order.order_date)"
+        [deliveryDate]="getEstimatedDeliveryDate(order.order_date)"
+        [products]="[{
+          name: 'Product ID: ' + order.product_id,
+          quantity: order.quantity,
+          color: 'Standard',
+          price: order.total_price,
+          image: '/assets/672462_ZAH9D_5626_002_100_0000_Light-The-North-Face-x-Gucci-coat 1.png'
+          
+        }]"
       ></app-order-tab-item>
+      <!-- The image above is an image placeholder for the coat -->
     </div>
-    <p *ngIf="activeTabIndex === 1">Delivered Orders Content</p>
-    <p *ngIf="activeTabIndex === 2">Not Yet Shipped Orders Content</p>
-    <p *ngIf="activeTabIndex === 3">Cancelled Orders Content</p>
-    <p *ngIf="activeTabIndex === 4">Last 30 Days Orders Content</p>
   </div>
 </div>
