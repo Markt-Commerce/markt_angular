@@ -7,7 +7,6 @@ import {
 } from '@angular/forms';
 import { confirmPasswordValidator } from '../../../validators/confirm-password';
 import { NgIf } from '@angular/common';
-import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({

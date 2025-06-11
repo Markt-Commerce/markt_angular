@@ -77,3 +77,26 @@
   padding: 20px;
   border-top: none;
 }
+
+/* New additions for enhanced functionality */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1rem;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  color: #888;
+}

@@ -4,7 +4,7 @@ export interface Order {
   id: number;
   order_date?: Date;
   order_status: string;
-  product_id: string;
+  product_id: string; 
   quantity: number;
   seller_id: string;
   total_price: number;
