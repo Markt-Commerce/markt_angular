@@ -7,3 +7,14 @@ export interface Cart {
   product_id: string;
   quantity: number;
 }
+
+export interface CartProduct {
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  cartId?: string;
+  hasDiscount?: boolean;
+  discountPercent?: number;
+  discountPrice?: number;
+}
