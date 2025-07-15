@@ -1,0 +1,100 @@
+<div class="niche-card" [class.featured]="niche.isFeatured" [class.trending]="niche.isTrending">
+  <div class="niche-header">
+    <div class="niche-icon">
+      <i [class]="niche.icon"></i>
+      <div class="niche-badge" *ngIf="niche.badge">
+        <span class="badge-text">{{ niche.badge.text }}</span>
+        <span class="badge-count" *ngIf="niche.badge.count">{{ niche.badge.count }}</span>
+      </div>
+    </div>
+    <div class="niche-actions">
+      <button class="action-btn" (click)="onFollow()" [class.following]="niche.isFollowing">
+        <i class="fas" [class.fa-heart]="!niche.isFollowing" [class.fa-heart-broken]="niche.isFollowing"></i>
+      </button>
+      <button class="action-btn" (click)="onShare()">
+        <i class="fas fa-share"></i>
+      </button>
+    </div>
+  </div>
+  
+  <div class="niche-content" (click)="onNicheClick()">
+    <div class="niche-info">
+      <h3 class="niche-name">{{ niche.name }}</h3>
+      <p class="niche-description">{{ niche.description }}</p>
+      
+      <div class="niche-stats">
+        <div class="stat-item">
+          <i class="fas fa-users"></i>
+          <span>{{ niche.followers }} followers</span>
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-shopping-bag"></i>
+          <span>{{ niche.products }} products</span>
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-store"></i>
+          <span>{{ niche.sellers }} sellers</span>
+        </div>
+      </div>
+      
+      <div class="niche-tags" *ngIf="niche.tags && niche.tags.length > 0">
+        <span class="tag" *ngFor="let tag of niche.tags">{{ tag }}</span>
+      </div>
+    </div>
+    
+    <div class="niche-preview">
+      <div class="preview-grid">
+        <div 
+          class="preview-item" 
+          *ngFor="let product of niche.previewProducts; let i = index"
+          [style.animation-delay]="(i * 0.1) + 's'"
+        >
+          <img [src]="product.image" [alt]="product.name" />
+          <div class="preview-overlay">
+            <span class="preview-price">${{ product.price }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="niche-footer">
+    <div class="niche-meta">
+      <div class="meta-item">
+        <i class="fas fa-chart-line"></i>
+        <span>{{ niche.growthRate }}% growth</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-star"></i>
+        <span>{{ niche.avgRating }} avg rating</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-clock"></i>
+        <span>{{ formatLastActivity(niche.lastActivity) }}</span>
+      </div>
+    </div>
+    
+    <div class="niche-actions-bar">
+      <button class="primary-btn" (click)="onExplore()">
+        <i class="fas fa-compass"></i>
+        Explore
+      </button>
+      <button class="secondary-btn" (click)="onViewAll()">
+        <i class="fas fa-arrow-right"></i>
+        View All
+      </button>
+    </div>
+  </div>
+  
+  <!-- Trending Indicator -->
+  <div class="trending-indicator" *ngIf="niche.isTrending">
+    <i class="fas fa-fire"></i>
+    <span>Trending</span>
+  </div>
+  
+  <!-- Featured Badge -->
+  <div class="featured-badge" *ngIf="niche.isFeatured">
+    <i class="fas fa-crown"></i>
+    <span>Featured</span>
+  </div>
+</div> 

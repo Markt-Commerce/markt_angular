@@ -1,0 +1,131 @@
+<div class="address-form-container">
+  <div class="form-header">
+    <h2>{{ isEditing ? 'Edit Address' : 'Add New Address' }}</h2>
+    <p class="form-subtitle">Enter your shipping address details</p>
+  </div>
+
+  <form [formGroup]="addressForm" (ngSubmit)="onSubmit()" class="address-form">
+    
+    <!-- Label Section -->
+    <div class="form-section">
+      <label for="label" class="form-label">Address Label (Optional)</label>
+      <input
+        type="text"
+        id="label"
+        formControlName="label"
+        class="form-input"
+        placeholder="e.g., Home, Office, School"
+      />
+    </div>
+
+    <!-- Street Address Section -->
+    <div class="form-section">
+      <label for="street" class="form-label">Street Address *</label>
+      <input
+        type="text"
+        id="street"
+        formControlName="street"
+        class="form-input"
+        placeholder="123 Main Street"
+      />
+      <div class="error-message" *ngIf="getErrorMessage('street')">
+        {{ getErrorMessage('street') }}
+      </div>
+    </div>
+
+    <!-- City and State Section -->
+    <div class="form-row">
+      <div class="form-section">
+        <label for="city" class="form-label">City *</label>
+        <input
+          type="text"
+          id="city"
+          formControlName="city"
+          class="form-input"
+          placeholder="New York"
+        />
+        <div class="error-message" *ngIf="getErrorMessage('city')">
+          {{ getErrorMessage('city') }}
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label for="state" class="form-label">State/Province *</label>
+        <input
+          type="text"
+          id="state"
+          formControlName="state"
+          class="form-input"
+          placeholder="NY"
+        />
+        <div class="error-message" *ngIf="getErrorMessage('state')">
+          {{ getErrorMessage('state') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ZIP Code and Country Section -->
+    <div class="form-row">
+      <div class="form-section">
+        <label for="zipCode" class="form-label">ZIP/Postal Code *</label>
+        <input
+          type="text"
+          id="zipCode"
+          formControlName="zipCode"
+          class="form-input"
+          placeholder="10001"
+        />
+        <div class="error-message" *ngIf="getErrorMessage('zipCode')">
+          {{ getErrorMessage('zipCode') }}
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label for="country" class="form-label">Country *</label>
+        <select id="country" formControlName="country" class="form-select">
+          <option *ngFor="let country of countries" [value]="country.code">
+            {{ country.name }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="getErrorMessage('country')">
+          {{ getErrorMessage('country') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Default Address Toggle -->
+    <div class="form-section">
+      <div class="toggle-section">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            formControlName="isDefault"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+          <span class="toggle-text">Set as default address</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="btn btn-secondary"
+        [disabled]="loading"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loading || addressForm.invalid"
+      >
+        <span *ngIf="loading" class="loading-spinner"></span>
+        {{ isEditing ? 'Update Address' : 'Save Address' }}
+      </button>
+    </div>
+  </form>
+</div> 

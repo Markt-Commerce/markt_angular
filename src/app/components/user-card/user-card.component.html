@@ -1,0 +1,19 @@
+<div class="user-card-container">
+  <div class="avatar-wrapper">
+    <img *ngIf="user.avatar; else defaultAvatar" [src]="user.avatar" [alt]="user.name" class="avatar" />
+    <ng-template #defaultAvatar>
+      <div class="avatar avatar-placeholder">{{ user.name.charAt(0).toUpperCase() }}</div>
+    </ng-template>
+    <span *ngIf="user.isOnline" class="status-dot online"></span>
+    <span *ngIf="!user.isOnline" class="status-dot offline"></span>
+    <span *ngIf="user.isVerified" class="verified-badge">✓</span>
+  </div>
+  <div class="user-content">
+    <div class="user-name">{{ user.name }}</div>
+    <div class="user-bio" *ngIf="user.bio">{{ user.bio }}</div>
+    <div class="user-actions" *ngIf="showActions">
+      <button class="btn follow-btn" (click)="onFollow()">{{ user.isFollowing ? 'Unfollow' : 'Follow' }}</button>
+      <button class="btn message-btn" (click)="onMessage()">Message</button>
+    </div>
+  </div>
+</div> 

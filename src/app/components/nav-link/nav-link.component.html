@@ -1,0 +1,12 @@
+<div 
+  class="nav-link" 
+  [class.active]="isActive"
+  [class.disabled]="link.disabled"
+  (click)="onClick()"
+>
+  <div class="nav-link-content">
+    <span *ngIf="link.icon" class="nav-icon">{{ link.icon }}</span>
+    <span class="nav-label">{{ link.label }}</span>
+    <span *ngIf="link.badge && showBadge" class="nav-badge">{{ link.badge }}</span>
+  </div>
+</div> 

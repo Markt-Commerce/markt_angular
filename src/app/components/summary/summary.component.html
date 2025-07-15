@@ -1,0 +1,14 @@
+<div class="summary-card" [style.borderColor]="summary.color || '#667eea'">
+  <div class="summary-icon" [style.background]="summary.color ? 'linear-gradient(135deg, ' + summary.color + ' 0%, #c7d2fe 100%)' : 'linear-gradient(135deg, #667eea 0%, #c7d2fe 100%)'">
+    <span *ngIf="summary.icon; else defaultIcon">{{ summary.icon }}</span>
+    <ng-template #defaultIcon>📊</ng-template>
+  </div>
+  <div class="summary-content">
+    <div class="summary-title">{{ summary.title }}</div>
+    <div class="summary-value">{{ summary.value }}</div>
+    <div class="summary-description" *ngIf="summary.description">{{ summary.description }}</div>
+  </div>
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner"></div>
+  </div>
+</div> 

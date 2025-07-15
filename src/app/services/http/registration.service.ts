@@ -1,10 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, retry, tap, throwError } from 'rxjs';
 import { ApiStore } from '../apiSpecificData';
 import {
   ClassicResponse,
-  UserLoginResponse,
   BuyerRegister,
   SellerRegister,
 } from '../../api/models';
@@ -17,44 +16,32 @@ export class AuthService {
 
   http = inject(HttpClient);
 
-  registerBuyer(
-    registerData: BuyerRegister
-  ): Observable<HttpResponse<ClassicResponse>> {
+  registerBuyer(buyerData: any): Observable<any> {
     return this.http
-      .post<ClassicResponse>(
-        ApiStore.mergeEndpoint('auth', 'register', 'buyer'),
-        registerData,
-        {
-          observe: 'response',
-        }
-      )
+      .post<any>(`${this.apiUrl}/auth/register/buyer`, buyerData)
       .pipe(
-        tap((data) => console.log(data)),
+        tap((data) => {
+          // Handle successful buyer registration
+        }),
         retry(3),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle buyer registration error appropriately
+          return throwError(() => new Error('Failed to register buyer'));
         })
       );
   }
 
-  registerSeller(
-    registerData: SellerRegister
-  ): Observable<HttpResponse<ClassicResponse>> {
+  registerSeller(sellerData: any): Observable<any> {
     return this.http
-      .post<ClassicResponse>(
-        ApiStore.mergeEndpoint('auth', 'register', 'seller'),
-        registerData,
-        {
-          observe: 'response',
-        }
-      )
+      .post<any>(`${this.apiUrl}/auth/register/seller`, sellerData)
       .pipe(
-        tap((data) => console.log(data)),
+        tap((data) => {
+          // Handle successful seller registration
+        }),
         retry(3),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle seller registration error appropriately
+          return throwError(() => new Error('Failed to register seller'));
         })
       );
   }

@@ -1,0 +1,117 @@
+<div class="featured-list">
+  <div class="featured-header">
+    <div class="featured-title">
+      <h2>{{ title }}</h2>
+      <p class="featured-subtitle">{{ subtitle }}</p>
+    </div>
+    <div class="featured-actions">
+      <button class="view-all-btn" (click)="onViewAll()">
+        View All
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <div class="carousel-controls">
+        <button class="control-btn prev" (click)="onPrevious()" [disabled]="currentIndex === 0">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="control-btn next" (click)="onNext()" [disabled]="currentIndex >= maxIndex">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="featured-content">
+    <div class="featured-carousel" [style.transform]="'translateX(' + (-currentIndex * 100) + '%)'">
+      <div class="featured-slide" *ngFor="let slide of visibleSlides; let i = index">
+        <div class="featured-grid">
+          <div 
+            class="featured-item" 
+            *ngFor="let item of slide"
+            (click)="onItemClick(item)"
+          >
+            <div class="item-image">
+              <img [src]="item.image" [alt]="item.name" />
+              <div class="item-overlay">
+                <button class="quick-view-btn" (click)="onQuickView(item)">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="favorite-btn" (click)="onToggleFavorite(item)" [class.favorited]="item.isFavorited">
+                  <i class="fas fa-heart"></i>
+                </button>
+              </div>
+              <div class="item-badges">
+                <span *ngIf="item.discount" class="discount-badge">-{{ item.discount }}%</span>
+                <span *ngIf="item.isNew" class="new-badge">New</span>
+                <span *ngIf="item.isFeatured" class="featured-badge">Featured</span>
+              </div>
+            </div>
+            
+            <div class="item-info">
+              <h3 class="item-name">{{ item.name }}</h3>
+              <p class="item-description">{{ item.description }}</p>
+              
+              <div class="item-meta">
+                <div class="seller-info">
+                  <img [src]="item.seller.avatar" [alt]="item.seller.name" class="seller-avatar" />
+                  <span class="seller-name">{{ item.seller.name }}</span>
+                </div>
+                <div class="rating-info">
+                  <div class="stars">
+                    <i class="fas fa-star" *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= item.rating"></i>
+                  </div>
+                  <span class="rating-count">({{ item.reviews }})</span>
+                </div>
+              </div>
+              
+              <div class="item-pricing">
+                <div class="price-section">
+                  <span class="current-price">${{ item.price }}</span>
+                  <span *ngIf="item.originalPrice" class="original-price">${{ item.originalPrice }}</span>
+                </div>
+                <div class="stock-info">
+                  <span class="stock-label">Stock:</span>
+                  <span class="stock-amount" [class.low]="item.stock < 10">{{ item.stock }} units</span>
+                </div>
+              </div>
+              
+              <div class="item-actions">
+                <button class="add-to-cart-btn" (click)="onAddToCart(item)">
+                  <i class="fas fa-shopping-cart"></i>
+                  Add to Cart
+                </button>
+                <button class="make-offer-btn" (click)="onMakeOffer(item)">
+                  <i class="fas fa-tag"></i>
+                  Make Offer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="carousel-indicators" *ngIf="totalSlides > 1">
+    <button 
+      class="indicator" 
+      *ngFor="let slide of [].constructor(totalSlides); let i = index"
+      [class.active]="i === currentIndex"
+      (click)="onIndicatorClick(i)"
+    ></button>
+  </div>
+  
+  <div class="featured-stats">
+    <div class="stat-item">
+      <i class="fas fa-eye"></i>
+      <span>{{ totalViews }} views</span>
+    </div>
+    <div class="stat-item">
+      <i class="fas fa-heart"></i>
+      <span>{{ totalFavorites }} favorites</span>
+    </div>
+    <div class="stat-item">
+      <i class="fas fa-shopping-cart"></i>
+      <span>{{ totalSales }} sales</span>
+    </div>
+  </div>
+</div> 

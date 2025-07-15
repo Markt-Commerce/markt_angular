@@ -1,0 +1,118 @@
+<div class="payment-method" [class.selected]="isSelected" [class.default]="isDefault">
+  <div class="payment-header">
+    <div class="payment-info">
+      <div class="payment-icon">
+        <i [class]="getPaymentIcon()"></i>
+      </div>
+      <div class="payment-details">
+        <h3 class="payment-name">{{ payment.name }}</h3>
+        <p class="payment-description">{{ payment.description }}</p>
+      </div>
+    </div>
+    <div class="payment-actions">
+      <label class="radio-container">
+        <input 
+          type="radio" 
+          name="paymentMethod" 
+          [value]="payment.id"
+          [checked]="isSelected"
+          (change)="onSelect()"
+        />
+        <span class="radio-custom"></span>
+      </label>
+      <button class="edit-btn" (click)="onEdit()" *ngIf="canEdit">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="delete-btn" (click)="onDelete()" *ngIf="canDelete">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+  
+  <div class="payment-content">
+    <div class="payment-details-display">
+      <div class="detail-row">
+        <span class="label">Card Number:</span>
+        <span class="value">{{ maskCardNumber(payment.cardNumber) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Expires:</span>
+        <span class="value">{{ payment.expiryMonth }}/{{ payment.expiryYear }}</span>
+      </div>
+      <div class="detail-row" *ngIf="payment.cardholderName">
+        <span class="label">Cardholder:</span>
+        <span class="value">{{ payment.cardholderName }}</span>
+      </div>
+      <div class="detail-row" *ngIf="payment.billingAddress">
+        <span class="label">Billing Address:</span>
+        <span class="value">{{ formatAddress(payment.billingAddress) }}</span>
+      </div>
+    </div>
+    
+    <div class="payment-features" *ngIf="payment.features && payment.features.length > 0">
+      <div class="feature-item" *ngFor="let feature of payment.features">
+        <i [class]="feature.icon"></i>
+        <span>{{ feature.name }}</span>
+      </div>
+    </div>
+    
+    <div class="payment-security">
+      <div class="security-badges">
+        <span class="security-badge" *ngFor="let badge of payment.securityBadges">
+          <i [class]="badge.icon"></i>
+          {{ badge.name }}
+        </span>
+      </div>
+      <div class="verification-status" [class.verified]="payment.isVerified">
+        <i class="fas" [class.fa-check-circle]="payment.isVerified" [class.fa-exclamation-circle]="!payment.isVerified"></i>
+        <span>{{ payment.isVerified ? 'Verified' : 'Pending Verification' }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="payment-footer">
+    <div class="payment-meta">
+      <div class="meta-item" *ngIf="payment.isDefault">
+        <i class="fas fa-star"></i>
+        <span>Default Payment Method</span>
+      </div>
+      <div class="meta-item" *ngIf="payment.lastUsed">
+        <i class="fas fa-clock"></i>
+        <span>Last used {{ formatLastUsed(payment.lastUsed) }}</span>
+      </div>
+      <div class="meta-item" *ngIf="payment.usageCount">
+        <i class="fas fa-chart-line"></i>
+        <span>Used {{ payment.usageCount }} times</span>
+      </div>
+    </div>
+    
+    <div class="payment-limits" *ngIf="payment.limits">
+      <div class="limit-item">
+        <span class="limit-label">Daily Limit:</span>
+        <span class="limit-value">${{ payment.limits.daily }}/${{ payment.limits.dailyMax }}</span>
+      </div>
+      <div class="limit-item">
+        <span class="limit-label">Monthly Limit:</span>
+        <span class="limit-value">${{ payment.limits.monthly }}/${{ payment.limits.monthlyMax }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Default Badge -->
+  <div class="default-badge" *ngIf="isDefault">
+    <i class="fas fa-star"></i>
+    <span>Default</span>
+  </div>
+  
+  <!-- Verification Badge -->
+  <div class="verification-badge" *ngIf="!payment.isVerified">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Verify Required</span>
+  </div>
+  
+  <!-- Expiry Warning -->
+  <div class="expiry-warning" *ngIf="isExpiringSoon">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>Expires Soon</span>
+  </div>
+</div> 

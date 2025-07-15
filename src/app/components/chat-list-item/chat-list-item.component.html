@@ -1,0 +1,38 @@
+<div 
+  class="chat-list-item" 
+  [class.active]="isActive"
+  (click)="onClick()"
+>
+  <div class="avatar-wrapper">
+    <img 
+      *ngIf="chat.avatar; else defaultAvatar" 
+      [src]="chat.avatar" 
+      [alt]="chat.name" 
+      class="avatar"
+    />
+    <ng-template #defaultAvatar>
+      <div class="avatar avatar-placeholder">
+        {{ getInitials(chat.name) }}
+      </div>
+    </ng-template>
+    <span class="status-dot" [class.online]="chat.isOnline"></span>
+  </div>
+  
+  <div class="chat-content">
+    <div class="chat-header">
+      <div class="chat-name">{{ chat.name }}</div>
+      <div class="chat-time">{{ getTimeAgo(chat.lastMessageTime) }}</div>
+    </div>
+    
+    <div class="chat-message">
+      <span *ngIf="chat.isTyping" class="typing-indicator">Typing...</span>
+      <span *ngIf="!chat.isTyping" class="last-message">{{ chat.lastMessage }}</span>
+    </div>
+  </div>
+  
+  <div class="chat-actions">
+    <div *ngIf="chat.unreadCount > 0" class="unread-badge">
+      {{ chat.unreadCount > 99 ? '99+' : chat.unreadCount }}
+    </div>
+  </div>
+</div> 

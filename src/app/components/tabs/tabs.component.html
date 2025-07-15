@@ -1,0 +1,19 @@
+<div class="tabs-container">
+  <div class="tabs-header">
+    <button 
+      *ngFor="let tab of tabs" 
+      class="tab-btn"
+      [class.active]="activeTab === tab.id"
+      [class.disabled]="tab.disabled"
+      (click)="onTabClick(tab)"
+    >
+      <i *ngIf="tab.icon" [class]="tab.icon"></i>
+      <span class="tab-label">{{ tab.label }}</span>
+      <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+    </button>
+  </div>
+  
+  <div class="tab-content">
+    <ng-content></ng-content>
+  </div>
+</div> 

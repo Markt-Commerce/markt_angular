@@ -1,63 +1,239 @@
 import { Routes } from '@angular/router';
-
-import { SignupComponent } from './ui/auth/signup/signup.component';
-import { OrderComponent } from './pages/order/order.component';
-import { MarketplaceComponent } from './pages/marketplace/marketplace.component';
-import { CartComponent } from './pages/cart/cart.component';
-import { CheckoutComponent } from './pages/checkout/checkout.component';
-import { ProductDetailsComponent } from './pages/product-details/product-details.component';
-import { MyAccountComponent } from './pages/my-account/my-account.component';
-import { ErrorComponent } from './ui/error/error.component';
-import { SellerProfileComponent } from './ui/seller-profile/seller-profile.component';
-import { SellerDashboardComponent } from './ui/seller-dashboard/seller-dashboard.component';
-import { SellerOrdersComponent } from './ui/seller-orders/seller-orders.component';
-import { SellerPricePlansComponent } from './ui/seller-price-plans/seller-price-plans.component';
-import { HelpDeskMainComponent } from './ui/help-desk-main/help-desk-main.component';
-import { HelpDeskFaqsComponent } from './ui/help-desk-faqs/help-desk-faqs.component';
-import { SellerBillingComponent } from './ui/seller-billing/seller-billing.component';
-import { MessagesChatComponent } from './ui/messages-chat/messages-chat.component';
-import { SellerInvoicesComponent } from './ui/seller-invoices/seller-invoices.component';
-import { SellerReturnsComponent } from './ui/seller-returns/seller-returns.component';
-import { SellerListingsComponent } from './ui/seller-listings/seller-listings.component';
-import { MessagesListingComponent } from './ui/messages-listing/messages-listing.component';
+import { authGuard } from './guards/auth.guard';
+import { publicGuard } from './guards/public.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'marketplace', pathMatch: 'full' },
+  // Landing Page (Public)
+  {
+    path: '',
+    loadComponent: () =>
+      import('./pages/landing/landing.component').then(
+        (m) => m.LandingComponent
+      ),
+  },
 
+  // Authentication Routes (Public - redirects if authenticated)
+  {
+    path: 'login',
+    canActivate: [publicGuard],
+    loadComponent: () =>
+      import('./ui/auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'signup',
+    canActivate: [publicGuard],
+    loadComponent: () =>
+      import('./ui/auth/signup/signup.component').then(
+        (m) => m.SignupComponent
+      ),
+  },
+
+  // Protected Routes (Require Authentication)
+  {
+    path: 'feed',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/feed/feed.component').then((m) => m.FeedComponent),
+  },
   {
     path: 'marketplace',
-    component: MarketplaceComponent,
-    title: 'Markt | Marketplace',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/marketplace/marketplace.component').then(
+        (m) => m.MarketplaceComponent
+      ),
   },
   {
-    path: 'create',
-    component: SignupComponent,
-    title: 'Markt | Create account',
+    path: 'search',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/search/search.component').then((m) => m.SearchComponent),
   },
-  { path: 'order', component: OrderComponent, title: 'Markt | Your orders' },
-  { path: 'cart', component: CartComponent, title: 'Markt | Your cart' },
-  { path: 'checkout', component: CheckoutComponent, title: 'Markt | Checkout' },
   {
-    path: 'product-details',
-    component: ProductDetailsComponent,
-    title: 'Markt | Product Details',
+    path: 'product/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/product-details/product-details.component').then(
+        (m) => m.ProductDetailsComponent
+      ),
   },
+  {
+    path: 'user/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/user-profile/user-profile.component').then(
+        (m) => m.UserProfileComponent
+      ),
+  },
+
+  // Buyer Routes (Protected)
+  {
+    path: 'cart',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/cart/cart.component').then((m) => m.CartComponent),
+  },
+  {
+    path: 'checkout',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/checkout/checkout.component').then(
+        (m) => m.CheckoutComponent
+      ),
+  },
+  {
+    path: 'my-orders',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/my-orders/my-orders.component').then(
+        (m) => m.MyOrdersComponent
+      ),
+  },
+  {
+    path: 'order/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/order/order.component').then((m) => m.OrderComponent),
+  },
+  {
+    path: 'buyer-requests',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/buyer-requests/buyer-requests.component').then(
+        (m) => m.BuyerRequestsComponent
+      ),
+  },
+  {
+    path: 'buyer-request/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import(
+        './pages/buyer-request-detail/buyer-request-detail.component'
+      ).then((m) => m.BuyerRequestDetailComponent),
+  },
+
+  // Seller Routes (Protected)
+  {
+    path: 'seller-dashboard',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/seller-dashboard/seller-dashboard.component').then(
+        (m) => m.SellerDashboardComponent
+      ),
+  },
+  {
+    path: 'seller-listings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/seller-listings/seller-listings.component').then(
+        (m) => m.SellerListingsComponent
+      ),
+  },
+  {
+    path: 'seller-orders',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/seller-orders/seller-orders.component').then(
+        (m) => m.SellerOrdersComponent
+      ),
+  },
+  {
+    path: 'seller-profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/seller-profile/seller-profile.component').then(
+        (m) => m.SellerProfileComponent
+      ),
+  },
+  {
+    path: 'seller-offer',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/seller-offer/seller-offer.component').then(
+        (m) => m.SellerOfferComponent
+      ),
+  },
+
+  // Social & Communication Routes (Protected)
+  {
+    path: 'chat',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/chat/chat.component').then((m) => m.ChatComponent),
+  },
+  {
+    path: 'messages',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/messages-list/messages-list.component').then(
+        (m) => m.MessagesListComponent
+      ),
+  },
+  {
+    path: 'following',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/following/following.component').then(
+        (m) => m.FollowingComponent
+      ),
+  },
+  {
+    path: 'notifications',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/notifications/notifications.component').then(
+        (m) => m.NotificationsComponent
+      ),
+  },
+  {
+    path: 'create-post',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/create-post/create-post.component').then(
+        (m) => m.CreatePostComponent
+      ),
+  },
+
+  // Account & Settings Routes (Protected)
   {
     path: 'my-account',
-    component: MyAccountComponent,
-    title: 'Markt | Your Account',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/my-account/my-account.component').then(
+        (m) => m.MyAccountComponent
+      ),
   },
-  { path: 'error', component: ErrorComponent },
-  { path: 'seller/profile', component: SellerProfileComponent },
-  { path: 'seller/dashboard', component: SellerDashboardComponent },
-  { path: 'seller/orders', component: SellerOrdersComponent },
-  { path: 'seller/pricing', component: SellerPricePlansComponent },
-  { path: 'seller/help', component: HelpDeskMainComponent },
-  { path: 'seller/faqs', component: HelpDeskFaqsComponent },
-  { path: 'seller/billing', component: SellerBillingComponent },
-  { path: 'seller/message', component: MessagesChatComponent },
-  { path: 'seller/invoice', component: SellerInvoicesComponent },
-  { path: 'seller/returns', component: SellerReturnsComponent },
-  { path: 'seller/listing', component: SellerListingsComponent },
-  { path: 'seller/messages', component: MessagesListingComponent },
+  {
+    path: 'account-details',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/account-details/account-details.component').then(
+        (m) => m.AccountDetailsComponent
+      ),
+  },
+  {
+    path: 'settings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/settings/settings.component').then(
+        (m) => m.SettingsComponent
+      ),
+  },
+
+  // Discovery Routes (Protected)
+  {
+    path: 'niche-discovery',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/niche-discovery/niche-discovery.component').then(
+        (m) => m.NicheDiscoveryComponent
+      ),
+  },
+
+  // Error Routes
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./ui/error/error.component').then((m) => m.ErrorComponent),
+  },
 ];

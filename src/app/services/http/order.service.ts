@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { ApiStore } from '../apiSpecificData';
 import { ClassicResponse, Order } from '../../api/models';
 
@@ -8,134 +9,105 @@ import { ClassicResponse, Order } from '../../api/models';
   providedIn: 'root',
 })
 export class OrderService {
-  private http = inject(HttpClient);
+  private apiUrl = ApiStore.apiUrl;
 
-  
-  createOrder(order: Order): Observable<HttpResponse<ClassicResponse>> {
+  constructor(private http: HttpClient) {}
+
+  getOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${this.apiUrl}/orders`).pipe(
+      tap((data) => {
+        // Handle successful orders retrieval
+      }),
+      catchError((err) => {
+        // Handle orders retrieval error appropriately
+        return throwError(() => new Error('Failed to load orders'));
+      })
+    );
+  }
+
+  getOrderById(orderId: string): Observable<Order> {
+    return this.http.get<Order>(`${this.apiUrl}/orders/${orderId}`).pipe(
+      tap((data) => {
+        // Handle successful order retrieval
+      }),
+      catchError((err) => {
+        // Handle order retrieval error appropriately
+        return throwError(() => new Error('Failed to load order details'));
+      })
+    );
+  }
+
+  createOrder(orderData: any): Observable<Order> {
+    return this.http.post<Order>(`${this.apiUrl}/orders`, orderData).pipe(
+      tap((data) => {
+        // Handle successful order creation
+      }),
+      catchError((err) => {
+        // Handle order creation error appropriately
+        return throwError(() => new Error('Failed to create order'));
+      })
+    );
+  }
+
+  getSellerOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${this.apiUrl}/seller/orders`).pipe(
+      tap((data) => {
+        // Handle successful seller orders retrieval
+      }),
+      catchError((err) => {
+        // Handle seller orders retrieval error appropriately
+        return throwError(() => new Error('Failed to load seller orders'));
+      })
+    );
+  }
+
+  cancelOrder(orderId: string): Observable<ClassicResponse> {
     return this.http
-      .post<ClassicResponse>(ApiStore.mergeEndpoint('orders', 'new'), order, {
-        observe: 'response',
+      .put<ClassicResponse>(`${this.apiUrl}/orders/${orderId}/cancel`, {})
+      .pipe(
+        tap((data) => {
+          // Handle successful order cancellation
+        }),
+        catchError((err) => {
+          // Handle order cancellation error appropriately
+          return throwError(() => new Error('Failed to cancel order'));
+        })
+      );
+  }
+
+  updateOrderStatus(
+    orderId: string,
+    status: string
+  ): Observable<ClassicResponse> {
+    return this.http
+      .put<ClassicResponse>(`${this.apiUrl}/orders/${orderId}/status`, {
+        status,
       })
       .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
+        tap((data) => {
+          // Handle successful status update
+        }),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle status update error appropriately
+          return throwError(() => new Error('Failed to update order status'));
         })
       );
   }
 
-  getBuyerOrders(buyerId: string): Observable<Order[]> {
+  getOrdersByStatus(
+    userType: 'buyer' | 'seller',
+    status: string
+  ): Observable<Order[]> {
     return this.http
-      .get<Order[]>(ApiStore.mergeEndpoint('orders', 'buyers', buyerId))
+      .get<Order[]>(`${this.apiUrl}/orders/${userType}/${status}`)
       .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
+        tap((data) => {
+          // Handle successful status-based orders retrieval
+        }),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
-        })
-      );
-  }
-
-  getSellerAcceptedOrders(sellerId: string): Observable<Order[]> {
-    return this.http
-      .get<Order[]>(
-        ApiStore.mergeEndpoint('orders', 'sellers', 'accepted', sellerId)
-      )
-      .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
-        catchError((err) => {
-          console.error(err);
-          return EMPTY;
-        })
-      );
-  }
-
-  // NEW METHODS 
-
-  // Get single order details
-  getOrderById(orderId: string): Observable<Order> {
-    return this.http
-      .get<Order>(ApiStore.mergeEndpoint('orders', orderId))
-      .pipe(
-        tap((data) => console.log('Order details:', data)),
-        retry(3),
-        catchError((err) => {
-          console.error('Error getting order details:', err);
-          return EMPTY;
-        })
-      );
-  }
-
-  // Get all seller orders (not just accepted)
-  getSellerOrders(sellerId: string): Observable<Order[]> {
-    return this.http
-      .get<Order[]>(ApiStore.mergeEndpoint('orders', 'sellers', sellerId))
-      .pipe(
-        tap((data) => console.log('All seller orders:', data)),
-        retry(3),
-        catchError((err) => {
-          console.error('Error getting seller orders:', err);
-          return EMPTY;
-        })
-      );
-  }
-
-  // Cancel order (for buyers)
-  cancelOrder(orderId: string): Observable<HttpResponse<ClassicResponse>> {
-    return this.http
-      .patch<ClassicResponse>(
-        ApiStore.mergeEndpoint('orders', orderId, 'cancel'),
-        {},
-        { observe: 'response' }
-      )
-      .pipe(
-        tap((data) => console.log('Order cancelled:', data)),
-        retry(3),
-        catchError((err) => {
-          console.error('Error cancelling order:', err);
-          return EMPTY;
-        })
-      );
-  }
-
-  // Update order status (for sellers)
-  updateOrderStatus(orderId: string, status: string): Observable<HttpResponse<ClassicResponse>> {
-    return this.http
-      .patch<ClassicResponse>(
-        ApiStore.mergeEndpoint('orders', orderId, 'status'),
-        { status },
-        { observe: 'response' }
-      )
-      .pipe(
-        tap((data) => console.log('Order status updated:', data)),
-        retry(3),
-        catchError((err) => {
-          console.error('Error updating order status:', err);
-          return EMPTY;
-        })
-      );
-  }
-
-  // Get orders by status (useful for filtering)
-  getOrdersByStatus(userId: string, status: string, userType: 'buyer' | 'seller'): Observable<Order[]> {
-    const endpoint = userType === 'buyer' 
-      ? ApiStore.mergeEndpoint('orders', 'buyers', userId, 'status', status)
-      : ApiStore.mergeEndpoint('orders', 'sellers', userId, 'status', status);
-    
-    return this.http
-      .get<Order[]>(endpoint)
-      .pipe(
-        tap((data) => console.log(`${userType} orders with status ${status}:`, data)),
-        retry(3),
-        catchError((err) => {
-          console.error(`Error getting ${status} orders:`, err);
-          return EMPTY;
+          // Handle status-based orders retrieval error appropriately
+          return throwError(() => new Error(`Failed to load ${status} orders`));
         })
       );
   }
 }
-

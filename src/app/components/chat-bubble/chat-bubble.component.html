@@ -1,0 +1,48 @@
+<div class="chat-bubble" [class.own-message]="isOwnMessage" [class.unread]="!isRead">
+  <div class="message-avatar" *ngIf="!isOwnMessage">
+    <img [src]="message.senderAvatar" [alt]="message.senderName" />
+  </div>
+  
+  <div class="message-content">
+    <div class="message-header" *ngIf="!isOwnMessage">
+      <span class="sender-name">{{ message.senderName }}</span>
+      <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+    </div>
+    
+    <div class="message-body">
+      <div class="message-text" *ngIf="message.type === 'text'">
+        {{ message.content }}
+      </div>
+      
+      <div class="message-image" *ngIf="message.type === 'image'">
+        <img [src]="message.content" [alt]="message.altText || 'Image'" />
+      </div>
+      
+      <div class="message-product" *ngIf="message.type === 'product'">
+        <div class="product-preview">
+          <img [src]="message.product.image" [alt]="message.product.name" />
+          <div class="product-info">
+            <h4>{{ message.product.name }}</h4>
+            <p class="product-price">${{ message.product.price }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="message-status" *ngIf="isOwnMessage">
+        <i class="fas fa-check" [class.double-check]="isRead"></i>
+      </div>
+    </div>
+  </div>
+  
+  <div class="message-actions" *ngIf="showActions">
+    <button class="action-btn" (click)="onReply()">
+      <i class="fas fa-reply"></i>
+    </button>
+    <button class="action-btn" (click)="onCopy()">
+      <i class="fas fa-copy"></i>
+    </button>
+    <button class="action-btn" (click)="onDelete()" *ngIf="isOwnMessage">
+      <i class="fas fa-trash"></i>
+    </button>
+  </div>
+</div> 

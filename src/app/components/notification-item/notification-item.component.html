@@ -1,0 +1,60 @@
+<div class="notification-item" [class.unread]="!notification.read" [class.important]="notification.important">
+  <div class="notification-avatar">
+    <img [src]="notification.sender.avatar" [alt]="notification.sender.name" />
+    <div class="notification-icon" [class]="notification.type">
+      <i [class]="getNotificationIcon()"></i>
+    </div>
+  </div>
+  
+  <div class="notification-content">
+    <div class="notification-header">
+      <div class="notification-sender">
+        <span class="sender-name">{{ notification.sender.name }}</span>
+        <span class="notification-time">{{ formatTime(notification.timestamp) }}</span>
+      </div>
+      <div class="notification-actions">
+        <button class="action-btn" (click)="onMarkAsRead()" *ngIf="!notification.read">
+          <i class="fas fa-check"></i>
+        </button>
+        <button class="action-btn" (click)="onDismiss()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="notification-message">
+      <span class="message-text" [innerHTML]="getNotificationMessage()"></span>
+      <span class="notification-preview" *ngIf="notification.preview">
+        "{{ notification.preview }}"
+      </span>
+    </div>
+    
+    <div class="notification-meta" *ngIf="notification.meta">
+      <div class="meta-item" *ngFor="let meta of notification.meta">
+        <i [class]="meta.icon"></i>
+        <span>{{ meta.text }}</span>
+      </div>
+    </div>
+    
+    <div class="notification-actions-bar" *ngIf="showActionButtons">
+      <button class="primary-action" (click)="onPrimaryAction()" *ngIf="notification.primaryAction">
+        <i [class]="notification.primaryAction.icon"></i>
+        {{ notification.primaryAction.text }}
+      </button>
+      <button class="secondary-action" (click)="onSecondaryAction()" *ngIf="notification.secondaryAction">
+        <i [class]="notification.secondaryAction.icon"></i>
+        {{ notification.secondaryAction.text }}
+      </button>
+    </div>
+  </div>
+  
+  <div class="notification-badge" *ngIf="notification.badge">
+    <span class="badge-text">{{ notification.badge.text }}</span>
+    <span class="badge-count" *ngIf="notification.badge.count">{{ notification.badge.count }}</span>
+  </div>
+  
+  <!-- Notification Image/Preview -->
+  <div class="notification-preview-image" *ngIf="notification.image">
+    <img [src]="notification.image" [alt]="notification.type" />
+  </div>
+</div> 

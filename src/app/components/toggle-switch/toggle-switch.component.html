@@ -1,0 +1,13 @@
+<label class="toggle-switch" [class.disabled]="disabled">
+  <input 
+    type="checkbox" 
+    [checked]="checked" 
+    [disabled]="disabled" 
+    (change)="onToggle()"
+    class="toggle-input"
+    aria-checked="{{checked}}"
+    [attr.aria-label]="label"
+  />
+  <span class="toggle-slider"></span>
+  <span class="toggle-label" *ngIf="label">{{ label }}</span>
+</label> 

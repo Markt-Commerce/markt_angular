@@ -1,0 +1,155 @@
+<div class="sales-trends-container">
+  <!-- Header with Controls -->
+  <div class="trends-header">
+    <div class="header-content">
+      <h2>Sales Trends</h2>
+      <p class="subtitle">Track your performance over time</p>
+    </div>
+    
+    <div class="controls">
+      <!-- Time Range Selector -->
+      <div class="time-range-selector">
+        <button 
+          *ngFor="let range of ['7d', '30d', '90d', '1y']" 
+          class="range-btn"
+          [class.active]="timeRange === range"
+          (click)="onTimeRangeChange(range)"
+        >
+          {{ range.toUpperCase() }}
+        </button>
+      </div>
+
+      <!-- Metric Selector -->
+      <div class="metric-selector">
+        <select 
+          class="metric-select"
+          [value]="selectedMetric"
+          (change)="onMetricChange($event.target.value)"
+        >
+          <option value="sales">Sales</option>
+          <option value="revenue">Revenue</option>
+          <option value="profit">Profit</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Loading sales data...</p>
+  </div>
+
+  <!-- No Data State -->
+  <div class="no-data" *ngIf="!loading && salesData.length === 0">
+    <div class="no-data-icon">📊</div>
+    <h3>No sales data available</h3>
+    <p>Start selling to see your trends here</p>
+  </div>
+
+  <!-- Trends Overview -->
+  <div class="trends-overview" *ngIf="!loading && trends.length > 0">
+    <div 
+      *ngFor="let trend of trends" 
+      class="trend-card"
+      [@fadeInUp]
+    >
+      <div class="trend-header">
+        <h3 class="trend-title">{{ trend.period }}</h3>
+        <div class="trend-change" [class]="trend.changeType">
+          <span class="change-icon">
+            {{ trend.changeType === 'increase' ? '↗' : trend.changeType === 'decrease' ? '↘' : '→' }}
+          </span>
+          <span class="change-value">{{ formatPercentage(trend.change) }}</span>
+        </div>
+      </div>
+      
+      <div class="trend-value">
+        {{ selectedMetric === 'sales' ? formatNumber(trend.value) : formatCurrency(trend.value) }}
+      </div>
+      
+      <div class="trend-period">
+        vs previous {{ timeRange === '7d' ? 'week' : timeRange === '30d' ? 'month' : timeRange === '90d' ? 'quarter' : 'year' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Section -->
+  <div class="chart-section" *ngIf="!loading && chartData.length > 0">
+    <div class="chart-header">
+      <h3>{{ selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1) }} Over Time</h3>
+      <div class="chart-stats">
+        <div class="stat-item">
+          <span class="stat-label">Average:</span>
+          <span class="stat-value">
+            {{ selectedMetric === 'sales' ? formatNumber(getAverageValue()) : formatCurrency(getAverageValue()) }}
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Peak:</span>
+          <span class="stat-value">
+            {{ selectedMetric === 'sales' ? formatNumber(getMaxValue()) : formatCurrency(getMaxValue()) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-bars">
+        <div 
+          *ngFor="let dataPoint of chartData; let i = index" 
+          class="chart-bar"
+          [style.height]="getChartHeight(dataPoint.value)"
+          (click)="onDataPointClick(salesData[i])"
+          [title]="dataPoint.date + ': ' + (selectedMetric === 'sales' ? formatNumber(dataPoint.value) : formatCurrency(dataPoint.value))"
+        >
+          <div class="bar-tooltip">
+            <div class="tooltip-date">{{ dataPoint.date }}</div>
+            <div class="tooltip-value">
+              {{ selectedMetric === 'sales' ? formatNumber(dataPoint.value) : formatCurrency(dataPoint.value) }}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-labels">
+        <div 
+          *ngFor="let dataPoint of chartData" 
+          class="chart-label"
+        >
+          {{ dataPoint.date | date:'MMM dd' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights Section -->
+  <div class="insights-section" *ngIf="!loading && trends.length > 0">
+    <h3>Key Insights</h3>
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-icon">📈</div>
+        <div class="insight-content">
+          <h4>Best Performing Metric</h4>
+          <p>{{ getBestPerformingMetric() }}</p>
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <div class="insight-icon">🎯</div>
+        <div class="insight-content">
+          <h4>Growth Rate</h4>
+          <p>{{ getGrowthRate() }}</p>
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <div class="insight-icon">📊</div>
+        <div class="insight-content">
+          <h4>Trend Direction</h4>
+          <p>{{ getTrendDirection() }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

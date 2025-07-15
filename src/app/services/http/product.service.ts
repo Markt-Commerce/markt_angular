@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, retry, tap, throwError } from 'rxjs';
 import { ApiStore } from '../apiSpecificData';
 import { ClassicResponse, Product } from '../../api/models';
 
@@ -10,34 +10,40 @@ import { ClassicResponse, Product } from '../../api/models';
 export class ProductService {
   private http = inject(HttpClient);
 
-  createProduct(product: Product): Observable<HttpResponse<ClassicResponse>> {
-    return this.http
-      .post<ClassicResponse>(
-        ApiStore.mergeEndpoint('products', 'new'),
-        product,
-        { observe: 'response' }
-      )
-      .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
-        catchError((err) => {
-          console.error(err);
-          return EMPTY;
-        })
-      );
+  getProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.apiUrl}/products`).pipe(
+      tap((data) => {
+        // Handle successful products retrieval
+      }),
+      catchError((err) => {
+        // Handle products retrieval error appropriately
+        return throwError(() => new Error('Failed to load products'));
+      })
+    );
   }
 
-  getProduct(productId: string): Observable<Product> {
-    return this.http
-      .get<Product>(ApiStore.mergeEndpoint('products', productId))
-      .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
-        catchError((err) => {
-          console.error(err);
-          return EMPTY;
-        })
-      );
+  getProductById(productId: string): Observable<Product> {
+    return this.http.get<Product>(`${this.apiUrl}/products/${productId}`).pipe(
+      tap((data) => {
+        // Handle successful product retrieval
+      }),
+      catchError((err) => {
+        // Handle product retrieval error appropriately
+        return throwError(() => new Error('Failed to load product details'));
+      })
+    );
+  }
+
+  createProduct(productData: any): Observable<Product> {
+    return this.http.post<Product>(`${this.apiUrl}/products`, productData).pipe(
+      tap((data) => {
+        // Handle successful product creation
+      }),
+      catchError((err) => {
+        // Handle product creation error appropriately
+        return throwError(() => new Error('Failed to create product'));
+      })
+    );
   }
 
   deleteProduct(productId: string): Observable<HttpResponse<ClassicResponse>> {
@@ -46,11 +52,13 @@ export class ProductService {
         observe: 'response',
       })
       .pipe(
-        tap((data) => console.log(data)),
+        tap((data) => {
+          // Handle successful product deletion
+        }),
         retry(3),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle product deletion error appropriately
+          return throwError(() => new Error('Failed to delete product'));
         })
       );
   }

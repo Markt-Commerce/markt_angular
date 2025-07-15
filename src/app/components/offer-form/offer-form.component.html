@@ -1,0 +1,121 @@
+<div class="offer-form-container">
+  <div class="form-header">
+    <h2>{{ isEditing ? 'Edit Offer' : 'Create New Offer' }}</h2>
+    <p class="form-subtitle">Fill in the details below to create your offer</p>
+  </div>
+
+  <form [formGroup]="offerForm" (ngSubmit)="onSubmit()" class="offer-form">
+    
+    <!-- Price Section -->
+    <div class="form-section">
+      <label for="price" class="form-label">Price *</label>
+      <div class="price-input-group">
+        <span class="currency-symbol">$</span>
+        <input
+          type="number"
+          id="price"
+          formControlName="price"
+          class="form-input price-input"
+          placeholder="0.00"
+          step="0.01"
+          min="0.01"
+        />
+      </div>
+      <div class="error-message" *ngIf="getErrorMessage('price')">
+        {{ getErrorMessage('price') }}
+      </div>
+    </div>
+
+    <!-- Quantity Section -->
+    <div class="form-section">
+      <label for="quantity" class="form-label">Quantity Available *</label>
+      <input
+        type="number"
+        id="quantity"
+        formControlName="quantity"
+        class="form-input"
+        placeholder="1"
+        min="1"
+      />
+      <div class="error-message" *ngIf="getErrorMessage('quantity')">
+        {{ getErrorMessage('quantity') }}
+      </div>
+    </div>
+
+    <!-- Condition Section -->
+    <div class="form-section">
+      <label for="condition" class="form-label">Item Condition *</label>
+      <select id="condition" formControlName="condition" class="form-select">
+        <option *ngFor="let condition of conditions" [value]="condition.value">
+          {{ condition.label }}
+        </option>
+      </select>
+      <div class="error-message" *ngIf="getErrorMessage('condition')">
+        {{ getErrorMessage('condition') }}
+      </div>
+    </div>
+
+    <!-- Delivery Time Section -->
+    <div class="form-section">
+      <label for="deliveryTime" class="form-label">Delivery Time *</label>
+      <select id="deliveryTime" formControlName="deliveryTime" class="form-select">
+        <option *ngFor="let time of deliveryTimes" [value]="time.value">
+          {{ time.label }}
+        </option>
+      </select>
+      <div class="error-message" *ngIf="getErrorMessage('deliveryTime')">
+        {{ getErrorMessage('deliveryTime') }}
+      </div>
+    </div>
+
+    <!-- Description Section -->
+    <div class="form-section">
+      <label for="description" class="form-label">Description *</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        class="form-textarea"
+        placeholder="Describe your item, include details about condition, features, and any relevant information..."
+        rows="4"
+      ></textarea>
+      <div class="error-message" *ngIf="getErrorMessage('description')">
+        {{ getErrorMessage('description') }}
+      </div>
+    </div>
+
+    <!-- Negotiable Toggle -->
+    <div class="form-section">
+      <div class="toggle-section">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            formControlName="isNegotiable"
+            class="toggle-checkbox"
+          />
+          <span class="toggle-slider"></span>
+          <span class="toggle-text">Price is negotiable</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="btn btn-secondary"
+        [disabled]="loading"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loading || offerForm.invalid"
+      >
+        <span *ngIf="loading" class="loading-spinner"></span>
+        {{ isEditing ? 'Update Offer' : 'Create Offer' }}
+      </button>
+    </div>
+  </form>
+</div> 

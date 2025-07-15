@@ -1,0 +1,353 @@
+.post-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar.small {
+  width: 32px;
+  height: 32px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.post-time {
+  font-size: 12px;
+  color: #666;
+}
+
+.post-actions .action-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.post-actions .action-btn:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.post-content {
+  padding: 16px;
+}
+
+.post-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.post-images {
+  margin-bottom: 16px;
+}
+
+.image-grid {
+  display: grid;
+  gap: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-grid.single {
+  grid-template-columns: 1fr;
+}
+
+.image-grid.double {
+  grid-template-columns: 1fr 1fr;
+}
+
+.image-grid.multiple {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.post-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.post-image:hover {
+  transform: scale(1.02);
+}
+
+.image-grid.multiple .post-image:first-child {
+  grid-column: 1 / 3;
+  height: 250px;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.post-product {
+  margin-top: 16px;
+}
+
+.product-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.product-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-info h5 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #333;
+}
+
+.product-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ff4757;
+  margin: 0 0 8px 0;
+}
+
+.view-product-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-product-btn:hover {
+  background: #ff3742;
+}
+
+.post-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  color: #666;
+}
+
+.stats-left {
+  display: flex;
+  gap: 16px;
+}
+
+.post-actions-bar {
+  display: flex;
+  padding: 8px 16px;
+}
+
+.post-actions-bar .action-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 12px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.post-actions-bar .action-btn:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.post-actions-bar .action-btn.liked {
+  color: #ff4757;
+}
+
+.post-actions-bar .action-btn.liked i {
+  color: #ff4757;
+}
+
+.comments-section {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px;
+}
+
+.comment-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.comment-input input {
+  flex: 1;
+  border: 1px solid #e9ecef;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.comment-input input:focus {
+  border-color: #ff4757;
+}
+
+.submit-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #ff3742;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment {
+  display: flex;
+  gap: 12px;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: #666;
+}
+
+.comment-text {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #333;
+  margin: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .post-header {
+    padding: 12px;
+  }
+  
+  .post-content {
+    padding: 12px;
+  }
+  
+  .post-stats {
+    padding: 8px 12px;
+  }
+  
+  .post-actions-bar {
+    padding: 4px 12px;
+  }
+  
+  .post-actions-bar .action-btn {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .comments-section {
+    padding: 12px;
+  }
+} 

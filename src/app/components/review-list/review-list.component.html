@@ -1,0 +1,183 @@
+<div class="review-list-container">
+  <!-- Review Summary Header -->
+  <div class="review-summary" *ngIf="reviews.length > 0">
+    <div class="summary-stats">
+      <div class="average-rating">
+        <div class="rating-number">{{ getAverageRating() }}</div>
+        <div class="rating-stars">
+          <span 
+            *ngFor="let star of [1,2,3,4,5]" 
+            class="star"
+            [class.filled]="star <= getAverageRating()"
+            [class.half]="star === Math.ceil(getAverageRating()) && getAverageRating() % 1 > 0"
+          >
+            ★
+          </span>
+        </div>
+        <div class="total-reviews">{{ reviews.length }} reviews</div>
+      </div>
+      
+      <div class="rating-distribution" *ngIf="showFilters">
+        <div 
+          *ngFor="let rating of [5,4,3,2,1]" 
+          class="rating-bar"
+          (click)="onRatingFilterChange(rating)"
+          [class.active]="selectedRating === rating"
+        >
+          <span class="rating-label">{{ rating }}★</span>
+          <div class="bar-container">
+            <div 
+              class="bar-fill" 
+              [style.width.%]="(getRatingDistribution()[rating] / reviews.length) * 100"
+            ></div>
+          </div>
+          <span class="rating-count">{{ getRatingDistribution()[rating] }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters and Sorting -->
+  <div class="review-filters" *ngIf="showFilters && reviews.length > 0">
+    <div class="filter-buttons">
+      <button 
+        *ngFor="let rating of [5,4,3,2,1]" 
+        class="filter-btn"
+        [class.active]="selectedRating === rating"
+        (click)="onRatingFilterChange(rating)"
+      >
+        {{ rating }}★
+      </button>
+      <button 
+        class="filter-btn clear-btn"
+        (click)="onRatingFilterChange(0)"
+        *ngIf="selectedRating > 0"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div class="sort-options">
+      <label class="sort-label">Sort by:</label>
+      <select 
+        class="sort-select" 
+        [value]="sortBy"
+        (change)="onSortChange($event.target.value)"
+      >
+        <option value="date">Most Recent</option>
+        <option value="rating">Highest Rated</option>
+        <option value="helpful">Most Helpful</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Loading reviews...</p>
+  </div>
+
+  <!-- No Reviews State -->
+  <div class="no-reviews" *ngIf="!loading && reviews.length === 0">
+    <div class="no-reviews-icon">
+      <i class="ph-note-pencil"></i>
+    </div>
+    <h3>No reviews yet</h3>
+    <p>Be the first to leave a review!</p>
+  </div>
+
+  <!-- Reviews List -->
+  <div class="reviews-container" *ngIf="!loading && filteredReviews.length > 0">
+    <div 
+      *ngFor="let review of filteredReviews" 
+      class="review-item"
+      [@fadeIn]
+    >
+      <div class="review-header">
+        <div class="reviewer-info">
+          <div class="avatar">
+            <img 
+              *ngIf="review.userAvatar" 
+              [src]="review.userAvatar" 
+              [alt]="review.userName"
+              class="user-avatar"
+            />
+            <div *ngIf="!review.userAvatar" class="avatar-placeholder">
+              {{ review.userName.charAt(0).toUpperCase() }}
+            </div>
+          </div>
+          <div class="user-details">
+            <div class="user-name">
+              {{ review.userName }}
+              <span *ngIf="review.isVerified" class="verified-badge">
+                <i class="ph-check-circle"></i>
+              </span>
+            </div>
+            <div class="review-date">
+              {{ review.date | date:'MMM dd, yyyy' }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="review-rating">
+          <div class="stars">
+            <span 
+              *ngFor="let star of [1,2,3,4,5]" 
+              class="star"
+              [class.filled]="star <= review.rating"
+            >
+              ★
+            </span>
+          </div>
+          <div class="rating-text" [style.color]="getRatingColor(review.rating)">
+            {{ getRatingText(review.rating) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="review-content">
+        <h4 *ngIf="review.title" class="review-title">{{ review.title }}</h4>
+        <p class="review-comment">{{ review.comment }}</p>
+      </div>
+
+      <div class="review-actions">
+        <button 
+          class="action-btn helpful-btn"
+          (click)="onHelpfulClick(review.id, true)"
+        >
+          <span class="action-icon">
+            <i class="ph-thumbs-up"></i>
+          </span>
+          Helpful ({{ review.helpful }})
+        </button>
+        
+        <button 
+          class="action-btn reply-btn"
+          (click)="onReplyToReview(review)"
+        >
+          <span class="action-icon">
+            <i class="ph-chat-circle"></i>
+          </span>
+          Reply
+        </button>
+        
+        <button 
+          class="action-btn report-btn"
+          (click)="onReportReview(review.id)"
+        >
+          <span class="action-icon">
+            <i class="ph-warning"></i>
+          </span>
+          Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load More Button -->
+  <div class="load-more-container" *ngIf="maxReviews && filteredReviews.length >= maxReviews && reviews.length > maxReviews">
+    <button class="load-more-btn">
+      Load More Reviews
+    </button>
+  </div>
+</div> 

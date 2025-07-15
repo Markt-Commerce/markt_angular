@@ -1,0 +1,148 @@
+<div class="feed-container">
+  <!-- Header Section -->
+  <div class="feed-header">
+    <div class="header-content">
+      <h1 class="feed-title">Discover</h1>
+      <p class="feed-subtitle">Find amazing products and connect with sellers</p>
+    </div>
+    
+    <!-- Search and Filter Bar -->
+    <div class="feed-controls">
+      <app-search-bar 
+        [placeholder]="'Search posts, products, or people...'"
+        (search)="onSearch($event)"
+        class="feed-search">
+      </app-search-bar>
+      
+      <app-filter-bar 
+        [categories]="categories"
+        (filterChange)="onFilterChange($event)"
+        class="feed-filter">
+      </app-filter-bar>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading your feed...</p>
+  </div>
+
+  <!-- Feed Content -->
+  <div *ngIf="!isLoading" class="feed-content">
+    <!-- Stories Section -->
+    <section class="stories-section">
+      <div class="section-header">
+        <h2 class="section-title">Stories</h2>
+        <button class="view-all-btn">View All</button>
+      </div>
+      
+      <app-story-list 
+        [stories]="stories()"
+        (storyClick)="onStoryClick($event)"
+        class="stories-list">
+      </app-story-list>
+    </section>
+
+    <!-- Posts Section -->
+    <section class="posts-section">
+      <div class="section-header">
+        <h2 class="section-title">Recent Posts</h2>
+        <div class="section-actions">
+          <button class="action-btn" title="Refresh">
+            <span class="action-icon">
+              <i class="ph-arrows-clockwise"></i>
+            </span>
+          </button>
+          <button class="action-btn" title="Sort">
+            <span class="action-icon">
+              <i class="ph-chart-bar"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Posts List -->
+      <div class="posts-list">
+        <div 
+          *ngFor="let post of posts()" 
+          class="post-item"
+          [@fadeInUp]>
+          <app-post-card 
+            [post]="post"
+            (like)="onLike($event)"
+            (comment)="onComment($event)"
+            (share)="onShare($event)">
+          </app-post-card>
+        </div>
+      </div>
+
+      <!-- Load More Button -->
+      <div class="load-more-container">
+        <button 
+          class="load-more-btn"
+          (click)="loadMorePosts()">
+          <span class="btn-icon">
+            <i class="ph-file-text"></i>
+          </span>
+          <span class="btn-text">Load More Posts</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Trending Section -->
+    <section class="trending-section">
+      <div class="section-header">
+        <h2 class="section-title">Trending Now</h2>
+        <button class="view-all-btn">View All</button>
+      </div>
+      
+      <div class="trending-grid">
+        <div class="trending-item" *ngFor="let i of [1,2,3,4]">
+          <div class="trending-card">
+            <div class="trending-image">
+              <img 
+                [src]="'assets/products/trending-' + i + '.jpg'" 
+                [alt]="'Trending product ' + i"
+                class="trending-img">
+              <div class="trending-overlay">
+                <span class="trending-badge">
+                  <i class="ph-fire"></i> Hot
+                </span>
+              </div>
+            </div>
+            <div class="trending-content">
+              <h3 class="trending-title">Vintage Designer Item {{ i }}</h3>
+              <p class="trending-price">${{ 150 + (i * 50) }}</p>
+              <p class="trending-seller">by Seller {{ i }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && posts().length === 0" class="empty-state">
+    <div class="empty-icon">
+      <i class="ph-envelope"></i>
+    </div>
+    <h3 class="empty-title">No posts yet</h3>
+    <p class="empty-description">
+      Follow some sellers or create your first post to see content here!
+    </p>
+    <button class="empty-action-btn">
+      <span class="btn-icon">
+        <i class="ph-plus"></i>
+      </span>
+      <span class="btn-text">Create Post</span>
+    </button>
+  </div>
+
+  <!-- Floating Action Button -->
+  <button class="fab-create-post" title="Create Post">
+    <span class="fab-icon">
+      <i class="ph-pencil"></i>
+    </span>
+  </button>
+</div> 

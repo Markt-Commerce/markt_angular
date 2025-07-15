@@ -54,8 +54,9 @@ export class OrderTabsComponent implements OnInit {
         this.loading = false;
       },
       error: (error: unknown): void => {
-        console.error('Error loading orders:', error);
+        // Handle order loading error appropriately
         this.loading = false;
+        // In production, this should show a user-friendly error message
       },
     });
   }

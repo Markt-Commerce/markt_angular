@@ -62,18 +62,16 @@
         <div>
           <input
             type="text"
-            placeholder="{{
-              accountType.value === 'buyer' ? 'Buyer Name' : 'Seller Name'
-            }}"
+            placeholder="{{ accountType?.value === 'buyer' ? 'Buyer Name' : 'Seller Name' }}"
             formControlName="name"
             class="input-field mt-4"
             name="name"
           />
-          @if(name.invalid && (name.dirty || name.touched)){
+          @if(name?.invalid && (name?.dirty || name?.touched)){
           <div class="error-message">
-            @if(name.hasError('required')){
+            @if(name?.hasError('required')){
             <div>Name is required</div>
-            } @if(name.hasError('minlength')){
+            } @if(name?.hasError('minlength')){
             <div>Name must be at least 3 characters</div>
             }
           </div>
@@ -87,11 +85,11 @@
             class="input-field mt-4"
             name="password"
           />
-          @if(password.invalid && (password.dirty || password.touched)){
+          @if(password?.invalid && (password?.dirty || password?.touched)){
           <div class="error-message">
-            @if(password.hasError('required')){
+            @if(password?.hasError('required')){
             <div>Password is required</div>
-            } @if(password.hasError('minlength')){
+            } @if(password?.hasError('minlength')){
             <div>Minimum password length is 6</div>
             }
           </div>
@@ -105,10 +103,9 @@
             class="input-field mt-4"
             name="confirmPassword"
           />
-          @if(signupForm.hasError('passwordsMismatch') && (confirmPassword.dirty
-          || confirmPassword.touched)){
+          @if(signupForm.hasError('passwordsMismatch') && (confirmPassword?.dirty || confirmPassword?.touched)){
           <div class="error-message">
-            @if(confirmPassword.hasError('required')){
+            @if(confirmPassword?.hasError('required')){
             <div>You must re-enter your password</div>
             } @if(signupForm.hasError('passwordsMismatch')){
             <div>Must be the same as the password you entered above</div>
@@ -128,11 +125,11 @@
             class="input-field mt-4"
             name="username"
           />
-          @if(username.invalid && (username.dirty || username.touched)){
+          @if(username?.invalid && (username?.dirty || username?.touched)){
           <div class="error-message">
-            @if(username.hasError('required')){
+            @if(username?.hasError('required')){
             <div>Username is required</div>
-            }@if(username.hasError('pattern')){
+            }@if(username?.hasError('pattern')){
             <div>
               Username must start with {{ "@" }} and can only contain letters,
               numbers, underscores, or dots.
@@ -149,11 +146,11 @@
             class="input-field mt-4"
             name="email"
           />
-          @if(email.invalid && (email.dirty || email.touched)){
+          @if(email?.invalid && (email?.dirty || email?.touched)){
           <div class="error-message">
-            @if(email.hasError('required')){
+            @if(email?.hasError('required')){
             <div>Email is required</div>
-            }@if(email.hasError('email')){
+            }@if(email?.hasError('email')){
             <div>Enter a valid email</div>
             }
           </div>
@@ -167,17 +164,17 @@
             class="input-field mt-4"
             name="phoneNumber"
           />
-          @if(phone.invalid && (phone.dirty || phone.touched)){
+          @if(phone?.invalid && (phone?.dirty || phone?.touched)){
           <div class="error-message">
-            @if(phone.hasError('required')){
+            @if(phone?.hasError('required')){
             <div>Phone number is required</div>
-            }@if(phone.hasError('pattern')){
+            }@if(phone?.hasError('pattern')){
             <div>Enter a valid phone number (e.g. 09157935312)</div>
             }
           </div>
           }
         </div>
-        @if(accountType.value==='seller'){
+        @if(accountType?.value==='seller'){
         <div>
           <input
             type="text"
@@ -257,11 +254,11 @@
             formControlName="cardNumber"
             name="cardNumber"
           />
-          @if(cardNumber.invalid && (cardNumber.dirty || cardNumber.touched)){
+          @if(cardNumber?.invalid && (cardNumber?.dirty || cardNumber?.touched)){
           <div class="error-message">
-            @if(cardNumber.hasError('required')){
+            @if(cardNumber?.hasError('required')){
             <div>Card number is required</div>
-            } @if(cardNumber.hasError('pattern')){
+            } @if(cardNumber?.hasError('pattern')){
             <div>Enter a valid card number</div>
             }
           </div>
@@ -275,11 +272,11 @@
             formControlName="cardExpiry"
             name="cardExpiry"
           />
-          @if(cardExpiry.invalid && (cardExpiry.dirty || cardExpiry.touched)){
+          @if(cardExpiry?.invalid && (cardExpiry?.dirty || cardExpiry?.touched)){
           <div class="error-message">
-            @if(cardExpiry.hasError('required')){
+            @if(cardExpiry?.hasError('required')){
             <div>Card expiry date is required</div>
-            } @if(cardExpiry.hasError('pattern')){
+            } @if(cardExpiry?.hasError('pattern')){
             <div>Enter a valid expiry date (MM/YY)</div>
             }
           </div>
@@ -293,11 +290,11 @@
             formControlName="cvv"
             name="cvv"
           />
-          @if(cvv.invalid && (cvv.dirty || cvv.touched)){
+          @if(cvv?.invalid && (cvv?.dirty || cvv?.touched)){
           <div class="error-message">
-            @if(cvv.hasError('required')){
+            @if(cvv?.hasError('required')){
             <div>CVV is required</div>
-            } @if(cvv.hasError('pattern')){
+            } @if(cvv?.hasError('pattern')){
             <div>Enter a valid 3-digit CVV</div>
             }
           </div>

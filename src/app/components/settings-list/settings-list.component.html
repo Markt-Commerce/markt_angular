@@ -1,0 +1,29 @@
+<div class="settings-list-container">
+  <div 
+    *ngFor="let option of options" 
+    class="settings-item" 
+    [class.disabled]="option.disabled"
+    (click)="onOptionClick(option)"
+  >
+    <div class="settings-icon">
+      <span *ngIf="option.icon; else defaultIcon">{{ option.icon }}</span>
+      <ng-template #defaultIcon>⚙️</ng-template>
+    </div>
+    <div class="settings-content">
+      <div class="settings-label">{{ option.label }}</div>
+      <div class="settings-description" *ngIf="option.description">{{ option.description }}</div>
+    </div>
+    <div class="settings-action" *ngIf="option.type === 'toggle'">
+      <label class="switch">
+        <input type="checkbox" [checked]="option.value" [disabled]="option.disabled" (click)="$event.stopPropagation(); onToggle(option)" />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-action" *ngIf="option.type === 'link'">
+      <span class="arrow">→</span>
+    </div>
+    <div class="settings-action" *ngIf="option.type === 'action'">
+      <button class="action-btn" [disabled]="option.disabled" (click)="$event.stopPropagation(); onOptionClick(option)">Go</button>
+    </div>
+  </div>
+</div> 

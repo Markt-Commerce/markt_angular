@@ -1,0 +1,105 @@
+<div class="listing-card">
+  <div class="listing-header">
+    <div class="listing-status" [class]="listing.status">
+      <span class="status-badge">{{ listing.status }}</span>
+    </div>
+    <div class="listing-actions">
+      <button class="action-btn" (click)="onEdit()" *ngIf="canEdit">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="action-btn" (click)="onDuplicate()" *ngIf="canDuplicate">
+        <i class="fas fa-copy"></i>
+      </button>
+      <button class="action-btn danger" (click)="onDelete()" *ngIf="canDelete">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+  
+  <div class="listing-content">
+    <div class="product-image">
+      <img [src]="listing.product.image" [alt]="listing.product.name" />
+      <div class="image-overlay">
+        <button class="view-btn" (click)="onView()">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+      <div class="product-badges">
+        <span *ngIf="listing.product.discount" class="discount-badge">-{{ listing.product.discount }}%</span>
+        <span *ngIf="listing.product.isNew" class="new-badge">New</span>
+        <span *ngIf="listing.product.isFeatured" class="featured-badge">Featured</span>
+      </div>
+    </div>
+    
+    <div class="listing-info">
+      <h3 class="product-name">{{ listing.product.name }}</h3>
+      <p class="product-description">{{ listing.product.description }}</p>
+      
+      <div class="product-meta">
+        <div class="meta-item">
+          <i class="fas fa-tag"></i>
+          <span>{{ listing.product.category }}</span>
+        </div>
+        <div class="meta-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>{{ listing.location }}</span>
+        </div>
+        <div class="meta-item">
+          <i class="fas fa-calendar"></i>
+          <span>{{ formatDate(listing.createdAt) }}</span>
+        </div>
+      </div>
+      
+      <div class="pricing-info">
+        <div class="price-section">
+          <span class="current-price">${{ listing.product.price }}</span>
+          <span *ngIf="listing.product.originalPrice" class="original-price">${{ listing.product.originalPrice }}</span>
+        </div>
+        <div class="stock-info">
+          <span class="stock-label">Stock:</span>
+          <span class="stock-amount" [class.low]="listing.product.stock < 10">{{ listing.product.stock }} units</span>
+        </div>
+      </div>
+      
+      <div class="performance-stats">
+        <div class="stat-item">
+          <i class="fas fa-eye"></i>
+          <span>{{ listing.views }} views</span>
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-heart"></i>
+          <span>{{ listing.favorites }} favorites</span>
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-shopping-cart"></i>
+          <span>{{ listing.sales }} sales</span>
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-star"></i>
+          <span>{{ listing.rating }} ({{ listing.reviews }} reviews)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="listing-footer">
+    <div class="listing-actions-bar">
+      <button class="primary-btn" (click)="onPromote()" *ngIf="canPromote">
+        <i class="fas fa-rocket"></i>
+        Promote
+      </button>
+      <button class="secondary-btn" (click)="onViewAnalytics()">
+        <i class="fas fa-chart-line"></i>
+        Analytics
+      </button>
+      <button class="secondary-btn" (click)="onShare()">
+        <i class="fas fa-share"></i>
+        Share
+      </button>
+    </div>
+    
+    <div class="listing-tags" *ngIf="listing.tags && listing.tags.length > 0">
+      <span class="tag" *ngFor="let tag of listing.tags">{{ tag }}</span>
+    </div>
+  </div>
+</div> 

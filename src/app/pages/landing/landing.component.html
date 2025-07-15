@@ -1,0 +1,355 @@
+<div class="landing-container">
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <h2 class="logo-text">Markt</h2>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-btn secondary" (click)="goToLogin()">Sign In</button>
+        <button class="nav-btn primary" (click)="goToSignup()">Get Started</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-background">
+      <div class="hero-image"></div>
+      <div class="gradient-overlay"></div>
+      <div class="floating-elements">
+        <div class="floating-element element-1"></div>
+        <div class="floating-element element-2"></div>
+        <div class="floating-element element-3"></div>
+      </div>
+    </div>
+    
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-badge">
+          <i class="ph-users"></i>
+          <span>Join 10,000+ students & sellers</span>
+        </div>
+        
+        <h1 class="hero-title">
+          The <span class="gradient-text">Social-First</span><br>
+          Marketplace for Students
+        </h1>
+        
+        <p class="hero-subtitle">
+          Buy, sell, and connect with your campus community. Trust through social connections, 
+          live selling, and verified profiles. Start your entrepreneurial journey today.
+        </p>
+        
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">50+</span>
+            <span class="stat-label">Campus Communities</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">10K+</span>
+            <span class="stat-label">Active Users</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">$500K+</span>
+            <span class="stat-label">Total Sales</span>
+          </div>
+        </div>
+        
+        <div class="hero-actions">
+          <button class="cta-primary" (click)="goToSignup()">
+            <i class="ph-rocket"></i>
+            Start Selling Today
+          </button>
+          <button class="cta-secondary" (click)="goToMarketplace()">
+            <i class="ph-magnifying-glass"></i>
+            Browse Marketplace
+          </button>
+        </div>
+        
+        <div class="hero-trust">
+          <div class="trust-badges">
+            <div class="trust-badge">
+              <i class="ph-shield-check"></i>
+              <span>Verified Sellers</span>
+            </div>
+            <div class="trust-badge">
+              <i class="ph-chat-circle"></i>
+              <span>Live Chat</span>
+            </div>
+            <div class="trust-badge">
+              <i class="ph-credit-card"></i>
+              <span>Secure Payments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="hero-visual">
+        <div class="hero-mockup">
+          <div class="mockup-screen">
+            <div class="mockup-header">
+              <div class="mockup-nav">
+                <i class="ph-house"></i>
+                <i class="ph-shopping-bag"></i>
+                <i class="ph-chat-circle"></i>
+                <i class="ph-user-circle"></i>
+              </div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-post">
+                <div class="mockup-avatar"></div>
+                <div class="mockup-text">
+                  <div class="mockup-line"></div>
+                  <div class="mockup-line short"></div>
+                </div>
+              </div>
+              <div class="mockup-product">
+                <div class="mockup-image"></div>
+                <div class="mockup-details">
+                  <div class="mockup-title"></div>
+                  <div class="mockup-price"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="floating-cards">
+            <div class="floating-card card-1">
+              <div class="card-icon">
+                <i class="ph-shopping-bag"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Shop Local</span>
+                <span class="card-subtitle">Find unique items from your campus community</span>
+              </div>
+            </div>
+            
+            <div class="floating-card card-2">
+              <div class="card-icon">
+                <i class="ph-chat-circle"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Chat & Connect</span>
+                <span class="card-subtitle">Build trust through real conversations</span>
+              </div>
+            </div>
+            
+            <div class="floating-card card-3">
+              <div class="card-icon">
+                <i class="ph-currency-dollar"></i>
+              </div>
+              <div class="card-content">
+                <span class="card-title">Earn Money</span>
+                <span class="card-subtitle">Turn your skills into income</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Why Students Choose Markt</h2>
+        <p class="section-subtitle">Built for the next generation of entrepreneurs</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="ph-handshake"></i>
+          </div>
+          <h3>Trust Through Social</h3>
+          <p>Build credibility through social connections, verified profiles, and community reputation</p>
+          <div class="feature-benefits">
+            <span class="benefit">Verified Profiles</span>
+            <span class="benefit">Social Proof</span>
+            <span class="benefit">Community Reviews</span>
+          </div>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="ph-video-camera"></i>
+          </div>
+          <h3>Live Selling</h3>
+          <p>Go live and sell directly to your community with real-time interactions</p>
+          <div class="feature-benefits">
+            <span class="benefit">Live Streaming</span>
+            <span class="benefit">Real-time Chat</span>
+            <span class="benefit">Instant Sales</span>
+          </div>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="ph-graduation-cap"></i>
+          </div>
+          <h3>Student-Focused</h3>
+          <p>Designed specifically for students and microbusinesses to succeed</p>
+          <div class="feature-benefits">
+            <span class="benefit">Campus Communities</span>
+            <span class="benefit">Student Discounts</span>
+            <span class="benefit">Flexible Hours</span>
+          </div>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="ph-house"></i>
+          </div>
+          <h3>Local First</h3>
+          <p>Start with your campus, expand to your city, then scale globally</p>
+          <div class="feature-benefits">
+            <span class="benefit">Campus Networks</span>
+            <span class="benefit">Local Delivery</span>
+            <span class="benefit">Community Events</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof Section -->
+  <section class="social-proof-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Trusted by Students Worldwide</h2>
+        <p class="section-subtitle">Join thousands of successful student entrepreneurs</p>
+      </div>
+      
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <p>"Markt helped me start my vintage clothing business. The community is amazing!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar"></div>
+            <div class="author-info">
+              <span class="author-name">Sarah Chen</span>
+              <span class="author-title">Fashion Entrepreneur</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <p>"Live selling changed everything. I can connect with buyers in real-time!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar"></div>
+            <div class="author-info">
+              <span class="author-name">Marcus Johnson</span>
+              <span class="author-title">Tech Reseller</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <p>"The trust system is incredible. I feel safe buying and selling here."</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar"></div>
+            <div class="author-info">
+              <span class="author-name">Emma Rodriguez</span>
+              <span class="author-title">Artisan Seller</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <div class="cta-badge">
+          <i class="ph-star"></i>
+          <span>Join the Revolution</span>
+        </div>
+        
+        <h2>Ready to Start Your Entrepreneurial Journey?</h2>
+        <p>Connect with your campus community, build your brand, and start earning today</p>
+        
+        <div class="cta-actions">
+          <button class="cta-primary" (click)="goToSignup()">
+            <i class="ph-rocket"></i>
+            Create Your Account
+          </button>
+          <button class="cta-secondary" (click)="goToMarketplace()">
+            <i class="ph-magnifying-glass"></i>
+            Explore Marketplace
+          </button>
+        </div>
+        
+        <div class="cta-features">
+          <div class="cta-feature">
+            <i class="ph-check-circle"></i>
+            <span>Free to join</span>
+          </div>
+          <div class="cta-feature">
+            <i class="ph-check-circle"></i>
+            <span>No monthly fees</span>
+          </div>
+          <div class="cta-feature">
+            <i class="ph-check-circle"></i>
+            <span>Instant setup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <h3 class="footer-logo">Markt</h3>
+          <p>The social-first marketplace for students</p>
+        </div>
+        
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Platform</h4>
+            <a href="#">How it Works</a>
+            <a href="#">Safety & Trust</a>
+            <a href="#">Live Selling</a>
+            <a href="#">Community Guidelines</a>
+          </div>
+          
+          <div class="footer-column">
+            <h4>Support</h4>
+            <a href="#">Help Center</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Student Resources</a>
+            <a href="#">Seller Guide</a>
+          </div>
+          
+          <div class="footer-column">
+            <h4>Company</h4>
+            <a href="#">About Us</a>
+            <a href="#">Careers</a>
+            <a href="#">Press</a>
+            <a href="#">Blog</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Markt. All rights reserved.</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div> 

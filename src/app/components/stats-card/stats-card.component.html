@@ -1,0 +1,25 @@
+<div 
+  class="stats-card-container {{ getSizeClass() }}" 
+  [class.clickable]="clickable" 
+  (click)="onCardClick()"
+  [style.borderColor]="getCardColor()"
+>
+  <div class="icon-wrapper" [style.background]="getIconBackground()">
+    <span *ngIf="stat.icon; else defaultIcon" class="stat-icon">{{ stat.icon }}</span>
+    <ng-template #defaultIcon>
+      <span class="stat-icon">📊</span>
+    </ng-template>
+  </div>
+  <div class="stats-content">
+    <div class="stats-title">{{ stat.title }}</div>
+    <div class="stats-value">{{ getFormattedValue() }}</div>
+    <div class="stats-change" [style.color]="getChangeColor()" *ngIf="stat.change !== undefined">
+      <span class="change-icon">{{ getChangeIcon() }}</span>
+      <span class="change-text">{{ getChangeText() }}</span>
+    </div>
+    <div class="stats-description" *ngIf="stat.description">{{ stat.description }}</div>
+  </div>
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loading-spinner"></div>
+  </div>
+</div> 

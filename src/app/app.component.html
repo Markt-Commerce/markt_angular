@@ -1,7 +1,121 @@
+<div class="app-container">
+  <!-- Header - Only show on authenticated pages -->
+  <header class="app-header" *ngIf="showHeader()">
+    <div class="header-content">
+      <div class="header-left">
+        <button class="menu-toggle" (click)="navigationService.toggleMobileMenu()">
+          <span class="menu-icon">
+            <i class="ph-list"></i>
+          </span>
+        </button>
+        <div class="logo">
+          <h1>Markt</h1>
+        </div>
+      </div>
+      
+      <div class="header-center">
+        <app-search-bar 
+          [placeholder]="'Search products, sellers, or posts...'"
+          (search)="onSearch($event)">
+        </app-search-bar>
+      </div>
+      
+      <div class="header-right">
+        <button class="header-action" (click)="navigationService.goToChat()">
+          <span class="action-icon">
+            <i class="ph-chat-circle"></i>
+          </span>
+          <span class="action-badge" *ngIf="unreadMessages() > 0">{{ unreadMessages() }}</span>
+        </button>
+        
+        <button class="header-action" (click)="navigationService.goToNotifications()">
+          <span class="action-icon">
+            <i class="ph-bell"></i>
+          </span>
+          <span class="action-badge" *ngIf="unreadNotifications() > 0">{{ unreadNotifications() }}</span>
+        </button>
+        
+        <button class="header-action" (click)="navigationService.goToCart()">
+          <span class="action-icon">
+            <i class="ph-shopping-cart"></i>
+          </span>
+          <span class="action-badge" *ngIf="cartItemCount() > 0">{{ cartItemCount() }}</span>
+        </button>
+        
+        <div class="user-menu" (click)="navigationService.goToMyAccount()">
+          <img 
+            [src]="userAvatar() || 'assets/icons/default-avatar.png'" 
+            [alt]="userName()"
+            class="user-avatar"
+            *ngIf="userAvatar(); else defaultAvatar">
+          <ng-template #defaultAvatar>
+            <div class="user-avatar-placeholder">{{ userInitials() }}</div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </header>
 
-<!-- 
-    There are going to be checks here to determine if the header is going to show here or not.... 
-    In fact I do not think the header or footer is supposed to show in the app... just the nav bar
- -->
- 
- <router-outlet></router-outlet>
+  <!-- Main Content -->
+  <main class="app-main" [class.no-header]="!showHeader()">
+    <div class="main-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- Mobile Navigation - Only show on authenticated pages -->
+  <nav class="mobile-nav" [class.open]="navigationService.isMobileMenuOpen()" *ngIf="showHeader()">
+    <div class="mobile-nav-header">
+      <h3>Navigation</h3>
+      <button class="close-menu" (click)="navigationService.closeMobileMenu()">
+        <span>
+          <i class="ph-x"></i>
+        </span>
+      </button>
+    </div>
+    
+    <div class="mobile-nav-items">
+      <div 
+        *ngFor="let item of navigationService.navigationItems()"
+        class="mobile-nav-item"
+        [class.active]="item.isActive"
+        (click)="navigationService.navigateTo(item.route)">
+        <span class="nav-icon">
+          <i [class]="item.icon"></i>
+        </span>
+        <span class="nav-label">{{ item.label }}</span>
+        <span class="nav-badge" *ngIf="item.badge">{{ item.badge }}</span>
+      </div>
+    </div>
+    
+    <div class="mobile-nav-footer">
+      <button class="nav-action" (click)="navigationService.goToSettings()">
+        <span class="action-icon">
+          <i class="ph-gear"></i>
+        </span>
+        <span>Settings</span>
+      </button>
+      <button class="nav-action" (click)="logout()">
+        <span class="action-icon">
+          <i class="ph-sign-out"></i>
+        </span>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation Overlay - Only show on authenticated pages -->
+  <div 
+    class="mobile-nav-overlay" 
+    [class.open]="navigationService.isMobileMenuOpen()"
+    (click)="navigationService.closeMobileMenu()"
+    *ngIf="showHeader()">
+  </div>
+
+  <!-- Floating Action Button - Only show on authenticated pages -->
+  <button class="fab" (click)="navigationService.navigateTo('/create-post')" *ngIf="showHeader()">
+    <span class="fab-icon">
+      <i class="ph-plus"></i>
+    </span>
+  </button>
+</div>

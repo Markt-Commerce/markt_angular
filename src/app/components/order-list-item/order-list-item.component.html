@@ -1,0 +1,130 @@
+<div class="order-list-item" [class.urgent]="order.isUrgent" [class.completed]="order.status === 'completed'">
+  <div class="order-header">
+    <div class="order-info">
+      <div class="order-id">
+        <span class="label">Order #</span>
+        <span class="value">{{ order.orderId }}</span>
+      </div>
+      <div class="order-date">
+        <span class="label">Placed</span>
+        <span class="value">{{ formatDate(order.orderDate) }}</span>
+      </div>
+    </div>
+    <div class="order-status">
+      <div class="status-badge" [class]="order.status">
+        <i [class]="getStatusIcon()"></i>
+        <span>{{ getStatusText() }}</span>
+      </div>
+      <div class="order-actions">
+        <button class="action-btn" (click)="onViewDetails()" title="View Details">
+          <i class="fas fa-eye"></i>
+        </button>
+        <button class="action-btn" (click)="onTrack()" title="Track Order">
+          <i class="fas fa-truck"></i>
+        </button>
+        <button class="action-btn" (click)="onContact()" title="Contact">
+          <i class="fas fa-comment"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="order-content">
+    <div class="order-items">
+      <div class="item" *ngFor="let item of order.items">
+        <div class="item-image">
+          <img [src]="item.image" [alt]="item.name" />
+          <div class="item-quantity">{{ item.quantity }}x</div>
+        </div>
+        <div class="item-details">
+          <h4 class="item-name">{{ item.name }}</h4>
+          <p class="item-variant">{{ item.variant }}</p>
+          <div class="item-price">
+            <span class="price">${{ item.price }}</span>
+            <span class="total">Total: ${{ item.price * item.quantity }}</span>
+          </div>
+        </div>
+        <div class="item-status">
+          <span class="status-text" [class]="item.status">{{ item.status }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="order-summary">
+      <div class="summary-row">
+        <span class="label">Subtotal:</span>
+        <span class="value">${{ order.subtotal }}</span>
+      </div>
+      <div class="summary-row" *ngIf="order.discount > 0">
+        <span class="label">Discount:</span>
+        <span class="value discount">-${{ order.discount }}</span>
+      </div>
+      <div class="summary-row" *ngIf="order.shipping > 0">
+        <span class="label">Shipping:</span>
+        <span class="value">${{ order.shipping }}</span>
+      </div>
+      <div class="summary-row total">
+        <span class="label">Total:</span>
+        <span class="value">${{ order.total }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="order-footer">
+    <div class="order-meta">
+      <div class="meta-item">
+        <i class="fas fa-user"></i>
+        <span>{{ order.seller.name }}</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>{{ order.shippingAddress.city }}, {{ order.shippingAddress.state }}</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-calendar"></i>
+        <span>Est. Delivery: {{ formatDate(order.estimatedDelivery) }}</span>
+      </div>
+    </div>
+    
+    <div class="order-timeline" *ngIf="order.timeline && order.timeline.length > 0">
+      <div class="timeline-item" *ngFor="let event of order.timeline; let i = index" [class.active]="i === order.timeline.length - 1">
+        <div class="timeline-icon">
+          <i [class]="event.icon"></i>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-title">{{ event.title }}</div>
+          <div class="timeline-time">{{ formatTime(event.timestamp) }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="order-actions-bar">
+      <button class="primary-btn" (click)="onPrimaryAction()" *ngIf="order.primaryAction">
+        <i [class]="order.primaryAction.icon"></i>
+        {{ order.primaryAction.text }}
+      </button>
+      <button class="secondary-btn" (click)="onSecondaryAction()" *ngIf="order.secondaryAction">
+        <i [class]="order.secondaryAction.icon"></i>
+        {{ order.secondaryAction.text }}
+      </button>
+      <button class="danger-btn" (click)="onCancel()" *ngIf="canCancel">
+        <i class="fas fa-times"></i>
+        Cancel Order
+      </button>
+    </div>
+  </div>
+  
+  <!-- Urgent Badge -->
+  <div class="urgent-badge" *ngIf="order.isUrgent">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Urgent</span>
+  </div>
+  
+  <!-- Progress Bar -->
+  <div class="progress-bar" *ngIf="order.progress">
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="order.progress"></div>
+    </div>
+    <span class="progress-text">{{ order.progress }}% Complete</span>
+  </div>
+</div> 

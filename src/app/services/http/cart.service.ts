@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { ApiStore } from '../apiSpecificData';
 import { ClassicResponse, Cart } from '../../api/models';
 
@@ -8,45 +9,46 @@ import { ClassicResponse, Cart } from '../../api/models';
   providedIn: 'root',
 })
 export class CartService {
-  private http = inject(HttpClient);
+  private apiUrl = ApiStore.apiUrl;
 
-  createCart(cartItem: Cart): Observable<HttpResponse<ClassicResponse>> {
-    return this.http
-      .post<ClassicResponse>(ApiStore.mergeEndpoint('cart', 'new'), cartItem, {
-        observe: 'response',
-      })
-      .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
-        catchError((err) => {
-          console.error(err);
-          return EMPTY;
-        })
-      );
-  }
+  constructor(private http: HttpClient) {}
 
-  getBuyerCart(buyerId: string): Observable<Cart[]> {
-    return this.http.get<Cart[]>(ApiStore.mergeEndpoint('cart', buyerId)).pipe(
-      tap((data) => console.log(data)),
-      retry(3),
+  getCart(): Observable<Cart> {
+    return this.http.get<Cart>(`${this.apiUrl}/cart`).pipe(
+      tap((data) => {
+        // Handle successful cart retrieval
+      }),
       catchError((err) => {
-        console.error(err);
-        return EMPTY;
+        // Handle cart retrieval error appropriately
+        return throwError(() => new Error('Failed to load cart'));
       })
     );
   }
 
-  removeCart(cartId: string): Observable<HttpResponse<ClassicResponse>> {
+  addToCart(productId: string, quantity: number): Observable<Cart> {
     return this.http
-      .delete<ClassicResponse>(ApiStore.mergeEndpoint('cart', cartId), {
-        observe: 'response',
-      })
+      .post<Cart>(`${this.apiUrl}/cart/add`, { productId, quantity })
       .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
+        tap((data) => {
+          // Handle successful add to cart
+        }),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle add to cart error appropriately
+          return throwError(() => new Error('Failed to add item to cart'));
+        })
+      );
+  }
+
+  removeFromCart(productId: string): Observable<ClassicResponse> {
+    return this.http
+      .delete<ClassicResponse>(`${this.apiUrl}/cart/${productId}`)
+      .pipe(
+        tap((data) => {
+          // Handle successful cart removal
+        }),
+        catchError((err) => {
+          // Handle cart removal error appropriately
+          return throwError(() => new Error('Failed to remove item from cart'));
         })
       );
   }

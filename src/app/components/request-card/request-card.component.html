@@ -1,0 +1,90 @@
+<div class="request-card">
+  <div class="request-header">
+    <div class="buyer-info">
+      <img [src]="request.buyer.avatar" [alt]="request.buyer.name" class="buyer-avatar" />
+      <div class="buyer-details">
+        <h4 class="buyer-name">{{ request.buyer.name }}</h4>
+        <span class="request-time">{{ formatTime(request.timestamp) }}</span>
+      </div>
+    </div>
+    <div class="request-status" [class]="request.status">
+      <span class="status-badge">{{ request.status }}</span>
+    </div>
+  </div>
+  
+  <div class="request-content">
+    <div class="product-details">
+      <div class="product-image">
+        <img [src]="request.product.image" [alt]="request.product.name" />
+      </div>
+      <div class="product-info">
+        <h5 class="product-name">{{ request.product.name }}</h5>
+        <p class="product-description">{{ request.product.description }}</p>
+        <div class="product-specs">
+          <span class="spec-item" *ngFor="let spec of request.product.specifications">
+            {{ spec }}
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="request-details">
+      <div class="budget-info">
+        <span class="budget-label">Budget:</span>
+        <span class="budget-amount">${{ request.budget.min }} - ${{ request.budget.max }}</span>
+      </div>
+      
+      <div class="timeline-info">
+        <span class="timeline-label">Timeline:</span>
+        <span class="timeline-amount">{{ request.timeline }} days</span>
+      </div>
+      
+      <div class="request-description">
+        <h6>Request Details:</h6>
+        <p>{{ request.description }}</p>
+      </div>
+      
+      <div class="request-tags" *ngIf="request.tags && request.tags.length > 0">
+        <span class="tag" *ngFor="let tag of request.tags">{{ tag }}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="request-actions">
+    <button class="primary-btn" (click)="onMakeOffer()" *ngIf="canMakeOffer">
+      <i class="fas fa-gavel"></i>
+      Make Offer
+    </button>
+    <button class="secondary-btn" (click)="onViewDetails()">
+      <i class="fas fa-eye"></i>
+      View Details
+    </button>
+    <button class="secondary-btn" (click)="onContactBuyer()" *ngIf="canContact">
+      <i class="fas fa-envelope"></i>
+      Contact Buyer
+    </button>
+    <button class="secondary-btn" (click)="onSave()" *ngIf="!isSaved">
+      <i class="fas fa-bookmark"></i>
+      Save
+    </button>
+    <button class="secondary-btn saved" (click)="onUnsave()" *ngIf="isSaved">
+      <i class="fas fa-bookmark"></i>
+      Saved
+    </button>
+  </div>
+  
+  <div class="request-stats">
+    <div class="stat-item">
+      <i class="fas fa-eye"></i>
+      <span>{{ request.views }} views</span>
+    </div>
+    <div class="stat-item">
+      <i class="fas fa-gavel"></i>
+      <span>{{ request.offers }} offers</span>
+    </div>
+    <div class="stat-item">
+      <i class="fas fa-clock"></i>
+      <span>{{ getTimeLeft() }} left</span>
+    </div>
+  </div>
+</div> 

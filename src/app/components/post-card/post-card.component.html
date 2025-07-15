@@ -1,0 +1,70 @@
+<div class="post-card">
+  <!-- Post Header -->
+  <div class="post-header">
+    <div class="user-info">
+      <img [src]="post.userAvatar" [alt]="post.userName" class="user-avatar" />
+      <div class="user-details">
+        <h4 class="user-name">{{ post.userName }}</h4>
+        <span class="post-time">{{ formatTime(post.createdAt) }}</span>
+      </div>
+    </div>
+    <button class="more-options" (click)="onMoreOptions()">
+      <span>⋯</span>
+    </button>
+  </div>
+
+  <!-- Post Content -->
+  <div class="post-content">
+    <p class="post-text">{{ post.content }}</p>
+    
+    <!-- Post Images -->
+    <div class="post-images" *ngIf="post.images.length > 0">
+      <div class="image-grid" [class.single]="post.images.length === 1" [class.multiple]="post.images.length > 1">
+        <div 
+          *ngFor="let image of post.images.slice(0, 3); let i = index"
+          class="image-container"
+          [class.overlay]="post.images.length > 3 && i === 2">
+          <img [src]="image" [alt]="'Post image ' + (i + 1)" class="post-image" />
+          <div class="image-overlay" *ngIf="post.images.length > 3 && i === 2">
+            <span class="more-count">+{{ post.images.length - 3 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Actions -->
+  <div class="post-actions">
+    <button class="action-btn" (click)="onLike()" [class.liked]="isLiked">
+      <span class="action-icon">
+        <i class="ph-heart"></i>
+      </span>
+      <span class="action-text">{{ post.likes }}</span>
+    </button>
+    
+    <button class="action-btn" (click)="onComment()">
+      <span class="action-icon">
+        <i class="ph-chat-circle"></i>
+      </span>
+      <span class="action-text">{{ post.comments.length }}</span>
+    </button>
+    
+    <button class="action-btn" (click)="onShare()">
+      <span class="action-icon">
+        <i class="ph-share"></i>
+      </span>
+      <span class="action-text">{{ post.shares }}</span>
+    </button>
+  </div>
+
+  <!-- Comments Preview -->
+  <div class="comments-preview" *ngIf="post.comments.length > 0">
+    <div class="comment" *ngFor="let comment of post.comments.slice(0, 2)">
+      <span class="comment-user">{{ comment.userName }}</span>
+      <span class="comment-text">{{ comment.content }}</span>
+    </div>
+    <button class="view-all-comments" *ngIf="post.comments.length > 2">
+      View all {{ post.comments.length }} comments
+    </button>
+  </div>
+</div> 

@@ -1,0 +1,147 @@
+<div class="comment-box">
+  <div class="comment-header">
+    <div class="user-info">
+      <img [src]="currentUser.avatar" [alt]="currentUser.name" class="user-avatar" />
+      <div class="user-details">
+        <span class="user-name">{{ currentUser.name }}</span>
+        <span class="comment-type">{{ commentType }}</span>
+      </div>
+    </div>
+    <div class="comment-actions">
+      <button class="action-btn" (click)="onAttachImage()" title="Attach Image">
+        <i class="ph-image"></i>
+      </button>
+      <button class="action-btn" (click)="onAttachFile()" title="Attach File">
+        <i class="ph-paperclip"></i>
+      </button>
+      <button class="action-btn" (click)="onEmoji()" title="Add Reaction">
+        <i class="ph-smiley"></i>
+      </button>
+    </div>
+  </div>
+  
+  <div class="comment-input-container">
+    <textarea 
+      #commentInput
+      [(ngModel)]="commentText"
+      (input)="onTextChange()"
+      (keydown)="onKeyDown($event)"
+      placeholder="Write your comment..."
+      class="comment-input"
+      rows="3"
+      maxlength="500"
+    ></textarea>
+    
+    <div class="input-footer">
+      <div class="input-actions">
+        <button 
+          class="mention-btn" 
+          (click)="onMention()"
+          *ngIf="showMentionButton"
+        >
+          <i class="ph-at"></i>
+          Mention
+        </button>
+        <button 
+          class="hashtag-btn" 
+          (click)="onHashtag()"
+          *ngIf="showHashtagButton"
+        >
+          <i class="ph-hash"></i>
+          Hashtag
+        </button>
+      </div>
+      
+      <div class="input-stats">
+        <span class="char-count" [class.warning]="charCount > 400">
+          {{ charCount }}/500
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="attachments" *ngIf="attachments.length > 0">
+    <div class="attachment-item" *ngFor="let attachment of attachments; let i = index">
+      <div class="attachment-preview">
+        <img *ngIf="attachment.type === 'image'" [src]="attachment.url" [alt]="attachment.name" />
+        <div *ngIf="attachment.type === 'file'" class="file-preview">
+          <i class="ph-file"></i>
+          <span>{{ attachment.name }}</span>
+        </div>
+      </div>
+      <button class="remove-attachment" (click)="onRemoveAttachment(i)">
+        <i class="ph-x"></i>
+      </button>
+    </div>
+  </div>
+  
+  <div class="comment-footer">
+    <div class="comment-options">
+      <label class="option-item">
+        <input type="checkbox" [(ngModel)]="isPrivate" />
+        <span class="option-label">Private comment</span>
+      </label>
+      <label class="option-item" *ngIf="showAnonymousOption">
+        <input type="checkbox" [(ngModel)]="isAnonymous" />
+        <span class="option-label">Post anonymously</span>
+      </label>
+    </div>
+    
+    <div class="comment-submit">
+      <button 
+        class="cancel-btn" 
+        (click)="onCancel()"
+        *ngIf="showCancelButton"
+      >
+        Cancel
+      </button>
+      <button 
+        class="submit-btn" 
+        [disabled]="!canSubmit"
+        (click)="onSubmit()"
+      >
+        <i class="ph-paper-plane-right"></i>
+        {{ submitButtonText }}
+      </button>
+    </div>
+  </div>
+  
+  <!-- Reaction Picker Modal -->
+  <div class="emoji-modal" *ngIf="showEmojiPicker">
+    <div class="emoji-content">
+      <div class="emoji-header">
+        <h3>Select Reaction</h3>
+        <button class="close-btn" (click)="onCloseEmoji()">
+          <i class="ph-x"></i>
+        </button>
+      </div>
+      <div class="emoji-grid">
+        <button 
+          *ngFor="let reaction of reactions" 
+          class="emoji-item"
+          (click)="onSelectEmoji(reaction.icon)"
+          [style.color]="reaction.color"
+          [title]="reaction.label"
+        >
+          <i [class]="reaction.icon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mention Suggestions -->
+  <div class="mention-suggestions" *ngIf="showMentionSuggestions">
+    <div 
+      *ngFor="let user of mentionSuggestions; let i = index"
+      class="mention-item"
+      [class.selected]="i === selectedMentionIndex"
+      (click)="onSelectMention(user)"
+    >
+      <img [src]="user.avatar" [alt]="user.name" class="mention-avatar" />
+      <div class="mention-details">
+        <span class="mention-name">{{ user.name }}</span>
+        <span class="mention-username">@{{ user.username }}</span>
+      </div>
+    </div>
+  </div>
+</div> 

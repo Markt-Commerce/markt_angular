@@ -1,0 +1,45 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="/assets/icons/markt-logo.svg" alt="Markt Logo" class="login-logo" />
+      <h2 class="login-title">Sign in to Markt</h2>
+      <p class="login-subtitle">Welcome back! Please enter your details.</p>
+    </div>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="you@email.com" [class.invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" />
+        <div class="error" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required.</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Enter a valid email.</span>
+        </div>
+      </div>
+      <div class="form-group password-group">
+        <label for="password">Password</label>
+        <div class="password-input-wrapper">
+          <input id="password" [type]="hidePassword ? 'password' : 'text'" formControlName="password" placeholder="Password" [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" />
+          <button type="button" class="toggle-password" (click)="togglePasswordVisibility()" tabindex="-1">
+            <i *ngIf="hidePassword" class="ph-eye"></i>
+            <i *ngIf="!hidePassword" class="ph-eye-slash"></i>
+          </button>
+        </div>
+        <div class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</span>
+          <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="login-btn" [disabled]="loading">
+          <span *ngIf="!loading">Sign In</span>
+          <span *ngIf="loading" class="spinner"></span>
+        </button>
+      </div>
+      <div class="form-links">
+        <a href="#" (click)="onForgotPassword(); $event.preventDefault();">Forgot password?</a>
+        <span>·</span>
+        <a routerLink="/signup">Create account</a>
+      </div>
+      <div class="error-message" *ngIf="error">{{ error }}</div>
+    </form>
+  </div>
+</div> 

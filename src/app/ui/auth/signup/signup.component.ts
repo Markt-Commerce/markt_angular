@@ -1,96 +1,107 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
-  AbstractControl,
   FormBuilder,
-  ReactiveFormsModule,
+  FormGroup,
   Validators,
+  ReactiveFormsModule,
 } from '@angular/forms';
-import { confirmPasswordValidator } from '../../../validators/confirm-password';
-import { NgIf } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
 export class SignupComponent {
-  private formBuilder = inject(FormBuilder);
-
+  signupForm: FormGroup;
+  hidePassword = true;
+  hideConfirmPassword = true;
+  loading = false;
+  error: string | null = null;
   currentStep = 1;
 
-  signupForm = this.formBuilder.group(
-    {
-      accountType: ['buyer', Validators.required],
-      name: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', Validators.required],
-      username: [
-        '',
-        [Validators.required, Validators.pattern(/^@[a-zA-Z0-9_.]+$/)],
-      ],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10,15}$/)]],
-      shopDescription: [''],
-      shopDirections: [''],
-      shopCategory: [''],
-      location: [''],
-      houseNumber: [''],
-      street: [''],
-      city: [''],
-      cardNumber: ['', [Validators.pattern('^[0-9]{13,16}$')]],
-      cardExpiry: ['', [Validators.pattern('^(0[1-9]|1[0-2])/[0-9]{2}$')]],
-      cvv: ['', [Validators.pattern('^[0-9]{3}$')]],
-    },
-    { validators: confirmPasswordValidator() }
-  );
-
-  get accountType(): AbstractControl {
-    return this.signupForm.controls['accountType'];
-  }
-  get name(): AbstractControl {
-    return this.signupForm.controls['name'];
-  }
-  get password(): AbstractControl {
-    return this.signupForm.controls['password'];
-  }
-  get confirmPassword(): AbstractControl {
-    return this.signupForm.controls['confirmPassword'];
-  }
-  get username(): AbstractControl {
-    return this.signupForm.controls['username'];
-  }
-  get email(): AbstractControl {
-    return this.signupForm.controls['email'];
-  }
-  get phone(): AbstractControl {
-    return this.signupForm.controls['phone'];
-  }
-  get cvv(): AbstractControl {
-    return this.signupForm.controls['cvv'];
-  }
-  get cardExpiry(): AbstractControl {
-    return this.signupForm.controls['cardExpiry'];
-  }
-  get cardNumber(): AbstractControl {
-    return this.signupForm.controls['cardNumber'];
-  }
-  get city(): AbstractControl {
-    return this.signupForm.controls['city'];
-  }
-  get street(): AbstractControl {
-    return this.signupForm.controls['street'];
-  }
-  get houseNumber(): AbstractControl {
-    return this.signupForm.controls['houseNumber'];
+  constructor(private fb: FormBuilder, private router: Router) {
+    this.signupForm = this.fb.group(
+      {
+        accountType: ['buyer', [Validators.required]],
+        name: ['', [Validators.required, Validators.minLength(3)]],
+        username: [
+          '',
+          [Validators.required, Validators.pattern(/^@[a-zA-Z0-9._]+$/)],
+        ],
+        email: ['', [Validators.required, Validators.email]],
+        phone: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', [Validators.required]],
+        shopDirections: [''],
+        shopCategory: [''],
+        shopDescription: [''],
+        cardNumber: [
+          '',
+          [Validators.required, Validators.pattern(/^[0-9]{16}$/)],
+        ],
+        cardExpiry: [
+          '',
+          [
+            Validators.required,
+            Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/),
+          ],
+        ],
+        cvv: ['', [Validators.required, Validators.pattern(/^[0-9]{3,4}$/)]],
+        agreeToTerms: [false, [Validators.requiredTrue]],
+      },
+      { validators: this.passwordMatchValidator }
+    );
   }
 
-  nextStep() {
-    if (this.currentStep < 4) {
-      this.currentStep++;
+  passwordMatchValidator(group: FormGroup) {
+    const password = group.get('password')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
+    return password === confirmPassword ? null : { passwordsMismatch: true };
+  }
+
+  togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.hideConfirmPassword = !this.hideConfirmPassword;
+  }
+
+  onCreateAccount() {
+    if (this.signupForm.invalid) {
+      this.markFormGroupTouched();
+      return;
     }
+
+    this.loading = true;
+    this.error = null;
+
+    // Simulate signup (replace with real API call)
+    setTimeout(() => {
+      this.loading = false;
+      // Success: redirect to feed
+      this.router.navigate(['/feed']);
+    }, 1500);
+  }
+
+  markFormGroupTouched() {
+    Object.keys(this.signupForm.controls).forEach((key) => {
+      const control = this.signupForm.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  onLoginClick() {
+    this.router.navigate(['/login']);
+  }
+
+  useCurrentLocation() {
+    // Implement location detection
+    console.log('Using current location');
   }
 
   previousStep() {
@@ -99,20 +110,50 @@ export class SignupComponent {
     }
   }
 
-  onCreateAccount() {
-    if (this.signupForm.valid) {
-      console.log('Form submitted:', this.signupForm.value);
+  nextStep() {
+    if (this.currentStep < 4) {
+      this.currentStep++;
     }
   }
 
-  useCurrentLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        this.signupForm.patchValue({
-          location: `${position.coords.latitude}, ${position.coords.longitude}`,
-        });
-      });
-      console.log(this.signupForm.controls['location'].value);
-    }
+  // Getter methods for template access with null checks
+  get accountType() {
+    return this.signupForm.get('accountType');
+  }
+
+  get name() {
+    return this.signupForm.get('name');
+  }
+
+  get username() {
+    return this.signupForm.get('username');
+  }
+
+  get email() {
+    return this.signupForm.get('email');
+  }
+
+  get phone() {
+    return this.signupForm.get('phone');
+  }
+
+  get password() {
+    return this.signupForm.get('password');
+  }
+
+  get confirmPassword() {
+    return this.signupForm.get('confirmPassword');
+  }
+
+  get cardNumber() {
+    return this.signupForm.get('cardNumber');
+  }
+
+  get cardExpiry() {
+    return this.signupForm.get('cardExpiry');
+  }
+
+  get cvv() {
+    return this.signupForm.get('cvv');
   }
 }

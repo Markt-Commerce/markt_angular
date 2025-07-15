@@ -1,0 +1,112 @@
+.story-list-container {
+  width: 100%;
+  overflow-x: auto;
+  padding: 1rem 0.5rem;
+}
+
+.story-list-scroll {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.story-list-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.story-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  width: 72px;
+  min-width: 72px;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  background: #f3f4f6;
+}
+
+.avatar-ring {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid #667eea;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  transition: border-color 0.3s;
+}
+
+.avatar-ring.viewed {
+  border-color: #e5e7eb;
+}
+
+.story-item.viewed .avatar-ring {
+  border-color: #e5e7eb;
+}
+
+.story-item.current-user .avatar-ring {
+  border-color: #10b981;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  color: #374151;
+  text-align: center;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-story {
+  color: #667eea;
+}
+
+.add-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  border: 2px solid #fff;
+}
+
+.add-icon {
+  font-size: 2rem;
+  color: #667eea;
+}
+
+@media (max-width: 600px) {
+  .story-item {
+    width: 56px;
+    min-width: 56px;
+  }
+  .user-name {
+    font-size: 0.75rem;
+    max-width: 56px;
+  }
+} 

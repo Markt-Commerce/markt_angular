@@ -1,0 +1,97 @@
+<div class="search-container">
+  <div class="search-input-wrapper">
+    <div class="search-icon">
+      <i class="fas fa-search"></i>
+    </div>
+    <input 
+      type="text" 
+      [placeholder]="placeholder"
+      [(ngModel)]="searchQuery"
+      (input)="onSearchInput()"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      class="search-input"
+    />
+    <button 
+      *ngIf="searchQuery" 
+      class="clear-btn"
+      (click)="clearSearch()"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <div class="search-filters" *ngIf="showFilters">
+    <div class="filter-chips">
+      <span 
+        *ngFor="let filter of activeFilters" 
+        class="filter-chip"
+        (click)="removeFilter(filter)"
+      >
+        {{ filter.label }}
+        <i class="fas fa-times"></i>
+      </span>
+    </div>
+    
+    <button class="filter-btn" (click)="toggleFilterMenu()">
+      <i class="fas fa-filter"></i>
+      Filters
+    </button>
+  </div>
+  
+  <div class="search-suggestions" *ngIf="showSuggestions && suggestions.length > 0">
+    <div 
+      *ngFor="let suggestion of suggestions" 
+      class="suggestion-item"
+      (click)="selectSuggestion(suggestion)"
+    >
+      <i class="fas fa-search suggestion-icon"></i>
+      <span class="suggestion-text">{{ suggestion.text }}</span>
+      <span class="suggestion-category">{{ suggestion.category }}</span>
+    </div>
+  </div>
+  
+  <div class="filter-menu" *ngIf="showFilterMenu">
+    <div class="filter-section">
+      <h4>Categories</h4>
+      <div class="filter-options">
+        <label *ngFor="let category of categories" class="filter-option">
+          <input 
+            type="checkbox" 
+            [checked]="isFilterActive('category', category.value)"
+            (change)="toggleFilter('category', category.value, category.label)"
+          />
+          {{ category.label }}
+        </label>
+      </div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Price Range</h4>
+      <div class="price-range">
+        <input 
+          type="number" 
+          placeholder="Min" 
+          [(ngModel)]="priceRange.min"
+          class="price-input"
+        />
+        <span>-</span>
+        <input 
+          type="number" 
+          placeholder="Max" 
+          [(ngModel)]="priceRange.max"
+          class="price-input"
+        />
+      </div>
+    </div>
+    
+    <div class="filter-actions">
+      <button class="apply-filters-btn" (click)="applyFilters()">
+        Apply Filters
+      </button>
+      <button class="clear-filters-btn" (click)="clearFilters()">
+        Clear All
+      </button>
+    </div>
+  </div>
+</div> 

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, retry, tap, throwError } from 'rxjs';
 import { ApiStore } from '../apiSpecificData';
 import {
   BuyerRegister,
@@ -25,11 +25,13 @@ export class UserService {
         { observe: 'response' }
       )
       .pipe(
-        tap((data) => console.log(data)),
+        tap((data) => {
+          // Handle successful buyer registration
+        }),
         retry(3),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle buyer registration error appropriately
+          return throwError(() => new Error('Failed to register buyer'));
         })
       );
   }
@@ -44,23 +46,50 @@ export class UserService {
         { observe: 'response' }
       )
       .pipe(
-        tap((data) => console.log(data)),
+        tap((data) => {
+          // Handle successful seller registration
+        }),
         retry(3),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle seller registration error appropriately
+          return throwError(() => new Error('Failed to register seller'));
         })
       );
   }
 
-  //   getUser(username: string): Observable<User> {
-  //     return this.http.get<User>(ApiStore.mergeEndpoint('user', username)).pipe(
-  //       tap((data) => console.log(data)),
-  //       retry(3),
-  //       catchError((err) => {
-  //         console.error(err);
-  //         return EMPTY;
-  //       })
-  //     );
-  //   }
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users`).pipe(
+      tap((data) => {
+        // Handle successful users retrieval
+      }),
+      catchError((err) => {
+        // Handle users retrieval error appropriately
+        return throwError(() => new Error('Failed to load users'));
+      })
+    );
+  }
+
+  getUserById(userId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/users/${userId}`).pipe(
+      tap((data) => {
+        // Handle successful user retrieval
+      }),
+      catchError((err) => {
+        // Handle user retrieval error appropriately
+        return throwError(() => new Error('Failed to load user details'));
+      })
+    );
+  }
+
+  updateUser(userId: string, userData: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/users/${userId}`, userData).pipe(
+      tap((data) => {
+        // Handle successful user update
+      }),
+      catchError((err) => {
+        // Handle user update error appropriately
+        return throwError(() => new Error('Failed to update user'));
+      })
+    );
+  }
 }

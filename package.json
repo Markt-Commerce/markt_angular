@@ -26,6 +26,7 @@
     "flowbite": "^2.5.2",
     "font-awesome": "^4.7.0",
     "ngx-infinite-scroll": "^18.0.0",
+    "phosphor-icons": "^1.4.2",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.8.1",
     "swiper": "^11.1.15",

@@ -1,0 +1,111 @@
+<div class="profile-header">
+  <div class="cover-image">
+    <img [src]="profile.coverImage" [alt]="profile.name + ' cover'" />
+    <div class="cover-overlay">
+      <button class="edit-cover-btn" *ngIf="isOwnProfile" (click)="onEditCover()">
+        <i class="fas fa-camera"></i>
+        Edit Cover
+      </button>
+    </div>
+  </div>
+  
+  <div class="profile-info">
+    <div class="avatar-section">
+      <div class="avatar-container">
+        <img [src]="profile.avatar" [alt]="profile.name" class="profile-avatar" />
+        <button class="edit-avatar-btn" *ngIf="isOwnProfile" (click)="onEditAvatar()">
+          <i class="fas fa-camera"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="profile-details">
+      <div class="name-section">
+        <h1 class="profile-name">{{ profile.name }}</h1>
+        <div class="verification-badge" *ngIf="profile.isVerified">
+          <i class="fas fa-check-circle"></i>
+          <span>Verified</span>
+        </div>
+      </div>
+      
+      <p class="profile-bio" *ngIf="profile.bio">{{ profile.bio }}</p>
+      
+      <div class="profile-stats">
+        <div class="stat-item">
+          <span class="stat-number">{{ profile.followers }}</span>
+          <span class="stat-label">Followers</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ profile.following }}</span>
+          <span class="stat-label">Following</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ profile.products }}</span>
+          <span class="stat-label">Products</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ profile.rating }}</span>
+          <span class="stat-label">Rating</span>
+        </div>
+      </div>
+      
+      <div class="profile-actions">
+        <button class="primary-btn" *ngIf="!isOwnProfile && !isFollowing" (click)="onFollow()">
+          <i class="fas fa-plus"></i>
+          Follow
+        </button>
+        <button class="secondary-btn" *ngIf="!isOwnProfile && isFollowing" (click)="onUnfollow()">
+          <i class="fas fa-check"></i>
+          Following
+        </button>
+        <button class="secondary-btn" *ngIf="!isOwnProfile" (click)="onMessage()">
+          <i class="fas fa-envelope"></i>
+          Message
+        </button>
+        <button class="secondary-btn" *ngIf="isOwnProfile" (click)="onEditProfile()">
+          <i class="fas fa-edit"></i>
+          Edit Profile
+        </button>
+        <button class="secondary-btn" *ngIf="!isOwnProfile" (click)="onShare()">
+          <i class="fas fa-share"></i>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="profile-tabs">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'posts'"
+      (click)="onTabChange('posts')"
+    >
+      <i class="fas fa-th"></i>
+      Posts
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'products'"
+      (click)="onTabChange('products')"
+    >
+      <i class="fas fa-shopping-bag"></i>
+      Products
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'reviews'"
+      (click)="onTabChange('reviews')"
+    >
+      <i class="fas fa-star"></i>
+      Reviews
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'about'"
+      (click)="onTabChange('about')"
+    >
+      <i class="fas fa-info-circle"></i>
+      About
+    </button>
+  </div>
+</div> 

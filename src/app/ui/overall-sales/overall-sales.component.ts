@@ -1,13 +1,12 @@
 import { Component, AfterViewInit } from '@angular/core';
-import Chart from 'chart.js/auto'
-
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'app-overall-sales',
   standalone: true,
   imports: [],
   templateUrl: './overall-sales.component.html',
-  styleUrl: './overall-sales.component.css'
+  styleUrl: './overall-sales.component.css',
 })
 export class OverallSalesComponent implements AfterViewInit {
   ngAfterViewInit() {
@@ -20,11 +19,11 @@ export class OverallSalesComponent implements AfterViewInit {
           {
             label: 'Sales',
             data: [100, 120, 140, 130, 150, 180, 200, 220, 240, 260, 300],
-            borderColor: '#e94b26',
-            backgroundColor: 'rgba(233, 75, 38, 0.2)',
+            borderColor: '#e94c2a',
+            backgroundColor: 'rgba(233, 76, 42, 0.1)',
             tension: 0.4,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#e94b26',
+            pointBackgroundColor: '#e94c2a',
+            pointBorderColor: '#e94c2a',
             borderWidth: 2,
           },
         ],
@@ -44,7 +43,8 @@ export class OverallSalesComponent implements AfterViewInit {
           },
           y: {
             ticks: {
-              callback: function (value: number) { // Explicitly typed parameter
+              callback: function (value: number) {
+                // Explicitly typed parameter
                 return `$${value}K`;
               },
             },

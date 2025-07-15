@@ -1,0 +1,25 @@
+<div class="story-list-container">
+  <div class="story-list-scroll">
+    <!-- Add Story Button -->
+    <div class="story-item add-story" (click)="onAddStory()">
+      <div class="avatar add-avatar">
+        <span class="add-icon">+</span>
+      </div>
+      <div class="user-name">Your Story</div>
+    </div>
+    <!-- Stories -->
+    <div 
+      *ngFor="let story of stories" 
+      class="story-item" 
+      [class.viewed]="story.isViewed"
+      [class.current-user]="story.isCurrentUser"
+      (click)="onStoryClick(story)"
+    >
+      <div class="avatar-wrapper">
+        <div class="avatar-ring" [class.viewed]="story.isViewed"></div>
+        <img [src]="story.userAvatar" [alt]="story.userName" class="avatar" />
+      </div>
+      <div class="user-name">{{ story.userName }}</div>
+    </div>
+  </div>
+</div> 

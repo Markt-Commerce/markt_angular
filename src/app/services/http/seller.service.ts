@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { EMPTY, Observable, catchError, retry, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, retry, tap, throwError } from 'rxjs';
 import { ApiStore } from '../apiSpecificData';
 import { SellerResponse } from '../../api/models';
 
@@ -14,12 +14,25 @@ export class SellerService {
     return this.http
       .get<SellerResponse>(ApiStore.mergeEndpoint('user', 'seller', sellerId))
       .pipe(
-        tap((data) => console.log(data)),
-        retry(3),
+        tap((data) => {
+          // Handle successful sellers retrieval
+        }),
         catchError((err) => {
-          console.error(err);
-          return EMPTY;
+          // Handle sellers retrieval error appropriately
+          return throwError(() => new Error('Failed to load sellers'));
         })
       );
+  }
+
+  getSellers(): Observable<SellerResponse[]> {
+    return this.http.get<SellerResponse[]>(`${this.apiUrl}/sellers`).pipe(
+      tap((data) => {
+        // Handle successful sellers retrieval
+      }),
+      catchError((err) => {
+        // Handle sellers retrieval error appropriately
+        return throwError(() => new Error('Failed to load sellers'));
+      })
+    );
   }
 }

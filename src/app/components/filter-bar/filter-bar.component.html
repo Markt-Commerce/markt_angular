@@ -1,0 +1,203 @@
+<div class="filter-bar">
+  <div class="filter-header">
+    <div class="filter-title">
+      <i class="fas fa-filter"></i>
+      <span>Filters</span>
+      <span class="active-count" *ngIf="activeFilterCount > 0">({{ activeFilterCount }})</span>
+    </div>
+    <div class="filter-actions">
+      <button class="clear-btn" (click)="onClearAll()" *ngIf="activeFilterCount > 0">
+        <i class="fas fa-times"></i>
+        Clear All
+      </button>
+      <button class="apply-btn" (click)="onApplyFilters()">
+        <i class="fas fa-check"></i>
+        Apply
+      </button>
+    </div>
+  </div>
+  
+  <div class="filter-sections">
+    <!-- Category Filter -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('category')">
+        <h3>Category</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.category" [class.fa-chevron-up]="expandedSections.category"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.category">
+        <div class="category-grid">
+          <label class="category-item" *ngFor="let category of categories">
+            <input 
+              type="checkbox" 
+              [value]="category.id"
+              [(ngModel)]="selectedCategories"
+              (change)="onCategoryChange()"
+            />
+            <span class="category-name">{{ category.name }}</span>
+            <span class="category-count">({{ category.count }})</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Price Range Filter -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('price')">
+        <h3>Price Range</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.price" [class.fa-chevron-up]="expandedSections.price"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.price">
+        <div class="price-inputs">
+          <div class="price-input">
+            <label>Min Price</label>
+            <input 
+              type="number" 
+              [(ngModel)]="priceRange.min" 
+              placeholder="0"
+              (input)="onPriceChange()"
+            />
+          </div>
+          <div class="price-input">
+            <label>Max Price</label>
+            <input 
+              type="number" 
+              [(ngModel)]="priceRange.max" 
+              placeholder="1000"
+              (input)="onPriceChange()"
+            />
+          </div>
+        </div>
+        <div class="price-slider">
+          <input 
+            type="range" 
+            [min]="priceSlider.min" 
+            [max]="priceSlider.max" 
+            [(ngModel)]="priceSlider.value"
+            (input)="onSliderChange()"
+            class="range-slider"
+          />
+          <div class="slider-labels">
+            <span>${{ priceSlider.min }}</span>
+            <span>${{ priceSlider.max }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Location Filter -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('location')">
+        <h3>Location</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.location" [class.fa-chevron-up]="expandedSections.location"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.location">
+        <div class="location-input">
+          <input 
+            type="text" 
+            [(ngModel)]="locationSearch" 
+            placeholder="Search location..."
+            (input)="onLocationSearch()"
+          />
+          <i class="fas fa-search"></i>
+        </div>
+        <div class="location-options">
+          <label class="location-item" *ngFor="let location of filteredLocations">
+            <input 
+              type="checkbox" 
+              [value]="location.id"
+              [(ngModel)]="selectedLocations"
+              (change)="onLocationChange()"
+            />
+            <span class="location-name">{{ location.name }}</span>
+            <span class="location-count">({{ location.count }})</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Condition Filter -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('condition')">
+        <h3>Condition</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.condition" [class.fa-chevron-up]="expandedSections.condition"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.condition">
+        <div class="condition-options">
+          <label class="condition-item" *ngFor="let condition of conditions">
+            <input 
+              type="checkbox" 
+              [value]="condition.value"
+              [(ngModel)]="selectedConditions"
+              (change)="onConditionChange()"
+            />
+            <span class="condition-name">{{ condition.name }}</span>
+            <span class="condition-count">({{ condition.count }})</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Seller Rating Filter -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('rating')">
+        <h3>Seller Rating</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.rating" [class.fa-chevron-up]="expandedSections.rating"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.rating">
+        <div class="rating-options">
+          <label class="rating-item" *ngFor="let rating of ratings">
+            <input 
+              type="checkbox" 
+              [value]="rating.value"
+              [(ngModel)]="selectedRatings"
+              (change)="onRatingChange()"
+            />
+            <div class="rating-stars">
+              <i class="fas fa-star" *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= rating.value"></i>
+            </div>
+            <span class="rating-text">{{ rating.text }}</span>
+            <span class="rating-count">({{ rating.count }})</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sort Options -->
+    <div class="filter-section">
+      <div class="section-header" (click)="toggleSection('sort')">
+        <h3>Sort By</h3>
+        <i class="fas" [class.fa-chevron-down]="!expandedSections.sort" [class.fa-chevron-up]="expandedSections.sort"></i>
+      </div>
+      <div class="section-content" [class.expanded]="expandedSections.sort">
+        <div class="sort-options">
+          <label class="sort-item" *ngFor="let sort of sortOptions">
+            <input 
+              type="radio" 
+              name="sort" 
+              [value]="sort.value"
+              [(ngModel)]="selectedSort"
+              (change)="onSortChange()"
+            />
+            <span class="sort-name">{{ sort.name }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Quick Filters -->
+  <div class="quick-filters">
+    <h3>Quick Filters</h3>
+    <div class="quick-filter-tags">
+      <button 
+        class="quick-filter-tag" 
+        *ngFor="let filter of quickFilters"
+        [class.active]="filter.active"
+        (click)="onQuickFilter(filter)"
+      >
+        <i [class]="filter.icon"></i>
+        {{ filter.name }}
+      </button>
+    </div>
+  </div>
+</div> 

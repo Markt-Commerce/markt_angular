@@ -9,10 +9,13 @@ export interface Cart {
 }
 
 export interface CartProduct {
+  productId: string;
   name: string;
   price: number;
   quantity: number;
   image: string;
+  sellerId: string;
+  sellerName: string;
   cartId?: string;
   hasDiscount?: boolean;
   discountPercent?: number;

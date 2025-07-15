@@ -29,6 +29,10 @@ export class AuthService {
     this.currentUserId.set(id);
   }
 
+  isAuthenticated(): boolean {
+    return this.currentUserId() !== null;
+  }
+
   authenticateUser(
     authData: UserLogin
   ): Observable<HttpResponse<UserLoginResponse>> {
@@ -49,7 +53,7 @@ export class AuthService {
         }),
         retry(3),
         catchError((err) => {
-          console.error(err);
+          // Handle authentication error appropriately
           return EMPTY;
         })
       );
@@ -65,10 +69,9 @@ export class AuthService {
         }
       )
       .pipe(
-        tap((data) => console.log(data)),
         retry(3),
         catchError((err) => {
-          console.error(err);
+          // Handle logout error appropriately
           return EMPTY;
         })
       );
@@ -84,10 +87,9 @@ export class AuthService {
         }
       )
       .pipe(
-        tap((data) => console.log(data)),
         retry(3),
         catchError((err) => {
-          console.error(err);
+          // Handle role switch error appropriately
           return EMPTY;
         })
       );

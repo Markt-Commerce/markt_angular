@@ -1,0 +1,91 @@
+<div class="image-gallery">
+  <div class="main-image-container">
+    <img 
+      [src]="selectedImage" 
+      [alt]="productName" 
+      class="main-image"
+      (click)="onImageClick()"
+    />
+    <div class="image-overlay" *ngIf="showOverlay">
+      <button class="zoom-btn" (click)="onZoom()">
+        <i class="fas fa-search-plus"></i>
+      </button>
+      <button class="fullscreen-btn" (click)="onFullscreen()">
+        <i class="fas fa-expand"></i>
+      </button>
+    </div>
+    <div class="image-navigation">
+      <button class="nav-btn prev" (click)="onPrevious()" [disabled]="currentIndex === 0">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button class="nav-btn next" (click)="onNext()" [disabled]="currentIndex === images.length - 1">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    <div class="image-counter">
+      {{ currentIndex + 1 }} / {{ images.length }}
+    </div>
+  </div>
+  
+  <div class="thumbnail-container" *ngIf="images.length > 1">
+    <div class="thumbnail-scroll">
+      <div 
+        *ngFor="let image of images; let i = index" 
+        class="thumbnail-item"
+        [class.active]="i === currentIndex"
+        (click)="onThumbnailClick(i)"
+      >
+        <img [src]="image" [alt]="productName + ' ' + (i + 1)" />
+        <div class="thumbnail-overlay"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="image-actions">
+    <button class="action-btn" (click)="onShare()">
+      <i class="fas fa-share"></i>
+      Share
+    </button>
+    <button class="action-btn" (click)="onDownload()">
+      <i class="fas fa-download"></i>
+      Download
+    </button>
+    <button class="action-btn" (click)="onReport()">
+      <i class="fas fa-flag"></i>
+      Report
+    </button>
+  </div>
+  
+  <!-- Fullscreen Modal -->
+  <div class="fullscreen-modal" *ngIf="isFullscreen" (click)="onCloseFullscreen()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <button class="close-btn" (click)="onCloseFullscreen()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img [src]="selectedImage" [alt]="productName" class="fullscreen-image" />
+        <div class="modal-navigation">
+          <button class="nav-btn prev" (click)="onPrevious()" [disabled]="currentIndex === 0">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="nav-btn next" (click)="onNext()" [disabled]="currentIndex === images.length - 1">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="image-counter">{{ currentIndex + 1 }} / {{ images.length }}</div>
+        <div class="modal-actions">
+          <button class="action-btn" (click)="onShare()">
+            <i class="fas fa-share"></i>
+          </button>
+          <button class="action-btn" (click)="onDownload()">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
