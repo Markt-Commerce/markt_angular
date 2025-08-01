@@ -1,0 +1,235 @@
+<!-- Register Page Template - Nigerian Campus Digital Ethnography -->
+<div class="register-container">
+  <!-- Header -->
+  <header class="register-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"
+              fill="currentColor"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="logo-text">Markt</h2>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="content-container">
+      <!-- Header -->
+      <h2 class="register-title">Join Nigerian Campus Markt</h2>
+      <p class="register-subtitle">Create your account and connect with {{ trustIndicators.totalUsers }} Nigerian students</p>
+
+      <!-- Nigerian Trust Indicators -->
+      <div class="trust-indicators-section">
+        <div class="trust-grid">
+          <div class="trust-item">
+            <span class="trust-number">{{ trustIndicators.totalUsers }}</span>
+            <span class="trust-label">Nigerian Students</span>
+          </div>
+          <div class="trust-item">
+            <span class="trust-number">{{ trustIndicators.verifiedCampuses }}</span>
+            <span class="trust-label">Verified Campuses</span>
+          </div>
+          <div class="trust-item">
+            <span class="trust-number">{{ trustIndicators.avgResponseTime }}</span>
+            <span class="trust-label">Avg Response Time</span>
+          </div>
+          <div class="trust-item">
+            <span class="trust-number">{{ trustIndicators.trustScore }}</span>
+            <span class="trust-label">Trust Score</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <form class="register-form" (ngSubmit)="onRegister()">
+        <!-- Full Name Field -->
+        <div class="form-group">
+          <input 
+            type="text" 
+            [(ngModel)]="registerData.fullName"
+            name="fullName"
+            class="form-input"
+            placeholder="Full Name"
+            required
+          />
+          <div class="error-message" *ngIf="errors['fullName']">
+            {{ errors['fullName'] }}
+          </div>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group">
+          <input 
+            type="email" 
+            [(ngModel)]="registerData.email"
+            name="email"
+            class="form-input"
+            placeholder="Nigerian University Email"
+            required
+          />
+          <div class="error-message" *ngIf="errors['email']">
+            {{ errors['email'] }}
+          </div>
+          <div class="email-hint">
+            Use your Nigerian university email for verification
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <div class="password-input-container">
+            <input 
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="registerData.password"
+              name="password"
+              class="form-input"
+              placeholder="Password"
+              (input)="onPasswordChange()"
+              required
+            />
+            <button 
+              type="button" 
+              class="password-toggle"
+              (click)="onTogglePassword()"
+            >
+              {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+            </button>
+          </div>
+          <div class="error-message" *ngIf="errors['password']">
+            {{ errors['password'] }}
+          </div>
+          <!-- Password Strength Indicator -->
+          <div class="password-strength" *ngIf="registerData.password">
+            <div class="strength-bar">
+              <div class="strength-fill" [style.width.%]="passwordStrength"></div>
+            </div>
+            <span class="strength-text">
+              Password strength: {{ passwordStrength < 25 ? 'Weak' : passwordStrength < 50 ? 'Fair' : passwordStrength < 75 ? 'Good' : 'Strong' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+          <div class="password-input-container">
+            <input 
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              [(ngModel)]="registerData.confirmPassword"
+              name="confirmPassword"
+              class="form-input"
+              placeholder="Confirm Password"
+              required
+            />
+            <button 
+              type="button" 
+              class="password-toggle"
+              (click)="onToggleConfirmPassword()"
+            >
+              {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+            </button>
+          </div>
+          <div class="error-message" *ngIf="errors['confirmPassword']">
+            {{ errors['confirmPassword'] }}
+          </div>
+        </div>
+
+        <!-- Nigerian Campus Selection -->
+        <div class="form-group">
+          <select 
+            [(ngModel)]="registerData.campus"
+            name="campus"
+            class="form-select"
+            (change)="onCampusChange()"
+            required
+          >
+            <option *ngFor="let campus of campuses" [value]="campus.value">
+              {{ campus.label }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="errors['campus']">
+            {{ errors['campus'] }}
+          </div>
+        </div>
+
+        <!-- Nigerian Campus Insights -->
+        <div *ngIf="getCampusInsights()" class="campus-insights">
+          <div class="insights-card">
+            <h4>Your Campus Community</h4>
+            <div class="campus-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{ getCampusInsights()?.activeMembers }}</span>
+                <span class="stat-label">active members</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ getCampusInsights()?.avgTrustScore }}</span>
+                <span class="stat-label">trust score</span>
+              </div>
+            </div>
+            <div class="popular-categories">
+              <span class="categories-label">Popular categories:</span>
+              <div class="category-tags">
+                <span class="category-tag" *ngFor="let category of getCampusInsights()?.popularCategories">
+                  {{ category }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+          <label class="terms-label">
+            <input 
+              type="checkbox"
+              [(ngModel)]="registerData.agreeToTerms"
+              name="agreeToTerms"
+              class="custom-checkbox"
+            />
+            <span class="terms-text">I agree to the Terms and Conditions for Nigerian campus users</span>
+          </label>
+          <div class="error-message" *ngIf="errors['terms']">
+            {{ errors['terms'] }}
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="submit-section">
+          <button 
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isLoading"
+          >
+            <span *ngIf="!isLoading">Join Nigerian Campus Community</span>
+            <span *ngIf="isLoading">Creating Account...</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Divider -->
+      <p class="divider-text">or</p>
+
+      <!-- Social Registration -->
+      <div class="social-registration">
+        <div class="social-buttons">
+          <button class="btn btn-social" (click)="onSocialLogin('google')">
+            <span>Continue with Google</span>
+          </button>
+          <button class="btn btn-social" (click)="onSocialLogin('facebook')">
+            <span>Continue with Facebook</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Login Link -->
+      <p class="login-link" (click)="onLogin()">
+        Already have an account? Sign in to Nigerian Markt
+      </p>
+    </div>
+  </div>
+</div> 

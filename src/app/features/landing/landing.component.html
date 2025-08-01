@@ -1,0 +1,187 @@
+<!-- Landing Page Template - Nigerian Campus Digital Ethnography -->
+<div class="landing-container">
+  <!-- Header -->
+  <header class="landing-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"
+              fill="currentColor"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="logo-text">Markt</h2>
+      </div>
+      <div class="header-nav">
+        <div class="nav-links">
+          <a class="nav-link" (click)="onLogin()">Login</a>
+          <a class="nav-link" (click)="onRegister()">Register</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="content-container">
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h1 class="hero-title">{{ heroTitle }}</h1>
+            <h2 class="hero-subtitle">{{ heroSubtitle }}</h2>
+            <p class="hero-description">{{ heroDescription }}</p>
+          </div>
+          
+          <!-- Nigerian Social Proof Section -->
+          <div class="social-proof-section">
+            <div class="social-proof-grid">
+              <div class="proof-item">
+                <span class="proof-number">{{ socialProof.activeUsers }}</span>
+                <span class="proof-label">Active Nigerian Students</span>
+              </div>
+              <div class="proof-item">
+                <span class="proof-number">{{ socialProof.campuses }}</span>
+                <span class="proof-label">Nigerian Campuses</span>
+              </div>
+              <div class="proof-item">
+                <span class="proof-number">{{ socialProof.transactions }}</span>
+                <span class="proof-label">Successful Transactions</span>
+              </div>
+              <div class="proof-item">
+                <span class="proof-number">{{ socialProof.trustScore }}</span>
+                <span class="proof-label">Trust Score</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button class="btn btn-primary" (click)="onGetStarted()">
+              <span>{{ getStartedText }}</span>
+            </button>
+            <button class="btn btn-secondary" (click)="onLearnMore()">
+              <span>{{ learnMoreText }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nigerian Trust Indicators Section -->
+      <div class="trust-indicators-section">
+        <h2 class="section-title">Why Nigerian Students Trust Markt</h2>
+        <div class="trust-indicators-grid">
+          <div class="trust-indicator" *ngFor="let indicator of trustIndicators">
+            <div class="indicator-icon">{{ indicator.icon }}</div>
+            <h3 class="indicator-title">{{ indicator.title }}</h3>
+            <p class="indicator-description">{{ indicator.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features Section with Nigerian Behavioral Insights -->
+      <div class="features-section">
+        <div class="features-header">
+          <h1 class="features-title">Features</h1>
+          <p class="features-description">
+            Markt offers a unique blend of social interaction and e-commerce, tailored for Nigerian campus communities.
+          </p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card" *ngFor="let feature of features">
+            <div class="feature-image">
+              <div class="feature-image-placeholder"></div>
+            </div>
+            <div class="feature-content">
+              <div class="feature-header">
+                <span class="feature-icon">{{ feature.icon }}</span>
+                <h3 class="feature-title">{{ feature.title }}</h3>
+              </div>
+              <p class="feature-description">{{ feature.description }}</p>
+              <!-- Nigerian Behavioral Insight -->
+              <div class="behavioral-insight">
+                <span class="insight-icon">📊</span>
+                <p class="insight-text">{{ feature.behavioralInsight }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nigerian Campus Insights Section -->
+      <div class="campus-insights-section">
+        <h2 class="section-title">Active Nigerian Campuses</h2>
+        <div class="campus-insights-grid">
+          <div class="campus-card" *ngFor="let campus of campusInsights">
+            <h3 class="campus-name">{{ campus.campus }}</h3>
+            <div class="campus-stats">
+              <span class="campus-users">{{ campus.activeUsers }} active users</span>
+              <span class="campus-trust">{{ campus.avgTrustScore }} trust score</span>
+            </div>
+            <div class="campus-categories">
+              <span class="category-label">Popular:</span>
+              <span class="category-tags">
+                <span class="category-tag" *ngFor="let category of campus.popularItems">{{ category }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nigerian Testimonials Section -->
+      <div class="testimonials-section">
+        <h2 class="testimonials-title">Nigerian Student Testimonials</h2>
+        <div class="testimonials-container">
+          <div class="testimonials-scroll">
+            <div class="testimonial-card" *ngFor="let testimonial of testimonials">
+              <div class="testimonial-image">
+                <div class="testimonial-image-placeholder"></div>
+              </div>
+              <div class="testimonial-content">
+                <div class="testimonial-rating">{{ testimonial.rating }}</div>
+                <p class="testimonial-text">{{ testimonial.text }}</p>
+                <div class="testimonial-author">
+                  <strong>{{ testimonial.name }}</strong>, {{ testimonial.role }}
+                </div>
+                <div class="testimonial-campus">{{ testimonial.campus }}</div>
+                <!-- Nigerian Behavioral Context -->
+                <div class="behavioral-context">
+                  <span class="context-icon">📈</span>
+                  <span class="context-text">{{ testimonial.behavioralContext }}</span>
+                </div>
+                <div class="trust-factor">
+                  <span class="trust-icon">🛡️</span>
+                  <span class="trust-text">{{ testimonial.trustFactor }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nigerian Community Stats Section -->
+      <div class="community-stats-section">
+        <h2 class="section-title">Nigerian Campus Community</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number">1,247</span>
+            <span class="stat-label">Active Nigerian Students</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">23</span>
+            <span class="stat-label">Verified Nigerian Campuses</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">96%</span>
+            <span class="stat-label">Average Trust Score</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">1.8min</span>
+            <span class="stat-label">Average Response Time</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

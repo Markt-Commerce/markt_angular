@@ -1,0 +1,55 @@
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <!-- Logo -->
+      <div class="logo">
+        <a routerLink="/" class="logo-link">
+          <span class="logo-icon">🏪</span>
+          <span class="logo-text">Markt</span>
+        </a>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="nav-desktop" *ngIf="true">
+        <ul class="nav-list">
+          <li *ngFor="let item of navItems" class="nav-item">
+            <a [routerLink]="item.route" routerLinkActive="active" class="nav-link">
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <!-- Search Button (Mobile) -->
+        <button class="action-btn search-btn" title="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
+
+        <!-- Notifications -->
+        <button class="action-btn notification-btn" title="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="m13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notification-badge">3</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <app-theme-toggle></app-theme-toggle>
+
+        <!-- User Menu -->
+        <div class="user-menu">
+          <button class="user-avatar" title="User menu">
+            <img src="https://via.placeholder.com/32x32/2563eb/ffffff?text=U" alt="User avatar" class="avatar-img">
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

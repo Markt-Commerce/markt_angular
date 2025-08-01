@@ -1,0 +1,558 @@
+/* Register Page Styles - Nigerian Campus Digital Ethnography */
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header */
+.register-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f4f0f0;
+  padding: 0.75rem 2.5rem;
+  background-color: var(--background-primary);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #181111;
+}
+
+.logo-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #181111;
+}
+
+.logo-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #181111;
+  margin: 0;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem 10rem;
+}
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+  width: 512px;
+  max-width: 512px;
+  padding: 1.25rem 0;
+}
+
+/* Header */
+.register-title {
+  color: #181111;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  margin: 0 0 0.75rem 0;
+  padding: 0 1rem;
+}
+
+.register-subtitle {
+  color: #181111;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0 0 0.75rem 0;
+  padding: 0 1rem;
+}
+
+/* Nigerian Trust Indicators Section */
+.trust-indicators-section {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--background-secondary);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+}
+
+.trust-number {
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.trust-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Form */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-group {
+  display: flex;
+  max-width: 480px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.form-input,
+.form-select {
+  flex: 1;
+  min-width: 160px;
+  height: 3.5rem;
+  padding: 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  background-color: #f4f0f0;
+  color: #181111;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus {
+  background-color: #e8e4e4;
+}
+
+.form-input::placeholder {
+  color: #886364;
+}
+
+.form-select {
+  background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724px%27 height=%2724px%27 fill=%27rgb(136,99,100)%27 viewBox=%270 0 256 256%27%3e%3cpath d=%27M181.66,170.34a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-48-48a8,8,0,0,1,11.32-11.32L128,212.69l42.34-42.35A8,8,0,0,1,181.66,170.34Zm-96-84.68L128,43.31l42.34,42.35a8,8,0,0,0,11.32-11.32l-48-48a8,8,0,0,0-11.32,0l-48,48A8,8,0,0,0,85.66,85.66Z%27%3e%3c/path%3e%3c/svg%3e');
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.5rem;
+  padding-right: 3rem;
+  cursor: pointer;
+}
+
+/* Email Hint */
+.email-hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-style: italic;
+}
+
+/* Password Input Container */
+.password-input-container {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+
+.password-input-container .form-input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-primary);
+}
+
+/* Password Strength Indicator */
+.password-strength {
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.strength-bar {
+  width: 100%;
+  height: 0.25rem;
+  background: #e0e0e0;
+  border-radius: 0.125rem;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.strength-fill {
+  height: 100%;
+  background: linear-gradient(to right, #ff4444, #ffaa00, #00ff00);
+  border-radius: 0.125rem;
+  transition: width 0.3s ease;
+}
+
+.strength-text {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Nigerian Campus Insights */
+.campus-insights {
+  margin: 1rem 0;
+  padding: 0 1rem;
+}
+
+.insights-card {
+  padding: 1rem;
+  background: var(--background-secondary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  transition: transform 0.3s ease;
+}
+
+.insights-card:hover {
+  transform: translateY(-2px);
+}
+
+.insights-card h4 {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.campus-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.campus-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.campus-stats .stat-number {
+  color: var(--primary-color);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.campus-stats .stat-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.popular-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.categories-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.category-tag {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Terms Section */
+.terms-section {
+  padding: 0 1rem;
+}
+
+.terms-label {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  flex-direction: row;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.custom-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  border: 2px solid #e5dcdc;
+  background-color: transparent;
+  color: #e92932;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.custom-checkbox:checked {
+  background-color: #e92932;
+  border-color: #e92932;
+  background-image: url('data:image/svg+xml,%3csvg viewBox=%270 0 16 16%27 fill=%27rgb(255,255,255)%27 xmlns=%27http://www.w3.org/2000/svg%27%3e%3cpath d=%27M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z%27/%3e%3c/svg%3e');
+  background-size: 0.75rem;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.custom-checkbox:focus {
+  border-color: #e5dcdc;
+}
+
+.terms-text {
+  color: #181111;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Submit Section */
+.submit-section {
+  display: flex;
+  padding: 0.75rem 1rem;
+}
+
+/* Buttons */
+.btn {
+  display: flex;
+  min-width: 84px;
+  max-width: 480px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: none;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+  transition: all 0.3s ease;
+}
+
+.btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-primary {
+  height: 3rem;
+  padding: 0 1.25rem;
+  flex: 1;
+  background-color: #e92932;
+  color: white;
+  font-size: 1rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #d4242e;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-social {
+  height: 2.5rem;
+  padding: 0 1rem;
+  background-color: #f4f0f0;
+  color: #181111;
+  font-size: 0.875rem;
+  flex: 1;
+  min-width: 84px;
+  max-width: 480px;
+}
+
+.btn-social:hover {
+  background-color: #e8e4e4;
+}
+
+/* Divider */
+.divider-text {
+  color: #886364;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0.25rem 0 0.75rem 0;
+  padding: 0 1rem;
+}
+
+/* Social Registration */
+.social-registration {
+  display: flex;
+  justify-content: center;
+}
+
+.social-buttons {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  max-width: 480px;
+  justify-content: center;
+}
+
+/* Login Link */
+.login-link {
+  color: #886364;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0.25rem 0 0.75rem 0;
+  padding: 0 1rem;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.login-link:hover {
+  color: #181111;
+}
+
+/* Error Messages */
+.error-message {
+  color: #e92932;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .main-content {
+    padding: 1.25rem 2rem;
+  }
+  
+  .trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .register-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .main-content {
+    padding: 1.25rem 1rem;
+  }
+  
+  .content-container {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .register-title {
+    font-size: 1.5rem;
+  }
+  
+  .form-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .form-input,
+  .form-select {
+    min-width: auto;
+  }
+  
+  .social-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-social {
+    width: 100%;
+  }
+  
+  .trust-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .campus-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-container {
+    padding: 0.5rem 0;
+  }
+  
+  .form-group {
+    padding: 0.5rem;
+  }
+  
+  .submit-section {
+    padding: 0.5rem;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+} 

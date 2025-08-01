@@ -1,0 +1,8 @@
+/* Import theme system */
+@import './core/theme/theme.css';
+
+/* App-specific styles */
+app-root {
+  display: block;
+  min-height: 100vh;
+}
