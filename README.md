@@ -1,59 +1,158 @@
-# MarktAngular
+# Markt - Social-First E-commerce Platform
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+A modern Angular application designed to recreate the real-world market experience online, focusing on trust, social interaction, and community-driven commerce.
 
-## Development server
+## 🎯 Project Overview
 
-To start a local development server, run:
+Markt is a social-first e-commerce platform targeting university students and campus entrepreneurs. The platform emphasizes:
 
-```bash
-ng serve
+- **Trust Building**: Campus verification and social proof
+- **Community Features**: Real-time chat, ratings, and reviews
+- **Mobile-First Design**: Optimized for mobile devices
+- **Social Commerce**: Live selling and community engagement
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm (v9 or higher)
+- Angular CLI (v20 or higher)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd markt-angular
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start development server**
+   ```bash
+   npm start
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:4200`
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/
+│   ├── core/                    # Core services, guards, interceptors
+│   ├── shared/                  # Shared components, pipes, directives
+│   ├── features/                # Feature modules
+│   │   ├── auth/               # Authentication
+│   │   ├── marketplace/        # Product browsing
+│   │   ├── seller/             # Seller dashboard
+│   │   ├── chat/               # Messaging system
+│   │   ├── community/          # Social features
+│   │   └── profile/            # User profiles
+│   └── layout/                 # Layout components
+├── assets/                      # Static assets
+└── styles/                      # Global styles
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## 🎨 Design System
 
-## Code scaffolding
+### Theme System
+- **CSS Custom Properties** for consistent theming
+- **Dark/Light Mode** support
+- **Responsive Breakpoints**:
+  - Mobile: 259px - 485px
+  - Tablet: 486px - 1024px
+  - Desktop: 1025px - 1852px
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Color Palette
+- **Primary**: #E94C2A (Markt Orange)
+- **Secondary**: #1f2937 (Dark Gray)
+- **Success**: #10b981 (Green)
+- **Warning**: #f59e0b (Amber)
+- **Error**: #ef4444 (Red)
 
+## 📱 Features
+
+### Core Features
+- [ ] User Authentication & Registration
+- [ ] Product Browsing & Search
+- [ ] Real-time Chat & Messaging
+- [ ] Rating & Review System
+- [ ] User Profiles & Verification
+- [ ] Seller Dashboard
+- [ ] Community Features
+
+### Advanced Features
+- [ ] Live Selling
+- [ ] Request/Offer System
+- [ ] Payment Integration
+- [ ] Analytics Dashboard
+- [ ] Mobile App (Future)
+
+## 🛠️ Development
+
+### Available Scripts
+
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm run test` - Run unit tests
+- `npm run lint` - Run linting
+- `npm run e2e` - Run end-to-end tests
+
+### Code Quality
+
+- **ESLint** for code linting
+- **Prettier** for code formatting
+- **Husky** for pre-commit hooks
+- **TypeScript** strict mode enabled
+
+## 📊 Testing
+
+- **Unit Tests**: Jasmine + Karma
+- **E2E Tests**: Playwright (planned)
+- **Component Testing**: Angular Testing Utilities
+
+## 🚀 Deployment
+
+### Production Build
 ```bash
-ng generate component component-name
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Environment Configuration
+- Development: `environment.ts`
+- Production: `environment.prod.ts`
 
-```bash
-ng generate --help
-```
+## 📚 Documentation
 
-## Building
+- [Design Analysis](./MARKT_DESIGN_ANALYSIS.md)
+- [Development Blueprint](./MARKT_DEVELOPMENT_BLUEPRINT.md)
+- [API Documentation](./docs/api.md) (Coming Soon)
 
-To build the project run:
+## 🤝 Contributing
 
-```bash
-ng build
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 📄 License
 
-## Running unit tests
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## 🆘 Support
 
-```bash
-ng test
-```
+For support and questions:
+- Create an issue in the repository
+- Contact the development team
+- Check the documentation
 
-## Running end-to-end tests
+---
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+**Built with ❤️ for the campus community**

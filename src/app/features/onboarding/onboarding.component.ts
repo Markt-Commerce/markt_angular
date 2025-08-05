@@ -1,242 +1,198 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './onboarding.component.html',
-  styleUrl: './onboarding.component.css'
-})
-export class OnboardingComponent {
-  currentStep = 1;
-  totalSteps = 4;
-  selectedRole = '';
-  
-  // Digital Ethnography: Role selection with behavioral insights for Nigerian students
-  roles = [
-    { 
-      value: 'buyer', 
-      label: 'I want to buy', 
-      description: 'Browse and purchase items from campus sellers',
-      behavioralInsight: '90% of Nigerian students start as buyers before becoming sellers',
-      communityBenefit: 'Join 1,100+ active buyers in your Nigerian campus community'
-    },
-    { 
-      value: 'seller', 
-      label: 'I want to sell', 
-      description: 'List items and manage your campus business',
-      behavioralInsight: 'Nigerian student sellers earn an average of ₦25,000/month',
-      communityBenefit: 'Connect with 800+ verified buyers on your campus'
-    },
-    { 
-      value: 'both', 
-      label: 'I want to do both', 
-      description: 'Buy and sell within your campus community',
-      behavioralInsight: 'Most active Nigerian users engage in both buying and selling',
-      communityBenefit: 'Full access to Nigerian campus marketplace ecosystem'
+  imports: [CommonModule, RouterLink, ButtonComponent],
+  template: `
+    <div class="onboarding-container">
+      <div class="onboarding-content">
+        <div class="onboarding-header">
+          <h1>Welcome to Markt!</h1>
+          <p>Let's get you started with your account</p>
+        </div>
+
+        <div class="onboarding-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h3>Create Your Account</h3>
+              <p>Sign up with your email and create a secure password</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h3>Complete Your Profile</h3>
+              <p>Add your personal information and profile picture</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h3>Start Exploring</h3>
+              <p>Browse the marketplace and discover amazing products</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="onboarding-actions">
+          <app-button 
+            variant="primary" 
+            size="lg" 
+            [routerLink]="['/auth/register']"
+          >
+            Get Started
+          </app-button>
+          <app-button 
+            variant="secondary" 
+            size="lg" 
+            [routerLink]="['/auth/login']"
+          >
+            I Already Have an Account
+          </app-button>
+        </div>
+
+        <div class="onboarding-features">
+          <h3>What you can do on Markt:</h3>
+          <ul class="features-list">
+            <li>Buy and sell products in a secure environment</li>
+            <li>Connect with local buyers and sellers</li>
+            <li>Join community discussions and get recommendations</li>
+            <li>Track your orders and manage your listings</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .onboarding-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
     }
-  ];
 
-  // Digital Ethnography: Campus verification with trust building for Nigerian universities
-  campusData = {
-    campus: '',
-    studentId: '',
-    graduationYear: '',
-    verificationStatus: 'pending' as 'pending' | 'verified' | 'failed'
-  };
-
-  // Digital Ethnography: Profile setup with social context for Nigerian students
-  profileData = {
-    displayName: '',
-    bio: '',
-    profilePicture: null as File | null,
-    socialPreferences: {
-      showEmail: false,
-      showPhone: false,
-      allowDirectMessages: true,
-      shareLocation: false
+    .onboarding-content {
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     }
-  };
 
-  isCompleted = false;
-
-  // Digital Ethnography: Community insights for trust building in Nigerian campuses
-  communityInsights = {
-    totalMembers: '1,247',
-    activeToday: '89',
-    avgResponseTime: '1.8 minutes',
-    trustScore: '96%'
-  };
-
-  // Digital Ethnography: Behavioral tracking
-  userBehavior = {
-    timeSpentOnStep: {} as { [key: number]: number },
-    interactions: [] as string[],
-    preferences: {} as { [key: string]: any }
-  };
-
-  constructor(private router: Router) {
-    this.startStepTimer();
-  }
-
-  onRoleSelect(role: string) {
-    this.selectedRole = role;
-    this.trackBehavior('role_selected', { role, step: this.currentStep });
-    
-    // Digital Ethnography: Show role-specific insights for Nigerian context
-    const selectedRoleData = this.roles.find(r => r.value === role);
-    if (selectedRoleData) {
-      console.log('Role Insight:', selectedRoleData.behavioralInsight);
-      console.log('Community Benefit:', selectedRoleData.communityBenefit);
+    .onboarding-header {
+      text-align: center;
+      margin-bottom: 3rem;
     }
-  }
 
-  onCampusChange() {
-    this.trackBehavior('campus_selected', { 
-      campus: this.campusData.campus, 
-      step: this.currentStep 
-    });
-    
-    // Digital Ethnography: Show campus-specific insights for Nigerian context
-    const campusInsights = this.getCampusInsights();
-    if (campusInsights) {
-      console.log('Campus Insight:', campusInsights);
+    .onboarding-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 1rem;
     }
-  }
 
-  onNext() {
-    if (this.canProceed()) {
-      this.trackBehavior('step_completed', { 
-        step: this.currentStep, 
-        timeSpent: this.userBehavior.timeSpentOnStep[this.currentStep] 
-      });
-      
-      if (this.currentStep < this.totalSteps) {
-        this.currentStep++;
-        this.startStepTimer();
-      } else {
-        this.completeOnboarding();
+    .onboarding-header p {
+      font-size: 1.125rem;
+      color: #6b7280;
+    }
+
+    .onboarding-steps {
+      margin-bottom: 3rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .step:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1.125rem;
+      flex-shrink: 0;
+    }
+
+    .step-content h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .onboarding-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .onboarding-features h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+
+    .features-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .features-list li {
+      padding: 0.5rem 0;
+      color: #6b7280;
+      position: relative;
+      padding-left: 1.5rem;
+    }
+
+    .features-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .onboarding-content {
+        padding: 2rem;
+      }
+
+      .onboarding-header h1 {
+        font-size: 2rem;
       }
     }
-  }
-
-  onBack() {
-    if (this.currentStep > 1) {
-      this.trackBehavior('step_back', { step: this.currentStep });
-      this.currentStep--;
-      this.startStepTimer();
-    }
-  }
-
-  onSkip() {
-    this.trackBehavior('onboarding_skipped', { 
-      completedSteps: this.currentStep - 1,
-      timeSpent: Object.values(this.userBehavior.timeSpentOnStep).reduce((a, b) => a + b, 0)
-    });
-    this.completeOnboarding();
-  }
-
-  completeOnboarding() {
-    this.isCompleted = true;
-    
-    // Digital Ethnography: Final behavior tracking
-    this.trackBehavior('onboarding_completed', {
-      totalTime: Object.values(this.userBehavior.timeSpentOnStep).reduce((a, b) => a + b, 0),
-      role: this.selectedRole,
-      campus: this.campusData.campus,
-      hasProfilePicture: !!this.profileData.profilePicture
-    });
-
-    // Navigate to main app after onboarding completion
-    setTimeout(() => {
-      this.router.navigate(['/app/feed']);
-    }, 2000);
-  }
-
-  getProgressPercentage(): number {
-    return (this.currentStep / this.totalSteps) * 100;
-  }
-
-  canProceed(): boolean {
-    switch (this.currentStep) {
-      case 1:
-        return this.selectedRole !== '';
-      case 2:
-        return this.campusData.campus !== '' && this.campusData.studentId !== '';
-      case 3:
-        return this.profileData.displayName !== '';
-      default:
-        return true;
-    }
-  }
-
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.profileData.profilePicture = file;
-      this.trackBehavior('profile_picture_uploaded', { 
-        fileSize: file.size, 
-        fileType: file.type 
-      });
-    }
-  }
-
-  // Digital Ethnography: Behavior tracking methods
-  private startStepTimer() {
-    const startTime = Date.now();
-    this.userBehavior.timeSpentOnStep[this.currentStep] = 0;
-    
-    // Update timer every second
-    const timer = setInterval(() => {
-      this.userBehavior.timeSpentOnStep[this.currentStep] = 
-        (Date.now() - startTime) / 1000;
-    }, 1000);
-
-    // Store timer reference for cleanup
-    (this as any).currentTimer = timer;
-  }
-
-  private trackBehavior(action: string, data?: any) {
-    const behaviorData = {
-      action,
-      data,
-      timestamp: new Date(),
-      step: this.currentStep,
-      sessionId: this.generateSessionId()
-    };
-    
-    this.userBehavior.interactions.push(action);
-    console.log('User Behavior Tracked:', behaviorData);
-    
-    // TODO: Send to analytics service
-    // this.analyticsService.trackBehavior(behaviorData);
-  }
-
-  private generateSessionId(): string {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  // Digital Ethnography: Get community insights for current Nigerian campus
-  getCampusInsights(): any {
-    if (!this.campusData.campus) return null;
-    
-    // Nigerian campus-specific insights
-    const campusInsights = {
-      'University of Lagos': { activeMembers: '247', popularCategories: ['Textbooks', 'Electronics', 'Fashion'] },
-      'University of Nigeria, Nsukka': { activeMembers: '183', popularCategories: ['Books', 'Tech Gadgets', 'Sports'] },
-      'Ahmadu Bello University': { activeMembers: '156', popularCategories: ['Textbooks', 'Electronics', 'Traditional Items'] },
-      'Obafemi Awolowo University': { activeMembers: '134', popularCategories: ['Books', 'Electronics', 'Fashion'] },
-      'University of Ibadan': { activeMembers: '198', popularCategories: ['Textbooks', 'Electronics', 'Food Items'] },
-      'University of Benin': { activeMembers: '145', popularCategories: ['Books', 'Electronics', 'Fashion'] },
-      'Federal University of Technology, Akure': { activeMembers: '112', popularCategories: ['Tech Gadgets', 'Books', 'Electronics'] },
-      'Covenant University': { activeMembers: '167', popularCategories: ['Textbooks', 'Electronics', 'Fashion'] },
-      'Babcock University': { activeMembers: '98', popularCategories: ['Books', 'Electronics', 'Fashion'] },
-      'Lagos State University': { activeMembers: '178', popularCategories: ['Textbooks', 'Electronics', 'Fashion'] }
-    };
-    
-    return campusInsights[this.campusData.campus as keyof typeof campusInsights] || null;
-  }
+  `]
+})
+export class OnboardingComponent {
+  // Onboarding component for new user introduction
 } 

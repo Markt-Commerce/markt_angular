@@ -1,284 +1,384 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { InputComponent } from '../../../shared/components/input/input.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonComponent, InputComponent],
+  template: `
+    <div class="register-container">
+      <div class="register-card">
+        <div class="register-header">
+          <h1>Create Account</h1>
+          <p>Join Markt and start buying and selling</p>
+        </div>
+        
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+          <div class="form-group">
+            <app-input
+              id="username"
+              name="username"
+              type="text"
+              label="Username"
+              placeholder="Choose a username"
+              formControlName="username"
+              [required]="true"
+              [errorMessage]="getErrorMessage('username')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-group">
+            <app-input
+              id="fullName"
+              name="fullName"
+              type="text"
+              label="Full Name"
+              placeholder="Enter your full name"
+              formControlName="fullName"
+              [required]="true"
+              [errorMessage]="getErrorMessage('fullName')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-group">
+            <app-input
+              id="email"
+              name="email"
+              type="email"
+              label="Email"
+              placeholder="Enter your email"
+              formControlName="email"
+              [required]="true"
+              [errorMessage]="getErrorMessage('email')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-group">
+            <app-input
+              id="phone"
+              name="phone"
+              type="tel"
+              label="Phone Number (Optional)"
+              placeholder="Enter your phone number"
+              formControlName="phone"
+              [errorMessage]="getErrorMessage('phone')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-group">
+            <label for="account_type" class="form-label">Account Type</label>
+            <select 
+              id="account_type" 
+              formControlName="account_type"
+              class="form-select"
+              [class.error]="getErrorMessage('account_type')"
+            >
+              <option value="buyer">Buyer - I want to buy products</option>
+              <option value="seller">Seller - I want to sell products</option>
+            </select>
+            <div *ngIf="getErrorMessage('account_type')" class="error-text">
+              {{ getErrorMessage('account_type') }}
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <app-input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              placeholder="Create a password"
+              formControlName="password"
+              [required]="true"
+              [errorMessage]="getErrorMessage('password')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-group">
+            <app-input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              formControlName="confirmPassword"
+              [required]="true"
+              [errorMessage]="getErrorMessage('confirmPassword')"
+              [fullWidth]="true"
+            ></app-input>
+          </div>
+          
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="agreeToTerms">
+              <span>I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a></span>
+            </label>
+          </div>
+          
+          <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
+          
+          <app-button
+            type="submit"
+            variant="primary"
+            size="lg"
+            [loading]="loading"
+            [disabled]="registerForm.invalid || loading"
+            [fullWidth]="true"
+          >
+            Create Account
+          </app-button>
+        </form>
+        
+        <div class="register-footer">
+          <p>Already have an account? <a routerLink="/auth/login">Sign in</a></p>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .register-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .register-card {
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .register-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .register-header h1 {
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+    
+    .register-header p {
+      color: #7f8c8d;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-options {
+      margin-bottom: 2rem;
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #2c3e50;
+      line-height: 1.4;
+    }
+    
+    .checkbox-label input {
+      width: auto;
+      margin-top: 0.1rem;
+    }
+    
+    .terms-link {
+      color: #3498db;
+      text-decoration: none;
+    }
+    
+    .terms-link:hover {
+      text-decoration: underline;
+    }
+    
+    .error-message {
+      background: #fee;
+      color: #c53030;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      border: 1px solid #fed7d7;
+    }
+    
+    .register-footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #ecf0f1;
+    }
+    
+    .register-footer a {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .register-footer a:hover {
+      text-decoration: underline;
+    }
+  `]
 })
-export class RegisterComponent {
-  // Form data
-  registerData = {
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    campus: '',
-    agreeToTerms: false
-  };
+export class RegisterComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  // UI state
-  isLoading = false;
-  showPassword = false;
-  showConfirmPassword = false;
+  registerForm!: FormGroup;
+  loading = false;
+  errorMessage = '';
 
-  // Form validation
-  errors: { [key: string]: string } = {};
-  passwordStrength = 0;
-
-  // Digital Ethnography: Nigerian campus options with behavioral insights
-  campuses = [
-    { value: '', label: 'Select your campus' },
-    { 
-      value: 'university-of-lagos', 
-      label: 'University of Lagos',
-      activeMembers: '247',
-      avgTrustScore: '4.8/5',
-      popularCategories: ['Textbooks', 'Electronics', 'Fashion Items']
-    },
-    { 
-      value: 'university-of-nigeria-nsukka', 
-      label: 'University of Nigeria, Nsukka',
-      activeMembers: '183',
-      avgTrustScore: '4.9/5',
-      popularCategories: ['Books', 'Tech Gadgets', 'Sports Equipment']
-    },
-    { 
-      value: 'ahmadu-bello-university', 
-      label: 'Ahmadu Bello University',
-      activeMembers: '156',
-      avgTrustScore: '4.7/5',
-      popularCategories: ['Textbooks', 'Electronics', 'Traditional Items']
-    },
-    { 
-      value: 'obafemi-awolowo-university', 
-      label: 'Obafemi Awolowo University',
-      activeMembers: '134',
-      avgTrustScore: '4.8/5',
-      popularCategories: ['Books', 'Electronics', 'Fashion']
-    },
-    { 
-      value: 'university-of-ibadan', 
-      label: 'University of Ibadan',
-      activeMembers: '198',
-      avgTrustScore: '4.9/5',
-      popularCategories: ['Textbooks', 'Electronics', 'Food Items']
-    },
-    { 
-      value: 'university-of-benin', 
-      label: 'University of Benin',
-      activeMembers: '145',
-      avgTrustScore: '4.7/5',
-      popularCategories: ['Books', 'Electronics', 'Fashion']
-    },
-    { 
-      value: 'federal-university-of-technology-akure', 
-      label: 'Federal University of Technology, Akure',
-      activeMembers: '112',
-      avgTrustScore: '4.8/5',
-      popularCategories: ['Tech Gadgets', 'Books', 'Electronics']
-    },
-    { 
-      value: 'covenant-university', 
-      label: 'Covenant University',
-      activeMembers: '167',
-      avgTrustScore: '4.9/5',
-      popularCategories: ['Textbooks', 'Electronics', 'Fashion']
-    },
-    { 
-      value: 'babcock-university', 
-      label: 'Babcock University',
-      activeMembers: '98',
-      avgTrustScore: '4.7/5',
-      popularCategories: ['Books', 'Electronics', 'Fashion']
-    },
-    { 
-      value: 'lagos-state-university', 
-      label: 'Lagos State University',
-      activeMembers: '178',
-      avgTrustScore: '4.8/5',
-      popularCategories: ['Textbooks', 'Electronics', 'Fashion']
-    },
-    { value: 'other', label: 'Other Nigerian University' }
-  ];
-
-  // Digital Ethnography: Trust indicators and social proof for Nigerian context
-  trustIndicators = {
-    totalUsers: '1,247',
-    verifiedCampuses: '23',
-    avgResponseTime: '1.8 minutes',
-    trustScore: '96%'
-  };
-
-  // Digital Ethnography: Behavioral tracking
-  userBehavior = {
-    formStartTime: Date.now(),
-    fieldInteractions: [] as string[],
-    validationAttempts: 0,
-    campusSelection: null as string | null
-  };
-
-  constructor(private router: Router) {
-    this.trackBehavior('registration_started');
+  ngOnInit(): void {
+    this.initForm();
   }
 
-  // Navigation
-  onRegister() {
-    if (this.validateForm()) {
-      this.isLoading = true;
-      this.trackBehavior('registration_submitted', {
-        campus: this.registerData.campus,
-        hasProfilePicture: false,
-        timeSpent: (Date.now() - this.userBehavior.formStartTime) / 1000
-      });
-      
-      // TODO: Implement registration logic
-      console.log('Registration attempt:', this.registerData);
-      setTimeout(() => {
-        this.isLoading = false;
-        this.trackBehavior('registration_successful');
-        // Navigate to onboarding after successful registration
-        this.router.navigate(['/onboarding']);
-      }, 2000);
-    } else {
-      this.userBehavior.validationAttempts++;
-      this.trackBehavior('validation_failed', {
-        errors: this.errors,
-        attempt: this.userBehavior.validationAttempts
-      });
-    }
-  }
-
-  onLogin() {
-    this.trackBehavior('navigate_to_login');
-    this.router.navigate(['/auth/login']);
-  }
-
-  onTogglePassword() {
-    this.showPassword = !this.showPassword;
-    this.trackBehavior('password_visibility_toggled', { visible: this.showPassword });
-  }
-
-  onToggleConfirmPassword() {
-    this.showConfirmPassword = !this.showConfirmPassword;
-    this.trackBehavior('confirm_password_visibility_toggled', { visible: this.showConfirmPassword });
-  }
-
-  onSocialLogin(provider: string) {
-    this.trackBehavior('social_login_attempted', { provider });
-    // Handle social login
-    console.log('Social login with:', provider);
-  }
-
-  // Digital Ethnography: Enhanced form validation with behavioral insights for Nigerian context
-  validateForm(): boolean {
-    this.errors = {};
-
-    if (!this.registerData.fullName.trim()) {
-      this.errors['fullName'] = 'Full name is required';
-    } else if (this.registerData.fullName.trim().length < 2) {
-      this.errors['fullName'] = 'Full name must be at least 2 characters';
-    }
-
-    if (!this.registerData.email.trim()) {
-      this.errors['email'] = 'Email is required';
-    } else if (!this.isValidEmail(this.registerData.email)) {
-      this.errors['email'] = 'Please enter a valid email';
-    } else if (!this.isNigerianCampusEmail(this.registerData.email)) {
-      this.errors['email'] = 'Please use your Nigerian university email address for verification';
-    }
-
-    if (!this.registerData.password) {
-      this.errors['password'] = 'Password is required';
-    } else if (this.registerData.password.length < 8) {
-      this.errors['password'] = 'Password must be at least 8 characters';
-    } else if (this.passwordStrength < 50) {
-      this.errors['password'] = 'Please choose a stronger password';
-    }
-
-    if (this.registerData.password !== this.registerData.confirmPassword) {
-      this.errors['confirmPassword'] = 'Passwords do not match';
-    }
-
-    if (!this.registerData.campus) {
-      this.errors['campus'] = 'Please select your Nigerian campus';
-    }
-
-    if (!this.registerData.agreeToTerms) {
-      this.errors['terms'] = 'You must agree to the terms and conditions';
-    }
-
-    return Object.keys(this.errors).length === 0;
-  }
-
-  // Email validation
-  isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  // Digital Ethnography: Nigerian campus email validation for trust building
-  isNigerianCampusEmail(email: string): boolean {
-    const nigerianCampusDomains = [
-      'unilag.edu.ng', 'unn.edu.ng', 'abu.edu.ng', 'oauife.edu.ng',
-      'ui.edu.ng', 'uniben.edu.ng', 'futa.edu.ng', 'covenantuniversity.edu.ng',
-      'babcock.edu.ng', 'lasu.edu.ng', 'futa.edu.ng', 'uniport.edu.ng',
-      'unimaid.edu.ng', 'usmanu.edu.ng', 'fudma.edu.ng', 'fud.edu.ng'
-    ];
-    const domain = email.split('@')[1];
-    return nigerianCampusDomains.includes(domain);
-  }
-
-  // Password strength calculation
-  calculatePasswordStrength(password: string): number {
-    let strength = 0;
-    if (password.length >= 8) strength += 25;
-    if (/[a-z]/.test(password)) strength += 25;
-    if (/[A-Z]/.test(password)) strength += 25;
-    if (/[0-9]/.test(password)) strength += 25;
-    return strength;
-  }
-
-  onPasswordChange() {
-    this.passwordStrength = this.calculatePasswordStrength(this.registerData.password);
-    this.trackBehavior('password_strength_updated', { strength: this.passwordStrength });
-  }
-
-  onCampusChange() {
-    this.userBehavior.campusSelection = this.registerData.campus;
-    this.trackBehavior('campus_selected', { 
-      campus: this.registerData.campus,
-      campusData: this.campuses.find(c => c.value === this.registerData.campus)
+  private initForm(): void {
+    this.registerForm = this.fb.group({
+      username: ['', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(30),
+        Validators.pattern(/^[a-zA-Z0-9_]+$/)
+      ]],
+      email: ['', [
+        Validators.required,
+        Validators.email
+      ]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+      ]],
+      confirmPassword: ['', [
+        Validators.required
+      ]],
+      fullName: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100)
+      ]],
+      phone: ['', [
+        Validators.pattern(/^\+?[\d\s\-\(\)]+$/)
+      ]],
+      account_type: ['buyer', [
+        Validators.required
+      ]],
+      agreeToTerms: [false, [
+        Validators.requiredTrue
+      ]]
+    }, {
+      validators: this.passwordMatchValidator
     });
   }
 
-  // Digital Ethnography: Behavior tracking
-  private trackBehavior(action: string, data?: any) {
-    const behaviorData = {
-      action,
-      data,
-      timestamp: new Date(),
-      sessionId: this.generateSessionId()
-    };
+  private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
     
-    this.userBehavior.fieldInteractions.push(action);
-    console.log('Registration Behavior Tracked:', behaviorData);
+    if (password && confirmPassword && password.value !== confirmPassword.value) {
+      return { passwordMismatch: true };
+    }
     
-    // TODO: Send to analytics service
-    // this.analyticsService.trackRegistrationBehavior(behaviorData);
+    return null;
   }
 
-  private generateSessionId(): string {
-    return 'reg_session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  onSubmit(): void {
+    if (this.registerForm.valid) {
+      this.loading = true;
+      this.errorMessage = '';
+
+      const userData = {
+        username: this.registerForm.value.username,
+        email: this.registerForm.value.email,
+        password: this.registerForm.value.password,
+        account_type: this.registerForm.value.account_type,
+        phone_number: this.registerForm.value.phone || undefined
+      };
+
+      this.authService.register(userData).subscribe({
+        next: (response) => {
+          this.loading = false;
+          console.log('Registration successful:', response);
+          
+          // Redirect to onboarding or dashboard
+          this.router.navigate(['/onboarding']);
+        },
+        error: (error) => {
+          this.loading = false;
+          console.error('Registration error:', error);
+          
+          if (error.status === 409) {
+            this.errorMessage = 'Username or email already exists. Please choose different credentials.';
+          } else if (error.status === 422) {
+            this.errorMessage = 'Please check your input and try again.';
+          } else if (error.status === 0) {
+            this.errorMessage = 'Unable to connect to server. Please check your internet connection.';
+          } else {
+            this.errorMessage = error.message || 'An error occurred during registration. Please try again.';
+          }
+        }
+      });
+    }
   }
 
-  // Digital Ethnography: Get campus insights for selected Nigerian campus
-  getCampusInsights(): any {
-    if (!this.registerData.campus) return null;
-    return this.campuses.find(c => c.value === this.registerData.campus);
+  getErrorMessage(field: string): string {
+    const control = this.registerForm.get(field);
+    
+    if (control?.errors && control.touched) {
+      if (control.errors['required']) {
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+      }
+      if (control.errors['email']) {
+        return 'Please enter a valid email address';
+      }
+      if (control.errors['minlength']) {
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} must be at least ${control.errors['minlength'].requiredLength} characters`;
+      }
+      if (control.errors['maxlength']) {
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} must be no more than ${control.errors['maxlength'].requiredLength} characters`;
+      }
+      if (control.errors['pattern']) {
+        if (field === 'username') {
+          return 'Username can only contain letters, numbers, and underscores';
+        }
+        if (field === 'password') {
+          return 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character';
+        }
+        if (field === 'phone') {
+          return 'Please enter a valid phone number';
+        }
+      }
+      if (control.errors['requiredTrue'] && field === 'agreeToTerms') {
+        return 'You must agree to the Terms of Service and Privacy Policy';
+      }
+    }
+    
+    // Check for password mismatch
+    if (field === 'confirmPassword' && this.registerForm.errors?.['passwordMismatch'] && control?.touched) {
+      return 'Passwords do not match';
+    }
+    
+    return '';
   }
 } 

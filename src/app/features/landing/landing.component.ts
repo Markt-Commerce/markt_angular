@@ -1,168 +1,257 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './landing.component.html',
-  styleUrl: './landing.component.css'
+  imports: [CommonModule, RouterLink, ButtonComponent],
+  template: `
+    <div class="landing-container">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            Welcome to <span class="highlight">Markt</span>
+          </h1>
+          <p class="hero-subtitle">
+            The social-first e-commerce platform where buying and selling meets community
+          </p>
+          <div class="hero-actions">
+            <app-button 
+              variant="primary" 
+              size="lg" 
+              [routerLink]="['/auth/register']"
+            >
+              Get Started
+            </app-button>
+            <app-button 
+              variant="secondary" 
+              size="lg" 
+              [routerLink]="['/app/marketplace']"
+            >
+              Browse Marketplace
+            </app-button>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="/assets/hero-image.jpg" alt="Markt Marketplace" class="hero-img">
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="features-section">
+        <h2 class="section-title">Why Choose Markt?</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3>Social Commerce</h3>
+            <p>Connect with buyers and sellers in a vibrant community</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3>Secure Transactions</h3>
+            <p>Safe and secure payment processing for all transactions</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <h3>Local Discovery</h3>
+            <p>Find amazing products and deals in your local area</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section class="cta-section">
+        <div class="cta-content">
+          <h2>Ready to Start?</h2>
+          <p>Join thousands of users buying and selling on Markt</p>
+          <app-button 
+            variant="primary" 
+            size="lg" 
+            [routerLink]="['/auth/register']"
+          >
+            Create Account
+          </app-button>
+        </div>
+      </section>
+    </div>
+  `,
+  styles: [`
+    .landing-container {
+      min-height: 100vh;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      padding: 4rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 80vh;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+
+    .highlight {
+      color: #3b82f6;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .hero-image {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-img {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Features Section */
+    .features-section {
+      padding: 4rem 2rem;
+      background: #f9fafb;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      color: #3b82f6;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card p {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      padding: 4rem 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+    }
+
+    .cta-content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .cta-content h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .cta-content p {
+      font-size: 1.25rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-section {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 2rem 1rem;
+      }
+
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  `]
 })
 export class LandingComponent {
-  heroTitle = 'Welcome to Markt';
-  heroSubtitle = 'The Social-First Nigerian Campus Marketplace';
-  heroDescription = 'Connect, buy, and sell with your Nigerian campus community. Experience the real-world market feeling online.';
-  
-  // Digital Ethnography: Social proof and community validation for Nigerian campuses
-  socialProof = {
-    activeUsers: '1,247',
-    campuses: '23',
-    transactions: '5,394',
-    trustScore: '96%'
-  };
-
-  // Digital Ethnography: Trust indicators and verification for Nigerian context
-  trustIndicators = [
-    {
-      icon: '🛡️',
-      title: 'Verified Campus Members',
-      description: 'All users verified through Nigerian university email domains'
-    },
-    {
-      icon: '🔒',
-      title: 'Secure Transactions',
-      description: 'End-to-end encryption and secure payment processing with local payment methods'
-    },
-    {
-      icon: '👥',
-      title: 'Community Moderation',
-      description: 'Active community reporting and moderation system tailored for Nigerian campuses'
-    },
-    {
-      icon: '📱',
-      title: 'Real-time Chat',
-      description: 'Instant messaging with buyers and sellers using popular Nigerian platforms'
-    }
-  ];
-  
-  features = [
-    {
-      icon: '🤝',
-      title: 'Trust-Based Community',
-      description: 'Build trust within your Nigerian campus community through verified profiles and transparent interactions.',
-      // Digital Ethnography: Behavioral insights for Nigerian students
-      behavioralInsight: 'Nigerian students prefer buying from verified campus members they can meet in person'
-    },
-    {
-      icon: '💬',
-      title: 'Live Social Interaction',
-      description: 'Engage in real-time conversations with buyers and sellers, fostering a vibrant marketplace.',
-      behavioralInsight: 'Real-time chat increases transaction completion by 60% in Nigerian campuses'
-    },
-    {
-      icon: '🎓',
-      title: 'Student Empowerment',
-      description: 'Empowering Nigerian students to buy, sell, and connect, fostering entrepreneurship and community.',
-      behavioralInsight: '75% of Nigerian student sellers started their first business on Markt'
-    },
-    {
-      icon: '📍',
-      title: 'Local First',
-      description: 'Focus on local transactions within your Nigerian campus, making it easier to buy and sell within your community.',
-      behavioralInsight: 'Local transactions have 4x higher trust ratings in Nigerian campuses'
-    }
-  ];
-
-  // Digital Ethnography: Authentic Nigerian user testimonials with behavioral context
-  testimonials = [
-    {
-      name: 'Aisha Bello',
-      role: '300 Level',
-      campus: 'University of Lagos',
-      rating: '★★★★★',
-      text: 'Markt has completely transformed how I buy and sell textbooks. It\'s so much easier and safer than other platforms.',
-      behavioralContext: 'Uses Markt 4-5 times per semester for textbook exchange',
-      trustFactor: 'Verified campus member since 2022'
-    },
-    {
-      name: 'Emeka Okonkwo',
-      role: '400 Level',
-      campus: 'University of Nigeria, Nsukka',
-      rating: '★★★★',
-      text: 'I love the community aspect of Markt. I\'ve met so many cool people through buying and selling on the app.',
-      behavioralContext: 'Active in campus community discussions',
-      trustFactor: 'Top-rated seller with 80+ successful transactions'
-    },
-    {
-      name: 'Fatima Hassan',
-      role: '500 Level',
-      campus: 'Ahmadu Bello University',
-      rating: '★★★★★',
-      text: 'Thanks to Markt, I was able to start my own small business selling handmade jewelry to my classmates. It\'s been an amazing experience!',
-      behavioralContext: 'Student entrepreneur with 150+ sales',
-      trustFactor: 'Featured seller and community moderator'
-    }
-  ];
-
-  // Digital Ethnography: Nigerian campus-specific insights
-  campusInsights = [
-    {
-      campus: 'University of Lagos',
-      activeUsers: '247',
-      popularItems: ['Textbooks', 'Electronics', 'Fashion Items'],
-      avgTrustScore: '4.8/5'
-    },
-    {
-      campus: 'University of Nigeria, Nsukka',
-      activeUsers: '183',
-      popularItems: ['Books', 'Tech Gadgets', 'Sports Equipment'],
-      avgTrustScore: '4.9/5'
-    },
-    {
-      campus: 'Ahmadu Bello University',
-      activeUsers: '156',
-      popularItems: ['Textbooks', 'Electronics', 'Traditional Items'],
-      avgTrustScore: '4.7/5'
-    },
-    {
-      campus: 'Obafemi Awolowo University',
-      activeUsers: '134',
-      popularItems: ['Books', 'Electronics', 'Fashion'],
-      avgTrustScore: '4.8/5'
-    },
-    {
-      campus: 'University of Ibadan',
-      activeUsers: '198',
-      popularItems: ['Textbooks', 'Electronics', 'Food Items'],
-      avgTrustScore: '4.9/5'
-    }
-  ];
-
-  getStartedText = 'Get Started';
-  learnMoreText = 'Learn More';
-
-  constructor(private router: Router) {}
-
-  onGetStarted() {
-    this.router.navigate(['/auth/register']);
-  }
-
-  onLearnMore() {
-    this.router.navigate(['/onboarding']);
-  }
-
-  onLogin() {
-    this.router.navigate(['/auth/login']);
-  }
-
-  onRegister() {
-    this.router.navigate(['/auth/register']);
-  }
-
-  // Digital Ethnography: Track user behavior for research
-  trackUserBehavior(action: string, context?: any) {
-    console.log('User Behavior:', { action, context, timestamp: new Date() });
-    // TODO: Integrate with analytics service
-  }
+  // Landing page component for the main entry point
 } 
