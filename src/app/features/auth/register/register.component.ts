@@ -3,146 +3,229 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { InputComponent } from '../../../shared/components/input/input.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   template: `
-    <div class="register-container">
-      <div class="register-card">
-        <div class="register-header">
-          <h1>Create Account</h1>
-          <p>Join Markt and start buying and selling</p>
-        </div>
-        
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-          <div class="form-group">
-            <app-input
-              id="username"
-              name="username"
-              type="text"
-              label="Username"
-              placeholder="Choose a username"
-              formControlName="username"
-              [required]="true"
-              [errorMessage]="getErrorMessage('username')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
+    <div class="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden font-sans">
+      <div class="layout-container flex h-full grow flex-col">
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f4f1f0] px-10 ">
+          <div class="flex items-center gap-6 text-[#181211]">
           
-          <div class="form-group">
-            <app-input
-              id="fullName"
-              name="fullName"
-              type="text"
-              label="Full Name"
-              placeholder="Enter your full name"
-              formControlName="fullName"
-              [required]="true"
-              [errorMessage]="getErrorMessage('fullName')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-          
-          <div class="form-group">
-            <app-input
-              id="email"
-              name="email"
-              type="email"
-              label="Email"
-              placeholder="Enter your email"
-              formControlName="email"
-              [required]="true"
-              [errorMessage]="getErrorMessage('email')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-          
-          <div class="form-group">
-            <app-input
-              id="phone"
-              name="phone"
-              type="tel"
-              label="Phone Number (Optional)"
-              placeholder="Enter your phone number"
-              formControlName="phone"
-              [errorMessage]="getErrorMessage('phone')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-          
-          <div class="form-group">
-            <label for="account_type" class="form-label">Account Type</label>
-            <select 
-              id="account_type" 
-              formControlName="account_type"
-              class="form-select"
-              [class.error]="getErrorMessage('account_type')"
-            >
-              <option value="buyer">Buyer - I want to buy products</option>
-              <option value="seller">Seller - I want to sell products</option>
-            </select>
-            <div *ngIf="getErrorMessage('account_type')" class="error-text">
-              {{ getErrorMessage('account_type') }}
+            <div class="h-12 lg:h-16 xl:h-20">
+              <img src="/markt-text-logo.png" alt="Markt" class="h-full w-auto object-contain drop-shadow-lg">
             </div>
           </div>
-          
-          <div class="form-group">
-            <app-input
-              id="password"
-              name="password"
-              type="password"
-              label="Password"
-              placeholder="Create a password"
-              formControlName="password"
-              [required]="true"
-              [errorMessage]="getErrorMessage('password')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-          
-          <div class="form-group">
-            <app-input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              label="Confirm Password"
-              placeholder="Confirm your password"
-              formControlName="confirmPassword"
-              [required]="true"
-              [errorMessage]="getErrorMessage('confirmPassword')"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-          
-          <div class="form-options">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="agreeToTerms">
-              <span>I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a></span>
-            </label>
-          </div>
-          
-          <div *ngIf="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
-          
-          <app-button
-            type="submit"
-            variant="primary"
-            size="lg"
-            [loading]="loading"
-            [disabled]="registerForm.invalid || loading"
-            [fullWidth]="true"
+          <button
+            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em]"
+            [routerLink]="['/auth/login']"
           >
-            Create Account
-          </app-button>
-        </form>
+            <span class="truncate">Already have an account? Sign in</span>
+          </button>
+        </header>
         
-        <div class="register-footer">
-          <p>Already have an account? <a routerLink="/auth/login">Sign in</a></p>
+        <div class="px-4 lg:px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 max-w-[960px] flex-1">
+            <h2 class="text-[#181211] tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Join Markt</h2>
+            <p class="text-[#181211] text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">Become part of a vibrant community of buyers and sellers.</p>
+            
+            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+              <!-- Full Name -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Full Name</p>
+                  <input
+                    formControlName="fullName"
+                    placeholder="Enter your full name"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                    [class.border-red-500]="getErrorMessage('fullName')"
+                  />
+                  <div *ngIf="getErrorMessage('fullName')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('fullName') }}
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Email Address -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Email Address</p>
+                  <input
+                    formControlName="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                    [class.border-red-500]="getErrorMessage('email')"
+                  />
+                  <div *ngIf="getErrorMessage('email')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('email') }}
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Phone Number -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Phone Number (Optional)</p>
+                  <input
+                    formControlName="phone"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                    [class.border-red-500]="getErrorMessage('phone')"
+                  />
+                  <div *ngIf="getErrorMessage('phone')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('phone') }}
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Password -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Password</p>
+                  <input
+                    formControlName="password"
+                    type="password"
+                    placeholder="Create a password"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                    [class.border-red-500]="getErrorMessage('password')"
+                  />
+                  <div *ngIf="getErrorMessage('password')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('password') }}
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Confirm Password -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Confirm Password</p>
+                  <input
+                    formControlName="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                    [class.border-red-500]="getErrorMessage('confirmPassword')"
+                  />
+                  <div *ngIf="getErrorMessage('confirmPassword')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('confirmPassword') }}
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Account Type -->
+              <div class="flex flex-wrap gap-3 p-4">
+                <label
+                  class="text-sm font-medium leading-normal flex items-center justify-center rounded-lg border border-[#e5dddc] px-4 h-11 text-[#181211] has-[:checked]:border-[3px] has-[:checked]:px-3.5 has-[:checked]:border-[#e85530] relative cursor-pointer"
+                >
+                  I'm a Buyer
+                  <input type="radio" formControlName="account_type" value="buyer" class="invisible absolute" />
+                </label>
+                <label
+                  class="text-sm font-medium leading-normal flex items-center justify-center rounded-lg border border-[#e5dddc] px-4 h-11 text-[#181211] has-[:checked]:border-[3px] has-[:checked]:px-3.5 has-[:checked]:border-[#e85530] relative cursor-pointer"
+                >
+                  I'm a Seller
+                  <input type="radio" formControlName="account_type" value="seller" class="invisible absolute" />
+                </label>
+              </div>
+              
+              <!-- Seller Fields (conditional) -->
+              <div *ngIf="isSellerAccount">
+                <!-- Shop/Business Name -->
+                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                  <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Shop/Business Name</p>
+                    <input
+                      formControlName="shopName"
+                      placeholder="Enter your shop or business name"
+                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                      [class.border-red-500]="getErrorMessage('shopName')"
+                    />
+                    <div *ngIf="getErrorMessage('shopName')" class="text-red-500 text-sm mt-1">
+                      {{ getErrorMessage('shopName') }}
+                    </div>
+                  </label>
+                </div>
+                
+                <!-- Business Description -->
+                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                  <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Business Description</p>
+                    <textarea
+                      formControlName="businessDescription"
+                      placeholder="Describe your business"
+                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] min-h-36 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                      [class.border-red-500]="getErrorMessage('businessDescription')"
+                    ></textarea>
+                    <div *ngIf="getErrorMessage('businessDescription')" class="text-red-500 text-sm mt-1">
+                      {{ getErrorMessage('businessDescription') }}
+                    </div>
+                  </label>
+                </div>
+                
+                <!-- Business Category -->
+                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                  <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Business Category</p>
+                    <select
+                      formControlName="businessCategory"
+                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 p-[15px] text-base font-normal leading-normal"
+                      [class.border-red-500]="getErrorMessage('businessCategory')"
+                    >
+                      <option value="">Select a category</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="fashion">Fashion & Clothing</option>
+                      <option value="home">Home & Garden</option>
+                      <option value="sports">Sports & Outdoors</option>
+                      <option value="books">Books & Media</option>
+                      <option value="health">Health & Beauty</option>
+                      <option value="food">Food & Beverages</option>
+                      <option value="services">Services</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div *ngIf="getErrorMessage('businessCategory')" class="text-red-500 text-sm mt-1">
+                      {{ getErrorMessage('businessCategory') }}
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Terms & Privacy -->
+              <div class="px-4">
+                <label class="flex gap-x-3 py-3 flex-row cursor-pointer">
+                  <input
+                    type="checkbox"
+                    formControlName="agreeToTerms"
+                    class="h-5 w-5 rounded border-[#e5dddc] border-2 bg-transparent text-[#e85530] checked:bg-[#e85530] checked:border-[#e85530] focus:ring-0 focus:ring-offset-0 focus:border-[#e5dddc] focus:outline-none"
+                  />
+                  <p class="text-[#181211] text-base font-normal leading-normal">I agree to the <a href="#" class="text-[#e85530] hover:underline">Terms & Privacy Policy</a></p>
+                </label>
+                <div *ngIf="getErrorMessage('agreeToTerms')" class="text-red-500 text-sm">
+                  {{ getErrorMessage('agreeToTerms') }}
+                </div>
+              </div>
+              
+              <!-- Error Message -->
+              <div *ngIf="errorMessage" class="mx-4 my-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {{ errorMessage }}
+              </div>
+              
+              <!-- Submit Button -->
+              <div class="flex px-4 py-3">
+                <button
+                  type="submit"
+                  [disabled]="registerForm.invalid || loading"
+                  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 flex-1 bg-[#e85530] text-white text-base font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#d64426] transition-colors duration-200"
+                >
+                  <span class="truncate" *ngIf="!loading">Create Account</span>
+                  <span class="truncate" *ngIf="loading">Creating Account...</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -249,18 +332,16 @@ export class RegisterComponent implements OnInit {
   loading = false;
   errorMessage = '';
 
+  get isSellerAccount(): boolean {
+    return this.registerForm?.get('account_type')?.value === 'seller';
+  }
+
   ngOnInit(): void {
     this.initForm();
   }
 
   private initForm(): void {
     this.registerForm = this.fb.group({
-      username: ['', [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(30),
-        Validators.pattern(/^[a-zA-Z0-9_]+$/)
-      ]],
       email: ['', [
         Validators.required,
         Validators.email
@@ -284,11 +365,36 @@ export class RegisterComponent implements OnInit {
       account_type: ['buyer', [
         Validators.required
       ]],
+      // Seller-specific fields
+      shopName: [''],
+      businessDescription: [''],
+      businessCategory: [''],
       agreeToTerms: [false, [
         Validators.requiredTrue
       ]]
     }, {
       validators: this.passwordMatchValidator
+    });
+
+    // Add conditional validators for seller fields
+    this.registerForm.get('account_type')?.valueChanges.subscribe(accountType => {
+      const shopNameControl = this.registerForm.get('shopName');
+      const businessDescriptionControl = this.registerForm.get('businessDescription');
+      const businessCategoryControl = this.registerForm.get('businessCategory');
+
+      if (accountType === 'seller') {
+        shopNameControl?.setValidators([Validators.required, Validators.minLength(2)]);
+        businessDescriptionControl?.setValidators([Validators.required, Validators.minLength(10)]);
+        businessCategoryControl?.setValidators([Validators.required]);
+      } else {
+        shopNameControl?.clearValidators();
+        businessDescriptionControl?.clearValidators();
+        businessCategoryControl?.clearValidators();
+      }
+
+      shopNameControl?.updateValueAndValidity();
+      businessDescriptionControl?.updateValueAndValidity();
+      businessCategoryControl?.updateValueAndValidity();
     });
   }
 

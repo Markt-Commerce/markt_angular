@@ -47,7 +47,7 @@ import {
                       class="text-white text-4xl lg:text-6xl xl:text-7xl font-black leading-tight tracking-[-0.033em] animate-fade-in-up"
                     >
                       Where Social Meets Shopping
-                    </h1>
+          </h1>
                     <h2 class="text-white/90 text-lg lg:text-xl font-normal leading-relaxed max-w-3xl mx-auto animate-fade-in-up delay-200">
                       Markt is a social-first e-commerce platform that combines the best of social media with online shopping. Discover unique products, connect with sellers, and build your community.
                     </h2>
@@ -55,8 +55,8 @@ import {
                   <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
                     <button
                       class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/app/marketplace']"
-                    >
+              [routerLink]="['/app/marketplace']"
+            >
                       <span class="truncate">I'm a Buyer</span>
                       <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                     </button>
@@ -112,7 +112,7 @@ import {
                 <div class="group flex flex-col gap-6 rounded-2xl border border-markt-border/50 bg-white p-6 lg:p-8 hover:shadow-xl hover:border-markt-primary/30 transform hover:-translate-y-2 transition-all duration-300">
                   <div class="flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-markt-primary/10 to-markt-accent/10 group-hover:from-markt-primary/20 group-hover:to-markt-accent/20 transition-all duration-300">
                     <fa-icon [icon]="faDollarSign" class="w-8 h-8 lg:w-10 lg:h-10 text-markt-primary group-hover:scale-110 transition-transform duration-300"></fa-icon>
-                  </div>
+          </div>
                   <div class="flex flex-col gap-3">
                     <h4 class="text-markt-dark text-xl lg:text-2xl font-bold leading-tight">Seller Tools</h4>
                     <p class="text-markt-muted text-base lg:text-lg font-normal leading-relaxed">

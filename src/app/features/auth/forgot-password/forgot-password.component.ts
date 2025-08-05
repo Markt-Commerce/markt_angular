@@ -3,190 +3,113 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { InputComponent } from '../../../shared/components/input/input.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   template: `
-    <div class="forgot-password-container">
-      <div class="forgot-password-card">
-        <div class="forgot-password-header">
-          <h1>Reset Password</h1>
-          <p>Enter your email address and we'll send you a link to reset your password</p>
-        </div>
-        
-        <div *ngIf="!emailSent" class="forgot-password-form">
-          <form [formGroup]="forgotPasswordForm" (ngSubmit)="onSubmit()">
-            <div class="form-group">
-              <app-input
-                id="email"
-                name="email"
-                type="email"
-                label="Email Address"
-                placeholder="Enter your email address"
-                formControlName="email"
-                [required]="true"
-                [errorMessage]="getErrorMessage('email')"
-                [fullWidth]="true"
-              ></app-input>
+    <div class="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+      <div class="layout-container flex h-full grow flex-col">
+        <!-- Header -->
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f4f1f0] px-10">
+          <div class="flex items-center gap-6 text-[#181211]">
+            <div class="h-12 lg:h-16 xl:h-20">
+              <img src="/markt-text-logo.png" alt="Markt" class="h-full w-auto object-contain drop-shadow-lg">
             </div>
-            
-            <div *ngIf="errorMessage" class="error-message">
-              {{ errorMessage }}
-            </div>
-            
-            <app-button
-              type="submit"
-              variant="primary"
-              size="lg"
-              [loading]="loading"
-              [disabled]="forgotPasswordForm.invalid || loading"
-              [fullWidth]="true"
-            >
-              Send Reset Link
-            </app-button>
-          </form>
-        </div>
-        
-        <div *ngIf="emailSent" class="success-message">
-          <div class="success-icon">✓</div>
-          <h2>Check Your Email</h2>
-          <p>We've sent a password reset link to <strong>{{ email }}</strong></p>
-          <p>Click the link in the email to reset your password. The link will expire in 1 hour.</p>
-          
-          <div class="success-actions">
-            <app-button
-              variant="secondary"
-              size="md"
-              (clicked)="resendEmail()"
-              [loading]="resending"
-              [disabled]="resending"
-            >
-              Resend Email
-            </app-button>
-            
-                         <app-button
-               variant="secondary"
-               size="md"
-               [outline]="true"
-               (clicked)="backToLogin()"
-             >
-               Back to Login
-             </app-button>
           </div>
-        </div>
-        
-        <div class="forgot-password-footer">
-          <p>Remember your password? <a routerLink="/auth/login">Sign in</a></p>
+          <button
+            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+            [routerLink]="['/auth/login']"
+          >
+            <span class="truncate">Back to sign in</span>
+          </button>
+        </header>
+
+        <!-- Main Content -->
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div class="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 max-w-[960px] flex-1">
+            
+            <!-- Reset Password Form -->
+            <div *ngIf="!emailSent">
+              <h2 class="text-[#181211] tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Reset your password</h2>
+              <p class="text-[#181211] text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
+                Enter the email address associated with your account and we'll send you a link to reset your password.
+              </p>
+              
+              <form [formGroup]="forgotPasswordForm" (ngSubmit)="onSubmit()">
+                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                  <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Email</p>
+                    <input
+                      placeholder="your.email@example.com"
+                      formControlName="email"
+                      type="email"
+                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
+                      [class.border-red-500]="forgotPasswordForm.get('email')?.errors && forgotPasswordForm.get('email')?.touched"
+                    />
+                    <div *ngIf="forgotPasswordForm.get('email')?.errors && forgotPasswordForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
+                      {{ getErrorMessage('email') }}
+                    </div>
+                  </label>
+                </div>
+                
+                <!-- Error Message -->
+                <div *ngIf="errorMessage" class="mx-4 mb-3 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                  {{ errorMessage }}
+                </div>
+                
+                <div class="flex px-4 py-3">
+                  <button
+                    type="submit"
+                    [disabled]="forgotPasswordForm.invalid || loading"
+                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span class="truncate">{{ loading ? 'Sending...' : 'Send reset link' }}</span>
+                  </button>
+                </div>
+              </form>
+              
+              <p class="text-[#886a63] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">
+                <a [routerLink]="['/auth/login']" class="underline hover:no-underline">Remember your password? Sign in</a>
+              </p>
+            </div>
+
+            <!-- Success Message -->
+            <div *ngIf="emailSent" class="text-center py-8">
+              <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">✓</div>
+              <h2 class="text-[#181211] text-[28px] font-bold leading-tight mb-4">Check Your Email</h2>
+              <p class="text-[#181211] text-base font-normal leading-normal mb-4">
+                We've sent a password reset link to <strong>{{ email }}</strong>
+              </p>
+              <p class="text-[#886a63] text-sm font-normal leading-normal mb-6">
+                Click the link in the email to reset your password. The link will expire in 1 hour.
+              </p>
+              
+              <div class="flex gap-4 justify-center">
+                <button
+                  (click)="resendEmail()"
+                  [disabled]="resending"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50"
+                >
+                  <span class="truncate">{{ resending ? 'Sending...' : 'Resend Email' }}</span>
+                </button>
+                
+                <button
+                  (click)="backToLogin()"
+                  class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span class="truncate">Back to Login</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .forgot-password-container {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
-    
-    .forgot-password-card {
-      background: white;
-      border-radius: 16px;
-      padding: 3rem;
-      max-width: 450px;
-      width: 100%;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    
-    .forgot-password-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    
-    .forgot-password-header h1 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-    
-    .forgot-password-header p {
-      color: #7f8c8d;
-      line-height: 1.5;
-    }
-    
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-    
-    .error-message {
-      background: #fee;
-      color: #c53030;
-      padding: 0.75rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-      border: 1px solid #fed7d7;
-    }
-    
-    .success-message {
-      text-align: center;
-      padding: 2rem 0;
-    }
-    
-    .success-icon {
-      width: 60px;
-      height: 60px;
-      background: #10b981;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-weight: bold;
-      margin: 0 auto 1.5rem;
-    }
-    
-    .success-message h2 {
-      color: #2c3e50;
-      margin-bottom: 1rem;
-    }
-    
-    .success-message p {
-      color: #7f8c8d;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-    }
-    
-    .success-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      margin-top: 2rem;
-    }
-    
-    .forgot-password-footer {
-      text-align: center;
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid #ecf0f1;
-    }
-    
-    .forgot-password-footer a {
-      color: #3498db;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    
-    .forgot-password-footer a:hover {
-      text-decoration: underline;
-    }
-  `]
+  styles: []
 })
 export class ForgotPasswordComponent implements OnInit {
   private fb = inject(FormBuilder);
