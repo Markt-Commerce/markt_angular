@@ -98,7 +98,7 @@ import { map } from 'rxjs/operators';
               <div class="user-avatar" (click)="toggleUserMenu()">
                 <img *ngIf="user.avatar_url" [src]="user.avatar_url" [alt]="user.full_name" class="avatar-img">
                 <div *ngIf="!user.avatar_url" class="avatar-placeholder">
-                  {{ user.full_name?.charAt(0) || user.username?.charAt(0) || 'U' }}
+                  {{ user.full_name.charAt(0) || user.username.charAt(0) || 'U' }}
                 </div>
               </div>
               

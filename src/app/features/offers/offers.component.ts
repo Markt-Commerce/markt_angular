@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
@@ -21,7 +21,7 @@ interface Offer {
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, InputComponent],
   template: `
     <div class="offers-container">
       <div class="offers-header">
