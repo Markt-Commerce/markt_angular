@@ -88,9 +88,7 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<AuthResponse> {
     this.loadingSubject.next(true);
     
-    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/login`, credentials, {
-      withCredentials: true
-    }).pipe(
+    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/login`, credentials).pipe(
       tap(response => {
         this.currentUserSubject.next(response.user);
         this.loadingSubject.next(false);
@@ -129,9 +127,7 @@ export class AuthService {
   register(userData: RegisterRequest): Observable<AuthResponse> {
     this.loadingSubject.next(true);
     
-    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/register`, userData, {
-      withCredentials: true
-    }).pipe(
+    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/register`, userData).pipe(
       tap(response => {
         this.currentUserSubject.next(response.user);
         this.loadingSubject.next(false);
