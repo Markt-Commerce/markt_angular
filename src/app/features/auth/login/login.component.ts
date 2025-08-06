@@ -17,7 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <div class="h-12 lg:h-16 xl:h-20">
               <img src="/markt-text-logo.png" alt="Markt" class="h-full w-auto object-contain drop-shadow-lg">
             </div>
-          </div>
+        </div>
           <button
             class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em]"
             [routerLink]="['/auth/register']"
@@ -37,7 +37,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 <label class="flex flex-col min-w-40 flex-1">
                   <input
                     formControlName="email"
-                    type="email"
+              type="email"
                     placeholder="Email Address"
                     class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 text-base font-normal leading-normal"
                     [class.border-red-500]="getErrorMessage('email')"
@@ -46,14 +46,14 @@ import { AuthService } from '../../../core/services/auth.service';
                     {{ getErrorMessage('email') }}
                   </div>
                 </label>
-              </div>
-              
+          </div>
+          
               <!-- Password -->
               <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
                 <label class="flex flex-col min-w-40 flex-1">
                   <div class="flex w-full flex-1 items-stretch rounded-lg">
                     <input
-                      formControlName="password"
+              formControlName="password"
                       [type]="showPassword ? 'text' : 'password'"
                       placeholder="Password"
                       class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal"
@@ -77,8 +77,24 @@ import { AuthService } from '../../../core/services/auth.service';
                     {{ getErrorMessage('password') }}
                   </div>
                 </label>
-              </div>
-              
+          </div>
+          
+              <!-- Account Type -->
+              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+                <label class="flex flex-col min-w-40 flex-1">
+                  <select
+                    formControlName="accountType"
+                    class="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 text-base font-normal leading-normal"
+                  >
+                    <option value="buyer">Buyer Account</option>
+                    <option value="seller">Seller Account</option>
+                  </select>
+                  <div *ngIf="getErrorMessage('accountType')" class="text-red-500 text-sm mt-1">
+                    {{ getErrorMessage('accountType') }}
+                  </div>
+                </label>
+          </div>
+          
               <!-- Remember Me -->
               <div class="flex items-center gap-4 bg-white px-4 min-h-14">
                 <div class="flex size-7 items-center justify-center">
@@ -87,30 +103,30 @@ import { AuthService } from '../../../core/services/auth.service';
                     formControlName="rememberMe"
                     class="h-5 w-5 rounded border-[#e5dddc] border-2 bg-transparent text-[#e85530] checked:bg-[#e85530] checked:border-[#e85530] focus:ring-0 focus:ring-offset-0 focus:border-[#e5dddc] focus:outline-none"
                   />
-                </div>
+            </div>
                 <p class="text-[#181211] text-base font-normal leading-normal flex-1 truncate">Remember me</p>
-              </div>
-              
+          </div>
+          
               <!-- Forgot Password -->
               <p class="text-[#886a63] text-sm font-normal leading-normal pb-3 pt-1 px-4 underline cursor-pointer hover:text-[#181211] transition-colors duration-200" [routerLink]="['/auth/forgot-password']">Forgot password?</p>
               
               <!-- Error Message -->
               <div *ngIf="errorMessage" class="mx-4 my-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {{ errorMessage }}
-              </div>
-              
+            {{ errorMessage }}
+          </div>
+          
               <!-- Sign In Button -->
               <div class="flex px-4 py-3">
                 <button
-                  type="submit"
-                  [disabled]="loginForm.invalid || loading"
+            type="submit"
+            [disabled]="loginForm.invalid || loading"
                   class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 flex-1 bg-[#e85530] text-white text-base font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#d64426] transition-colors duration-200"
                 >
                   <span class="truncate" *ngIf="!loading">Sign In</span>
                   <span class="truncate" *ngIf="loading">Signing In...</span>
                 </button>
               </div>
-            </form>
+        </form>
           </div>
         </div>
       </div>
@@ -234,6 +250,7 @@ export class LoginComponent implements OnInit {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      accountType: ['buyer', [Validators.required]],
       rememberMe: [false]
     });
   }
@@ -246,7 +263,7 @@ export class LoginComponent implements OnInit {
       const credentials = {
         email: this.loginForm.value.email,
         password: this.loginForm.value.password,
-        account_type: 'buyer' as 'buyer' | 'seller' // Default for now, can be determined after login
+        account_type: this.loginForm.value.accountType || 'buyer'
       };
 
       this.authService.login(credentials).subscribe({
@@ -254,16 +271,40 @@ export class LoginComponent implements OnInit {
           this.loading = false;
           console.log('Login successful:', response);
           
-          // Redirect to return URL or default to app
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/app';
-          this.router.navigateByUrl(returnUrl);
+          // Navigate to main app after successful login
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/app/marketplace';
+          console.log('Login successful, redirecting to:', returnUrl);
+          
+          // Use Angular router for better integration
+          this.router.navigateByUrl(returnUrl).then(
+            success => {
+              if (success) {
+                console.log('Navigation successful');
+              } else {
+                console.log('Navigation failed, falling back to window.location');
+                window.location.href = returnUrl;
+              }
+            },
+            error => {
+              console.error('Navigation error:', error);
+              window.location.href = returnUrl;
+            }
+          );
         },
         error: (error) => {
           this.loading = false;
           console.error('Login error:', error);
           
-          if (error.status === 401) {
-            this.errorMessage = 'Invalid email or password';
+          if (error.message?.includes('CORS_ERROR')) {
+            this.errorMessage = 'CORS Error: Backend configuration issue. For development, please use a CORS browser extension or contact the backend team.';
+          } else if (error.status === 401) {
+            // Check if it's an account type issue
+            if (error.error?.message?.includes('not found')) {
+              const accountType = this.loginForm.value.accountType;
+              this.errorMessage = `${accountType.charAt(0).toUpperCase() + accountType.slice(1)} account not found. Try switching account type.`;
+            } else {
+              this.errorMessage = 'Invalid email or password';
+            }
           } else if (error.status === 0) {
             this.errorMessage = 'Unable to connect to server. Please check your internet connection.';
           } else {

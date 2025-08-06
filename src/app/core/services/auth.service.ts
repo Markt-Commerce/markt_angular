@@ -1,161 +1,162 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, throwError, of } from 'rxjs';
-import { Router } from '@angular/router';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { ApiService } from './api.service';
+import { User, UserLogin, UserRegister } from '../models';
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  full_name: string;
-  phone?: string;
-  avatar_url?: string;
-  is_seller: boolean;
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-  account_type: 'buyer' | 'seller';
-}
-
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-  account_type: 'buyer' | 'seller';
-  phone_number?: string;
-  seller_data?: {
-    policies: Record<string, string>;
-    description: string;
-    shop_name: string;
-    category_ids: number[];
-  };
-  buyer_data?: {
-    shipping_address: Record<string, string>;
-    buyername: string;
-  };
-}
-
-export interface AuthResponse {
-  user: User;
-  message: string;
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private router = inject(Router);
+  private apiService = inject(ApiService);
   
-  private readonly API_BASE_URL = 'https://test.api.marktcommerce.com/api/v1';
-  private readonly MOCK_MODE = false; // Set to false to use real backend
-  
-  // BehaviorSubject to track authentication state
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
-  
-  // BehaviorSubject to track loading state
-  private loadingSubject = new BehaviorSubject<boolean>(false);
-  public loading$ = this.loadingSubject.asObservable();
+  private authStateSubject = new BehaviorSubject<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null
+  });
 
-  constructor() {
-    // Check if user is already logged in on app initialization
-    this.checkAuthStatus();
+  public authState$ = this.authStateSubject.asObservable();
+
+  /**
+   * Get current user observable
+   */
+  get currentUser$(): Observable<User | null> {
+    return this.authStateSubject.asObservable().pipe(map(state => state.user));
   }
 
   /**
-   * Check if user is currently authenticated
+   * Get loading state observable
    */
-  get isAuthenticated(): boolean {
-    return this.currentUserSubject.value !== null;
+  get loading$(): Observable<boolean> {
+    return this.authStateSubject.asObservable().pipe(map(state => state.isLoading));
+  }
+
+  /**
+   * Forgot password
+   */
+  forgotPassword(email: string): Observable<any> {
+    return this.apiService.passwordReset(email);
+  }
+
+  constructor() {
+    this.initializeAuth();
+  }
+
+  /**
+   * Initialize authentication state from localStorage
+   */
+  private initializeAuth(): void {
+    const userData = localStorage.getItem('markt_user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        this.authStateSubject.next({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        this.clearAuth();
+      }
+    }
+  }
+
+  /**
+   * Get current auth state
+   */
+  getAuthState(): AuthState {
+    return this.authStateSubject.value;
   }
 
   /**
    * Get current user
    */
-  get currentUser(): User | null {
-    return this.currentUserSubject.value;
+  getCurrentUser(): User | null {
+    return this.authStateSubject.value.user;
   }
 
   /**
-   * Login user with email and password
+   * Check if user is authenticated
    */
-  login(credentials: LoginRequest): Observable<AuthResponse> {
-    this.loadingSubject.next(true);
-    
-    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/login`, credentials).pipe(
-      tap(response => {
-        this.currentUserSubject.next(response.user);
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        console.error('Login error:', error);
-        
-        // Handle specific error cases
-        if (error.status === 404) {
-          return throwError(() => new Error('Login endpoint not implemented yet. Backend is still under development.'));
-        }
-        
-        if (error.status === 0 || error.statusText === 'Unknown Error') {
-          return throwError(() => new Error('Unable to connect to server. Please check your internet connection.'));
-        }
-        
-        if (error.status === 400) {
-          return throwError(() => new Error('Invalid login credentials. Please check your email and password.'));
-        }
-        
-        if (error.status === 401) {
-          return throwError(() => new Error('Invalid email or password. Please try again.'));
-        }
-        
-        // Generic error
-        const errorMessage = error.error?.message || error.message || 'Login failed. Please try again.';
-        return throwError(() => new Error(errorMessage));
-      })
-    );
+  isAuthenticated(): boolean {
+    return this.authStateSubject.value.isAuthenticated;
+  }
+
+  /**
+   * Check if user is a buyer
+   */
+  isBuyer(): boolean {
+    const user = this.getCurrentUser();
+    return user?.is_buyer || false;
+  }
+
+  /**
+   * Check if user is a seller
+   */
+  isSeller(): boolean {
+    const user = this.getCurrentUser();
+    return user?.is_seller || false;
+  }
+
+  /**
+   * Get current role
+   */
+  getCurrentRole(): 'buyer' | 'seller' | null {
+    const user = this.getCurrentUser();
+    return user?.current_role || null;
   }
 
   /**
    * Register new user
    */
-  register(userData: RegisterRequest): Observable<AuthResponse> {
-    this.loadingSubject.next(true);
+  register(userData: UserRegister): Observable<any> {
+    this.setLoading(true);
     
-    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/users/register`, userData).pipe(
-      tap(response => {
-        this.currentUserSubject.next(response.user);
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        console.error('Registration error:', error);
-        
-        // Handle specific error cases
-        if (error.status === 404) {
-          return throwError(() => new Error('Registration endpoint not implemented yet. Backend is still under development.'));
+    return this.apiService.register(userData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+          this.setLoading(false);
+        },
+        error: (error) => {
+          this.setError(error.message);
+          this.setLoading(false);
         }
-        
-        if (error.status === 0 || error.statusText === 'Unknown Error') {
-          return throwError(() => new Error('Unable to connect to server. Please check your internet connection.'));
+      })
+    );
+  }
+
+  /**
+   * Login user
+   */
+  login(credentials: UserLogin): Observable<any> {
+    this.setLoading(true);
+    
+    return this.apiService.login(credentials).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+          this.setLoading(false);
+        },
+        error: (error) => {
+          this.setError(error.message);
+          this.setLoading(false);
         }
-        
-        if (error.status === 400) {
-          return throwError(() => new Error('Invalid registration data. Please check your information.'));
-        }
-        
-        if (error.status === 409) {
-          return throwError(() => new Error('User already exists with this email or username.'));
-        }
-        
-        // Generic error
-        const errorMessage = error.error?.message || error.message || 'Registration failed. Please try again.';
-        return throwError(() => new Error(errorMessage));
       })
     );
   }
@@ -164,97 +165,314 @@ export class AuthService {
    * Logout user
    */
   logout(): Observable<any> {
-    return this.http.post(`${this.API_BASE_URL}/users/logout`, {}, {
-      withCredentials: true
-    }).pipe(
-      tap(() => {
-        this.currentUserSubject.next(null);
-        this.router.navigate(['/home']);
-      }),
-      catchError(error => {
-        // Even if logout fails, clear local state
-        this.currentUserSubject.next(null);
-        this.router.navigate(['/home']);
-        return throwError(() => error);
+    return this.apiService.logout().pipe(
+      tap({
+        next: () => {
+          this.clearAuth();
+        },
+        error: (error) => {
+          console.error('Logout error:', error);
+          // Clear auth even if logout fails
+          this.clearAuth();
+        }
       })
     );
   }
 
   /**
-   * Check authentication status
+   * Get user profile
    */
-  checkAuthStatus(): void {
-    this.http.get<User>(`${this.API_BASE_URL}/users/profile`, {
-      withCredentials: true
-    }).pipe(
-      catchError(() => {
-        // If check fails, user is not authenticated
-        this.currentUserSubject.next(null);
-        return throwError(() => new Error('Not authenticated'));
+  getProfile(): Observable<any> {
+    return this.apiService.getProfile().pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
       })
-    ).subscribe(user => {
-      this.currentUserSubject.next(user);
-    });
-  }
-
-  /**
-   * Forgot password
-   */
-  forgotPassword(email: string): Observable<any> {
-    return this.http.post(`${this.API_BASE_URL}/users/password-reset`, { email }, {
-      withCredentials: true
-    });
-  }
-
-  /**
-   * Reset password
-   */
-  resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.API_BASE_URL}/users/password-reset/confirm`, {
-      code: token,
-      new_password: newPassword
-    }, {
-      withCredentials: true
-    });
+    );
   }
 
   /**
    * Update user profile
    */
-  updateProfile(userData: Partial<User>): Observable<User> {
-    return this.http.patch<User>(`${this.API_BASE_URL}/users/profile`, userData, {
-      withCredentials: true
-    }).pipe(
-      tap(user => {
-        this.currentUserSubject.next(user);
+  updateProfile(profileData: any): Observable<any> {
+    return this.apiService.updateProfile(profileData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
       })
     );
   }
 
   /**
-   * Change password
+   * Create buyer account for existing user
    */
-  changePassword(currentPassword: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.API_BASE_URL}/users/change-password`, {
-      current_password: currentPassword,
-      new_password: newPassword
-    }, {
-      withCredentials: true
+  createBuyerAccount(buyerData: any): Observable<any> {
+    return this.apiService.createBuyerAccount(buyerData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Create seller account for existing user
+   */
+  createSellerAccount(sellerData: any): Observable<any> {
+    return this.apiService.createSellerAccount(sellerData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Update buyer profile
+   */
+  updateBuyerProfile(buyerData: any): Observable<any> {
+    return this.apiService.updateBuyerProfile(buyerData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Update seller profile
+   */
+  updateSellerProfile(sellerData: any): Observable<any> {
+    return this.apiService.updateSellerProfile(sellerData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.setUser(response.data);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Switch between buyer and seller roles
+   */
+  switchRole(): Observable<any> {
+    return this.apiService.switchRole().pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data?.user) {
+            this.setUser(response.data.user);
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Password reset
+   */
+  passwordReset(email: string): Observable<any> {
+    return this.apiService.passwordReset(email);
+  }
+
+  /**
+   * Confirm password reset
+   */
+  passwordResetConfirm(data: { code: string; email: string; new_password: string }): Observable<any> {
+    return this.apiService.passwordResetConfirm(data);
+  }
+
+  /**
+   * Send email verification
+   */
+  sendEmailVerification(email: string): Observable<any> {
+    return this.apiService.sendEmailVerification(email);
+  }
+
+  /**
+   * Verify email with code
+   */
+  verifyEmail(data: { email: string; verification_code: string }): Observable<any> {
+    return this.apiService.verifyEmail(data);
+  }
+
+  /**
+   * Upload profile picture
+   */
+  uploadProfilePicture(file: File): Observable<any> {
+    return this.apiService.uploadProfilePicture(file).pipe(
+      tap({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Update user profile picture
+            const currentUser = this.getCurrentUser();
+            if (currentUser) {
+              const updatedUser = { ...currentUser, profile_picture_url: response.data.url };
+              this.setUser(updatedUser);
+            }
+          }
+        },
+        error: (error) => {
+          this.setError(error.message);
+        }
+      })
+    );
+  }
+
+  /**
+   * Check username availability
+   */
+  checkUsername(username: string): Observable<any> {
+    return this.apiService.checkUsername(username);
+  }
+
+  /**
+   * Get user settings
+   */
+  getUserSettings(): Observable<any> {
+    return this.apiService.getUserSettings();
+  }
+
+  /**
+   * Update user settings
+   */
+  updateUserSettings(settings: any): Observable<any> {
+    return this.apiService.updateUserSettings(settings);
+  }
+
+  /**
+   * Get public profile
+   */
+  getPublicProfile(userId: string): Observable<any> {
+    return this.apiService.getPublicProfile(userId);
+  }
+
+  /**
+   * Get shops
+   */
+  getShops(params?: any): Observable<any> {
+    return this.apiService.getShops(params);
+  }
+
+  /**
+   * Get trending shops
+   */
+  getTrendingShops(): Observable<any> {
+    return this.apiService.getTrendingShops();
+  }
+
+  /**
+   * Get shop categories
+   */
+  getShopCategories(): Observable<any> {
+    return this.apiService.getShopCategories();
+  }
+
+  /**
+   * Get shop details
+   */
+  getShopDetails(shopId: number): Observable<any> {
+    return this.apiService.getShopDetails(shopId);
+  }
+
+  // ============================================================================
+  // PRIVATE HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Set user and update auth state
+   */
+  private setUser(user: User): void {
+    localStorage.setItem('markt_user', JSON.stringify(user));
+    this.authStateSubject.next({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null
     });
   }
 
   /**
-   * Delete account
+   * Clear authentication state
    */
-  deleteAccount(password: string): Observable<any> {
-    return this.http.delete(`${this.API_BASE_URL}/users/account`, {
-      body: { password },
-      withCredentials: true
-    }).pipe(
-      tap(() => {
-        this.currentUserSubject.next(null);
-        this.router.navigate(['/home']);
-      })
-    );
+  private clearAuth(): void {
+    localStorage.removeItem('markt_user');
+    this.authStateSubject.next({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null
+    });
+  }
+
+  /**
+   * Set loading state
+   */
+  private setLoading(isLoading: boolean): void {
+    const currentState = this.authStateSubject.value;
+    this.authStateSubject.next({
+      ...currentState,
+      isLoading
+    });
+  }
+
+  /**
+   * Set error state
+   */
+  private setError(error: string): void {
+    const currentState = this.authStateSubject.value;
+    this.authStateSubject.next({
+      ...currentState,
+      error,
+      isLoading: false
+    });
+  }
+
+  /**
+   * Clear error state
+   */
+  clearError(): void {
+    const currentState = this.authStateSubject.value;
+    this.authStateSubject.next({
+      ...currentState,
+      error: null
+    });
   }
 } 

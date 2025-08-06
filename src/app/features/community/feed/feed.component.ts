@@ -1,191 +1,357 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faHeart, faComment, faShare, faPlus, faImage, faMapMarkerAlt, faStore, faCheckCircle, faEllipsisV } from '@fortawesome/free-solid-svg-icons';
+import { AuthService } from '../../../core/services/auth.service';
+import { SocialService } from '../../../core/services/social.service';
+import { Observable } from 'rxjs';
+import { User } from '../../../core/models/auth.model';
+
+interface FeedPost {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: string;
+    isVerified: boolean;
+    isSeller: boolean;
+  };
+  content: string;
+  images?: string[];
+  location?: string;
+  timestamp: Date;
+  likes: number;
+  comments: number;
+  isLiked: boolean;
+  type: 'text' | 'product' | 'request';
+  productInfo?: {
+    price: number;
+    category: string;
+  };
+}
 
 @Component({
   selector: 'app-feed',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
   template: `
-    <div class="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
-      <div class="layout-container flex h-full grow flex-col">
-        
-        <!-- Main Content -->
-        <div class="px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
-            
-            <!-- Create Post Section -->
-            <div class="flex items-center px-4 py-3 gap-3 @container">
-              <label class="flex flex-col min-w-40 h-full flex-1">
-                <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
-                  <div class="flex border border-[#e5dddc] bg-white justify-end pl-[15px] pr-[15px] pt-[15px] rounded-l-lg border-r-0">
-                    <div
-                      class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0"
-                      style='background-image: url("https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80");'
-                    ></div>
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header with Create Post -->
+      <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div class="max-w-2xl mx-auto px-4 py-4">
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold text-gray-900">Your Feed</h1>
+              <p class="text-gray-600">Discover what's happening in your community</p>
+            </div>
+            <button 
+              class="bg-markt-primary hover:bg-markt-secondary text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              (click)="showCreatePost = true"
+            >
+              <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
+              Create Post
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-w-2xl mx-auto px-4 py-6">
+        <!-- Create Post Modal/Section -->
+        <div *ngIf="showCreatePost" class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Create New Post</h2>
+            <button 
+              (click)="showCreatePost = false"
+              class="text-gray-400 hover:text-gray-600 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+          
+          <div class="flex gap-3 mb-4">
+            <div class="w-10 h-10 bg-markt-primary rounded-full flex items-center justify-center text-white font-bold">
+              {{ (currentUser$ | async)?.username?.charAt(0) || 'U' }}
+            </div>
+            <div class="flex-1">
+            <textarea 
+                [(ngModel)]="newPostContent"
+                placeholder="What's on your mind? Share a product, make a request, or just say hello!"
+                class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-markt-primary focus:border-transparent"
+                rows="3"
+            ></textarea>
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <button class="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faImage" class="w-4 h-4"></fa-icon>
+                Photo
+              </button>
+              <button class="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4"></fa-icon>
+                Location
+              </button>
+            </div>
+            <button 
+              (click)="createPost()"
+              [disabled]="!newPostContent.trim()"
+              class="bg-markt-primary hover:bg-markt-secondary disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Post
+            </button>
+          </div>
+        </div>
+
+        <!-- Feed Posts -->
+        <div class="space-y-6">
+          <div *ngFor="let post of posts" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <!-- Post Header -->
+            <div class="p-4 border-b border-gray-100">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-markt-primary to-markt-accent rounded-full flex items-center justify-center text-white font-bold">
+                  {{ post.user.name.charAt(0) }}
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-semibold text-gray-900">{{ post.user.name }}</h3>
+                    <fa-icon *ngIf="post.user.isVerified" [icon]="faVerified" class="w-4 h-4 text-blue-500"></fa-icon>
+                    <fa-icon *ngIf="post.user.isSeller" [icon]="faStore" class="w-4 h-4 text-markt-primary"></fa-icon>
                   </div>
-                  <div class="flex flex-1 flex-col">
-                    <textarea
-                      placeholder="What's on your mind? Share with the Markt community..."
-                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-auto placeholder:text-[#cebfbb] rounded-l-none border-l-0 pl-2 rounded-b-none border-b-0 text-base font-normal leading-normal pt-[22px]"
-                      [(ngModel)]="newPostContent"
-                    ></textarea>
-                    <div class="flex border border-[#e5dddc] bg-white justify-end pr-[15px] rounded-br-lg border-l-0 border-t-0 px-[15px] pb-[15px]">
-                      <div class="flex items-center gap-4 justify-end">
-                        <div class="flex items-center gap-1">
-                          <button class="flex items-center justify-center p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                            <div class="text-[#886a63]" data-icon="Image" data-size="20px" data-weight="regular">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
-                                <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V158.75l-26.07-26.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L40,149.37V56ZM40,172l52-52,80,80H40Zm176,28H194.63l-36-36,20-20L216,181.38V200ZM144,100a12,12,0,1,1,12,12A12,12,0,0,1,144,100Z"></path>
-                              </svg>
-                            </div>
-                          </button>
-                          <button class="flex items-center justify-center p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                            <div class="text-[#886a63]" data-icon="ChartPolar" data-size="20px" data-weight="regular">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
-                                <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm87.63,96H191.48A64.1,64.1,0,0,0,136,64.52V40.37A88.13,88.13,0,0,1,215.63,120ZM120,120H80.68A48.09,48.09,0,0,1,120,80.68Zm0,16v39.32A48.09,48.09,0,0,1,80.68,136Zm16,0h39.32A48.09,48.09,0,0,1,136,175.32Zm0-16V80.68A48.09,48.09,0,0,1,175.32,120ZM120,40.37V64.52A64.1,64.1,0,0,0,64.52,120H40.37A88.13,88.13,0,0,1,120,40.37ZM40.37,136H64.52A64.1,64.1,0,0,0,120,191.48v24.15A88.13,88.13,0,0,1,40.37,136ZM136,215.63V191.48A64.1,64.1,0,0,0,191.48,136h24.15A88.13,88.13,0,0,1,136,215.63Z"></path>
-                              </svg>
-                            </div>
-                          </button>
-                          <button class="flex items-center justify-center p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                            <div class="text-[#886a63]" data-icon="Tag" data-size="20px" data-weight="regular">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" fill="currentColor" viewBox="0 0 256 256">
-                                <path d="M243.31,136,144,36.69A15.86,15.86,0,0,0,132.69,32H40a8,8,0,0,0-8,8v92.69A15.86,15.86,0,0,0,36.69,144L136,243.31a16,16,0,0,0,22.63,0l84.68-84.68a16,16,0,0,0,0-22.63Zm-96,96L48,132.69V48h84.69L232,147.31ZM96,84A12,12,0,1,1,84,72,12,12,0,0,1,96,84Z"></path>
-                              </svg>
-                            </div>
-                          </button>
-                        </div>
-                        <button
-                          (click)="createPost()"
-                          [disabled]="!newPostContent.trim()"
-                          class="min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-[#e85530] text-white text-sm font-medium leading-normal hidden @[480px]:block disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#d64426] transition-colors duration-200"
-                        >
-                          <span class="truncate">Post</span>
-                        </button>
-                      </div>
-                    </div>
+                  <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <span>{{ getTimeAgo(post.timestamp) }}</span>
+                    <span *ngIf="post.location" class="flex items-center gap-1">
+                      <fa-icon [icon]="faMapMarkerAlt" class="w-3 h-3"></fa-icon>
+                      {{ post.location }}
+                    </span>
                   </div>
                 </div>
-              </label>
+                <div class="text-gray-400">
+                  <button class="p-2 hover:bg-gray-100 rounded-full">
+                    <fa-icon [icon]="faEllipsisV" class="w-4 h-4"></fa-icon>
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <!-- Feed Posts -->
-            <div class="feed-posts" *ngFor="let post of feedPosts">
-              <div class="p-4 @container">
-                <div class="flex flex-col items-stretch justify-start rounded-lg @xl:flex-row @xl:items-start hover:bg-gray-50 transition-colors duration-200 p-4 rounded-xl">
-                  <div
-                    class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg"
-                    [style.background-image]="'url(' + post.image + ')'"
-                  ></div>
-                  <div class="flex w-full min-w-72 grow flex-col items-stretch justify-center gap-1 py-4 @xl:px-4">
-                    <p class="text-[#181211] text-lg font-bold leading-tight tracking-[-0.015em]">
-                      {{ post.title }}
-                    </p>
-                    <div class="flex items-end gap-3 justify-between">
-                      <div class="flex flex-col gap-1">
-                        <p class="text-[#886a63] text-base font-normal leading-normal">
-                          {{ post.content }}
-                        </p>
-                        <p class="text-[#886a63] text-base font-normal leading-normal">
-                          Posted by {{ post.author }} · {{ post.timeAgo }}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <!-- Post Actions -->
-                    <div class="flex items-center gap-4 mt-3">
-                      <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
-                          <path d="M178,32c-20.65,0-38.73,8.88-50,23.89C116.73,40.88,98.65,32,78,32A62.07,62.07,0,0,0,16,94c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,220.66,240,164,240,94A62.07,62.07,0,0,0,178,32ZM128,206.8C109.74,196.16,32,147.69,32,94A46.06,46.06,0,0,1,78,48c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,147.69,146.26,196.16,128,206.8Z"></path>
-                        </svg>
-                        <span class="text-sm text-gray-600">{{ post.likes }}</span>
-                      </button>
-                      <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
-                          <path d="M216,48H40a16,16,0,0,0-16,16V192a15.84,15.84,0,0,0,9.25,14.5A16.05,16.05,0,0,0,40,208a15.89,15.89,0,0,0,10.25-3.78.69.69,0,0,0,.13-.11L82.5,176H216a16,16,0,0,0,16-16V64A16,16,0,0,0,216,48ZM40,192V64H216V160H82.5a16,16,0,0,0-10.3,3.75L40,192Z"></path>
-                        </svg>
-                        <span class="text-sm text-gray-600">{{ post.comments }}</span>
-                      </button>
-                      <button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
-                          <path d="M237.66,117.66l-80,80A8,8,0,0,1,144,192V152.23c-57.1,3.24-96,96.25-96,96.25a8,8,0,0,1-12.25-10.06C50.46,205.15,72.09,152,144,152V112a8,8,0,0,1,13.66-5.66l80,80A8,8,0,0,1,237.66,117.66Z"></path>
-                        </svg>
-                        <span class="text-sm text-gray-600">Share</span>
-                      </button>
-                    </div>
+
+            <!-- Post Content -->
+            <div class="p-4">
+              <p class="text-gray-900 mb-3">{{ post.content }}</p>
+              
+              <!-- Product Info (if product post) -->
+              <div *ngIf="post.type === 'product' && post.productInfo" class="bg-markt-light/20 rounded-lg p-3 mb-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-markt-muted">{{ post.productInfo.category }}</span>
+                  <span class="text-lg font-bold text-markt-primary">₦{{ post.productInfo.price.toLocaleString() }}</span>
+                </div>
+              </div>
+
+              <!-- Post Images -->
+              <div *ngIf="post.images && post.images.length > 0" class="grid gap-2 mb-3" 
+                   [ngClass]="{
+                     'grid-cols-1': post.images.length === 1,
+                     'grid-cols-2': post.images.length >= 2
+                   }">
+                <div *ngFor="let image of post.images.slice(0, 4); let i = index" 
+                     class="relative aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                  <img [src]="image" [alt]="'Post image'" class="w-full h-full object-cover">
+                  <div *ngIf="post.images.length > 4 && i === 3" 
+                       class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-bold">
+                    +{{ post.images.length - 4 }}
                   </div>
                 </div>
               </div>
             </div>
-            
+
+            <!-- Post Actions -->
+            <div class="px-4 py-3 border-t border-gray-100">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                  <button 
+                    (click)="likePost(post.id.toString())"
+                    class="flex items-center gap-2 text-gray-600 hover:text-markt-primary transition-colors"
+                    [class.text-markt-primary]="post.isLiked"
+                  >
+                    <fa-icon [icon]="faHeart" class="w-5 h-5" [class.text-red-500]="post.isLiked"></fa-icon>
+                    <span class="text-sm font-medium">{{ post.likes }}</span>
+                  </button>
+                  <button class="flex items-center gap-2 text-gray-600 hover:text-markt-primary transition-colors">
+                    <fa-icon [icon]="faComment" class="w-5 h-5"></fa-icon>
+                    <span class="text-sm font-medium">{{ post.comments }}</span>
+              </button>
+                  <button class="flex items-center gap-2 text-gray-600 hover:text-markt-primary transition-colors">
+                    <fa-icon [icon]="faShare" class="w-5 h-5"></fa-icon>
+                    <span class="text-sm font-medium">Share</span>
+              </button>
+                </div>
+                <div *ngIf="post.type === 'product'" class="flex gap-2">
+                  <button class="bg-markt-primary hover:bg-markt-secondary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Contact Seller
+              </button>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- Load More -->
+        <div class="text-center py-8">
+          <button 
+            (click)="loadMorePosts()"
+            class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            Load More Posts
+          </button>
         </div>
       </div>
     </div>
   `,
   styles: []
 })
-export class FeedComponent {
-  newPostContent = '';
-  
-  feedPosts = [
-    {
-      id: 1,
-      title: "Discovering the latest trends in sustainable fashion. Check out these eco-friendly brands!",
-      content: "I'm loving the new collection from Green Threads. Their commitment to sustainability is truly inspiring. What are your favorite eco-conscious brands?",
-      author: "Olivia Carter",
-      timeAgo: "2h ago",
-      image: "https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80",
-      likes: 24,
-      comments: 8
-    },
-    {
-      id: 2,
-      title: "Just unboxed the new TechPro headphones! The sound quality is incredible.",
-      content: "These headphones are a game-changer for my workouts. The noise cancellation is top-notch, and the battery life is amazing. Highly recommend!",
-      author: "Ethan Walker",
-      timeAgo: "4h ago",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      likes: 42,
-      comments: 15
-    },
-    {
-      id: 3,
-      title: "Exploring the art of coffee making with my new espresso machine.",
-      content: "I've always been fascinated by the process of making the perfect cup of coffee. This machine is making it so much fun to experiment with different roasts and techniques.",
-      author: "Sophia Bennett",
-      timeAgo: "6h ago",
-      image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      likes: 18,
-      comments: 6
-    },
-    {
-      id: 4,
-      title: "Weekend getaway to the mountains! The views are breathtaking.",
-      content: "Spending some time in nature is so refreshing. The crisp air, the stunning scenery, and the peace and quiet are exactly what I needed.",
-      author: "Liam Harris",
-      timeAgo: "8h ago",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      likes: 56,
-      comments: 12
-    },
-    {
-      id: 5,
-      title: "New art supplies arrived! Time to get creative.",
-      content: "I'm so excited to start working on my next project. These high-quality paints and brushes will definitely elevate my work.",
-      author: "Ava Thompson",
-      timeAgo: "10h ago",
-      image: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80",
-      likes: 33,
-      comments: 9
-    }
-  ];
+export class FeedComponent implements OnInit {
+  private authService = inject(AuthService);
+  private socialService = inject(SocialService);
 
-  createPost() {
+  // Icons
+  faHeart = faHeart;
+  faComment = faComment;
+  faShare = faShare;
+  faPlus = faPlus;
+  faImage = faImage;
+  faMapMarkerAlt = faMapMarkerAlt;
+  faStore = faStore;
+  faVerified = faCheckCircle;
+  faEllipsisV = faEllipsisV;
+
+  // State
+  get currentUser$(): Observable<User | null> {
+    return this.authService.currentUser$;
+  }
+  selectedMedia: any[] = [];
+  showCreatePost = false;
+  newPostContent = '';
+  posts: FeedPost[] = [];
+  currentPage = 1;
+  hasMorePosts = true;
+
+  ngOnInit() {
+    this.loadPosts();
+    this.loadStories();
+  }
+
+  loadPosts(): void {
+    this.socialService.getFeed({ page: this.currentPage }).subscribe({
+      next: (response) => {
+        this.posts = (response.items || []).map(post => this.mapPostToFeedPost(post));
+        this.hasMorePosts = response.pagination?.has_next || false;
+      },
+      error: (error) => {
+        console.error('Error loading posts:', error);
+      }
+    });
+  }
+
+  loadStories(): void {
+    this.socialService.getStories().subscribe({
+      next: (response) => {
+        // this.stories = response || []; // stories interface not defined in original file
+      },
+      error: (error) => {
+        console.error('Error loading stories:', error);
+      }
+    });
+  }
+
+  loadMorePosts(): void {
+    this.currentPage++;
+    this.socialService.getFeed({ page: this.currentPage }).subscribe({
+      next: (response) => {
+        this.posts = [...this.posts, ...(response.items || []).map(post => this.mapPostToFeedPost(post))];
+        this.hasMorePosts = response.pagination?.has_next || false;
+      },
+      error: (error) => {
+        console.error('Error loading more posts:', error);
+      }
+    });
+  }
+
+  private mapPostToFeedPost(post: any): FeedPost {
+    return {
+      id: post.id,
+      user: {
+        id: post.seller?.id || post.user?.id || '',
+        name: post.seller?.shop_name || post.user?.username || 'Unknown User',
+        avatar: post.seller?.profile_picture_url || post.user?.profile_picture_url,
+        isVerified: post.seller?.verification_status === 'verified' || false,
+        isSeller: !!post.seller
+      },
+      content: post.caption || post.content || '',
+      images: post.social_media?.map((sm: any) => sm.media?.url) || [],
+      location: post.location || '',
+      timestamp: new Date(post.created_at),
+      likes: post.like_count || 0,
+      comments: post.comment_count || 0,
+      isLiked: false, // This would need to be set based on user's like status
+      type: 'text', // Default type, could be determined from post data
+      productInfo: post.products?.[0] ? {
+        price: post.products[0].price,
+        category: post.products[0].category?.name || 'Product'
+      } : undefined
+    };
+  }
+
+  createPost(): void {
     if (this.newPostContent.trim()) {
-      // TODO: Implement post creation logic
-      console.log('Creating post:', this.newPostContent);
-      this.newPostContent = '';
+      this.currentUser$.subscribe(user => {
+        const postData = {
+          caption: this.newPostContent,
+          media: this.selectedMedia,
+          tags: []
+        };
+
+        this.socialService.createPost(postData).subscribe({
+          next: (response) => {
+            this.posts.unshift(this.mapPostToFeedPost(response));
+            this.newPostContent = '';
+            this.showCreatePost = false;
+          },
+          error: (error) => {
+            console.error('Error creating post:', error);
+          }
+        });
+      });
     }
+  }
+
+  likePost(postId: string): void {
+    this.socialService.likePost(postId).subscribe({
+      next: (response) => {
+        if (response) {
+          const post = this.posts.find(p => p.id === postId);
+          if (post) {
+            post.likes++;
+            post.isLiked = true;
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error liking post:', error);
+      }
+    });
+  }
+
+  getTimeAgo(timestamp: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'Just now';
   }
 } 

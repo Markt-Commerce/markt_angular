@@ -1,674 +1,538 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '../../shared/components/button/button.component';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  items: number;
-  date: string;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  shippingAddress: string;
-  trackingNumber?: string;
-}
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import {
+  faSearch,
+  faFilter,
+  faSort,
+  faEye,
+  faEdit,
+  faTrash,
+  faPrint,
+  faStar,
+  faTimesCircle,
+  faMapMarkerAlt,
+  faCalendar,
+  faClock,
+  faCheckCircle,
+  faExclamationTriangle,
+  faArrowUp,
+  faArrowDown,
+  faBox,
+  faCreditCard,
+  faArrowRight,
+  faRefresh,
+  faTimes,
+  faDownload,
+  faStore
+} from '@fortawesome/free-solid-svg-icons';
+import { OrderService } from '../../core/services/order.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    FontAwesomeModule
+  ],
   template: `
-    <div class="orders-container">
-      <div class="orders-header">
-        <div class="header-content">
-          <h1>Orders</h1>
-          <p>Manage your orders and track their status</p>
+    <div class="space-y-6">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">My Orders</h1>
+          <p class="mt-1 text-sm text-gray-500">
+            Track your orders and view order history
+          </p>
         </div>
-      </div>
-
-      <!-- Filters and Search -->
-      <div class="filters-section">
-        <div class="search-box">
-          <input 
-            type="text" 
-            placeholder="Search orders by number, customer name, or email..."
-            [(ngModel)]="searchQuery"
-            (input)="onSearch()"
-            class="search-input"
+        <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+          <button
+            (click)="refreshOrders()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Refresh Orders"
           >
-        </div>
-
-        <div class="filter-controls">
-          <select [(ngModel)]="statusFilter" (change)="onFilter()" class="filter-select">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="refunded">Refunded</option>
-          </select>
-
-          <select [(ngModel)]="paymentFilter" (change)="onFilter()" class="filter-select">
-            <option value="">All Payment Status</option>
-            <option value="pending">Payment Pending</option>
-            <option value="paid">Paid</option>
-            <option value="failed">Payment Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
-
-          <select [(ngModel)]="sortBy" (change)="onSort()" class="filter-select">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="total-high">Total: High to Low</option>
-            <option value="total-low">Total: Low to High</option>
-          </select>
+            <fa-icon [icon]="faRefresh" class="w-5 h-5"></fa-icon>
+          </button>
         </div>
       </div>
 
-      <!-- Orders Table -->
-      <div class="orders-table">
-        <div class="table-header">
-          <span>Order #</span>
-          <span>Customer</span>
-          <span>Items</span>
-          <span>Total</span>
-          <span>Status</span>
-          <span>Payment</span>
-          <span>Date</span>
-          <span>Actions</span>
+      <!-- Order Statistics -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+              <fa-icon [icon]="faBox" class="w-6 h-6"></fa-icon>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Total Orders</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.total }}</p>
+            </div>
+          </div>
         </div>
 
-        <div class="table-row" *ngFor="let order of filteredOrders">
-          <span class="order-number">{{ order.orderNumber }}</span>
-          <div class="customer-info">
-            <span class="customer-name">{{ order.customerName }}</span>
-            <span class="customer-email">{{ order.customerEmail }}</span>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+              <fa-icon [icon]="faClock" class="w-6 h-6"></fa-icon>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Pending</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.pending }}</p>
+            </div>
           </div>
-          <span class="items-count">{{ order.items }} items</span>
-          <span class="order-total">₦{{ order.total.toLocaleString() }}</span>
-          <span class="order-status" [class]="order.status">
-            {{ getStatusLabel(order.status) }}
-          </span>
-          <span class="payment-status" [class]="order.paymentStatus">
-            {{ getPaymentStatusLabel(order.paymentStatus) }}
-          </span>
-          <span class="order-date">{{ formatDate(order.date) }}</span>
-          <div class="order-actions">
-            <app-button 
-              variant="secondary" 
-              size="sm"
-              [outline]="true"
-              [routerLink]="['/app/orders', order.id]"
-            >
-              View
-            </app-button>
-            <app-button 
-              variant="secondary" 
-              size="sm"
-              [outline]="true"
-              (clicked)="updateStatus(order.id)"
-              *ngIf="order.status === 'pending'"
-            >
-              Process
-            </app-button>
-            <app-button 
-              variant="secondary" 
-              size="sm"
-              [outline]="true"
-              (clicked)="shipOrder(order.id)"
-              *ngIf="order.status === 'processing'"
-            >
-              Ship
-            </app-button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+              <fa-icon [icon]="faCheckCircle" class="w-6 h-6"></fa-icon>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Completed</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.completed }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">
+              <fa-icon [icon]="faTimes" class="w-6 h-6"></fa-icon>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Cancelled</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.cancelled }}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="filteredOrders.length === 0">
-        <div class="empty-icon">📦</div>
-        <h3>No orders found</h3>
-        <p>Try adjusting your search or filters</p>
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+          <!-- Search -->
+          <div class="flex-1">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
+              </div>
+              <input
+                type="text"
+                placeholder="Search orders..."
+                [(ngModel)]="searchQuery"
+                (input)="onSearchInput()"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+              >
+            </div>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">Status:</label>
+            <select
+              [(ngModel)]="statusFilter"
+              (change)="onStatusFilterChange()"
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-markt-primary focus:border-markt-primary sm:text-sm rounded-md"
+            >
+              <option value="">All Orders</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <!-- Sort -->
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">Sort by:</label>
+            <select
+              [(ngModel)]="sortBy"
+              (change)="onSortChange()"
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-markt-primary focus:border-markt-primary sm:text-sm rounded-md"
+            >
+              <option value="created_at_desc">Newest First</option>
+              <option value="created_at_asc">Oldest First</option>
+              <option value="total_desc">Highest Amount</option>
+              <option value="total_asc">Lowest Amount</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Pagination -->
-      <div class="pagination" *ngIf="filteredOrders.length > 0">
-        <app-button 
-          variant="secondary" 
-          size="sm"
-          [outline]="true"
-          [disabled]="currentPage === 1"
-          (clicked)="previousPage()"
-        >
-          Previous
-        </app-button>
-        
-        <div class="page-info">
-          Page {{ currentPage }} of {{ totalPages }}
+      <!-- Orders List -->
+      <div class="space-y-4">
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="flex items-center justify-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
         </div>
-        
-        <app-button 
-          variant="secondary" 
-          size="sm"
-          [outline]="true"
-          [disabled]="currentPage === totalPages"
-          (clicked)="nextPage()"
-        >
-          Next
-        </app-button>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && orders.length === 0" class="text-center py-12">
+          <fa-icon [icon]="faBox" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">No orders found</h2>
+          <p class="text-gray-500 mb-6">You haven't placed any orders yet.</p>
+          <button
+            routerLink="/app/marketplace"
+            class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+          >
+            Start Shopping
+          </button>
+        </div>
+
+        <!-- Orders -->
+        <div *ngFor="let order of orders" class="bg-white rounded-lg shadow overflow-hidden">
+          <!-- Order Header -->
+          <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900">Order #{{ order.order_number }}</h3>
+                  <p class="text-sm text-gray-500">{{ order.created_at | date:'medium' }}</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="getOrderStatusClasses(order.status)"
+                >
+                  {{ getOrderStatusDisplay(order.status) }}
+                </span>
+                <div class="flex items-center space-x-2">
+                  <button
+                    [routerLink]="['/app/orders', order.id]"
+                    class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                    title="View Details"
+                  >
+                    <fa-icon [icon]="faEye" class="w-4 h-4"></fa-icon>
+                  </button>
+                  <button
+                    (click)="downloadInvoice(order)"
+                    class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                    title="Download Invoice"
+                  >
+                    <fa-icon [icon]="faDownload" class="w-4 h-4"></fa-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Items -->
+          <div class="px-6 py-4">
+            <div class="space-y-3">
+              <div *ngFor="let item of order.items" class="flex items-center space-x-4">
+                <img
+                  [src]="item.product?.images[0]?.url || '/assets/images/placeholder.png'"
+                  [alt]="item.product?.name"
+                  class="w-16 h-16 object-cover rounded-lg"
+                >
+                <div class="flex-1">
+                  <h4 class="font-medium text-gray-900">{{ item.product?.name }}</h4>
+                  <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
+                  <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    <span class="flex items-center">
+                      <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
+                      {{ item.product?.seller?.shop_name }}
+                    </span>
+                    <span class="flex items-center">
+                      <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
+                      {{ item.product?.seller?.location }}
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'NGN' }}</p>
+                  <p class="text-sm text-gray-500">{{ item.price | currency:'NGN' }} each</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4">
+                <div class="text-sm text-gray-500">
+                  <span class="font-medium">Total:</span> {{ order.total | currency:'NGN' }}
+                </div>
+                <div class="text-sm text-gray-500">
+                  <span class="font-medium">Items:</span> {{ order.items.length }}
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <button
+                  *ngIf="canReviewOrder(order)"
+                  (click)="reviewOrder(order)"
+                  class="text-markt-primary hover:text-markt-secondary font-medium text-sm"
+                >
+                  Write Review
+                </button>
+                <button
+                  *ngIf="canCancelOrder(order)"
+                  (click)="cancelOrder(order)"
+                  class="text-red-600 hover:text-red-800 font-medium text-sm"
+                >
+                  Cancel Order
+                </button>
+                <button
+                  [routerLink]="['/app/orders', order.id]"
+                  class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors text-sm font-medium"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="totalPages > 1" class="flex items-center justify-center">
+          <nav class="flex items-center space-x-2">
+            <button
+              (click)="previousPage()"
+              [disabled]="currentPage === 1"
+              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+
+            <button
+              *ngFor="let page of getPageNumbers()"
+              (click)="goToPage(page)"
+              [class.bg-markt-primary]="page === currentPage"
+              [class.text-white]="page === currentPage"
+              [class.text-gray-700]="page !== currentPage"
+              class="px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              (click)="nextPage()"
+              [disabled]="currentPage === totalPages"
+              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </nav>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .orders-container {
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .orders-header {
-      margin-bottom: 2rem;
-    }
-
-    .header-content h1 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-
-    .header-content p {
-      color: #7f8c8d;
-      font-size: 1.1rem;
-    }
-
-    .filters-section {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .search-box {
-      flex: 1;
-      min-width: 300px;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #e9ecef;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-
-    .search-input:focus {
-      border-color: #007bff;
-    }
-
-    .filter-controls {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .filter-select {
-      padding: 0.75rem 1rem;
-      border: 1px solid #e9ecef;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-      background: white;
-      min-width: 150px;
-    }
-
-    .orders-table {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
-    }
-
-    .table-header {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr 0.5fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 1rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      font-weight: 600;
-      color: #495057;
-      font-size: 0.9rem;
-    }
-
-    .table-row {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr 0.5fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 1rem;
-      padding: 1rem;
-      border-bottom: 1px solid #e9ecef;
-      align-items: center;
-    }
-
-    .table-row:last-child {
-      border-bottom: none;
-    }
-
-    .table-row:hover {
-      background: #f8f9fa;
-    }
-
-    .order-number {
-      font-weight: 600;
-      color: #007bff;
-    }
-
-    .customer-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .customer-name {
-      font-weight: 500;
-      color: #2c3e50;
-    }
-
-    .customer-email {
-      font-size: 0.9rem;
-      color: #6c757d;
-    }
-
-    .items-count {
-      font-weight: 500;
-      color: #6c757d;
-    }
-
-    .order-total {
-      font-weight: 600;
-      color: #28a745;
-    }
-
-    .order-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-align: center;
-      text-transform: capitalize;
-    }
-
-    .order-status.pending {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .order-status.processing {
-      background: #cce5ff;
-      color: #004085;
-    }
-
-    .order-status.shipped {
-      background: #d1ecf1;
-      color: #0c5460;
-    }
-
-    .order-status.delivered {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .order-status.cancelled {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .order-status.refunded {
-      background: #e2e3e5;
-      color: #383d41;
-    }
-
-    .payment-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-align: center;
-      text-transform: capitalize;
-    }
-
-    .payment-status.pending {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .payment-status.paid {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .payment-status.failed {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .payment-status.refunded {
-      background: #e2e3e5;
-      color: #383d41;
-    }
-
-    .order-date {
-      font-size: 0.9rem;
-      color: #6c757d;
-    }
-
-    .order-actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h3 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-
-    .empty-state p {
-      color: #6c757d;
-      margin-bottom: 2rem;
-    }
-
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .page-info {
-      font-weight: 500;
-      color: #495057;
-    }
-
-    @media (max-width: 768px) {
-      .orders-container {
-        padding: 1rem;
-      }
-
-      .filters-section {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .search-box {
-        min-width: auto;
-      }
-
-      .filter-controls {
-        justify-content: stretch;
-      }
-
-      .filter-select {
-        min-width: auto;
-        flex: 1;
-      }
-
-      .table-header,
-      .table-row {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-      }
-
-      .table-header {
-        display: none;
-      }
-
-      .table-row {
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        padding: 1rem;
-      }
-
-      .customer-info {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .order-actions {
-        justify-content: center;
-      }
+    :host {
+      display: block;
     }
   `]
 })
 export class OrdersComponent implements OnInit {
-  orders: Order[] = [
-    {
-      id: '1',
-      orderNumber: 'ORD-001',
-      customerName: 'John Doe',
-      customerEmail: 'john.doe@example.com',
-      total: 25000,
-      status: 'pending',
-      items: 2,
-      date: '2025-01-03T10:30:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '123 Main St, Lagos, Nigeria'
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-002',
-      customerName: 'Jane Smith',
-      customerEmail: 'jane.smith@example.com',
-      total: 15000,
-      status: 'processing',
-      items: 1,
-      date: '2025-01-03T09:15:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '456 Oak Ave, Abuja, Nigeria'
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-003',
-      customerName: 'Mike Johnson',
-      customerEmail: 'mike.johnson@example.com',
-      total: 35000,
-      status: 'shipped',
-      items: 3,
-      date: '2025-01-02T16:45:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '789 Pine Rd, Port Harcourt, Nigeria',
-      trackingNumber: 'TRK123456'
-    },
-    {
-      id: '4',
-      orderNumber: 'ORD-004',
-      customerName: 'Sarah Wilson',
-      customerEmail: 'sarah.wilson@example.com',
-      total: 18000,
-      status: 'delivered',
-      items: 2,
-      date: '2025-01-01T14:20:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '321 Elm St, Kano, Nigeria'
-    },
-    {
-      id: '5',
-      orderNumber: 'ORD-005',
-      customerName: 'David Brown',
-      customerEmail: 'david.brown@example.com',
-      total: 12000,
-      status: 'cancelled',
-      items: 1,
-      date: '2025-01-01T11:00:00Z',
-      paymentStatus: 'refunded',
-      shippingAddress: '654 Maple Dr, Ibadan, Nigeria'
-    }
-  ];
+  private orderService = inject(OrderService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  filteredOrders: Order[] = [];
+  // Font Awesome Icons
+  faSearch = faSearch;
+  faFilter = faFilter;
+  faSort = faSort;
+  faEye = faEye;
+  faEdit = faEdit;
+  faTrash = faTrash;
+  faPrint = faPrint;
+  faStar = faStar;
+  faTimesCircle = faTimesCircle;
+  faMapMarkerAlt = faMapMarkerAlt;
+  faCalendar = faCalendar;
+  faClock = faClock;
+  faCheckCircle = faCheckCircle;
+  faExclamationTriangle = faExclamationTriangle;
+  faArrowUp = faArrowUp;
+  faArrowDown = faArrowDown;
+  faBox = faBox;
+  faCreditCard = faCreditCard;
+  faArrowRight = faArrowRight;
+  faRefresh = faRefresh;
+  faTimes = faTimes;
+  faDownload = faDownload;
+  faStore = faStore;
+
+  // Data
+  orders: any[] = [];
+  isLoading = false;
+
+  // Filters and pagination
   searchQuery = '';
   statusFilter = '';
-  paymentFilter = '';
-  sortBy = 'newest';
+  sortBy = 'created_at_desc';
   currentPage = 1;
   totalPages = 1;
-  itemsPerPage = 10;
+  totalResults = 0;
+
+  // Statistics
+  orderStats = {
+    total: 0,
+    pending: 0,
+    completed: 0,
+    cancelled: 0
+  };
 
   ngOnInit(): void {
     this.loadOrders();
-    this.applyFilters();
+    this.loadOrderStatistics();
   }
 
   private loadOrders(): void {
-    // TODO: Load orders from API
-    console.log('Loading orders...');
-    this.filteredOrders = [...this.orders];
-  }
+    this.isLoading = true;
 
-  onSearch(): void {
-    this.applyFilters();
-  }
-
-  onFilter(): void {
-    this.applyFilters();
-  }
-
-  onSort(): void {
-    this.applyFilters();
-  }
-
-  private applyFilters(): void {
-    let filtered = [...this.orders];
-
-    // Search filter
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(order =>
-        order.orderNumber.toLowerCase().includes(query) ||
-        order.customerName.toLowerCase().includes(query) ||
-        order.customerEmail.toLowerCase().includes(query)
-      );
-    }
-
-    // Status filter
-    if (this.statusFilter) {
-      filtered = filtered.filter(order => order.status === this.statusFilter);
-    }
-
-    // Payment filter
-    if (this.paymentFilter) {
-      filtered = filtered.filter(order => order.paymentStatus === this.paymentFilter);
-    }
-
-    // Sort
-    switch (this.sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case 'total-high':
-        filtered.sort((a, b) => b.total - a.total);
-        break;
-      case 'total-low':
-        filtered.sort((a, b) => a.total - b.total);
-        break;
-    }
-
-    this.filteredOrders = filtered;
-    this.currentPage = 1;
-    this.calculatePagination();
-  }
-
-  private calculatePagination(): void {
-    this.totalPages = Math.ceil(this.filteredOrders.length / this.itemsPerPage);
-  }
-
-  getStatusLabel(status: string): string {
-    const statusMap: Record<string, string> = {
-      pending: 'Pending',
-      processing: 'Processing',
-      shipped: 'Shipped',
-      delivered: 'Delivered',
-      cancelled: 'Cancelled',
-      refunded: 'Refunded'
+    const params = {
+      page: this.currentPage,
+      search: this.searchQuery,
+      status: this.statusFilter,
+      sort_by: this.sortBy
     };
-    return statusMap[status] || status;
-  }
 
-  getPaymentStatusLabel(status: string): string {
-    const statusMap: Record<string, string> = {
-      pending: 'Pending',
-      paid: 'Paid',
-      failed: 'Failed',
-      refunded: 'Refunded'
-    };
-    return statusMap[status] || status;
-  }
-
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    this.orderService.getOrders().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.orders = response.data;
+          this.totalResults = response.data.length;
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading orders:', error);
+        this.isLoading = false;
+      }
     });
   }
 
-  updateStatus(orderId: string): void {
-    // TODO: Update order status via API
-    console.log('Updating status for order:', orderId);
-    const order = this.orders.find(o => o.id === orderId);
-    if (order && order.status === 'pending') {
-      order.status = 'processing';
-      this.applyFilters();
-    }
+  private loadOrderStatistics(): void {
+    this.orderService.getOrderStatistics().subscribe({
+      next: (stats: any) => {
+        this.orderStats = stats;
+      },
+      error: (error) => {
+        console.error('Error loading order statistics:', error);
+      }
+    });
   }
 
-  shipOrder(orderId: string): void {
-    // TODO: Ship order via API
-    console.log('Shipping order:', orderId);
-    const order = this.orders.find(o => o.id === orderId);
-    if (order && order.status === 'processing') {
-      order.status = 'shipped';
-      order.trackingNumber = 'TRK' + Math.random().toString(36).substr(2, 6).toUpperCase();
-      this.applyFilters();
-    }
+  onSearchInput(): void {
+    this.currentPage = 1;
+    this.loadOrders();
+  }
+
+  onStatusFilterChange(): void {
+    this.currentPage = 1;
+    this.loadOrders();
+  }
+
+  onSortChange(): void {
+    this.currentPage = 1;
+    this.loadOrders();
+  }
+
+  refreshOrders(): void {
+    this.loadOrders();
+    this.loadOrderStatistics();
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.loadOrders();
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.loadOrders();
     }
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = page;
+    this.loadOrders();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  }
+
+  getOrderStatusDisplay(status: string): string {
+    const statusMap: Record<string, string> = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'shipped': 'Shipped',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled'
+    };
+    return statusMap[status] || status;
+  }
+
+  getOrderStatusClasses(status: string): string {
+    const classMap: Record<string, string> = {
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'confirmed': 'bg-blue-100 text-blue-800',
+      'shipped': 'bg-purple-100 text-purple-800',
+      'delivered': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800'
+    };
+    return classMap[status] || 'bg-gray-100 text-gray-800';
+  }
+
+  canReviewOrder(order: any): boolean {
+    return order.status === 'delivered';
+  }
+
+  canCancelOrder(order: any): boolean {
+    return ['pending', 'confirmed'].includes(order.status);
+  }
+
+  reviewOrder(order: any): void {
+    this.router.navigate(['/app/orders', order.id, 'review']);
+  }
+
+  cancelOrder(order: any): void {
+    if (confirm('Are you sure you want to cancel this order?')) {
+      this.orderService.updateRequestStatus(order.id, { status: 'cancelled' }).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.refreshOrders();
+          }
+        },
+        error: (error) => {
+          console.error('Error cancelling order:', error);
+        }
+      });
+    }
+  }
+
+  downloadInvoice(order: any): void {
+    // This would typically call an API to generate and download the invoice
+    console.log('Downloading invoice for order:', order.id);
+  }
+
+  trackOrder(order: any): void {
+    this.router.navigate(['/app/orders', order.id, 'track']);
   }
 } 

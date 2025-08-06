@@ -1,94 +1,42 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap, catchError, throwError } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { ApiService } from './api.service';
-import { User } from './auth.service';
+import { 
+  User, 
+  UserProfile, 
+  UserUpdate, 
+  BuyerAccount, 
+  SellerAccount,
+  BuyerUpdate,
+  SellerUpdate
+} from '../models';
+import { tap, map } from 'rxjs/operators';
 
-export interface UserProfile extends User {
-  bio?: string;
-  website?: string;
-  social_links?: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    linkedin?: string;
+export interface ProfileState {
+  profile: UserProfile | null;
+  isLoading: boolean;
+  error: string | null;
+  isEditing: boolean;
+}
+
+export interface ProfileSettings {
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
   };
-  preferences?: {
-    email_notifications: boolean;
-    push_notifications: boolean;
-    sms_notifications: boolean;
-    newsletter: boolean;
+  privacy: {
+    profile_visibility: 'public' | 'private' | 'friends';
+    show_email: boolean;
+    show_phone: boolean;
+    show_location: boolean;
+  };
+  preferences: {
     language: string;
-    timezone: string;
     currency: string;
+    timezone: string;
+    theme: 'light' | 'dark' | 'auto';
   };
-  statistics?: {
-    total_products: number;
-    total_sales: number;
-    total_orders: number;
-    total_reviews: number;
-    average_rating: number;
-    member_since_days: number;
-  };
-}
-
-export interface ProfileUpdateRequest {
-  full_name?: string;
-  phone?: string;
-  bio?: string;
-  website?: string;
-  social_links?: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    linkedin?: string;
-  };
-}
-
-export interface PasswordChangeRequest {
-  current_password: string;
-  new_password: string;
-  confirm_password: string;
-}
-
-export interface NotificationPreferences {
-  email_notifications: boolean;
-  push_notifications: boolean;
-  sms_notifications: boolean;
-  newsletter: boolean;
-  product_updates: boolean;
-  order_updates: boolean;
-  chat_notifications: boolean;
-  marketing_emails: boolean;
-}
-
-export interface PrivacySettings {
-  profile_visibility: 'public' | 'private' | 'friends';
-  show_email: boolean;
-  show_phone: boolean;
-  show_location: boolean;
-  allow_messages: boolean;
-  allow_friend_requests: boolean;
-  show_online_status: boolean;
-}
-
-export interface UserActivity {
-  id: number;
-  type: 'login' | 'product_view' | 'product_create' | 'order_placed' | 'review_posted' | 'message_sent';
-  description: string;
-  created_at: string;
-  metadata?: any;
-}
-
-export interface UserReview {
-  id: number;
-  reviewer_id: number;
-  reviewer_name: string;
-  reviewer_avatar?: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  product_id?: number;
-  product_title?: string;
 }
 
 @Injectable({
@@ -97,312 +45,601 @@ export interface UserReview {
 export class ProfileService {
   private apiService = inject(ApiService);
   
-  // BehaviorSubjects for state management
-  private profileSubject = new BehaviorSubject<UserProfile | null>(null);
-  private activitiesSubject = new BehaviorSubject<UserActivity[]>([]);
-  private reviewsSubject = new BehaviorSubject<UserReview[]>([]);
-  private loadingSubject = new BehaviorSubject<boolean>(false);
+  private profileStateSubject = new BehaviorSubject<ProfileState>({
+    profile: null,
+    isLoading: false,
+    error: null,
+    isEditing: false
+  });
 
-  // Public observables
-  public profile$ = this.profileSubject.asObservable();
-  public activities$ = this.activitiesSubject.asObservable();
-  public reviews$ = this.reviewsSubject.asObservable();
-  public loading$ = this.loadingSubject.asObservable();
+  public profileState$ = this.profileStateSubject.asObservable();
 
-  /**
-   * Get current user's profile
-   */
-  getProfile(): Observable<UserProfile> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<UserProfile>('/users/profile').pipe(
-      tap(response => {
-        if (response.data) {
-          this.profileSubject.next(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
+  constructor() {}
+
+  // ============================================================================
+  // PROFILE OPERATIONS
+  // ============================================================================
 
   /**
-   * Get user profile by ID (for viewing other users)
+   * Get user profile
    */
-  getUserProfile(userId: number): Observable<UserProfile> {
-    return this.apiService.get<UserProfile>(`/users/${userId}/profile`).pipe(
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Update user profile
-   */
-  updateProfile(profileData: ProfileUpdateRequest): Observable<UserProfile> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.put<UserProfile>('/users/profile', profileData).pipe(
-      tap(response => {
-        if (response.data) {
-          this.profileSubject.next(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Change password
-   */
-  changePassword(passwordData: PasswordChangeRequest): Observable<any> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<any>('/users/change-password', passwordData).pipe(
-      tap(() => {
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Upload profile avatar
-   */
-  uploadAvatar(file: File): Observable<{ avatar_url: string }> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.upload<{ avatar_url: string }>('/users/avatar', file).pipe(
-      tap(response => {
-        if (response.data) {
-          const currentProfile = this.profileSubject.value;
-          if (currentProfile) {
-            this.profileSubject.next({
-              ...currentProfile,
-              avatar_url: response.data.avatar_url
-            });
-          }
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Delete profile avatar
-   */
-  deleteAvatar(): Observable<any> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.delete<any>('/users/avatar').pipe(
-      tap(() => {
-        const currentProfile = this.profileSubject.value;
-        if (currentProfile) {
-          this.profileSubject.next({
-            ...currentProfile,
-            avatar_url: undefined
+  getProfile(): Observable<any> {
+    return this.apiService.getProfile().pipe(
+      tap({
+        next: (response) => {
+          this.updateProfileState({
+            profile: response.data as UserProfile,
+            isLoading: false,
+            error: null
+          });
+        },
+        error: (error) => {
+          this.updateProfileState({
+            isLoading: false,
+            error: error.message || 'Failed to load profile'
           });
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
+      })
+    );
+  }
+
+  private convertUserToUserProfile(user: User): UserProfile {
+    return {
+      ...user,
+      address: user.address || {
+        latitude: 0,
+        longitude: 0,
+        street: '',
+        house_number: '',
+        city: '',
+        state: '',
+        country: '',
+        postal_code: ''
+      }
+    };
+  }
+
+  updateProfile(profileData: any): Observable<any> {
+    return this.apiService.updateProfile(profileData).pipe(
+      tap({
+        next: (response) => {
+          this.updateProfileState({
+            profile: response.data as UserProfile,
+            isLoading: false,
+            error: null
+          });
+        },
+        error: (error) => {
+          this.updateProfileState({
+            isLoading: false,
+            error: error.message || 'Failed to update profile'
+          });
+        }
       })
     );
   }
 
   /**
-   * Get notification preferences
+   * Update buyer profile
    */
-  getNotificationPreferences(): Observable<NotificationPreferences> {
-    return this.apiService.get<NotificationPreferences>('/users/notifications/preferences').pipe(
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Update notification preferences
-   */
-  updateNotificationPreferences(preferences: Partial<NotificationPreferences>): Observable<NotificationPreferences> {
-    this.loadingSubject.next(true);
+  updateBuyerProfile(buyerData: any): Observable<any> {
+    this.setLoading(true);
     
-    return this.apiService.put<NotificationPreferences>('/users/notifications/preferences', preferences).pipe(
-      tap(() => {
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get privacy settings
-   */
-  getPrivacySettings(): Observable<PrivacySettings> {
-    return this.apiService.get<PrivacySettings>('/users/privacy/settings').pipe(
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Update privacy settings
-   */
-  updatePrivacySettings(settings: Partial<PrivacySettings>): Observable<PrivacySettings> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.put<PrivacySettings>('/users/privacy/settings', settings).pipe(
-      tap(() => {
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get user activities
-   */
-  getUserActivities(page = 1, perPage = 20): Observable<{ data: UserActivity[], pagination: any }> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<{ data: UserActivity[], pagination: any }>('/users/activities', { page, per_page: perPage }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.activitiesSubject.next(response.data.data || []);
+    return this.apiService.updateBuyerProfile(buyerData).pipe(
+      tap({
+        next: (response) => {
+          this.updateProfileState({
+            profile: response.data as UserProfile,
+            isLoading: false,
+            error: null
+          });
+        },
+        error: (error) => {
+          this.updateProfileState({
+            isLoading: false,
+            error: error.message || 'Failed to update buyer profile'
+          });
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get user reviews
-   */
-  getUserReviews(page = 1, perPage = 10): Observable<{ data: UserReview[], pagination: any }> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<{ data: UserReview[], pagination: any }>('/users/reviews', { page, per_page: perPage }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.reviewsSubject.next(response.data.data || []);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get user statistics
-   */
-  getUserStatistics(): Observable<any> {
-    return this.apiService.get<any>('/users/statistics').pipe(
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Delete user account
-   */
-  deleteAccount(password: string): Observable<any> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<any>('/users/account/delete', { password }).pipe(
-      tap(() => {
-        this.profileSubject.next(null);
-        this.activitiesSubject.next([]);
-        this.reviewsSubject.next([]);
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
       })
     );
   }
 
   /**
-   * Export user data
+   * Update seller profile
    */
-  exportUserData(): Observable<{ download_url: string }> {
-    return this.apiService.post<{ download_url: string }>('/users/export-data').pipe(
-      map(response => response.data!)
+  updateSellerProfile(sellerData: any): Observable<any> {
+    return this.apiService.updateSellerProfile(sellerData).pipe(
+      tap({
+        next: (response) => {
+          this.updateProfileState({
+            profile: response.data as UserProfile,
+            isLoading: false,
+            error: null
+          });
+        },
+        error: (error) => {
+          this.updateProfileState({
+            isLoading: false,
+            error: error.message || 'Failed to update seller profile'
+          });
+        }
+      })
     );
+  }
+
+  /**
+   * Upload profile picture
+   */
+  uploadProfilePicture(file: File): Observable<any> {
+    this.setLoading(true);
+    
+    return this.apiService.uploadProfilePicture(file).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.updateProfileState({
+              profile: {
+                ...this.getProfileState().profile!,
+                profile_picture_url: response.data.original_url
+              }
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error uploading profile picture:', error);
+          this.setError(error.message);
+          this.setLoading(false);
+        }
+      })
+    );
+  }
+
+  /**
+   * Get public profile
+   */
+  getPublicProfile(userId: string): Observable<any> {
+    return this.apiService.getPublicProfile(userId);
+  }
+
+  /**
+   * Get user settings
+   */
+  getUserSettings(): Observable<any> {
+    return this.apiService.getUserSettings();
+  }
+
+  /**
+   * Update user settings
+   */
+  updateUserSettings(settings: any): Observable<any> {
+    return this.apiService.updateUserSettings(settings);
+  }
+
+  /**
+   * Check username availability
+   */
+  checkUsername(username: string): Observable<any> {
+    return this.apiService.checkUsername(username);
+  }
+
+  // ============================================================================
+  // PROFILE UTILITIES
+  // ============================================================================
+
+  /**
+   * Get current profile state
+   */
+  getProfileState(): ProfileState {
+    return this.profileStateSubject.value;
   }
 
   /**
    * Get current profile
    */
-  get currentProfile(): UserProfile | null {
-    return this.profileSubject.value;
+  getCurrentProfile(): UserProfile | null {
+    return this.getProfileState().profile;
   }
 
   /**
-   * Get current activities
+   * Get profile observable
    */
-  get currentActivities(): UserActivity[] {
-    return this.activitiesSubject.value;
+  getProfile$(): Observable<UserProfile | null> {
+    return this.profileState$.pipe(
+      map(state => state.profile)
+    );
   }
 
   /**
-   * Get current reviews
+   * Get loading state observable
    */
-  get currentReviews(): UserReview[] {
-    return this.reviewsSubject.value;
+  getLoading$(): Observable<boolean> {
+    return this.profileState$.pipe(
+      map(state => state.isLoading)
+    );
   }
 
   /**
-   * Get current loading state
+   * Get error state observable
    */
-  get isLoading(): boolean {
-    return this.loadingSubject.value;
+  getError$(): Observable<string | null> {
+    return this.profileState$.pipe(
+      map(state => state.error)
+    );
   }
 
   /**
-   * Refresh profile data
+   * Get editing state observable
+   */
+  getEditing$(): Observable<boolean> {
+    return this.profileState$.pipe(
+      map(state => state.isEditing)
+    );
+  }
+
+  /**
+   * Update profile state
+   */
+  private updateProfileState(partial: Partial<ProfileState>): void {
+    const currentState = this.getProfileState();
+    const newState = { ...currentState, ...partial };
+    this.profileStateSubject.next(newState);
+  }
+
+  /**
+   * Set loading state
+   */
+  private setLoading(isLoading: boolean): void {
+    this.updateProfileState({ isLoading });
+  }
+
+  /**
+   * Set error state
+   */
+  private setError(error: string): void {
+    this.updateProfileState({ error });
+  }
+
+  /**
+   * Clear error
+   */
+  clearError(): void {
+    this.updateProfileState({ error: null });
+  }
+
+  /**
+   * Set editing state
+   */
+  setEditing(isEditing: boolean): void {
+    this.updateProfileState({ isEditing });
+  }
+
+  /**
+   * Get user display name
+   */
+  getUserDisplayName(user: User): string {
+    if (user.current_role === 'buyer' && user.buyer_account) {
+      return user.buyer_account.buyername;
+    } else if (user.current_role === 'seller' && user.seller_account) {
+      return user.seller_account.shop_name;
+    }
+    return user.username;
+  }
+
+  /**
+   * Get user role display
+   */
+  getUserRoleDisplay(user: User): string {
+    if (user.current_role === 'buyer') {
+      return 'Buyer';
+    } else if (user.current_role === 'seller') {
+      return 'Seller';
+    }
+    return 'User';
+  }
+
+  /**
+   * Get user role color
+   */
+  getUserRoleColor(user: User): string {
+    if (user.current_role === 'buyer') {
+      return 'text-blue-600';
+    } else if (user.current_role === 'seller') {
+      return 'text-green-600';
+    }
+    return 'text-gray-600';
+  }
+
+  /**
+   * Get user verification status
+   */
+  getUserVerificationStatus(user: User): {
+    isVerified: boolean;
+    status: string;
+    color: string;
+  } {
+    if (user.current_role === 'seller' && user.seller_account) {
+      const status = user.seller_account.verification_status;
+      const isVerified = status === 'verified';
+      
+      return {
+        isVerified,
+        status: status.charAt(0).toUpperCase() + status.slice(1),
+        color: isVerified ? 'text-green-600' : 'text-yellow-600'
+      };
+    }
+    
+    return {
+      isVerified: user.email_verified,
+      status: user.email_verified ? 'Verified' : 'Unverified',
+      color: user.email_verified ? 'text-green-600' : 'text-red-600'
+    };
+  }
+
+  /**
+   * Get user rating display
+   */
+  getUserRatingDisplay(user: User): string {
+    if (user.current_role === 'seller' && user.seller_account) {
+      return user.seller_account.average_rating.toFixed(1);
+    }
+    return 'N/A';
+  }
+
+  /**
+   * Get user rating stars
+   */
+  getUserRatingStars(user: User): Array<'full' | 'half' | 'empty'> {
+    if (user.current_role !== 'seller' || !user.seller_account) {
+      return Array(5).fill('empty');
+    }
+    
+    const rating = user.seller_account.average_rating;
+    const stars: Array<'full' | 'half' | 'empty'> = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push('full');
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push('half');
+      } else {
+        stars.push('empty');
+      }
+    }
+    
+    return stars;
+  }
+
+  /**
+   * Get user stats
+   */
+  getUserStats(user: User): {
+    totalOrders: number;
+    totalProducts: number;
+    totalSales: number;
+    memberSince: string;
+  } {
+    const stats = {
+      totalOrders: 0,
+      totalProducts: 0,
+      totalSales: 0,
+      memberSince: user.created_at
+    };
+    
+    if (user.current_role === 'buyer' && user.buyer_account) {
+      stats.totalOrders = user.buyer_account.total_orders;
+    } else if (user.current_role === 'seller' && user.seller_account) {
+      stats.totalProducts = user.seller_account.total_products;
+      stats.totalSales = user.seller_account.total_sales;
+    }
+    
+    return stats;
+  }
+
+  /**
+   * Format user join date
+   */
+  formatUserJoinDate(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMonths = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+    
+    if (diffInMonths < 1) {
+      return 'Less than a month';
+    } else if (diffInMonths < 12) {
+      return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''}`;
+    } else {
+      const years = Math.floor(diffInMonths / 12);
+      return `${years} year${years > 1 ? 's' : ''}`;
+    }
+  }
+
+  /**
+   * Get default profile settings
+   */
+  getDefaultProfileSettings(): ProfileSettings {
+    return {
+      notifications: {
+        email: true,
+        push: true,
+        sms: false
+      },
+      privacy: {
+        profile_visibility: 'public',
+        show_email: false,
+        show_phone: false,
+        show_location: false
+      },
+      preferences: {
+        language: 'en',
+        currency: 'NGN',
+        timezone: 'Africa/Lagos',
+        theme: 'light'
+      }
+    };
+  }
+
+  /**
+   * Validate profile data
+   */
+  validateProfileData(profileData: UserUpdate): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (profileData.phone_number && !this.isValidPhoneNumber(profileData.phone_number)) {
+      errors.push('Invalid phone number format');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Validate buyer profile data
+   */
+  validateBuyerProfileData(buyerData: BuyerUpdate): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!buyerData.buyername || buyerData.buyername.trim().length === 0) {
+      errors.push('Buyer name is required');
+    }
+    
+    if (buyerData.buyername && buyerData.buyername.length > 50) {
+      errors.push('Buyer name must be less than 50 characters');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Validate seller profile data
+   */
+  validateSellerProfileData(sellerData: SellerUpdate): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!sellerData.shop_name || sellerData.shop_name.trim().length === 0) {
+      errors.push('Shop name is required');
+    }
+    
+    if (sellerData.shop_name && sellerData.shop_name.length > 100) {
+      errors.push('Shop name must be less than 100 characters');
+    }
+    
+    if (!sellerData.description || sellerData.description.trim().length === 0) {
+      errors.push('Shop description is required');
+    }
+    
+    if (sellerData.description && sellerData.description.length > 500) {
+      errors.push('Shop description must be less than 500 characters');
+    }
+    
+    if (!sellerData.category_ids || sellerData.category_ids.length === 0) {
+      errors.push('At least one category must be selected');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Check if phone number is valid
+   */
+  private isValidPhoneNumber(phone: string): boolean {
+    // Basic phone number validation for Nigerian numbers
+    const phoneRegex = /^(\+234|0)[789][01]\d{8}$/;
+    return phoneRegex.test(phone);
+  }
+
+  /**
+   * Get profile completion percentage
+   */
+  getProfileCompletionPercentage(user: User): number {
+    let completedFields = 0;
+    let totalFields = 0;
+    
+    // Basic profile fields
+    totalFields += 4;
+    if (user.username) completedFields++;
+    if (user.email) completedFields++;
+    if (user.profile_picture_url) completedFields++;
+    if (user.phone_number) completedFields++;
+    
+    // Role-specific fields
+    if (user.current_role === 'buyer' && user.buyer_account) {
+      totalFields += 2;
+      if (user.buyer_account.buyername) completedFields++;
+      if (user.buyer_account.shipping_address) completedFields++;
+    } else if (user.current_role === 'seller' && user.seller_account) {
+      totalFields += 3;
+      if (user.seller_account.shop_name) completedFields++;
+      if (user.seller_account.description) completedFields++;
+      if (user.seller_account.categories && user.seller_account.categories.length > 0) completedFields++;
+    }
+    
+    return totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
+  }
+
+  /**
+   * Get profile completion status
+   */
+  getProfileCompletionStatus(user: User): {
+    percentage: number;
+    status: 'incomplete' | 'basic' | 'complete';
+    missingFields: string[];
+  } {
+    const percentage = this.getProfileCompletionPercentage(user);
+    const missingFields: string[] = [];
+    
+    if (!user.username) missingFields.push('Username');
+    if (!user.email) missingFields.push('Email');
+    if (!user.profile_picture_url) missingFields.push('Profile Picture');
+    if (!user.phone_number) missingFields.push('Phone Number');
+    
+    if (user.current_role === 'buyer' && user.buyer_account) {
+      if (!user.buyer_account.buyername) missingFields.push('Buyer Name');
+      if (!user.buyer_account.shipping_address) missingFields.push('Shipping Address');
+    } else if (user.current_role === 'seller' && user.seller_account) {
+      if (!user.seller_account.shop_name) missingFields.push('Shop Name');
+      if (!user.seller_account.description) missingFields.push('Shop Description');
+      if (!user.seller_account.categories || user.seller_account.categories.length === 0) {
+        missingFields.push('Shop Categories');
+      }
+    }
+    
+    let status: 'incomplete' | 'basic' | 'complete';
+    if (percentage < 50) {
+      status = 'incomplete';
+    } else if (percentage < 80) {
+      status = 'basic';
+    } else {
+      status = 'complete';
+    }
+    
+    return {
+      percentage,
+      status,
+      missingFields
+    };
+  }
+
+  /**
+   * Clear current profile
+   */
+  clearCurrentProfile(): void {
+    this.updateProfileState({ profile: null });
+  }
+
+  /**
+   * Refresh profile
    */
   refreshProfile(): void {
     this.getProfile().subscribe();
-  }
-
-  /**
-   * Clear profile data (on logout)
-   */
-  clearProfile(): void {
-    this.profileSubject.next(null);
-    this.activitiesSubject.next([]);
-    this.reviewsSubject.next([]);
   }
 } 

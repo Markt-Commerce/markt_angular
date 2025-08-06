@@ -1,93 +1,32 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap, catchError, throwError } from 'rxjs';
-import { ApiService, PaginatedResponse } from './api.service';
-import { Product } from './marketplace.service';
-import { ShippingAddress } from './cart.service';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { ApiService } from './api.service';
+import { 
+  Order, 
+  BuyerOrder, 
+  OrderCreate, 
+  SellerOrderItem,
+  OrderItem,
+  OrderStatus,
+  OrderItemStatus
+} from '../models';
+import { tap, map } from 'rxjs/operators';
 
-export interface OrderItem {
-  id: number;
-  order_id: number;
-  product_id: number;
-  product: Product;
-  quantity: number;
-  price: number;
-  total_price: number;
-  seller_id: number;
-  seller_name: string;
+export interface OrderState {
+  orders: Order[];
+  currentOrder: Order | null;
+  sellerOrders: SellerOrderItem[];
+  isLoading: boolean;
+  error: string | null;
 }
 
-export interface Order {
-  id: number;
-  order_number: string;
-  user_id: number;
-  user_name: string;
-  items: OrderItem[];
-  total_items: number;
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  discount: number;
-  total: number;
-  currency: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
-  payment_method: string;
-  shipping_address: ShippingAddress;
-  billing_address: ShippingAddress;
-  shipping_method: string;
-  tracking_number?: string;
-  estimated_delivery?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateOrderRequest {
-  items: {
-    product_id: number;
-    quantity: number;
-  }[];
-  shipping_address: ShippingAddress;
-  billing_address?: ShippingAddress;
-  shipping_method_id: string;
-  payment_method: string;
-  coupon_code?: string;
-  notes?: string;
-}
-
-export interface OrderStatus {
-  status: string;
-  timestamp: string;
-  description: string;
-  location?: string;
-}
-
-export interface OrderTracking {
-  order_id: number;
-  tracking_number: string;
-  carrier: string;
-  status: string;
-  estimated_delivery: string;
-  events: OrderStatus[];
-}
-
-export interface PaymentMethod {
-  id: string;
-  type: 'card' | 'bank_transfer' | 'paypal' | 'paystack';
-  name: string;
-  description: string;
-  is_available: boolean;
-  processing_fee?: number;
-}
-
-export interface PaymentIntent {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  payment_method: string;
-  client_secret?: string;
-  redirect_url?: string;
+export interface OrderFilters {
+  status?: OrderStatus;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  sort_by?: 'created_at' | 'total' | 'status';
+  sort_order?: 'asc' | 'desc';
 }
 
 @Injectable({
@@ -96,308 +35,640 @@ export interface PaymentIntent {
 export class OrderService {
   private apiService = inject(ApiService);
   
-  // BehaviorSubjects for state management
-  private ordersSubject = new BehaviorSubject<Order[]>([]);
-  private currentOrderSubject = new BehaviorSubject<Order | null>(null);
-  private loadingSubject = new BehaviorSubject<boolean>(false);
+  private orderStateSubject = new BehaviorSubject<OrderState>({
+    orders: [],
+    currentOrder: null,
+    sellerOrders: [],
+    isLoading: false,
+    error: null
+  });
 
-  // Public observables
-  public orders$ = this.ordersSubject.asObservable();
-  public currentOrder$ = this.currentOrderSubject.asObservable();
-  public loading$ = this.loadingSubject.asObservable();
+  public orderState$ = this.orderStateSubject.asObservable();
+
+  constructor() {}
+
+  // ============================================================================
+  // ORDER OPERATIONS (BUYER)
+  // ============================================================================
 
   /**
-   * Get all orders for current user
+   * Get buyer orders
    */
-  getOrders(page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    this.loadingSubject.next(true);
+  getOrders(): Observable<any> {
+    this.setLoading(true);
     
-    return this.apiService.get<PaginatedResponse<Order>>('/orders', { page, per_page: perPage }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.ordersSubject.next(response.data.data || []);
+    return this.apiService.getOrders().pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.updateOrderState({
+              orders: response.data,
+              isLoading: false,
+              error: null
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching orders:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get order by ID
-   */
-  getOrder(orderId: number): Observable<Order> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<Order>(`/orders/${orderId}`).pipe(
-      tap(response => {
-        if (response.data) {
-          this.currentOrderSubject.next(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get order by order number
-   */
-  getOrderByNumber(orderNumber: string): Observable<Order> {
-    return this.apiService.get<Order>(`/orders/number/${orderNumber}`).pipe(
-      map(response => response.data!)
+      })
     );
   }
 
   /**
    * Create new order
    */
-  createOrder(orderData: CreateOrderRequest): Observable<Order> {
-    this.loadingSubject.next(true);
+  createOrder(orderData: OrderCreate): Observable<any> {
+    this.setLoading(true);
     
-    return this.apiService.post<Order>('/orders', orderData).pipe(
-      tap(response => {
-        if (response.data) {
-          const currentOrders = this.ordersSubject.value;
-          this.ordersSubject.next([response.data, ...currentOrders]);
-          this.currentOrderSubject.next(response.data);
+    return this.apiService.createOrder(orderData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            const newOrder = response.data;
+            const currentOrders = this.getOrderState().orders;
+            this.updateOrderState({
+              orders: [newOrder, ...currentOrders],
+              currentOrder: newOrder,
+              isLoading: false,
+              error: null
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error creating order:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
-   * Cancel order
+   * Get single order
    */
-  cancelOrder(orderId: number, reason?: string): Observable<Order> {
-    this.loadingSubject.next(true);
+  getOrder(orderId: string): Observable<any> {
+    return this.apiService.getOrder(orderId).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.updateOrderState({
+              currentOrder: response.data
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching order:', error);
+        }
+      })
+    );
+  }
+
+  /**
+   * Pay for order
+   */
+  payOrder(orderId: string, paymentData: any): Observable<any> {
+    return this.apiService.payOrder(orderId, paymentData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            // Update order status
+            this.updateOrderStatus(orderId, response.data.status);
+          }
+        },
+        error: (error) => {
+          console.error('Error paying order:', error);
+        }
+      })
+    );
+  }
+
+  /**
+   * Track order
+   */
+  trackOrder(orderId: string): Observable<any> {
+    return this.apiService.trackOrder(orderId);
+  }
+
+  /**
+   * Review order
+   */
+  reviewOrder(orderId: string, reviewData: any): Observable<any> {
+    return this.apiService.reviewOrder(orderId, reviewData);
+  }
+
+  // ============================================================================
+  // ORDER OPERATIONS (SELLER)
+  // ============================================================================
+
+  /**
+   * Get seller orders
+   */
+  getSellerOrders(params?: any): Observable<any> {
+    this.setLoading(true);
     
-    return this.apiService.post<Order>(`/orders/${orderId}/cancel`, { reason }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.updateOrderInList(response.data);
-          this.currentOrderSubject.next(response.data);
+    return this.apiService.getSellerOrders(params).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.updateOrderState({
+              sellerOrders: response.data.items,
+              isLoading: false,
+              error: null
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching seller orders:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
-   * Request refund
+   * Get seller order statistics
    */
-  requestRefund(orderId: number, reason: string, items?: number[]): Observable<Order> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<Order>(`/orders/${orderId}/refund`, { reason, items }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.updateOrderInList(response.data);
-          this.currentOrderSubject.next(response.data);
+  getSellerOrderStats(): Observable<any> {
+    return this.apiService.getSellerOrderStats();
+  }
+
+  /**
+   * Update order item status
+   */
+  updateOrderItemStatus(orderItemId: string, status: OrderItemStatus): Observable<any> {
+    return this.apiService.updateOrderItemStatus(parseInt(orderItemId), status).pipe(
+      tap({
+        next: () => {
+          const currentOrders = this.getOrderState().orders;
+          const updatedOrders = currentOrders.map(order => ({
+            ...order,
+            items: order.items.map(item =>
+              item.id === orderItemId ? { ...item, status } : item
+            )
+          }));
+          this.updateOrderState({ orders: updatedOrders });
+        },
+        error: (error) => {
+          console.error('Error updating order item status:', error);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
-  /**
-   * Get order tracking
-   */
-  getOrderTracking(orderId: number): Observable<OrderTracking> {
-    return this.apiService.get<OrderTracking>(`/orders/${orderId}/tracking`).pipe(
-      map(response => response.data!)
-    );
-  }
+  // ============================================================================
+  // ORDER UTILITIES
+  // ============================================================================
 
   /**
-   * Get available payment methods
+   * Get current order state
    */
-  getPaymentMethods(): Observable<PaymentMethod[]> {
-    return this.apiService.get<PaymentMethod[]>('/orders/payment-methods').pipe(
-      map(response => response.data || [])
-    );
-  }
-
-  /**
-   * Create payment intent
-   */
-  createPaymentIntent(orderId: number, paymentMethodId: string): Observable<PaymentIntent> {
-    return this.apiService.post<PaymentIntent>(`/orders/${orderId}/payment-intent`, {
-      payment_method_id: paymentMethodId
-    }).pipe(
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Confirm payment
-   */
-  confirmPayment(orderId: number, paymentIntentId: string): Observable<Order> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<Order>(`/orders/${orderId}/confirm-payment`, {
-      payment_intent_id: paymentIntentId
-    }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.updateOrderInList(response.data);
-          this.currentOrderSubject.next(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get orders by status
-   */
-  getOrdersByStatus(status: string, page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    return this.getOrders(page, perPage).pipe(
-      map(response => ({
-        ...response,
-        data: response.data?.filter(order => order.status === status) || []
-      }))
-    );
-  }
-
-  /**
-   * Get pending orders
-   */
-  getPendingOrders(page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    return this.getOrdersByStatus('pending', page, perPage);
-  }
-
-  /**
-   * Get active orders (confirmed, processing, shipped)
-   */
-  getActiveOrders(page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    return this.getOrders(page, perPage).pipe(
-      map(response => ({
-        ...response,
-        data: response.data?.filter(order => 
-          ['confirmed', 'processing', 'shipped'].includes(order.status)
-        ) || []
-      }))
-    );
-  }
-
-  /**
-   * Get completed orders
-   */
-  getCompletedOrders(page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    return this.getOrdersByStatus('delivered', page, perPage);
-  }
-
-  /**
-   * Get cancelled orders
-   */
-  getCancelledOrders(page = 1, perPage = 20): Observable<PaginatedResponse<Order>> {
-    return this.getOrdersByStatus('cancelled', page, perPage);
-  }
-
-  /**
-   * Update order in list
-   */
-  private updateOrderInList(updatedOrder: Order): void {
-    const currentOrders = this.ordersSubject.value;
-    const updatedOrders = currentOrders.map(order => 
-      order.id === updatedOrder.id ? updatedOrder : order
-    );
-    this.ordersSubject.next(updatedOrders);
-  }
-
-  /**
-   * Get current orders
-   */
-  get currentOrders(): Order[] {
-    return this.ordersSubject.value;
+  getOrderState(): OrderState {
+    return this.orderStateSubject.value;
   }
 
   /**
    * Get current order
    */
-  get currentOrder(): Order | null {
-    return this.currentOrderSubject.value;
+  getCurrentOrder(): Order | null {
+    return this.getOrderState().currentOrder;
   }
 
   /**
-   * Get current loading state
+   * Get orders observable
    */
-  get isLoading(): boolean {
-    return this.loadingSubject.value;
+  getOrders$(): Observable<Order[]> {
+    return this.orderState$.pipe(
+      map(state => state.orders)
+    );
   }
 
   /**
-   * Get orders count by status
+   * Get current order observable
    */
-  getOrdersCountByStatus(status: string): number {
-    return this.currentOrders.filter(order => order.status === status).length;
+  getCurrentOrder$(): Observable<Order | null> {
+    return this.orderState$.pipe(
+      map(state => state.currentOrder)
+    );
   }
 
   /**
-   * Get total orders count
+   * Get seller orders observable
    */
-  get totalOrdersCount(): number {
-    return this.currentOrders.length;
+  getSellerOrders$(): Observable<SellerOrderItem[]> {
+    return this.orderState$.pipe(
+      map(state => state.sellerOrders)
+    );
   }
 
   /**
-   * Get pending orders count
+   * Get loading state observable
    */
-  get pendingOrdersCount(): number {
-    return this.getOrdersCountByStatus('pending');
+  getLoading$(): Observable<boolean> {
+    return this.orderState$.pipe(
+      map(state => state.isLoading)
+    );
   }
 
   /**
-   * Get active orders count
+   * Get error state observable
    */
-  get activeOrdersCount(): number {
-    return this.currentOrders.filter(order => 
-      ['confirmed', 'processing', 'shipped'].includes(order.status)
-    ).length;
+  getError$(): Observable<string | null> {
+    return this.orderState$.pipe(
+      map(state => state.error)
+    );
   }
 
   /**
-   * Clear orders data (on logout)
+   * Update order state
    */
-  clearOrdersData(): void {
-    this.ordersSubject.next([]);
-    this.currentOrderSubject.next(null);
+  private updateOrderState(partial: Partial<OrderState>): void {
+    const currentState = this.getOrderState();
+    const newState = { ...currentState, ...partial };
+    this.orderStateSubject.next(newState);
   }
 
   /**
-   * Refresh orders data
+   * Set loading state
+   */
+  private setLoading(isLoading: boolean): void {
+    this.updateOrderState({ isLoading });
+  }
+
+  /**
+   * Set error state
+   */
+  private setError(error: string): void {
+    this.updateOrderState({ error });
+  }
+
+  /**
+   * Clear error
+   */
+  clearError(): void {
+    this.updateOrderState({ error: null });
+  }
+
+  /**
+   * Update order status
+   */
+  private updateOrderStatus(orderId: string, status: OrderStatus): void {
+    const currentOrders = this.getOrderState().orders;
+    const updatedOrders = currentOrders.map(order => 
+      order.id === orderId 
+        ? { ...order, status }
+        : order
+    );
+    
+    this.updateOrderState({ orders: updatedOrders });
+    
+    // Update current order if it matches
+    const currentOrder = this.getCurrentOrder();
+    if (currentOrder && currentOrder.id === orderId) {
+      this.updateOrderState({ currentOrder: { ...currentOrder, status } });
+    }
+  }
+
+  /**
+   * Update order item status in state
+   */
+  private updateOrderItemStatusInState(orderItemId: string, status: OrderItemStatus): void {
+    const currentOrder = this.getCurrentOrder();
+    if (currentOrder) {
+      const updatedItems = currentOrder.items.map(item => 
+        item.id === orderItemId 
+          ? { ...item, status }
+          : item
+      );
+      
+      this.updateOrderState({
+        currentOrder: { ...currentOrder, items: updatedItems }
+      });
+    }
+  }
+
+  /**
+   * Get order by ID
+   */
+  getOrderById(orderId: string): Order | null {
+    const orders = this.getOrderState().orders;
+    return orders.find(o => o.id === orderId) || null;
+  }
+
+  /**
+   * Get orders by status
+   */
+  getOrdersByStatus(status: OrderStatus): Order[] {
+    const orders = this.getOrderState().orders;
+    return orders.filter(o => o.status === status);
+  }
+
+  /**
+   * Get seller order by ID
+   */
+  getSellerOrderById(orderItemId: string): SellerOrderItem | null {
+    const sellerOrders = this.getOrderState().sellerOrders;
+    return sellerOrders.find(o => o.id === orderItemId) || null;
+  }
+
+  /**
+   * Get seller orders by status
+   */
+  getSellerOrdersByStatus(status: OrderItemStatus): SellerOrderItem[] {
+    const sellerOrders = this.getOrderState().sellerOrders;
+    return sellerOrders.filter(o => o.status === status);
+  }
+
+  /**
+   * Format order number
+   */
+  formatOrderNumber(orderNumber: string): string {
+    return `#${orderNumber}`;
+  }
+
+  /**
+   * Format order total
+   */
+  formatOrderTotal(total: number, currency: string = 'NGN'): string {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: currency
+    }).format(total);
+  }
+
+  /**
+   * Get order status display
+   */
+  getOrderStatusDisplay(status: OrderStatus): string {
+    const statusMap: Record<OrderStatus, string> = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'shipped': 'Shipped',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled',
+      'refunded': 'Refunded'
+    };
+    
+    return statusMap[status] || 'Unknown';
+  }
+
+  /**
+   * Get order status color
+   */
+  getOrderStatusColor(status: OrderStatus): string {
+    const colorMap: Record<OrderStatus, string> = {
+      'pending': 'text-yellow-600',
+      'confirmed': 'text-blue-600',
+      'shipped': 'text-purple-600',
+      'delivered': 'text-green-600',
+      'cancelled': 'text-red-600',
+      'refunded': 'text-gray-600'
+    };
+    
+    return colorMap[status] || 'text-gray-600';
+  }
+
+  /**
+   * Get order status icon
+   */
+  getOrderStatusIcon(status: OrderStatus): string {
+    const iconMap: Record<OrderStatus, string> = {
+      'pending': 'clock',
+      'confirmed': 'check-circle',
+      'shipped': 'truck',
+      'delivered': 'package',
+      'cancelled': 'x-circle',
+      'refunded': 'refresh-cw'
+    };
+    
+    return iconMap[status] || 'help-circle';
+  }
+
+  /**
+   * Get order item status display
+   */
+  getOrderItemStatusDisplay(status: OrderItemStatus): string {
+    const statusMap: Record<OrderItemStatus, string> = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'shipped': 'Shipped',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled',
+      'refunded': 'Refunded'
+    };
+    
+    return statusMap[status] || 'Unknown';
+  }
+
+  /**
+   * Get order item status color
+   */
+  getOrderItemStatusColor(status: OrderItemStatus): string {
+    const colorMap: Record<OrderItemStatus, string> = {
+      'pending': 'text-yellow-600',
+      'confirmed': 'text-blue-600',
+      'shipped': 'text-purple-600',
+      'delivered': 'text-green-600',
+      'cancelled': 'text-red-600',
+      'refunded': 'text-gray-600'
+    };
+    
+    return colorMap[status] || 'text-gray-600';
+  }
+
+  /**
+   * Check if order is completed
+   */
+  isOrderCompleted(order: Order): boolean {
+    return order.status === 'delivered';
+  }
+
+  /**
+   * Check if order is cancelled
+   */
+  isOrderCancelled(order: Order): boolean {
+    return order.status === 'cancelled' || order.status === 'refunded';
+  }
+
+  /**
+   * Check if order can be cancelled
+   */
+  canCancelOrder(order: Order): boolean {
+    return ['pending', 'confirmed'].includes(order.status);
+  }
+
+  /**
+   * Check if order can be reviewed
+   */
+  canReviewOrder(order: Order): boolean {
+    return order.status === 'delivered';
+  }
+
+  /**
+   * Calculate order statistics
+   */
+  getOrderStatistics(): Observable<any> {
+    return this.apiService.getSellerOrderStats().pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Update request status
+   */
+  updateRequestStatus(requestId: string, statusData: any): Observable<any> {
+    return this.apiService.put<any>(`/requests/${requestId}/status`, statusData).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Calculate seller order statistics
+   */
+  getSellerOrderStatistics(): {
+    total: number;
+    pending: number;
+    confirmed: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    totalValue: number;
+  } {
+    const sellerOrders = this.getOrderState().sellerOrders;
+    
+    const total = sellerOrders.length;
+    const pending = sellerOrders.filter(o => o.status === 'pending').length;
+    const confirmed = sellerOrders.filter(o => o.status === 'confirmed').length;
+    const shipped = sellerOrders.filter(o => o.status === 'shipped').length;
+    const delivered = sellerOrders.filter(o => o.status === 'delivered').length;
+    const cancelled = sellerOrders.filter(o => o.status === 'cancelled').length;
+    const totalValue = sellerOrders.reduce((sum, o) => sum + (o.price * o.quantity), 0);
+    
+    return {
+      total,
+      pending,
+      confirmed,
+      shipped,
+      delivered,
+      cancelled,
+      totalValue
+    };
+  }
+
+  /**
+   * Validate order data
+   */
+  validateOrderData(orderData: OrderCreate): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!orderData.cart_id) {
+      errors.push('Cart ID is required');
+    }
+    
+    if (!orderData.shipping_address) {
+      errors.push('Shipping address is required');
+    }
+    
+    if (!orderData.payment_method) {
+      errors.push('Payment method is required');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Get order timeline
+   */
+  getOrderTimeline(order: Order): Array<{
+    status: OrderStatus;
+    date: string;
+    description: string;
+    completed: boolean;
+  }> {
+    const timeline = [
+      {
+        status: 'pending' as OrderStatus,
+        date: order.created_at,
+        description: 'Order placed',
+        completed: true
+      },
+      {
+        status: 'confirmed' as OrderStatus,
+        date: order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered' ? order.created_at : '',
+        description: 'Order confirmed',
+        completed: ['confirmed', 'shipped', 'delivered'].includes(order.status)
+      },
+      {
+        status: 'shipped' as OrderStatus,
+        date: order.status === 'shipped' || order.status === 'delivered' ? order.created_at : '',
+        description: 'Order shipped',
+        completed: ['shipped', 'delivered'].includes(order.status)
+      },
+      {
+        status: 'delivered' as OrderStatus,
+        date: order.status === 'delivered' ? order.created_at : '',
+        description: 'Order delivered',
+        completed: order.status === 'delivered'
+      }
+    ];
+    
+    return timeline;
+  }
+
+  /**
+   * Clear current order
+   */
+  clearCurrentOrder(): void {
+    this.updateOrderState({ currentOrder: null });
+  }
+
+  /**
+   * Refresh orders
    */
   refreshOrders(): void {
     this.getOrders().subscribe();
+  }
+
+  /**
+   * Refresh seller orders
+   */
+  refreshSellerOrders(): void {
+    this.getSellerOrders().subscribe();
+  }
+
+  getOrderItem(orderItemId: string): Observable<OrderItem | null> {
+    return this.getOrders().pipe(
+      map(orders => {
+        for (const order of orders) {
+          const item = order.items.find((item: OrderItem) => item.id === orderItemId);
+          if (item) return item;
+        }
+        return null;
+      })
+    );
+  }
+
+  getSellerOrderItem(orderItemId: string): OrderItem | null {
+    const orders = this.getOrderState().orders;
+    for (const order of orders) {
+      const item = order.items.find(item => item.id === orderItemId);
+      if (item) return item;
+    }
+    return null;
+  }
+
+  getOrderItemById(orderItemId: string): OrderItem | null {
+    const orders = this.getOrderState().orders;
+    for (const order of orders) {
+      const item = order.items.find(item => item.id === orderItemId);
+      if (item) return item;
+    }
+    return null;
   }
 } 

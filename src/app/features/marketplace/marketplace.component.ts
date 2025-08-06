@@ -1,1117 +1,608 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
-import { MarketplaceService, Product, SearchFilters } from '../../core/services/marketplace.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { 
+  faSearch, 
+  faFilter, 
+  faSort, 
+  faThLarge, 
+  faList,
+  faHeart,
+  faShoppingCart,
+  faStar,
+  faEye,
+  faTimes,
+  faChevronDown,
+  faChevronUp,
+  faSlidersH,
+  faTags,
+  faMapMarkerAlt,
+  faClock,
+  faUser,
+  faStore
+} from '@fortawesome/free-solid-svg-icons';
+import { MarketplaceService } from '../../core/services/marketplace.service';
 import { CartService } from '../../core/services/cart.service';
+import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
-import { ButtonComponent } from '../../shared/components/button/button.component';
-import { InputComponent } from '../../shared/components/input/input.component';
 
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule,  FormsModule, FontAwesomeModule],
   template: `
-    <div class="marketplace-container">
+    <div class="space-y-6">
       <!-- Header -->
-      <div class="marketplace-header">
-        <div class="header-content">
-          <h1>Marketplace</h1>
-          <p>Discover amazing products from trusted sellers</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Marketplace</h1>
+          <p class="mt-1 text-sm text-gray-500">
+            Discover amazing products from trusted sellers
+          </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+          <button 
+            (click)="toggleViewMode()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            [title]="viewMode === 'grid' ? 'List View' : 'Grid View'"
+          >
+            <fa-icon [icon]="viewMode === 'grid' ? faList : faGrid3" class="w-5 h-5"></fa-icon>
+          </button>
+          <button 
+            (click)="toggleFilters()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Filters"
+          >
+            <fa-icon [icon]="faFilter" class="w-5 h-5"></fa-icon>
+          </button>
         </div>
       </div>
 
-      <div class="marketplace-content">
-        <!-- Filters Sidebar -->
-        <aside class="filters-sidebar">
-          <div class="filters-header">
-            <h3>Filters</h3>
-            <button class="clear-filters" (click)="clearFilters()" *ngIf="hasActiveFilters">
-              Clear All
+      <!-- Search and Filters Bar -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+          <!-- Search -->
+          <div class="flex-1">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search products..."
+                [(ngModel)]="searchQuery"
+                (input)="onSearchInput()"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+              >
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div class="flex items-center space-x-2">
+            <label class="text-sm font-medium text-gray-700">Sort by:</label>
+            <select 
+              [(ngModel)]="sortBy"
+              (change)="onSortChange()"
+              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-markt-primary focus:border-markt-primary sm:text-sm rounded-md"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="rating">Rating</option>
+              <option value="newest">Newest</option>
+              <option value="popular">Most Popular</option>
+            </select>
+          </div>
+
+          <!-- Results Count -->
+          <div class="text-sm text-gray-500">
+            {{ totalResults }} products found
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters Sidebar -->
+      <div class="lg:flex lg:space-x-6">
+        <!-- Filters -->
+        <div 
+          class="lg:w-64 lg:flex-shrink-0"
+          [class.hidden]="!showFilters"
+        >
+          <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <!-- Categories -->
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Categories</h3>
+              <div class="space-y-2">
+                <label 
+                  *ngFor="let category of categories" 
+                  class="flex items-center"
+                >
+                  <input 
+                    type="checkbox" 
+                    [value]="category.id"
+                    [(ngModel)]="selectedCategories"
+                    (change)="onCategoryChange()"
+                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
+                  >
+                  <span class="ml-2 text-sm text-gray-700">{{ category.name }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Price Range -->
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Price Range</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm text-gray-700">Min Price</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="priceRange.min"
+                    (input)="onPriceChange()"
+                    placeholder="0"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+                  >
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-700">Max Price</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="priceRange.max"
+                    (input)="onPriceChange()"
+                    placeholder="100000"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Rating -->
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Rating</h3>
+              <div class="space-y-2">
+                <label 
+                  *ngFor="let rating of [4, 3, 2, 1]" 
+                  class="flex items-center"
+                >
+                  <input 
+                    type="radio" 
+                    [value]="rating"
+                    [(ngModel)]="selectedRating"
+                    (change)="onRatingChange()"
+                    name="rating"
+                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
+                  >
+                  <span class="ml-2 text-sm text-gray-700">
+                    <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
+                    {{ rating }}+ stars
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Location</h3>
+              <div class="space-y-2">
+                <label 
+                  *ngFor="let location of locations" 
+                  class="flex items-center"
+                >
+                  <input 
+                    type="checkbox" 
+                    [value]="location"
+                    [(ngModel)]="selectedLocations"
+                    (change)="onLocationChange()"
+                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
+                  >
+                  <span class="ml-2 text-sm text-gray-700">{{ location }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Clear Filters -->
+            <button 
+              (click)="clearFilters()"
+              class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-markt-primary"
+            >
+              Clear All Filters
             </button>
           </div>
+        </div>
 
-          <!-- Search -->
-          <div class="filter-section">
-            <h4>Search</h4>
-            <app-input
-              id="search"
-              name="search"
-              type="text"
-              placeholder="Search products..."
-              [(ngModel)]="searchQuery"
-              (keyup.enter)="applyFilters()"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-
-          <!-- Categories -->
-          <div class="filter-section">
-            <h4>Categories</h4>
-            <div class="category-list">
-              <label class="category-item" *ngFor="let category of categories$ | async">
-                <input 
-                  type="checkbox" 
-                  [value]="category.id"
-                  [checked]="selectedCategories.includes(category.id)"
-                  (change)="onCategoryChange(category.id, $event)"
-                >
-                <span class="category-name">{{ category.name }}</span>
-                <span class="category-count">({{ category.products_count }})</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Price Range -->
-          <div class="filter-section">
-            <h4>Price Range</h4>
-            <div class="price-inputs">
-              <app-input
-                id="minPrice"
-                name="minPrice"
-                type="number"
-                placeholder="Min Price"
-                [(ngModel)]="minPrice"
-                [fullWidth]="true"
-              ></app-input>
-              <app-input
-                id="maxPrice"
-                name="maxPrice"
-                type="number"
-                placeholder="Max Price"
-                [(ngModel)]="maxPrice"
-                [fullWidth]="true"
-              ></app-input>
-            </div>
-          </div>
-
-          <!-- Condition -->
-          <div class="filter-section">
-            <h4>Condition</h4>
-            <div class="condition-options">
-              <label class="condition-item">
-                <input 
-                  type="checkbox" 
-                  value="new"
-                  [checked]="selectedConditions.includes('new')"
-                  (change)="onConditionChange('new', $event)"
-                >
-                <span>New</span>
-              </label>
-              <label class="condition-item">
-                <input 
-                  type="checkbox" 
-                  value="used"
-                  [checked]="selectedConditions.includes('used')"
-                  (change)="onConditionChange('used', $event)"
-                >
-                <span>Used</span>
-              </label>
-              <label class="condition-item">
-                <input 
-                  type="checkbox" 
-                  value="refurbished"
-                  [checked]="selectedConditions.includes('refurbished')"
-                  (change)="onConditionChange('refurbished', $event)"
-                >
-                <span>Refurbished</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Location -->
-          <div class="filter-section">
-            <h4>Location</h4>
-            <app-input
-              id="location"
-              name="location"
-              type="text"
-              placeholder="Enter location..."
-              [(ngModel)]="location"
-              [fullWidth]="true"
-            ></app-input>
-          </div>
-
-          <!-- Apply Filters -->
-          <div class="filter-actions">
-            <app-button
-              variant="primary"
-              [fullWidth]="true"
-              (clicked)="applyFilters()"
-            >
-              Apply Filters
-            </app-button>
-          </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-          <!-- Toolbar -->
-          <div class="toolbar">
-            <div class="results-info">
-              <span *ngIf="loading$ | async">Loading...</span>
-              <span *ngIf="!(loading$ | async)">
-                {{ totalProducts$ | async }} products found
-              </span>
-            </div>
-
-            <div class="sort-controls">
-              <label for="sort">Sort by:</label>
-              <select id="sort" [(ngModel)]="sortBy" (change)="applyFilters()">
-                <option value="relevance">Relevance</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="popular">Most Popular</option>
-              </select>
-            </div>
-
-            <div class="view-controls">
-              <button 
-                class="view-toggle" 
-                [class.active]="viewMode === 'grid'"
-                (click)="setViewMode('grid')"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-              </button>
-              <button 
-                class="view-toggle" 
-                [class.active]="viewMode === 'list'"
-                (click)="setViewMode('list')"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="8" y1="6" x2="21" y2="6"></line>
-                  <line x1="8" y1="12" x2="21" y2="12"></line>
-                  <line x1="8" y1="18" x2="21" y2="18"></line>
-                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Products Grid -->
-          <div class="products-container" [class.list-view]="viewMode === 'list'">
-            <div 
-              class="product-card" 
-              *ngFor="let product of products$ | async; trackBy: trackByProduct"
-              [routerLink]="['/marketplace/product', product.id]"
-            >
-              <div class="product-image">
-                <img 
-                  [src]="product.images[0] || '/assets/placeholder-product.jpg'" 
-                  [alt]="product.title"
-                  loading="lazy"
-                >
-                <div class="product-badges">
-                  <span class="badge condition" *ngIf="product.condition">{{ product.condition }}</span>
-                  <span class="badge featured" *ngIf="product.is_featured">Featured</span>
-                  <span class="badge negotiable" *ngIf="product.is_negotiable">Negotiable</span>
-                </div>
-              </div>
-
-              <div class="product-info">
-                <h3 class="product-title">{{ product.title }}</h3>
-                <p class="product-description">{{ product.description | slice:0:100 }}{{ product.description.length > 100 ? '...' : '' }}</p>
-                
-                <div class="product-meta">
-                  <div class="seller-info">
-                    <img 
-                      [src]="product.seller_avatar || '/assets/placeholder-avatar.jpg'" 
-                      [alt]="product.seller_name"
-                      class="seller-avatar"
-                    >
-                    <span class="seller-name">{{ product.seller_name }}</span>
-                  </div>
-                  
-                  <div class="product-stats">
-                    <span class="stat">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                      {{ product.views_count }}
-                    </span>
-                    <span class="stat">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                      </svg>
-                      {{ product.favorites_count }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="product-footer">
-                  <div class="price-info">
-                    <span class="price">{{ product.price | currency:product.currency:'symbol':'1.0-0' }}</span>
-                    <span class="location">{{ product.location }}</span>
-                  </div>
-                  
-                  <div class="product-actions">
-                    <app-button
-                      variant="secondary"
-                      size="sm"
-                      (clicked)="addToCart($event, product)"
-                      [disabled]="cartService.isProductInCart(product.id)"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                      </svg>
-                      {{ cartService.isProductInCart(product.id) ? 'In Cart' : 'Add to Cart' }}
-                    </app-button>
-                    
-                    <button 
-                      class="favorite-btn"
-                      [class.favorited]="product.is_favorited"
-                      (click)="toggleFavorite($event, product)"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <!-- Products Grid -->
+        <div class="flex-1">
           <!-- Loading State -->
-          <div class="loading-state" *ngIf="loading$ | async">
-            <div class="loading-spinner"></div>
-            <p>Loading products...</p>
+          <div *ngIf="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div *ngFor="let item of [1,2,3,4,5,6,8]" class="bg-white rounded-lg shadow animate-pulse">
+              <div class="h-48 bg-gray-200 rounded-t-lg"></div>
+              <div class="p-4 space-y-3">
+                <div class="h-4 bg-gray-200 rounded"></div>
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products -->
+          <div 
+            *ngIf="!isLoading && products.length > 0"
+            [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'"
+          >
+            <div 
+              *ngFor="let product of products"
+              [ngClass]="viewMode === 'grid' ? 'bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow' : 'bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow'"
+            >
+              <!-- Grid View -->
+              <div *ngIf="viewMode === 'grid'" class="relative">
+                <img 
+                  [src]="product.images[0]?.url || '/assets/images/placeholder.png'" 
+                  [alt]="product.name"
+                  class="w-full h-48 object-cover"
+                >
+                <div class="absolute top-2 right-2">
+                  <button 
+                    (click)="toggleWishlist(product)"
+                    class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                    [class.text-red-500]="isInWishlist(product)"
+                    [class.text-gray-400]="!isInWishlist(product)"
+                  >
+                    <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
+                  </button>
+                </div>
+                <div class="p-4">
+                  <h3 class="text-lg font-medium text-gray-900 mb-2">{{ product.name }}</h3>
+                  <p class="text-sm text-gray-500 mb-2">{{ product.description }}</p>
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-xl font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
+                    <div class="flex items-center">
+                      <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
+                      <span class="ml-1 text-sm text-gray-600">{{ product.rating }}</span>
+                    </div>
+                  </div>
+                  <button 
+                    (click)="addToCart(product)"
+                    class="w-full bg-markt-primary text-white py-2 px-4 rounded-md hover:bg-markt-secondary transition-colors"
+                  >
+                    <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+
+              <!-- List View -->
+              <div *ngIf="viewMode === 'list'" class="flex space-x-4">
+                <img 
+                  [src]="product.images[0]?.url || '/assets/images/placeholder.png'" 
+                  [alt]="product.name"
+                  class="w-24 h-24 object-cover rounded-lg"
+                >
+                <div class="flex-1">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <h3 class="text-lg font-medium text-gray-900 mb-1">{{ product.name }}</h3>
+                      <p class="text-sm text-gray-500 mb-2">{{ product.description }}</p>
+                      <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center">
+                          <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
+                          {{ product.seller?.shop_name }}
+                        </span>
+                        <span class="flex items-center">
+                          <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
+                          {{ product.seller?.location }}
+                        </span>
+                        <span class="flex items-center">
+                          <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
+                          {{ product.rating }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-xl font-bold text-gray-900 mb-2">{{ product.price | currency:'NGN' }}</div>
+                      <div class="flex items-center space-x-2">
+                        <button 
+                          (click)="toggleWishlist(product)"
+                          class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          [class.text-red-500]="isInWishlist(product)"
+                        >
+                          <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
+                        </button>
+                        <button 
+                          (click)="addToCart(product)"
+                          class="bg-markt-primary text-white py-2 px-4 rounded-md hover:bg-markt-secondary transition-colors"
+                        >
+                          <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
+                          Add to Cart
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Empty State -->
-          <div class="empty-state" *ngIf="!(loading$ | async) && (products$ | async) && (products$ | async)!.length === 0">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9,22 9,12 15,12 15,22"></polyline>
-            </svg>
-            <h3>No products found</h3>
-            <p>Try adjusting your filters or search terms</p>
-            <app-button variant="primary" (clicked)="clearFilters()">
+          <div *ngIf="!isLoading && products.length === 0" class="text-center py-12">
+            <fa-icon [icon]="faSearch" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p class="text-gray-500 mb-4">Try adjusting your search or filters to find what you're looking for.</p>
+            <button 
+              (click)="clearFilters()"
+              class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
+            >
               Clear Filters
-            </app-button>
+            </button>
           </div>
 
           <!-- Pagination -->
-          <div class="pagination" *ngIf="(products$ | async) && (products$ | async)!.length > 0">
-            <button 
-              class="pagination-btn"
-              [disabled]="currentPage === 1"
-              (click)="goToPage(currentPage - 1)"
-            >
-              Previous
-            </button>
-            
-            <div class="page-numbers">
+          <div *ngIf="totalPages > 1" class="mt-8 flex items-center justify-center">
+            <nav class="flex items-center space-x-2">
               <button 
-                class="page-btn"
+                (click)="previousPage()"
+                [disabled]="currentPage === 1"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              
+              <button 
                 *ngFor="let page of getPageNumbers()"
-                [class.active]="page === currentPage"
                 (click)="goToPage(page)"
+                [class.bg-markt-primary]="page === currentPage"
+                [class.text-white]="page === currentPage"
+                [class.text-gray-700]="page !== currentPage"
+                class="px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 {{ page }}
               </button>
-            </div>
-            
-            <button 
-              class="pagination-btn"
-              [disabled]="currentPage >= totalPages"
-              (click)="goToPage(currentPage + 1)"
-            >
-              Next
-            </button>
+              
+              <button 
+                (click)="nextPage()"
+                [disabled]="currentPage === totalPages"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </nav>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .marketplace-container {
-      min-height: 100vh;
-      background: #f9fafb;
-    }
-
-    /* Header */
-    .marketplace-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 3rem 0;
-    }
-
-    .header-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1rem;
-      text-align: center;
-    }
-
-    .header-content h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .header-content p {
-      font-size: 1.125rem;
-      opacity: 0.9;
-    }
-
-    /* Content Layout */
-    .marketplace-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 2rem;
-    }
-
-    /* Filters Sidebar */
-    .filters-sidebar {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      height: fit-content;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .filters-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .filters-header h3 {
-      margin: 0;
-      color: #1f2937;
-      font-size: 1.25rem;
-    }
-
-    .clear-filters {
-      background: none;
-      border: none;
-      color: #3b82f6;
-      font-size: 0.875rem;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    .filter-section {
-      margin-bottom: 2rem;
-    }
-
-    .filter-section h4 {
-      margin: 0 0 1rem 0;
-      color: #374151;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .category-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .category-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 6px;
-      transition: background-color 0.2s;
-    }
-
-    .category-item:hover {
-      background: #f3f4f6;
-    }
-
-    .category-item input[type="checkbox"] {
-      margin: 0;
-    }
-
-    .category-name {
-      flex: 1;
-      font-size: 0.875rem;
-      color: #374151;
-    }
-
-    .category-count {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .price-inputs {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .condition-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .condition-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 6px;
-      transition: background-color 0.2s;
-    }
-
-    .condition-item:hover {
-      background: #f3f4f6;
-    }
-
-    .condition-item input[type="checkbox"] {
-      margin: 0;
-    }
-
-    .filter-actions {
-      margin-top: 2rem;
-    }
-
-    /* Main Content */
-    .main-content {
-      min-height: 600px;
-    }
-
-    /* Toolbar */
-    .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .results-info {
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-
-    .sort-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .sort-controls label {
-      font-size: 0.875rem;
-      color: #374151;
-    }
-
-    .sort-controls select {
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      background: white;
-    }
-
-    .view-controls {
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .view-toggle {
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .view-toggle:hover {
-      background: #f3f4f6;
-    }
-
-    .view-toggle.active {
-      background: #3b82f6;
-      color: white;
-      border-color: #3b82f6;
-    }
-
-    /* Products Grid */
-    .products-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .products-container.list-view {
-      grid-template-columns: 1fr;
-    }
-
-    .product-card {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: all 0.2s;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .product-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .list-view .product-card {
-      display: grid;
-      grid-template-columns: 200px 1fr;
-    }
-
-    .product-image {
-      position: relative;
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .list-view .product-image {
-      height: 100%;
-    }
-
-    .product-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.2s;
-    }
-
-    .product-card:hover .product-image img {
-      transform: scale(1.05);
-    }
-
-    .product-badges {
-      position: absolute;
-      top: 0.5rem;
-      left: 0.5rem;
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge.condition {
-      background: #10b981;
-      color: white;
-    }
-
-    .badge.featured {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .badge.negotiable {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .product-info {
-      padding: 1rem;
-    }
-
-    .product-title {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1f2937;
-      line-height: 1.4;
-    }
-
-    .product-description {
-      margin: 0 0 1rem 0;
-      font-size: 0.875rem;
-      color: #6b7280;
-      line-height: 1.5;
-    }
-
-    .product-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .seller-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .seller-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .seller-name {
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-
-    .product-stats {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .product-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .price-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .price {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    .location {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .product-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .favorite-btn {
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: #6b7280;
-    }
-
-    .favorite-btn:hover {
-      background: #f3f4f6;
-    }
-
-    .favorite-btn.favorited {
-      background: #fef2f2;
-      border-color: #ef4444;
-      color: #ef4444;
-    }
-
-    /* Loading State */
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      color: #6b7280;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Empty State */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-      color: #6b7280;
-    }
-
-    .empty-state svg {
-      margin-bottom: 1rem;
-      color: #d1d5db;
-    }
-
-    .empty-state h3 {
-      margin: 0 0 0.5rem 0;
-      color: #374151;
-    }
-
-    .empty-state p {
-      margin: 0 0 1.5rem 0;
-    }
-
-    /* Pagination */
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .pagination-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .pagination-btn:hover:not(:disabled) {
-      background: #f3f4f6;
-    }
-
-    .pagination-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .page-numbers {
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .page-btn {
-      padding: 0.5rem 0.75rem;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-width: 40px;
-    }
-
-    .page-btn:hover {
-      background: #f3f4f6;
-    }
-
-    .page-btn.active {
-      background: #3b82f6;
-      color: white;
-      border-color: #3b82f6;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .marketplace-content {
-        grid-template-columns: 1fr;
-      }
-
-      .filters-sidebar {
-        order: 2;
-      }
-
-      .main-content {
-        order: 1;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .toolbar {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
-
-      .sort-controls {
-        justify-content: space-between;
-      }
-
-      .products-container {
-        grid-template-columns: 1fr;
-      }
-
-      .list-view .product-card {
-        grid-template-columns: 1fr;
-      }
-
-      .list-view .product-image {
-        height: 200px;
-      }
+    :host {
+      display: block;
     }
   `]
 })
-export class MarketplaceComponent implements OnInit, OnDestroy {
+export class MarketplaceComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
-  public cartService = inject(CartService);
+  private cartService = inject(CartService);
+  private searchService = inject(SearchService);
   private appStateService = inject(AppStateService);
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private destroy$ = new Subject<void>();
 
-  // Observables
-  products$ = this.marketplaceService.products$;
-  categories$ = this.marketplaceService.categories$;
-  loading$ = this.marketplaceService.loading$;
-  totalProducts$ = this.marketplaceService.totalProducts$;
+  // Icons
+  faSearch = faSearch;
+  faFilter = faFilter;
+  faSort = faSort;
+  faGrid3 = faThLarge;
+  faList = faList;
+  faHeart = faHeart;
+  faShoppingCart = faShoppingCart;
+  faStar = faStar;
+  faEye = faEye;
+  faTimes = faTimes;
+  faChevronDown = faChevronDown;
+  faChevronUp = faChevronUp;
+  faSlidersH = faSlidersH;
+  faTags = faTags;
+  faMapMarkerAlt = faMapMarkerAlt;
+  faClock = faClock;
+  faUser = faUser;
+  faStore = faStore;
 
-  // Filter state
-  searchQuery = '';
-  selectedCategories: number[] = [];
-  minPrice: number | null = null;
-  maxPrice: number | null = null;
-  selectedConditions: string[] = [];
-  location = '';
-  sortBy = 'relevance';
+  // State
+  products: any[] = [];
+  categories: any[] = [];
+  isLoading = false;
   viewMode: 'grid' | 'list' = 'grid';
+  showFilters = false;
+  
+  // Search and filters
+  searchQuery = '';
+  sortBy = 'relevance';
+  selectedCategories: number[] = [];
+  priceRange = { min: null, max: null };
+  selectedRating: number | null = null;
+  selectedLocations: string[] = [];
+  
+  // Pagination
   currentPage = 1;
   totalPages = 1;
-
-  // Computed properties
-  get hasActiveFilters(): boolean {
-    return !!this.searchQuery || 
-           this.selectedCategories.length > 0 || 
-           this.minPrice !== null || 
-           this.maxPrice !== null || 
-           this.selectedConditions.length > 0 || 
-           !!this.location;
-  }
+  totalResults = 0;
+  
+  // Mock data
+  locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
 
   ngOnInit(): void {
-    // Load initial data
-    this.loadProducts();
-    this.loadCategories();
+    this.loadMarketplaceData();
+    this.setupSubscriptions();
+  }
 
-    // Subscribe to route changes
-    this.route.queryParams.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      this.searchQuery = params['q'] || '';
-      this.currentPage = parseInt(params['page']) || 1;
-      this.applyFilters();
+  private loadMarketplaceData(): void {
+    this.isLoading = true;
+    
+    // Load products
+    this.marketplaceService.getProducts().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.products = response.data.items;
+          this.totalResults = response.data.pagination.total_items;
+          this.totalPages = response.data.pagination.total_pages;
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.isLoading = false;
+      }
+    });
+
+    // Load categories
+    this.marketplaceService.getCategories().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.categories = response.data;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
     });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  loadProducts(): void {
-    const filters: SearchFilters = {
-      query: this.searchQuery,
-      category_id: this.selectedCategories.length === 1 ? this.selectedCategories[0] : undefined,
-      min_price: this.minPrice || undefined,
-      max_price: this.maxPrice || undefined,
-      condition: this.selectedConditions.length === 1 ? this.selectedConditions[0] as any : undefined,
-      location: this.location || undefined,
-      sort_by: this.sortBy as any,
-      page: this.currentPage,
-      per_page: 12
-    };
-
-    this.marketplaceService.searchProducts(filters).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(response => {
-      this.totalPages = response.pagination?.total_pages || 1;
+  private setupSubscriptions(): void {
+    // Subscribe to search query changes
+    this.searchService.getSearchQuery$().subscribe(query => {
+      this.searchQuery = query;
     });
   }
 
-  loadCategories(): void {
-    this.marketplaceService.getCategories().pipe(
-      takeUntil(this.destroy$)
-    ).subscribe();
-  }
-
-  onCategoryChange(categoryId: number, event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const checked = target.checked;
-    
-    if (checked) {
-      this.selectedCategories.push(categoryId);
-    } else {
-      this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
-    }
-  }
-
-  onConditionChange(condition: string, event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const checked = target.checked;
-    
-    if (checked) {
-      this.selectedConditions.push(condition);
-    } else {
-      this.selectedConditions = this.selectedConditions.filter(c => c !== condition);
-    }
-  }
-
-  applyFilters(): void {
+  onSearchInput(): void {
+    this.searchService.setSearchQuery(this.searchQuery);
     this.currentPage = 1;
     this.loadProducts();
-    this.updateUrl();
+  }
+
+  onSortChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onCategoryChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onPriceChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onRatingChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onLocationChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  private loadProducts(): void {
+    const params = {
+      page: this.currentPage,
+      search: this.searchQuery,
+      sort_by: this.sortBy as 'price' | 'rating' | 'created_at' | 'name',
+      category_ids: this.selectedCategories,
+      price_min: this.priceRange.min || undefined,
+      price_max: this.priceRange.max || undefined,
+      rating_min: this.selectedRating || undefined,
+      locations: this.selectedLocations
+    };
+
+    this.marketplaceService.getProducts(params).subscribe({
+      next: (response) => {
+        this.products = response.items || [];
+        this.totalResults = response.pagination?.total || 0;
+        this.totalPages = response.pagination?.total_pages || 1;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  toggleViewMode(): void {
+    this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
   }
 
   clearFilters(): void {
-    this.searchQuery = '';
     this.selectedCategories = [];
-    this.minPrice = null;
-    this.maxPrice = null;
-    this.selectedConditions = [];
-    this.location = '';
-    this.sortBy = 'relevance';
+    this.priceRange = { min: null, max: null };
+    this.selectedRating = null;
+    this.selectedLocations = [];
     this.currentPage = 1;
-    this.applyFilters();
+    this.loadProducts();
   }
 
-  setViewMode(mode: 'grid' | 'list'): void {
-    this.viewMode = mode;
+  addToCart(product: any): void {
+    this.cartService.addToCart(product.id, 1).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Show success message
+          console.log('Product added to cart');
+        }
+      },
+      error: (error) => {
+        console.error('Error adding to cart:', error);
+      }
+    });
+  }
+
+  toggleWishlist(product: any): void {
+    // This would typically call a wishlist service
+    console.log('Toggle wishlist for product:', product.id);
+  }
+
+  isInWishlist(product: any): boolean {
+    // This would typically check against wishlist state
+    return false;
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadProducts();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadProducts();
+    }
   }
 
   goToPage(page: number): void {
     this.currentPage = page;
     this.loadProducts();
-    this.updateUrl();
   }
 
   getPageNumbers(): number[] {
     const pages: number[] = [];
-    const start = Math.max(1, this.currentPage - 2);
-    const end = Math.min(this.totalPages, this.currentPage + 2);
-
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-
+    
     return pages;
   }
-
-  updateUrl(): void {
-    const queryParams: any = {};
-    
-    if (this.searchQuery) queryParams.q = this.searchQuery;
-    if (this.currentPage > 1) queryParams.page = this.currentPage;
-    if (this.selectedCategories.length > 0) queryParams.categories = this.selectedCategories.join(',');
-    if (this.minPrice) queryParams.minPrice = this.minPrice;
-    if (this.maxPrice) queryParams.maxPrice = this.maxPrice;
-    if (this.selectedConditions.length > 0) queryParams.conditions = this.selectedConditions.join(',');
-    if (this.location) queryParams.location = this.location;
-    if (this.sortBy !== 'relevance') queryParams.sort = this.sortBy;
-
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams,
-      queryParamsHandling: 'merge'
-    });
-  }
-
-  addToCart(event: Event, product: Product): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.cartService.addToCart({
-      product_id: product.id,
-      quantity: 1
-    }).subscribe({
-      next: () => {
-        this.appStateService.addNotification({
-          type: 'success',
-          title: 'Added to Cart',
-          message: `${product.title} has been added to your cart.`
-        });
-      },
-      error: (error) => {
-        console.error('Add to cart error:', error);
-        this.appStateService.addNotification({
-          type: 'error',
-          title: 'Error',
-          message: 'Failed to add item to cart. Please try again.'
-        });
-      }
-    });
-  }
-
-  toggleFavorite(event: Event, product: Product): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (product.is_favorited) {
-      this.marketplaceService.removeFromFavorites(product.id).subscribe({
-        next: () => {
-          product.is_favorited = false;
-          product.favorites_count--;
-          this.appStateService.addNotification({
-            type: 'success',
-            title: 'Removed from Favorites',
-            message: `${product.title} has been removed from your favorites.`
-          });
-        },
-        error: (error) => {
-          console.error('Remove from favorites error:', error);
-        }
-      });
-    } else {
-      this.marketplaceService.addToFavorites(product.id).subscribe({
-        next: () => {
-          product.is_favorited = true;
-          product.favorites_count++;
-          this.appStateService.addNotification({
-            type: 'success',
-            title: 'Added to Favorites',
-            message: `${product.title} has been added to your favorites.`
-          });
-        },
-        error: (error) => {
-          console.error('Add to favorites error:', error);
-        }
-      });
-    }
-  }
-
-  trackByProduct(index: number, product: Product): number {
-    return product.id;
-  }
-} 
+}

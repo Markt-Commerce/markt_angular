@@ -21,13 +21,19 @@ import { map } from 'rxjs/operators';
           <!-- Logo -->
           <div class="logo">
             <a routerLink="/" class="logo-link">
-              <span class="logo-text">Markt</span>
+              <img src="/markt-text-logo.png" alt="Markt" class="h-16 lg:h-20 xl:h-24 w-auto object-contain drop-shadow-lg">
             </a>
           </div>
 
           <!-- Search Bar -->
           <div class="search-container">
             <div class="search-bar">
+              <div class="search-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+              </div>
               <input 
                 type="text" 
                 placeholder="Search products, sellers, or categories..."
@@ -37,8 +43,7 @@ import { map } from 'rxjs/operators';
               >
               <button class="search-button" (click)="onSearch()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
+                  <path d="M9 18l6-6-6-6"/>
                 </svg>
               </button>
             </div>
@@ -52,6 +57,14 @@ import { map } from 'rxjs/operators';
                 <polyline points="9,22 9,12 15,12 15,22"></polyline>
               </svg>
               <span>Marketplace</span>
+            </a>
+            
+            <a routerLink="/app/community/feed" routerLinkActive="active" class="nav-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 21V14h2v7h4v-7h2v7h4v-7h2v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>
+                <path d="M9 2l3 3 3-3h3l-5 5v4H8V7L3 2h6z"/>
+              </svg>
+              <span>Feed</span>
             </a>
             
             <a routerLink="/app/community" routerLinkActive="active" class="nav-link">
@@ -75,13 +88,13 @@ import { map } from 'rxjs/operators';
           <!-- User Actions -->
           <div class="user-actions">
             <!-- Cart -->
-            <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) && (cartItemCount$ | async)! > 0">
+            <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) ?? 0 > 0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
               </svg>
-              <span class="cart-count" *ngIf="(cartItemCount$ | async) && (cartItemCount$ | async)! > 0">{{ cartItemCount$ | async }}</span>
+              <span class="cart-count" *ngIf="(cartItemCount$ | async) ?? 0 > 0">{{ cartItemCount$ | async }}</span>
             </a>
 
             <!-- Notifications -->
@@ -90,21 +103,21 @@ import { map } from 'rxjs/operators';
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              <span class="notification-badge" *ngIf="(unreadNotificationsCount$ | async) && (unreadNotificationsCount$ | async)! > 0">{{ unreadNotificationsCount$ | async }}</span>
+              <span class="notification-badge" *ngIf="(unreadNotificationsCount$ | async) ?? 0 > 0">{{ unreadNotificationsCount$ | async }}</span>
             </a>
 
             <!-- User Menu -->
             <div class="user-menu" *ngIf="currentUser$ | async as user; else loginButton">
               <div class="user-avatar" (click)="toggleUserMenu()">
-                <img *ngIf="user.avatar_url" [src]="user.avatar_url" [alt]="user.full_name" class="avatar-img">
-                <div *ngIf="!user.avatar_url" class="avatar-placeholder">
-                  {{ user.full_name.charAt(0) || user.username.charAt(0) || 'U' }}
+                <img *ngIf="user.profile_picture_url" [src]="user.profile_picture_url" [alt]="user.username" class="avatar-img">
+                <div *ngIf="!user.profile_picture_url" class="avatar-placeholder">
+                  {{ (user.username || 'U').charAt(0).toUpperCase() }}
                 </div>
               </div>
               
               <div class="user-dropdown" [class.open]="userMenuOpen">
                 <div class="dropdown-header">
-                  <strong>{{ user.full_name || user.username }}</strong>
+                  <strong>{{ user.username }}</strong>
                   <small>{{ user.email }}</small>
                 </div>
                 <a routerLink="/app/profile" class="dropdown-item">
@@ -260,11 +273,11 @@ import { map } from 'rxjs/operators';
     /* Header */
     .header {
       background: white;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5dddc;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(232, 85, 48, 0.1);
     }
 
     .header-content {
@@ -274,7 +287,7 @@ import { map } from 'rxjs/operators';
       display: flex;
       align-items: center;
       gap: 2rem;
-      height: 64px;
+      height: 72px;
     }
 
     .logo {
@@ -283,13 +296,28 @@ import { map } from 'rxjs/operators';
 
     .logo-link {
       text-decoration: none;
-      color: #1f2937;
+      color: #181211;
+      display: flex;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+
+    .logo-link:hover {
+      transform: scale(1.05);
+    }
+
+    .logo-icon {
+      margin-right: 0.75rem;
+      color: #e85530;
     }
 
     .logo-text {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #3b82f6;
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #e85530 0%, #d14520 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     /* Search */
@@ -304,20 +332,35 @@ import { map } from 'rxjs/operators';
       align-items: center;
     }
 
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      color: #886a63;
+      z-index: 10;
+    }
+
     .search-input {
       width: 100%;
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1rem;
+      padding-left: 2.75rem;
       padding-right: 3rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      border: 2px solid #e5dddc;
+      border-radius: 12px;
       font-size: 0.875rem;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
+      background: #f4f1f0;
+      color: #181211;
     }
 
     .search-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: #e85530;
+      box-shadow: 0 0 0 3px rgba(232, 85, 48, 0.1);
+      background: white;
+    }
+
+    .search-input::placeholder {
+      color: #886a63;
     }
 
     .search-button {
@@ -325,43 +368,60 @@ import { map } from 'rxjs/operators';
       right: 0.5rem;
       background: none;
       border: none;
-      color: #6b7280;
+      color: #886a63;
       cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 4px;
-      transition: color 0.2s;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: all 0.2s;
     }
 
     .search-button:hover {
-      color: #3b82f6;
+      color: #e85530;
+      background: rgba(232, 85, 48, 0.1);
     }
 
     /* Navigation */
     .nav {
       display: flex;
-      gap: 1rem;
+      gap: 0.5rem;
     }
 
     .nav-link {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1rem;
       text-decoration: none;
-      color: #6b7280;
-      border-radius: 8px;
+      color: #886a63;
+      border-radius: 10px;
       transition: all 0.2s;
       font-size: 0.875rem;
+      font-weight: 500;
+      position: relative;
     }
 
     .nav-link:hover {
-      color: #3b82f6;
-      background: #f3f4f6;
+      color: #e85530;
+      background: rgba(232, 85, 48, 0.1);
+      transform: translateY(-1px);
     }
 
     .nav-link.active {
-      color: #3b82f6;
-      background: #eff6ff;
+      color: #e85530;
+      background: rgba(232, 85, 48, 0.15);
+      font-weight: 600;
+    }
+
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: #e85530;
+      border-radius: 1px;
     }
 
     /* User Actions */
@@ -376,35 +436,38 @@ import { map } from 'rxjs/operators';
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      color: #6b7280;
-      border-radius: 8px;
+      width: 48px;
+      height: 48px;
+      color: #886a63;
+      border-radius: 12px;
       transition: all 0.2s;
       text-decoration: none;
+      background: transparent;
     }
 
     .action-link:hover {
-      color: #3b82f6;
-      background: #f3f4f6;
+      color: #e85530;
+      background: rgba(232, 85, 48, 0.1);
+      transform: translateY(-1px);
     }
 
     .cart-link.has-items {
-      color: #3b82f6;
+      color: #e85530;
     }
 
     .cart-count, .notification-badge {
       position: absolute;
-      top: -4px;
-      right: -4px;
-      background: #ef4444;
+      top: -6px;
+      right: -6px;
+      background: #e85530;
       color: white;
       font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.125rem 0.375rem;
-      border-radius: 10px;
-      min-width: 18px;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      min-width: 20px;
       text-align: center;
+      box-shadow: 0 2px 4px rgba(232, 85, 48, 0.3);
     }
 
     /* User Menu */
@@ -413,17 +476,24 @@ import { map } from 'rxjs/operators';
     }
 
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       cursor: pointer;
       overflow: hidden;
-      border: 2px solid #e5e7eb;
-      transition: border-color 0.2s;
+      border: 3px solid #e5dddc;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, #e85530 0%, #d14520 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .user-avatar:hover {
-      border-color: #3b82f6;
+      border-color: #e85530;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(232, 85, 48, 0.3);
     }
 
     .avatar-img {
@@ -435,13 +505,14 @@ import { map } from 'rxjs/operators';
     .avatar-placeholder {
       width: 100%;
       height: 100%;
-      background: #3b82f6;
-      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
-      font-size: 1rem;
+      background: linear-gradient(135deg, #e85530 0%, #d14520 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-transform: uppercase;
     }
 
     .user-dropdown {
@@ -684,10 +755,17 @@ export class MainLayoutComponent implements OnInit {
   currentUser$ = this.authService.currentUser$;
   loading$ = this.authService.loading$;
   sidebarCollapsed$ = this.appStateService.sidebarCollapsed$;
-  cartItemCount$ = this.cartService.cartItems$.pipe(
-    map(items => items.reduce((total, item) => total + item.quantity, 0))
-  );
-  unreadNotificationsCount$ = this.appStateService.unreadNotificationsCount$;
+  cartItemCount$ = this.cartService.getCartItemCount$();
+
+  unreadNotificationsCount$ = this.appStateService.getUnreadNotifications$();
+
+  showNotification(type: string, message: string): void {
+    this.appStateService.showNotification({
+      type,
+      message,
+      duration: 5000
+    });
+  }
 
   // Local state
   searchQuery = '';
@@ -739,16 +817,22 @@ export class MainLayoutComponent implements OnInit {
         this.router.navigate(['/']);
         this.appStateService.addNotification({
           type: 'success',
-          title: 'Logged Out',
-          message: 'You have been successfully logged out.'
+          message: 'Item added to cart successfully!',
+          id: Date.now().toString(),
+          title: 'Success',
+          is_read: false,
+          created_at: new Date().toISOString()
         });
       },
       error: (error) => {
         console.error('Logout error:', error);
         this.appStateService.addNotification({
           type: 'error',
-          title: 'Logout Failed',
-          message: 'There was an error logging out. Please try again.'
+          message: 'Failed to add item to cart. Please try again.',
+          id: Date.now().toString(),
+          title: 'Error',
+          is_read: false,
+          created_at: new Date().toISOString()
         });
       }
     });

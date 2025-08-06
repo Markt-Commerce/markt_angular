@@ -3,230 +3,173 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { RegisterRequest } from '../../../core/models/auth.model';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
   template: `
-    <div class="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden font-sans">
-      <div class="layout-container flex h-full grow flex-col">
-        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f4f1f0] px-10 ">
-          <div class="flex items-center gap-6 text-[#181211]">
-          
-            <div class="h-12 lg:h-16 xl:h-20">
-              <img src="/markt-text-logo.png" alt="Markt" class="h-full w-auto object-contain drop-shadow-lg">
+    <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div class="w-full max-w-md space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+          <div class="flex justify-center mb-6">
+            <img src="/Logo.png" alt="Markt" class="h-12 w-auto" />
+          </div>
+          <h2 class="text-3xl font-bold tracking-tight text-gray-900">Join Markt</h2>
+          <p class="mt-2 text-sm text-gray-600">
+            Become part of a vibrant community of buyers and sellers.
+          </p>
+        </div>
+
+        <!-- Registration Form -->
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <!-- Username -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+            <input
+              id="username"
+              formControlName="username"
+              type="text"
+              required
+              placeholder="Choose a unique username"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+              [class.border-red-500]="getErrorMessage('username')"
+            />
+            <div *ngIf="getErrorMessage('username')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('username') }}
             </div>
           </div>
-          <button
-            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em]"
-            [routerLink]="['/auth/login']"
-          >
-            <span class="truncate">Already have an account? Sign in</span>
-          </button>
-        </header>
-        
-        <div class="px-4 lg:px-40 flex flex-1 justify-center py-5">
-          <div class="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 max-w-[960px] flex-1">
-            <h2 class="text-[#181211] tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Join Markt</h2>
-            <p class="text-[#181211] text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">Become part of a vibrant community of buyers and sellers.</p>
-            
-            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-              <!-- Full Name -->
-              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
-                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Full Name</p>
-                  <input
-                    formControlName="fullName"
-                    placeholder="Enter your full name"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                    [class.border-red-500]="getErrorMessage('fullName')"
-                  />
-                  <div *ngIf="getErrorMessage('fullName')" class="text-red-500 text-sm mt-1">
-                    {{ getErrorMessage('fullName') }}
-                  </div>
-                </label>
-              </div>
-              
-              <!-- Email Address -->
-              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
-                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Email Address</p>
-                  <input
-                    formControlName="email"
-                    type="email"
-                    placeholder="Enter your email address"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                    [class.border-red-500]="getErrorMessage('email')"
-                  />
-                  <div *ngIf="getErrorMessage('email')" class="text-red-500 text-sm mt-1">
-                    {{ getErrorMessage('email') }}
-                  </div>
-                </label>
-              </div>
-              
-              <!-- Phone Number -->
-              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
-                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Phone Number (Optional)</p>
-                  <input
-                    formControlName="phone"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                    [class.border-red-500]="getErrorMessage('phone')"
-                  />
-                  <div *ngIf="getErrorMessage('phone')" class="text-red-500 text-sm mt-1">
-                    {{ getErrorMessage('phone') }}
-                  </div>
-                </label>
-              </div>
-              
-              <!-- Password -->
-              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
-                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Password</p>
-                  <input
-                    formControlName="password"
-                    type="password"
-                    placeholder="Create a password"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                    [class.border-red-500]="getErrorMessage('password')"
-                  />
-                  <div *ngIf="getErrorMessage('password')" class="text-red-500 text-sm mt-1">
-                    {{ getErrorMessage('password') }}
-                  </div>
-                </label>
-              </div>
-              
-              <!-- Confirm Password -->
-              <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
-                  <p class="text-[#181211] text-base font-medium leading-normal pb-2">Confirm Password</p>
-                  <input
-                    formControlName="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                    [class.border-red-500]="getErrorMessage('confirmPassword')"
-                  />
-                  <div *ngIf="getErrorMessage('confirmPassword')" class="text-red-500 text-sm mt-1">
-                    {{ getErrorMessage('confirmPassword') }}
-                  </div>
-                </label>
-              </div>
-              
-              <!-- Account Type -->
-              <div class="flex flex-wrap gap-3 p-4">
-                <label
-                  class="text-sm font-medium leading-normal flex items-center justify-center rounded-lg border border-[#e5dddc] px-4 h-11 text-[#181211] has-[:checked]:border-[3px] has-[:checked]:px-3.5 has-[:checked]:border-[#e85530] relative cursor-pointer"
-                >
-                  I'm a Buyer
-                  <input type="radio" formControlName="account_type" value="buyer" class="invisible absolute" />
-                </label>
-                <label
-                  class="text-sm font-medium leading-normal flex items-center justify-center rounded-lg border border-[#e5dddc] px-4 h-11 text-[#181211] has-[:checked]:border-[3px] has-[:checked]:px-3.5 has-[:checked]:border-[#e85530] relative cursor-pointer"
-                >
-                  I'm a Seller
-                  <input type="radio" formControlName="account_type" value="seller" class="invisible absolute" />
-                </label>
-              </div>
-              
-              <!-- Seller Fields (conditional) -->
-              <div *ngIf="isSellerAccount">
-                <!-- Shop/Business Name -->
-                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                  <label class="flex flex-col min-w-40 flex-1">
-                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Shop/Business Name</p>
-                    <input
-                      formControlName="shopName"
-                      placeholder="Enter your shop or business name"
-                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                      [class.border-red-500]="getErrorMessage('shopName')"
-                    />
-                    <div *ngIf="getErrorMessage('shopName')" class="text-red-500 text-sm mt-1">
-                      {{ getErrorMessage('shopName') }}
-                    </div>
-                  </label>
-                </div>
-                
-                <!-- Business Description -->
-                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                  <label class="flex flex-col min-w-40 flex-1">
-                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Business Description</p>
-                    <textarea
-                      formControlName="businessDescription"
-                      placeholder="Describe your business"
-                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] min-h-36 placeholder:text-[#886a63] p-[15px] text-base font-normal leading-normal"
-                      [class.border-red-500]="getErrorMessage('businessDescription')"
-                    ></textarea>
-                    <div *ngIf="getErrorMessage('businessDescription')" class="text-red-500 text-sm mt-1">
-                      {{ getErrorMessage('businessDescription') }}
-                    </div>
-                  </label>
-                </div>
-                
-                <!-- Business Category -->
-                <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                  <label class="flex flex-col min-w-40 flex-1">
-                    <p class="text-[#181211] text-base font-medium leading-normal pb-2">Business Category</p>
-                    <select
-                      formControlName="businessCategory"
-                      class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border border-[#e5dddc] bg-white focus:border-[#e5dddc] h-14 p-[15px] text-base font-normal leading-normal"
-                      [class.border-red-500]="getErrorMessage('businessCategory')"
-                    >
-                      <option value="">Select a category</option>
-                      <option value="electronics">Electronics</option>
-                      <option value="fashion">Fashion & Clothing</option>
-                      <option value="home">Home & Garden</option>
-                      <option value="sports">Sports & Outdoors</option>
-                      <option value="books">Books & Media</option>
-                      <option value="health">Health & Beauty</option>
-                      <option value="food">Food & Beverages</option>
-                      <option value="services">Services</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <div *ngIf="getErrorMessage('businessCategory')" class="text-red-500 text-sm mt-1">
-                      {{ getErrorMessage('businessCategory') }}
-                    </div>
-                  </label>
-                </div>
-              </div>
-              
-              <!-- Terms & Privacy -->
-              <div class="px-4">
-                <label class="flex gap-x-3 py-3 flex-row cursor-pointer">
-                  <input
-                    type="checkbox"
-                    formControlName="agreeToTerms"
-                    class="h-5 w-5 rounded border-[#e5dddc] border-2 bg-transparent text-[#e85530] checked:bg-[#e85530] checked:border-[#e85530] focus:ring-0 focus:ring-offset-0 focus:border-[#e5dddc] focus:outline-none"
-                  />
-                  <p class="text-[#181211] text-base font-normal leading-normal">I agree to the <a href="#" class="text-[#e85530] hover:underline">Terms & Privacy Policy</a></p>
-                </label>
-                <div *ngIf="getErrorMessage('agreeToTerms')" class="text-red-500 text-sm">
-                  {{ getErrorMessage('agreeToTerms') }}
-                </div>
-              </div>
-              
-              <!-- Error Message -->
-              <div *ngIf="errorMessage" class="mx-4 my-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {{ errorMessage }}
-              </div>
-              
-              <!-- Submit Button -->
-              <div class="flex px-4 py-3">
-                <button
-                  type="submit"
-                  [disabled]="registerForm.invalid || loading"
-                  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 flex-1 bg-[#e85530] text-white text-base font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#d64426] transition-colors duration-200"
-                >
-                  <span class="truncate" *ngIf="!loading">Create Account</span>
-                  <span class="truncate" *ngIf="loading">Creating Account...</span>
-                </button>
-              </div>
-            </form>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+            <input
+              id="email"
+              formControlName="email"
+              type="email"
+              required
+              placeholder="Enter your email address"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+              [class.border-red-500]="getErrorMessage('email')"
+            />
+            <div *ngIf="getErrorMessage('email')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('email') }}
+            </div>
           </div>
-        </div>
+
+          <!-- Phone Number -->
+          <div>
+            <label for="phone_number" class="block text-sm font-medium text-gray-700">Phone Number</label>
+            <input
+              id="phone_number"
+              formControlName="phone_number"
+              type="tel"
+              required
+              placeholder="+1234567890"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+              [class.border-red-500]="getErrorMessage('phone_number')"
+            />
+            <div *ngIf="getErrorMessage('phone_number')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('phone_number') }}
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              id="password"
+              formControlName="password"
+              type="password"
+              required
+              placeholder="Create a strong password"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+              [class.border-red-500]="getErrorMessage('password')"
+            />
+            <div *ngIf="getErrorMessage('password')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('password') }}
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Must contain at least 8 characters with uppercase, lowercase, and numbers
+            </p>
+          </div>
+
+          <!-- Confirm Password -->
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              formControlName="confirmPassword"
+              type="password"
+              required
+              placeholder="Confirm your password"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+              [class.border-red-500]="getErrorMessage('confirmPassword')"
+            />
+            <div *ngIf="getErrorMessage('confirmPassword')" class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('confirmPassword') }}
+            </div>
+          </div>
+
+          <!-- Account Type -->
+          <div>
+            <label for="account_type" class="block text-sm font-medium text-gray-700">Account Type</label>
+            <select
+              id="account_type"
+              formControlName="account_type"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
+            >
+              <option value="buyer">Buyer</option>
+              <option value="seller">Seller</option>
+            </select>
+          </div>
+
+          <!-- Terms -->
+          <div class="flex items-start">
+            <input
+              id="terms"
+              formControlName="terms"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-[#E94C2A] focus:ring-[#E94C2A]"
+            />
+            <label for="terms" class="ml-2 text-sm text-gray-700">
+              I agree to the 
+              <a href="#" class="text-[#E94C2A] hover:underline">Terms of Service</a> 
+              and 
+              <a href="#" class="text-[#E94C2A] hover:underline">Privacy Policy</a>
+            </label>
+          </div>
+          <div *ngIf="getErrorMessage('terms')" class="text-sm text-red-600">
+            {{ getErrorMessage('terms') }}
+          </div>
+
+          <!-- Error Message -->
+          <div *ngIf="errorMessage" class="rounded-md bg-red-50 p-4">
+            <div class="text-sm text-red-700">{{ errorMessage }}</div>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            [disabled]="registerForm.invalid || loading"
+            class="w-full flex justify-center rounded-md border border-transparent bg-[#E94C2A] py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-[#d63924] focus:outline-none focus:ring-2 focus:ring-[#E94C2A] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span *ngIf="!loading">Create Account</span>
+            <span *ngIf="loading">Creating Account...</span>
+          </button>
+
+          <!-- Login Link -->
+          <div class="text-center">
+            <p class="text-sm text-gray-600">
+              Already have an account? 
+              <a routerLink="/auth/login" class="font-medium text-[#E94C2A] hover:underline">
+                Sign in
+              </a>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   `,
@@ -342,60 +285,21 @@ export class RegisterComponent implements OnInit {
 
   private initForm(): void {
     this.registerForm = this.fb.group({
-      email: ['', [
-        Validators.required,
-        Validators.email
-      ]],
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
       password: ['', [
-        Validators.required,
+        Validators.required, 
         Validators.minLength(8),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+        Validators.pattern(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/) // Must contain digit, lowercase, uppercase
       ]],
-      confirmPassword: ['', [
-        Validators.required
-      ]],
-      fullName: ['', [
+      confirmPassword: ['', Validators.required],
+      phone_number: ['', [
         Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100)
+        Validators.pattern(/^\+?[1-9]\d{1,14}$/)
       ]],
-      phone: ['', [
-        Validators.pattern(/^\+?[\d\s\-\(\)]+$/)
-      ]],
-      account_type: ['buyer', [
-        Validators.required
-      ]],
-      // Seller-specific fields
-      shopName: [''],
-      businessDescription: [''],
-      businessCategory: [''],
-      agreeToTerms: [false, [
-        Validators.requiredTrue
-      ]]
-    }, {
-      validators: this.passwordMatchValidator
-    });
-
-    // Add conditional validators for seller fields
-    this.registerForm.get('account_type')?.valueChanges.subscribe(accountType => {
-      const shopNameControl = this.registerForm.get('shopName');
-      const businessDescriptionControl = this.registerForm.get('businessDescription');
-      const businessCategoryControl = this.registerForm.get('businessCategory');
-
-      if (accountType === 'seller') {
-        shopNameControl?.setValidators([Validators.required, Validators.minLength(2)]);
-        businessDescriptionControl?.setValidators([Validators.required, Validators.minLength(10)]);
-        businessCategoryControl?.setValidators([Validators.required]);
-      } else {
-        shopNameControl?.clearValidators();
-        businessDescriptionControl?.clearValidators();
-        businessCategoryControl?.clearValidators();
-      }
-
-      shopNameControl?.updateValueAndValidity();
-      businessDescriptionControl?.updateValueAndValidity();
-      businessCategoryControl?.updateValueAndValidity();
-    });
+      account_type: ['buyer', Validators.required],
+      terms: [false, Validators.requiredTrue]
+    }, { validators: this.passwordMatchValidator });
   }
 
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -410,40 +314,56 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.valid) {
+    if (this.registerForm.valid && !this.loading) {
       this.loading = true;
       this.errorMessage = '';
 
-      const userData = {
-        username: this.registerForm.value.username,
-        email: this.registerForm.value.email,
-        password: this.registerForm.value.password,
-        account_type: this.registerForm.value.account_type,
-        phone_number: this.registerForm.value.phone || undefined
+      const formData = this.registerForm.value;
+      
+      // Remove confirmPassword and terms from the API payload
+      const registerData: RegisterRequest = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        phone_number: formData.phone_number,
+        account_type: formData.account_type
       };
 
-      this.authService.register(userData).subscribe({
+      this.authService.register(registerData).subscribe({
         next: (response) => {
-          this.loading = false;
           console.log('Registration successful:', response);
-          
-          // Redirect to onboarding or dashboard
-          this.router.navigate(['/onboarding']);
+          // AuthService will handle navigation to email verification
         },
         error: (error) => {
+          console.error('Registration failed:', error);
           this.loading = false;
-          console.error('Registration error:', error);
           
-          if (error.status === 409) {
-            this.errorMessage = 'Username or email already exists. Please choose different credentials.';
-          } else if (error.status === 422) {
-            this.errorMessage = 'Please check your input and try again.';
+          // Handle different error types
+          if (error.status === 422 && error.error?.errors) {
+            // Backend validation errors
+            const validationErrors = error.error.errors;
+            if (validationErrors.json?.password) {
+              this.errorMessage = validationErrors.json.password[0];
+            } else if (validationErrors.json?.email) {
+              this.errorMessage = validationErrors.json.email[0];
+            } else if (validationErrors.json?.username) {
+              this.errorMessage = validationErrors.json.username[0];
+            } else {
+              this.errorMessage = 'Please check your information and try again.';
+            }
+          } else if (error.status === 409) {
+            this.errorMessage = 'An account with this email or username already exists.';
           } else if (error.status === 0) {
             this.errorMessage = 'Unable to connect to server. Please check your internet connection.';
           } else {
-            this.errorMessage = error.message || 'An error occurred during registration. Please try again.';
+            this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
           }
         }
+      });
+    } else {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.registerForm.controls).forEach(key => {
+        this.registerForm.get(key)?.markAsTouched();
       });
     }
   }
@@ -469,7 +389,7 @@ export class RegisterComponent implements OnInit {
           return 'Username can only contain letters, numbers, and underscores';
         }
         if (field === 'password') {
-          return 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character';
+          return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
         }
         if (field === 'phone') {
           return 'Please enter a valid phone number';

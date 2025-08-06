@@ -1,70 +1,37 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap, catchError, throwError } from 'rxjs';
-import { ApiService, PaginatedResponse } from './api.service';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { ApiService } from './api.service';
+import { 
+  Product, 
+  ProductCreate, 
+  ProductUpdate, 
+  ProductReview, 
+  ProductSearchResult,
+  Category,
+  CategoryProducts,
+  Tag,
+  SellerSimple,
+  BulkProductResult
+} from '../models';
+import { CartService } from './cart.service';
+import { map } from 'rxjs/operators';
 
-export interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  category_id: number;
-  category_name: string;
-  seller_id: number;
-  seller_name: string;
-  seller_avatar?: string;
-  images: string[];
-  condition: 'new' | 'used' | 'refurbished';
-  location: string;
-  tags: string[];
-  is_negotiable: boolean;
-  is_featured: boolean;
-  is_verified: boolean;
-  is_favorited?: boolean;
-  views_count: number;
-  favorites_count: number;
-  created_at: string;
-  updated_at: string;
+export interface ProductFilters {
+  category_ids?: number[];
+  price_min?: number;
+  price_max?: number;
+  rating_min?: number;
+  status?: string;
+  seller_id?: number;
+  tags?: string[];
+  search?: string;
+  sort_by?: 'price' | 'rating' | 'created_at' | 'name';
+  sort_order?: 'asc' | 'desc';
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  parent_id?: number;
-  image_url?: string;
-  products_count: number;
-}
-
-export interface SearchFilters {
-  query?: string;
-  category_id?: number;
-  min_price?: number;
-  max_price?: number;
-  condition?: 'new' | 'used' | 'refurbished';
-  location?: string;
-  is_negotiable?: boolean;
-  is_featured?: boolean;
-  sort_by?: 'relevance' | 'price_low' | 'price_high' | 'newest' | 'oldest' | 'popular';
+export interface ProductSearchParams extends ProductFilters {
   page?: number;
   per_page?: number;
-  [key: string]: unknown;
-}
-
-export interface ProductCreateRequest {
-  title: string;
-  description: string;
-  price: number;
-  category_id: number;
-  condition: 'new' | 'used' | 'refurbished';
-  location: string;
-  tags?: string[];
-  is_negotiable?: boolean;
-  images?: File[];
-}
-
-export interface ProductUpdateRequest extends Partial<ProductCreateRequest> {
-  id: number;
 }
 
 @Injectable({
@@ -72,325 +39,527 @@ export interface ProductUpdateRequest extends Partial<ProductCreateRequest> {
 })
 export class MarketplaceService {
   private apiService = inject(ApiService);
+  private cartService = inject(CartService);
   
-  // BehaviorSubjects for state management
-  private productsSubject = new BehaviorSubject<Product[]>([]);
-  private categoriesSubject = new BehaviorSubject<Category[]>([]);
-  private searchFiltersSubject = new BehaviorSubject<SearchFilters>({});
-  private loadingSubject = new BehaviorSubject<boolean>(false);
-  private totalProductsSubject = new BehaviorSubject<number>(0);
-  private currentProductSubject = new BehaviorSubject<Product | null>(null);
-  private relatedProductsSubject = new BehaviorSubject<Product[]>([]);
+  private searchResultsSubject = new BehaviorSubject<ProductSearchResult | null>(null);
+  public searchResults$ = this.searchResultsSubject.asObservable();
 
-  // Public observables
-  public products$ = this.productsSubject.asObservable();
-  public categories$ = this.categoriesSubject.asObservable();
-  public searchFilters$ = this.searchFiltersSubject.asObservable();
-  public loading$ = this.loadingSubject.asObservable();
-  public totalProducts$ = this.totalProductsSubject.asObservable();
-  public currentProduct$ = this.currentProductSubject.asObservable();
-  public relatedProducts$ = this.relatedProductsSubject.asObservable();
+  // ============================================================================
+  // PRODUCT OPERATIONS
+  // ============================================================================
 
-  constructor() {
-    this.loadCategories();
+  /**
+   * Get all products with filters
+   */
+  getProducts(params?: ProductSearchParams): Observable<any> {
+    return this.apiService.getProducts(params);
   }
 
   /**
-   * Get all products with optional filters
+   * Get single product by ID
    */
-  getProducts(filters: SearchFilters = {}): Observable<PaginatedResponse<Product>> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<PaginatedResponse<Product>>('/products', filters).pipe(
-      tap(response => {
-        if (response.data) {
-          this.productsSubject.next(response.data.data || []);
-          this.totalProductsSubject.next(response.data.pagination?.total || 0);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
+  getProduct(productId: string): Observable<any> {
+    return this.apiService.getProduct(productId);
   }
 
   /**
-   * Get a single product by ID
+   * Create new product
    */
-  getProduct(id: number): Observable<Product> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.get<Product>(`/products/${id}`).pipe(
-      tap(response => {
-        if (response.data) {
-          this.currentProductSubject.next(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
+  createProduct(productData: ProductCreate): Observable<any> {
+    return this.apiService.createProduct(productData);
   }
 
   /**
-   * Search products
+   * Update existing product
    */
-  searchProducts(filters: SearchFilters): Observable<PaginatedResponse<Product>> {
-    this.searchFiltersSubject.next(filters);
-    return this.getProducts(filters);
+  updateProduct(productId: string, productData: ProductUpdate): Observable<any> {
+    return this.apiService.updateProduct(productId, productData);
   }
 
   /**
-   * Get products by category
+   * Delete product
    */
-  getProductsByCategory(categoryId: number, filters: SearchFilters = {}): Observable<PaginatedResponse<Product>> {
-    const categoryFilters = { ...filters, category_id: categoryId };
-    return this.getProducts(categoryFilters);
+  deleteProduct(productId: string): Observable<any> {
+    return this.apiService.deleteProduct(productId);
   }
 
   /**
-   * Get featured products
+   * Bulk create products
    */
-  getFeaturedProducts(limit = 10): Observable<Product[]> {
-    return this.apiService.get<Product[]>('/products/featured', { limit }).pipe(
-      map(response => response.data || [])
-    );
+  bulkCreateProducts(products: ProductCreate[]): Observable<any> {
+    return this.apiService.bulkCreateProducts(products);
   }
 
   /**
    * Get trending products
    */
-  getTrendingProducts(limit = 10): Observable<Product[]> {
-    return this.apiService.get<Product[]>('/products/trending', { limit }).pipe(
-      map(response => response.data || [])
-    );
+  getTrendingProducts(params?: any): Observable<any> {
+    return this.apiService.getTrendingProducts(params);
   }
 
   /**
-   * Get products by seller
+   * Get recommended products
    */
-  getProductsBySeller(sellerId: number, filters: SearchFilters = {}): Observable<PaginatedResponse<Product>> {
-    const sellerFilters = { ...filters, seller_id: sellerId };
-    return this.getProducts(sellerFilters);
+  getRecommendedProducts(params?: any): Observable<any> {
+    return this.apiService.getRecommendedProducts(params);
   }
 
   /**
-   * Create a new product
+   * Get seller's products
    */
-  createProduct(productData: ProductCreateRequest): Observable<Product> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<Product>('/products', productData).pipe(
-      tap(response => {
-        if (response.data) {
-          const currentProducts = this.productsSubject.value;
-          this.productsSubject.next([response.data, ...currentProducts]);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
+  getMyProducts(params?: any): Observable<any> {
+    return this.apiService.getMyProducts(params);
   }
 
   /**
-   * Update a product
+   * Track product view
    */
-  updateProduct(productData: ProductUpdateRequest): Observable<Product> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.put<Product>(`/products/${productData.id}`, productData).pipe(
-      tap(response => {
-        if (response.data) {
-          const currentProducts = this.productsSubject.value;
-          const updatedProducts = currentProducts.map(product => 
-            product.id === productData.id ? response.data! : product
-          );
-          this.productsSubject.next(updatedProducts);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
+  trackProductView(productId: string): Observable<any> {
+    return this.apiService.trackProductView(productId);
   }
 
   /**
-   * Delete a product
+   * Share product
    */
-  deleteProduct(productId: number): Observable<any> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.delete<any>(`/products/${productId}`).pipe(
-      tap(() => {
-        const currentProducts = this.productsSubject.value;
-        const filteredProducts = currentProducts.filter(product => product.id !== productId);
-        this.productsSubject.next(filteredProducts);
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      })
-    );
+  shareProduct(productId: string): Observable<any> {
+    return this.apiService.shareProduct(productId);
+  }
+
+  // ============================================================================
+  // PRODUCT REVIEWS
+  // ============================================================================
+
+  /**
+   * Get product reviews
+   */
+  getProductReviews(productId: string, params?: any): Observable<any> {
+    return this.apiService.getProductReviews(productId, params);
   }
 
   /**
-   * Upload product images
+   * Create product review
    */
-  uploadProductImages(productId: number, images: File[]): Observable<string[]> {
-    return this.apiService.uploadMultiple<string[]>(`/products/${productId}/images`, images).pipe(
-      map(response => response.data!)
-    );
+  createProductReview(productId: string, reviewData: any): Observable<any> {
+    return this.apiService.createProductReview(productId, reviewData);
   }
+
+  /**
+   * Upvote review
+   */
+  upvoteReview(reviewId: string): Observable<any> {
+    return this.apiService.upvoteReview(reviewId);
+  }
+
+  // ============================================================================
+  // CATEGORY OPERATIONS
+  // ============================================================================
 
   /**
    * Get all categories
    */
-  getCategories(): Observable<Category[]> {
-    return this.apiService.get<Category[]>('/categories').pipe(
-      map(response => response.data || [])
-    );
+  getCategories(): Observable<any> {
+    return this.apiService.getCategories();
   }
 
   /**
-   * Load categories into state
+   * Get single category
    */
-  private loadCategories(): void {
-    this.getCategories().subscribe(categories => {
-      this.categoriesSubject.next(categories);
-    });
+  getCategory(categoryId: number): Observable<any> {
+    return this.apiService.getCategory(categoryId);
   }
 
   /**
-   * Get category by ID
+   * Create category
    */
-  getCategory(id: number): Observable<Category> {
-    return this.apiService.get<Category>(`/categories/${id}`).pipe(
-      map(response => response.data!)
-    );
+  createCategory(categoryData: any): Observable<any> {
+    return this.apiService.createCategory(categoryData);
   }
 
   /**
-   * Get subcategories
+   * Update category
    */
-  getSubcategories(parentId: number): Observable<Category[]> {
-    return this.apiService.get<Category[]>(`/categories/${parentId}/subcategories`).pipe(
-      map(response => response.data || [])
-    );
+  updateCategory(categoryId: number, categoryData: any): Observable<any> {
+    return this.apiService.updateCategory(categoryId, categoryData);
   }
 
   /**
-   * Add product to favorites
+   * Get products by category
    */
-  addToFavorites(productId: number): Observable<any> {
-    return this.apiService.post<any>(`/products/${productId}/favorite`);
+  getCategoryProducts(categoryId: number, params?: any): Observable<any> {
+    return this.apiService.getCategoryProducts(categoryId, params);
   }
 
   /**
-   * Remove product from favorites
+   * Get popular tags
    */
-  removeFromFavorites(productId: number): Observable<any> {
-    return this.apiService.delete<any>(`/products/${productId}/favorite`);
+  getPopularTags(): Observable<any> {
+    return this.apiService.getPopularTags();
   }
 
   /**
-   * Get user's favorite products
+   * Create tag
    */
-  getFavoriteProducts(filters: SearchFilters = {}): Observable<PaginatedResponse<Product>> {
-    return this.apiService.get<PaginatedResponse<Product>>('/products/favorites', filters).pipe(
-      map(response => response.data || { 
-        data: [], 
-        pagination: { page: 1, per_page: 10, total: 0, total_pages: 0 },
-        message: '',
-        success: true
+  createTag(tagData: any): Observable<any> {
+    return this.apiService.createTag(tagData);
+  }
+
+  // ============================================================================
+  // SEARCH & FILTERING
+  // ============================================================================
+
+  /**
+   * Search products
+   */
+  searchProducts(searchParams: ProductSearchParams): Observable<any> {
+    return this.apiService.getProducts(searchParams).pipe(
+      map(response => {
+        if (response.success) {
+          this.searchResultsSubject.next(response.data);
+        }
+        return response;
       })
     );
   }
 
   /**
-   * Increment product view count
+   * Get search results
    */
-  incrementViewCount(productId: number): Observable<any> {
-    return this.apiService.post<any>(`/products/${productId}/view`);
+  getSearchResults(): ProductSearchResult | null {
+    return this.searchResultsSubject.value;
   }
 
   /**
-   * Get related products
+   * Clear search results
    */
-  getRelatedProducts(productId: number, limit = 6): Observable<Product[]> {
-    return this.apiService.get<Product[]>(`/products/${productId}/related`, { limit }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.relatedProductsSubject.next(response.data);
-        }
-      }),
-      catchError(error => {
-        return throwError(() => error);
-      }),
-      map(response => response.data || [])
+  clearSearchResults(): void {
+    this.searchResultsSubject.next(null);
+  }
+
+  /**
+   * Build search params from filters
+   */
+  buildSearchParams(filters: ProductFilters, page: number = 1, perPage: number = 20): ProductSearchParams {
+    return {
+      ...filters,
+      page,
+      per_page: perPage
+    };
+  }
+
+  /**
+   * Get default filters
+   */
+  getDefaultFilters(): ProductFilters {
+    return {
+      status: 'active',
+      sort_by: 'created_at',
+      sort_order: 'desc'
+    };
+  }
+
+  // ============================================================================
+  // PRODUCT UTILITIES
+  // ============================================================================
+
+  /**
+   * Format product price
+   */
+  formatPrice(price: number, currency: string = 'USD'): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(price);
+  }
+
+  /**
+   * Calculate discount percentage
+   */
+  calculateDiscount(price: number, comparePrice: number): number {
+    if (!comparePrice || comparePrice <= price) return 0;
+    return Math.round(((comparePrice - price) / comparePrice) * 100);
+  }
+
+  /**
+   * Check if product is on sale
+   */
+  isProductOnSale(product: Product): boolean {
+    return !!(product.compare_at_price && product.compare_at_price > product.price);
+  }
+
+  /**
+   * Get product availability status
+   */
+  getProductAvailability(product: Product): 'in_stock' | 'low_stock' | 'out_of_stock' {
+    if (product.stock === 0) return 'out_of_stock';
+    if (product.stock <= 5) return 'low_stock';
+    return 'in_stock';
+  }
+
+  /**
+   * Get product rating display
+   */
+  getProductRatingDisplay(rating: number): string {
+    return rating.toFixed(1);
+  }
+
+  /**
+   * Get product rating stars
+   */
+  getProductRatingStars(rating: number): Array<'full' | 'half' | 'empty'> {
+    const stars: Array<'full' | 'half' | 'empty'> = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push('full');
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push('half');
+      } else {
+        stars.push('empty');
+      }
+    }
+    
+    return stars;
+  }
+
+  /**
+   * Validate product data
+   */
+  validateProduct(product: ProductCreate): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!product.name || product.name.trim().length === 0) {
+      errors.push('Product name is required');
+    }
+    
+    if (!product.description || product.description.trim().length === 0) {
+      errors.push('Product description is required');
+    }
+    
+    if (product.price <= 0) {
+      errors.push('Product price must be greater than 0');
+    }
+    
+    if (product.stock < 0) {
+      errors.push('Product stock cannot be negative');
+    }
+    
+    if (!product.sku || product.sku.trim().length === 0) {
+      errors.push('Product SKU is required');
+    }
+    
+    if (product.category_ids.length === 0) {
+      errors.push('At least one category must be selected');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Generate product SKU
+   */
+  generateProductSku(productName: string, categoryId: number): string {
+    const timestamp = Date.now().toString().slice(-6);
+    const namePrefix = productName.substring(0, 3).toUpperCase().replace(/\s/g, '');
+    return `${namePrefix}-${categoryId}-${timestamp}`;
+  }
+
+  /**
+   * Get product image URL
+   */
+  getProductImageUrl(product: Product, size: 'thumbnail' | 'medium' | 'large' = 'medium'): string {
+    if (product.images && product.images.length > 0) {
+      const featuredImage = product.images.find(img => img.is_featured) || product.images[0];
+      return featuredImage.media?.url || '';
+    }
+    
+    // Return placeholder image
+    return '/assets/images/product-placeholder.jpg';
+  }
+
+  /**
+   * Get product gallery images
+   */
+  getProductGalleryImages(product: Product): string[] {
+    if (!product.images || product.images.length === 0) {
+      return ['/assets/images/product-placeholder.jpg'];
+    }
+    
+    return product.images.map(img => img.media?.url || '').filter(url => url);
+  }
+
+  /**
+   * Check if product is available for purchase
+   */
+  isProductAvailable(product: Product): boolean {
+    return product.status === 'active' && product.stock > 0;
+  }
+
+  /**
+   * Get product variants
+   */
+  getProductVariants(product: Product): any[] {
+    return product.variants || [];
+  }
+
+  /**
+   * Get product categories
+   */
+  getProductCategories(product: Product): Category[] {
+    return product.category ? [product.category] : [];
+  }
+
+  /**
+   * Get product tags
+   */
+  getProductTags(product: Product): string[] {
+    return product.tag_ids?.map(id => id.toString()) || [];
+  }
+
+  /**
+   * Check if product is in cart
+   */
+  isProductInCart(productId: string): boolean {
+    const cart = this.cartService.getCurrentCart();
+    return cart?.items.some((item: any) => item.product_id === productId) || false;
+  }
+
+  /**
+   * Add to favorites
+   */
+  addToFavorites(productId: string): Observable<any> {
+    return this.apiService.post<any>(`/products/${productId}/favorite`).pipe(
+      map(response => response.data)
     );
   }
 
   /**
-   * Get current search filters
+   * Remove from favorites
    */
-  get currentFilters(): SearchFilters {
-    return this.searchFiltersSubject.value;
+  removeFromFavorites(productId: string): Observable<any> {
+    return this.apiService.delete<any>(`/products/${productId}/favorite`).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
-   * Update search filters
+   * Check if product is favorited
    */
-  updateFilters(filters: Partial<SearchFilters>): void {
-    const currentFilters = this.searchFiltersSubject.value;
-    this.searchFiltersSubject.next({ ...currentFilters, ...filters });
+  isProductFavorited(productId: string): boolean {
+    // This would typically check against a favorites list in state
+    return false;
   }
 
   /**
-   * Clear search filters
+   * Format number for display
    */
-  clearFilters(): void {
-    this.searchFiltersSubject.next({});
+  formatNumber(num: number): string {
+    return num.toLocaleString();
   }
 
   /**
-   * Get current products
+   * Get condition color
    */
-  get currentProducts(): Product[] {
-    return this.productsSubject.value;
+  getConditionColor(condition: string): string {
+    const colors: Record<string, string> = {
+      'new': 'text-green-600',
+      'like_new': 'text-blue-600',
+      'good': 'text-yellow-600',
+      'fair': 'text-orange-600',
+      'poor': 'text-red-600'
+    };
+    return colors[condition] || 'text-gray-600';
   }
 
   /**
-   * Get current categories
+   * Get seller display name
    */
-  get currentCategories(): Category[] {
-    return this.categoriesSubject.value;
+  getSellerDisplayName(seller: any): string {
+    return seller?.shop_name || seller?.username || 'Unknown Seller';
   }
 
   /**
-   * Get current loading state
+   * Track by product ID for ngFor
    */
-  get isLoading(): boolean {
-    return this.loadingSubject.value;
+  trackByProductId(index: number, product: Product): string {
+    return product.id;
+  }
+
+  // ============================================================================
+  // SELLER OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get seller information
+   */
+  getSellerInfo(sellerId: number): SellerSimple | null {
+    // This would typically come from the product data
+    // For now, return null as we need to implement seller service
+    return null;
   }
 
   /**
-   * Get total products count
+   * Get seller products
    */
-  get totalProducts(): number {
-    return this.totalProductsSubject.value;
+  getSellerProducts(sellerId: number, params?: any): Observable<any> {
+    const searchParams = { ...params, seller_id: sellerId };
+    return this.getProducts(searchParams);
+  }
+
+  /**
+   * Get seller rating
+   */
+  getSellerRating(sellerId: number): number {
+    // This would typically come from seller data
+    return 4.5; // Placeholder
+  }
+
+  // ============================================================================
+  // ANALYTICS & INSIGHTS
+  // ============================================================================
+
+  /**
+   * Get product analytics
+   */
+  getProductAnalytics(productId: string): Observable<any> {
+    // This would call an analytics endpoint
+    return new Observable();
+  }
+
+  /**
+   * Get marketplace insights
+   */
+  getMarketplaceInsights(): Observable<any> {
+    // This would call an insights endpoint
+    return new Observable();
+  }
+
+  /**
+   * Get trending categories
+   */
+  getTrendingCategories(): Observable<any> {
+    // This would call a trending categories endpoint
+    return new Observable();
+  }
+
+  /**
+   * Get price history
+   */
+  getPriceHistory(productId: string): Observable<any> {
+    // This would call a price history endpoint
+    return new Observable();
+  }
+
+  /**
+   * Load categories
+   */
+  loadCategories(): Observable<Category[]> {
+    return this.apiService.getCategories().pipe(
+      map(response => response.data || [])
+    );
   }
 } 

@@ -54,6 +54,36 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanMatch {
 @Injectable({
   providedIn: 'root'
 })
+export class EmailVerificationGuard implements CanActivate {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  /**
+   * Check if user has verified their email
+   */
+  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.authService.currentUser$.pipe(
+      take(1),
+      map(user => {
+        if (user && user.email_verified) {
+          return true;
+        } else if (user && !user.email_verified) {
+          // Redirect to email verification page
+          return this.router.createUrlTree(['/auth/verify-email'], {
+            queryParams: { email: user.email }
+          });
+        } else {
+          // No user, redirect to login
+          return this.router.createUrlTree(['/auth/login']);
+        }
+      })
+    );
+  }
+}
+
+@Injectable({
+  providedIn: 'root'
+})
 export class GuestGuard implements CanActivate {
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -84,16 +114,51 @@ export class SellerGuard implements CanActivate {
   private router = inject(Router);
 
   /**
-   * Check if user is a seller
+   * Check if user is a verified seller
    */
   canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     return this.authService.currentUser$.pipe(
       take(1),
       map(user => {
-        if (user && user.is_seller) {
+        if (user && user.is_seller && user.email_verified) {
           return true;
+        } else if (user && !user.email_verified) {
+          // Redirect to email verification if not verified
+          return this.router.createUrlTree(['/auth/verify-email'], {
+            queryParams: { email: user.email }
+          });
         } else {
-          // Redirect non-sellers to home
+          // Redirect non-sellers to app home
+          return this.router.createUrlTree(['/app']);
+        }
+      })
+    );
+  }
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class BuyerGuard implements CanActivate {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  /**
+   * Check if user is a verified buyer
+   */
+  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.authService.currentUser$.pipe(
+      take(1),
+      map(user => {
+        if (user && user.is_buyer && user.email_verified) {
+          return true;
+        } else if (user && !user.email_verified) {
+          // Redirect to email verification if not verified
+          return this.router.createUrlTree(['/auth/verify-email'], {
+            queryParams: { email: user.email }
+          });
+        } else {
+          // Redirect non-buyers to app home
           return this.router.createUrlTree(['/app']);
         }
       })

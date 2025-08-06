@@ -1,76 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap, catchError, throwError, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { Product } from './marketplace.service';
-
-export interface CartItem {
-  id: number;
-  product_id: number;
-  product: Product;
-  quantity: number;
-  price: number;
-  total_price: number;
-  added_at: string;
-  notes?: string;
-}
-
-export interface Cart {
-  id: number;
-  user_id: number;
-  items: CartItem[];
-  total_items: number;
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  total: number;
-  currency: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AddToCartRequest {
-  product_id: number;
-  quantity: number;
-  notes?: string;
-}
-
-export interface UpdateCartItemRequest {
-  quantity: number;
-  notes?: string;
-}
-
-export interface ShippingAddress {
-  id?: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  address_line1: string;
-  address_line2?: string;
-  city: string;
-  state: string;
-  postal_code: string;
-  country: string;
-  is_default: boolean;
-}
-
-export interface ShippingMethod {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  estimated_days: string;
-  is_available: boolean;
-}
-
-export interface CartSummary {
-  total_items: number;
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  total: number;
-  currency: string;
-}
+import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order } from '../models';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -78,346 +10,369 @@ export interface CartSummary {
 export class CartService {
   private apiService = inject(ApiService);
   
-  // BehaviorSubjects for state management
   private cartSubject = new BehaviorSubject<Cart | null>(null);
-  private cartItemsSubject = new BehaviorSubject<CartItem[]>([]);
-  private cartSummarySubject = new BehaviorSubject<CartSummary>({
-    total_items: 0,
-    subtotal: 0,
-    tax: 0,
-    shipping: 0,
-    total: 0,
-    currency: 'NGN'
-  });
-  private loadingSubject = new BehaviorSubject<boolean>(false);
-
-  // Public observables
   public cart$ = this.cartSubject.asObservable();
-  public cartItems$ = this.cartItemsSubject.asObservable();
-  public cartSummary$ = this.cartSummarySubject.asObservable();
-  public loading$ = this.loadingSubject.asObservable();
 
   constructor() {
     this.loadCart();
   }
 
+  // ============================================================================
+  // CART OPERATIONS
+  // ============================================================================
+
   /**
-   * Load user's cart
+   * Get current cart
    */
-  loadCart(): void {
-    this.loadingSubject.next(true);
-    
-    this.apiService.get<Cart>('/cart').pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
+  getCart(): Observable<any> {
+    return this.apiService.getCart().pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.cartSubject.next(response.data);
+          }
+        },
+        error: (error) => {
+          console.error('Error loading cart:', error);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
       })
-    ).subscribe();
-  }
-
-  /**
-   * Get cart
-   */
-  getCart(): Observable<Cart> {
-    return this.apiService.get<Cart>('/cart').pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
-        }
-      }),
-      map(response => response.data!)
     );
   }
 
   /**
-   * Add item to cart
+   * Load cart from API
    */
-  addToCart(item: AddToCartRequest): Observable<Cart> {
-    this.loadingSubject.next(true);
+  private loadCart(): void {
+    this.getCart().subscribe();
+  }
+
+  /**
+   * Add item to cart with quantity
+   */
+  addToCart(productId: string, quantity: number = 1): Observable<any> {
+    const cartData = {
+      product_id: productId,
+      quantity: quantity
+    };
     
-    return this.apiService.post<Cart>('/cart/items', item).pipe(
+    return this.apiService.addToCart(cartData).pipe(
       tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
+        if (response.success) {
+          this.loadCart();
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
-   * Update cart item
+   * Update cart item quantity
    */
-  updateCartItem(itemId: number, updates: UpdateCartItemRequest): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.put<Cart>(`/cart/items/${itemId}`, updates).pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
+  updateCartItem(itemId: string, quantity: number): Observable<any> {
+    const updateData = { quantity };
+    return this.apiService.updateCartItem(itemId, updateData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.loadCart(); // Reload cart to get updated state
+          }
+        },
+        error: (error) => {
+          console.error('Error updating cart item:', error);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
    * Remove item from cart
    */
-  removeFromCart(itemId: number): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.delete<Cart>(`/cart/items/${itemId}`).pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
+  removeCartItem(itemId: string): Observable<any> {
+    return this.apiService.removeCartItem(itemId).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.loadCart(); // Reload cart to get updated state
+          }
+        },
+        error: (error) => {
+          console.error('Error removing cart item:', error);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
-   * Clear cart
+   * Clear entire cart
    */
-  clearCart(): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.delete<Cart>('/cart/items').pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
+  clearCart(): Observable<any> {
+    return this.apiService.clearCart().pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.cartSubject.next(null);
+          }
+        },
+        error: (error) => {
+          console.error('Error clearing cart:', error);
         }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Get shipping methods
-   */
-  getShippingMethods(): Observable<ShippingMethod[]> {
-    return this.apiService.get<ShippingMethod[]>('/cart/shipping-methods').pipe(
-      map(response => response.data || [])
-    );
-  }
-
-  /**
-   * Calculate shipping
-   */
-  calculateShipping(shippingMethodId: string): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<Cart>('/cart/calculate-shipping', { shipping_method_id: shippingMethodId }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Apply coupon code
-   */
-  applyCoupon(couponCode: string): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.post<Cart>('/cart/apply-coupon', { coupon_code: couponCode }).pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
-    );
-  }
-
-  /**
-   * Remove coupon code
-   */
-  removeCoupon(): Observable<Cart> {
-    this.loadingSubject.next(true);
-    
-    return this.apiService.delete<Cart>('/cart/coupon').pipe(
-      tap(response => {
-        if (response.data) {
-          this.cartSubject.next(response.data);
-          this.cartItemsSubject.next(response.data.items);
-          this.updateCartSummary(response.data);
-        }
-        this.loadingSubject.next(false);
-      }),
-      catchError(error => {
-        this.loadingSubject.next(false);
-        return throwError(() => error);
-      }),
-      map(response => response.data!)
+      })
     );
   }
 
   /**
    * Get cart summary
    */
-  getCartSummary(): Observable<CartSummary> {
-    return this.apiService.get<CartSummary>('/cart/summary').pipe(
-      map(response => response.data!)
+  getCartSummary(): Observable<any> {
+    return this.apiService.getCartSummary();
+  }
+
+  /**
+   * Apply coupon to cart
+   */
+  applyCoupon(couponCode: string): Observable<any> {
+    return this.apiService.applyCoupon({ coupon_code: couponCode }).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            this.loadCart(); // Reload cart to get updated state
+          }
+        },
+        error: (error) => {
+          console.error('Error applying coupon:', error);
+        }
+      })
+    );
+  }
+
+  /**
+   * Checkout cart
+   */
+  checkout(checkoutData: Checkout): Observable<any> {
+    return this.apiService.checkoutCart(checkoutData).pipe(
+      tap({
+        next: (response) => {
+          if (response.success) {
+            // Clear cart after successful checkout
+            this.cartSubject.next(null);
+          }
+        },
+        error: (error) => {
+          console.error('Error during checkout:', error);
+        }
+      })
+    );
+  }
+
+  // ============================================================================
+  // CART UTILITIES
+  // ============================================================================
+
+  /**
+   * Get current cart value
+   */
+  getCurrentCart(): Cart | null {
+    return this.cartSubject.value;
+  }
+
+  /**
+   * Get cart item count
+   */
+  getCartItemCount(): number {
+    const cart = this.getCurrentCart();
+    return cart?.total_items || 0;
+  }
+
+  /**
+   * Get cart total
+   */
+  getCartTotal(): number {
+    const cart = this.getCurrentCart();
+    return cart?.subtotal || 0;
+  }
+
+  /**
+   * Check if cart is empty
+   */
+  isCartEmpty(): boolean {
+    const cart = this.getCurrentCart();
+    return !cart || cart.total_items === 0;
+  }
+
+  /**
+   * Check if item exists in cart
+   */
+  isItemInCart(productId: string, variantId?: string): boolean {
+    const cart = this.getCurrentCart();
+    if (!cart) return false;
+    
+    return cart.items.some(item => 
+      item.product_id === productId && 
+      (!variantId || item.variant_id === variantId)
+    );
+  }
+
+  /**
+   * Get item quantity in cart
+   */
+  getItemQuantity(productId: string, variantId?: string): number {
+    const cart = this.getCurrentCart();
+    if (!cart) return 0;
+    
+    const item = cart.items.find(item => 
+      item.product_id === productId && 
+      (!variantId || item.variant_id === variantId)
+    );
+    
+    return item ? item.quantity : 0;
+  }
+
+  /**
+   * Get cart items
+   */
+  getCartItems(): CartItem[] {
+    const cart = this.getCurrentCart();
+    return cart?.items || [];
+  }
+
+  /**
+   * Get unique seller count in cart
+   */
+  getUniqueSellerCount(): number {
+    const cart = this.getCurrentCart();
+    if (!cart) return 0;
+    
+    const sellerIds = new Set(cart.items.map(item => item.product.seller.id));
+    return sellerIds.size;
+  }
+
+  /**
+   * Get items by seller
+   */
+  getItemsBySeller(sellerId: string): CartItem[] {
+    const cart = this.getCurrentCart();
+    if (!cart) return [];
+    
+    return cart.items.filter(item => item.product.seller.id === sellerId);
+  }
+
+  /**
+   * Calculate shipping cost for seller
+   */
+  calculateShippingForSeller(sellerId: string): number {
+    // This would typically call an API to calculate shipping
+    // For now, return a placeholder value
+    const items = this.getItemsBySeller(sellerId);
+    return items.length > 0 ? 5.99 : 0; // $5.99 base shipping
+  }
+
+  /**
+   * Get cart summary by seller
+   */
+  getCartSummaryBySeller(): Array<{ sellerId: string; items: CartItem[]; subtotal: number; shipping: number }> {
+    const cart = this.getCurrentCart();
+    if (!cart) return [];
+    
+    const sellerGroups = new Map<string, CartItem[]>();
+    
+    cart.items.forEach(item => {
+      const sellerId = item.product.seller.id;
+      if (!sellerGroups.has(sellerId)) {
+        sellerGroups.set(sellerId, []);
+      }
+      sellerGroups.get(sellerId)!.push(item);
+    });
+    
+    return Array.from(sellerGroups.entries()).map(([sellerId, items]) => ({
+      sellerId,
+      items,
+      subtotal: items.reduce((sum, item) => sum + (item.product_price * item.quantity), 0),
+      shipping: this.calculateShippingForSeller(sellerId)
+    }));
+  }
+
+  /**
+   * Validate cart for checkout
+   */
+  validateCartForCheckout(): { isValid: boolean; errors: string[] } {
+    const cart = this.getCurrentCart();
+    const errors: string[] = [];
+    
+    if (!cart || cart.total_items === 0) {
+      errors.push('Cart is empty');
+      return { isValid: false, errors };
+    }
+    
+    // Check if all items are still available
+    cart.items.forEach(item => {
+      if (item.quantity > item.product.stock) {
+        errors.push(`${item.product.name} - Only ${item.product.stock} available`);
+      }
+    });
+    
+    // Check if all items are active
+    cart.items.forEach(item => {
+      if (item.product.status !== 'active') {
+        errors.push(`${item.product.name} - Product is not available`);
+      }
+    });
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Save cart to localStorage as backup
+   */
+  saveCartToLocalStorage(): void {
+    const cart = this.getCurrentCart();
+    if (cart) {
+      localStorage.setItem('markt_cart_backup', JSON.stringify(cart));
+    }
+  }
+
+  /**
+   * Load cart from localStorage backup
+   */
+  loadCartFromLocalStorage(): Cart | null {
+    const cartData = localStorage.getItem('markt_cart_backup');
+    if (cartData) {
+      try {
+        return JSON.parse(cartData);
+      } catch (error) {
+        console.error('Error parsing cart backup:', error);
+        localStorage.removeItem('markt_cart_backup');
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Clear cart backup
+   */
+  clearCartBackup(): void {
+    localStorage.removeItem('markt_cart_backup');
+  }
+
+  // ============================================================================
+  // CART OBSERVABLES
+  // ============================================================================
+
+  /**
+   * Get cart item count observable
+   */
+  getCartItemCount$(): Observable<number> {
+    return this.cartSubject.pipe(
+      map(cart => cart?.items.reduce((total, item) => total + item.quantity, 0) || 0)
     );
   }
 
   /**
    * Check if product is in cart
    */
-  isProductInCart(productId: number): boolean {
-    const currentItems = this.cartItemsSubject.value;
-    return currentItems.some(item => item.product_id === productId);
-  }
-
-  /**
-   * Get cart item quantity for product
-   */
-  getProductQuantity(productId: number): number {
-    const currentItems = this.cartItemsSubject.value;
-    const item = currentItems.find(item => item.product_id === productId);
-    return item ? item.quantity : 0;
-  }
-
-  /**
-   * Update cart summary
-   */
-  private updateCartSummary(cart: Cart): void {
-    this.cartSummarySubject.next({
-      total_items: cart.total_items,
-      subtotal: cart.subtotal,
-      tax: cart.tax,
-      shipping: cart.shipping,
-      total: cart.total,
-      currency: cart.currency
-    });
-  }
-
-  /**
-   * Get current cart
-   */
-  get currentCart(): Cart | null {
-    return this.cartSubject.value;
-  }
-
-  /**
-   * Get current cart items
-   */
-  get currentCartItems(): CartItem[] {
-    return this.cartItemsSubject.value;
-  }
-
-  /**
-   * Get current cart summary
-   */
-  get currentCartSummary(): CartSummary {
-    return this.cartSummarySubject.value;
-  }
-
-  /**
-   * Get current loading state
-   */
-  get isLoading(): boolean {
-    return this.loadingSubject.value;
-  }
-
-  /**
-   * Get cart item count
-   */
-  get cartItemCount(): number {
-    return this.cartSummarySubject.value.total_items;
-  }
-
-  /**
-   * Get cart total
-   */
-  get cartTotal(): number {
-    return this.cartSummarySubject.value.total;
-  }
-
-  /**
-   * Check if cart is empty
-   */
-  get isCartEmpty(): boolean {
-    return this.cartItemCount === 0;
-  }
-
-  /**
-   * Clear cart data (on logout)
-   */
-  clearCartData(): void {
-    this.cartSubject.next(null);
-    this.cartItemsSubject.next([]);
-    this.cartSummarySubject.next({
-      total_items: 0,
-      subtotal: 0,
-      tax: 0,
-      shipping: 0,
-      total: 0,
-      currency: 'NGN'
-    });
-  }
-
-  /**
-   * Refresh cart data
-   */
-  refreshCart(): void {
-    this.loadCart();
+  isProductInCart(productId: string): boolean {
+    const cart = this.getCurrentCart();
+    return cart?.items.some((item: any) => item.product_id === productId) || false;
   }
 } 

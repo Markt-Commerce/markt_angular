@@ -36,8 +36,8 @@ import { RouterLink } from '@angular/router';
               <div class="flex flex-1 flex-col py-3">
                 <p class="text-[#181211] text-base font-medium leading-normal">Create Your Account</p>
                 <p class="text-[#886a63] text-base font-normal leading-normal">Sign up and verify your email</p>
-              </div>
-              
+          </div>
+
               <!-- Step 2: Complete Profile -->
               <div class="flex flex-col items-center gap-1">
                 <div class="w-[1.5px] bg-[#e5dddc] h-2"></div>
@@ -47,12 +47,12 @@ import { RouterLink } from '@angular/router';
                   </svg>
                 </div>
                 <div class="w-[1.5px] bg-[#e5dddc] h-2 grow"></div>
-              </div>
+            </div>
               <div class="flex flex-1 flex-col py-3">
                 <p class="text-[#181211] text-base font-medium leading-normal">Complete Your Profile</p>
                 <p class="text-[#886a63] text-base font-normal leading-normal">Add your details and preferences</p>
-              </div>
-              
+          </div>
+
               <!-- Step 3: Start Exploring -->
               <div class="flex flex-col items-center gap-1 pb-3">
                 <div class="w-[1.5px] bg-[#e5dddc] h-2"></div>
@@ -111,26 +111,26 @@ import { RouterLink } from '@angular/router';
                 />
                 <p class="text-[#181211] text-base font-normal leading-normal">Track your orders and manage your listings</p>
               </label>
-            </div>
-            
+        </div>
+
             <!-- Call-to-Action Buttons -->
             <div class="flex justify-center">
               <div class="flex flex-1 gap-3 max-w-[480px] flex-col items-stretch px-4 py-3">
                 <button
                   class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#e85530] text-white text-base font-bold leading-normal tracking-[0.015em] w-full hover:bg-[#d64426] transition-colors duration-200"
-                  [routerLink]="['/auth/register']"
-                >
+            [routerLink]="['/auth/register']"
+          >
                   <span class="truncate">Get Started</span>
                 </button>
                 <button
                   class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#f4f1f0] text-[#181211] text-base font-bold leading-normal tracking-[0.015em] w-full hover:bg-[#e5dddc] transition-colors duration-200"
-                  [routerLink]="['/auth/login']"
-                >
+            [routerLink]="['/auth/login']"
+          >
                   <span class="truncate">I Already Have an Account</span>
                 </button>
               </div>
             </div>
-          </div>
+        </div>
         </div>
       </div>
     </div>

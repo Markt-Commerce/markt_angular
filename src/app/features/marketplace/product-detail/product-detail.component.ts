@@ -1,243 +1,456 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, combineLatest } from 'rxjs';
-import { MarketplaceService, Product } from '../../../core/services/marketplace.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { 
+  faHeart, 
+  faShoppingCart, 
+  faStar, 
+  faShare, 
+  faEye,
+  faMapMarkerAlt,
+  faClock,
+  faUser,
+  faStore,
+  faCheck,
+  faTruck,
+  faShieldAlt,
+  faArrowLeft,
+  faPlus,
+  faMinus,
+  faImages,
+  faThumbsUp,
+  faThumbsDown,
+  faTimesCircle,
+  faFlag
+} from '@fortawesome/free-solid-svg-icons';
+import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { CartService } from '../../../core/services/cart.service';
-import { AppStateService } from '../../../core/services/app-state.service';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { SocialService } from '../../../core/services/social.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
   template: `
-    <div class="product-detail-container" *ngIf="!(loading$ | async)">
-      <div class="product-content" *ngIf="product$ | async as product">
+    <div class="space-y-6" *ngIf="product">
+      <!-- Breadcrumb -->
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-4">
+          <li>
+            <a routerLink="/app/marketplace" class="text-gray-400 hover:text-gray-500">
+              Marketplace
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <fa-icon [icon]="faArrowLeft" class="w-4 h-4 text-gray-400"></fa-icon>
+              <span class="ml-4 text-gray-500">{{ product.category?.name }}</span>
+            </div>
+          </li>
+          <li>
+            <span class="text-gray-900">{{ product.name }}</span>
+          </li>
+        </ol>
+      </nav>
+
+      <!-- Product Details -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Product Images -->
-        <div class="product-images">
-          <div class="main-image">
+        <div class="space-y-4">
+          <!-- Main Image -->
+          <div class="relative">
             <img 
-              [src]="selectedImage || product.images[0] || '/assets/placeholder-product.jpg'" 
-              [alt]="product.title"
-              class="main-image-img"
+              [src]="selectedImage?.url || product.images[0]?.url || '/assets/images/placeholder.png'" 
+              [alt]="product.name"
+              class="w-full h-96 object-cover rounded-lg shadow-lg"
             >
-            <div class="image-badges">
-              <span class="badge condition" *ngIf="product.condition">{{ product.condition }}</span>
-              <span class="badge featured" *ngIf="product.is_featured">Featured</span>
-              <span class="badge negotiable" *ngIf="product.is_negotiable">Negotiable</span>
+            <div class="absolute top-4 right-4 flex space-x-2">
+              <button 
+                (click)="toggleWishlist()"
+                class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                [class.text-red-500]="isInWishlist"
+                [class.text-gray-400]="!isInWishlist"
+              >
+                <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
+              </button>
+              <button 
+                (click)="shareProduct()"
+                class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors text-gray-400"
+              >
+                <fa-icon [icon]="faShare" class="w-5 h-5"></fa-icon>
+              </button>
             </div>
           </div>
-          
-          <div class="image-thumbnails" *ngIf="product.images.length > 1">
-            <div 
-              class="thumbnail" 
-              *ngFor="let image of product.images; let i = index"
-              [class.active]="selectedImage === image"
+
+          <!-- Thumbnail Images -->
+          <div *ngIf="product.images.length > 1" class="flex space-x-2 overflow-x-auto">
+            <button 
+              *ngFor="let image of product.images"
               (click)="selectImage(image)"
+              class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors"
+              [class.border-markt-primary]="selectedImage?.id === image.id"
+              [class.border-gray-200]="selectedImage?.id !== image.id"
             >
-              <img [src]="image" [alt]="product.title + ' - Image ' + (i + 1)">
-            </div>
+              <img 
+                [src]="image.url" 
+                [alt]="product.name"
+                class="w-full h-full object-cover"
+              >
+            </button>
           </div>
         </div>
 
-        <!-- Product Information -->
-        <div class="product-info">
-          <div class="product-header">
-            <h1 class="product-title">{{ product.title }}</h1>
-            <div class="product-meta">
-              <span class="price">{{ product.price | currency:product.currency:'symbol':'1.0-0' }}</span>
-              <span class="location">{{ product.location }}</span>
+        <!-- Product Info -->
+        <div class="space-y-6">
+          <!-- Product Header -->
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
+            <div class="flex items-center space-x-4 mb-4">
+              <div class="flex items-center">
+                <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
+                <span class="ml-1 text-lg font-semibold text-gray-900">{{ product.rating }}</span>
+                <span class="ml-1 text-gray-500">({{ product.review_count }} reviews)</span>
+              </div>
+              <span class="text-gray-500">•</span>
+              <span class="text-gray-500">{{ product.sold_count }} sold</span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 mb-4">
+              {{ product.price | currency:'NGN' }}
+              <span *ngIf="product.original_price && product.original_price > product.price" class="text-lg text-gray-500 line-through ml-2">
+                {{ product.original_price | currency:'NGN' }}
+              </span>
             </div>
           </div>
 
-          <div class="product-description">
-            <h3>Description</h3>
-            <p>{{ product.description }}</p>
+          <!-- Product Description -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
+            <p class="text-gray-600 leading-relaxed">{{ product.description }}</p>
           </div>
 
-          <div class="product-details">
-            <div class="detail-item">
-              <span class="label">Category:</span>
-              <span class="value">{{ product.category_name }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Condition:</span>
-              <span class="value">{{ product.condition }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Location:</span>
-              <span class="value">{{ product.location }}</span>
-            </div>
-            <div class="detail-item" *ngIf="product.tags.length > 0">
-              <span class="label">Tags:</span>
-              <div class="tags">
-                <span class="tag" *ngFor="let tag of product.tags">{{ tag }}</span>
+          <!-- Product Details -->
+          <div *ngIf="product.details" class="space-y-3">
+            <h3 class="text-lg font-medium text-gray-900">Details</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div *ngFor="let detail of product.details" class="flex justify-between">
+                <span class="text-gray-500">{{ detail.key }}:</span>
+                <span class="text-gray-900">{{ detail.value }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Purchase Section -->
-          <div class="purchase-section">
-            <div class="quantity-selector">
-              <label for="quantity">Quantity:</label>
-              <div class="quantity-controls">
-                <button 
-                  class="quantity-btn"
-                  (click)="decreaseQuantity()"
-                  [disabled]="quantity <= 1"
-                >
-                  -
-                </button>
-                <input 
-                  type="number" 
-                  id="quantity"
-                  [(ngModel)]="quantity"
-                  min="1"
-                  max="99"
-                  class="quantity-input"
-                >
-                <button 
-                  class="quantity-btn"
-                  (click)="increaseQuantity()"
-                  [disabled]="quantity >= 99"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div class="total-price">
-              <span class="label">Total:</span>
-              <span class="price">{{ (product.price * quantity) | currency:product.currency:'symbol':'1.0-0' }}</span>
-            </div>
-
-            <div class="purchase-actions">
-              <app-button
-                variant="primary"
-                size="lg"
-                [fullWidth]="true"
-                (clicked)="addToCart()"
-                [loading]="addingToCart"
-                [disabled]="addingToCart || cartService.isProductInCart(product.id)"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                {{ cartService.isProductInCart(product.id) ? 'In Cart' : 'Add to Cart' }}
-              </app-button>
-              
-              <app-button
-                variant="secondary"
-                size="lg"
-                [fullWidth]="true"
-                (clicked)="buyNow()"
-                [loading]="buyingNow"
-                [disabled]="buyingNow"
-              >
-                Buy Now
-              </app-button>
-            </div>
-
-            <div class="secondary-actions">
+          <!-- Quantity Selector -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+            <div class="flex items-center space-x-3">
               <button 
-                class="action-btn favorite-btn"
-                [class.favorited]="product.is_favorited"
-                (click)="toggleFavorite()"
+                (click)="decreaseQuantity()"
+                [disabled]="quantity <= 1"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-                {{ product.is_favorited ? 'Favorited' : 'Add to Favorites' }}
+                <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
               </button>
-              
-              <button class="action-btn share-btn" (click)="shareProduct()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="18" cy="5" r="3"></circle>
-                  <circle cx="6" cy="12" r="3"></circle>
-                  <circle cx="18" cy="19" r="3"></circle>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                </svg>
-                Share
+              <input 
+                type="number" 
+                [(ngModel)]="quantity"
+                min="1"
+                max="99"
+                class="w-20 text-center border border-gray-300 rounded-md py-2"
+              >
+              <button 
+                (click)="increaseQuantity()"
+                [disabled]="quantity >= 99"
+                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
               </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-4">
+            <button 
+              (click)="addToCart()"
+              class="flex-1 bg-markt-primary text-white py-3 px-6 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+            >
+              <fa-icon [icon]="faShoppingCart" class="w-5 h-5 mr-2"></fa-icon>
+              Add to Cart
+            </button>
+            <button 
+              (click)="buyNow()"
+              class="flex-1 bg-gray-900 text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors font-medium"
+            >
+              Buy Now
+            </button>
+          </div>
+
+          <!-- Seller Info -->
+          <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Seller Information</h3>
+            <div class="flex items-center space-x-4">
+              <img 
+                [src]="product.seller?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                [alt]="product.seller?.shop_name"
+                class="w-12 h-12 rounded-full object-cover"
+              >
+              <div class="flex-1">
+                <h4 class="font-medium text-gray-900">{{ product.seller?.shop_name }}</h4>
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                  <span class="flex items-center">
+                    <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
+                    {{ product.seller?.location }}
+                  </span>
+                  <span class="flex items-center">
+                    <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
+                    {{ product.seller?.rating }}
+                  </span>
+                </div>
+              </div>
+              <button 
+                routerLink="/app/profile/{{ product.seller?.id }}"
+                class="text-markt-primary hover:text-markt-secondary font-medium"
+              >
+                View Shop
+              </button>
+            </div>
+          </div>
+
+          <!-- Shipping & Returns -->
+          <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Shipping & Returns</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex items-center space-x-3">
+                <fa-icon [icon]="faTruck" class="w-5 h-5 text-green-600"></fa-icon>
+                <div>
+                  <p class="font-medium text-gray-900">Free Shipping</p>
+                  <p class="text-sm text-gray-500">On orders over ₦5,000</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-blue-600"></fa-icon>
+                <div>
+                  <p class="font-medium text-gray-900">Secure Payment</p>
+                  <p class="text-sm text-gray-500">100% secure checkout</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <fa-icon [icon]="faCheck" class="w-5 h-5 text-green-600"></fa-icon>
+                <div>
+                  <p class="font-medium text-gray-900">Easy Returns</p>
+                  <p class="text-sm text-gray-500">30-day return policy</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Seller Information -->
-      <div class="seller-section" *ngIf="product$ | async as product">
-        <div class="seller-card">
-          <div class="seller-header">
-            <h3>Seller Information</h3>
-            <a [routerLink]="['/seller', product.seller_id]" class="view-profile-btn">
-              View Profile
-            </a>
+      <!-- Product Tabs -->
+      <div class="border-t border-gray-200 pt-8">
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <button 
+              (click)="activeTab = 'description'"
+              class="py-2 px-1 border-b-2 font-medium text-sm"
+              [class.border-markt-primary]="activeTab === 'description'"
+              [class.text-markt-primary]="activeTab === 'description'"
+              [class.border-transparent]="activeTab !== 'description'"
+              [class.text-gray-500]="activeTab !== 'description'"
+            >
+              Description
+            </button>
+            <button 
+              (click)="activeTab = 'reviews'"
+              class="py-2 px-1 border-b-2 font-medium text-sm"
+              [class.border-markt-primary]="activeTab === 'reviews'"
+              [class.text-markt-primary]="activeTab === 'reviews'"
+              [class.border-transparent]="activeTab !== 'reviews'"
+              [class.text-gray-500]="activeTab !== 'reviews'"
+            >
+              Reviews ({{ product.review_count }})
+            </button>
+            <button 
+              (click)="activeTab = 'specifications'"
+              class="py-2 px-1 border-b-2 font-medium text-sm"
+              [class.border-markt-primary]="activeTab === 'specifications'"
+              [class.text-markt-primary]="activeTab === 'specifications'"
+              [class.border-transparent]="activeTab !== 'specifications'"
+              [class.text-gray-500]="activeTab !== 'specifications'"
+            >
+              Specifications
+            </button>
+          </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="py-6">
+          <!-- Description Tab -->
+          <div *ngIf="activeTab === 'description'" class="prose max-w-none">
+            <div [innerHTML]="product.full_description"></div>
           </div>
-          
-          <div class="seller-info">
-            <div class="seller-avatar">
-              <img 
-                [src]="product.seller_avatar || '/assets/placeholder-avatar.jpg'" 
-                [alt]="product.seller_name"
-              >
+
+          <!-- Reviews Tab -->
+          <div *ngIf="activeTab === 'reviews'" class="space-y-6">
+            <!-- Review Summary -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900">Customer Reviews</h3>
+                  <div class="flex items-center mt-2">
+                    <div class="flex items-center">
+                      <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
+                      <span class="ml-1 text-lg font-semibold text-gray-900">{{ product.rating }}</span>
+                    </div>
+                    <span class="ml-2 text-gray-500">out of 5</span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">{{ product.review_count }} reviews</p>
+                </div>
+                <button 
+                  (click)="showReviewForm = true"
+                  class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
+                >
+                  Write a Review
+                </button>
+              </div>
             </div>
-            <div class="seller-details">
-              <h4>{{ product.seller_name }}</h4>
-              <p class="seller-location">{{ product.location }}</p>
-              <div class="seller-stats">
-                <span class="stat">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  {{ product.views_count }} views
-                </span>
-                <span class="stat">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                  {{ product.favorites_count }} favorites
-                </span>
+
+            <!-- Review Form -->
+            <div *ngIf="showReviewForm" class="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 class="text-lg font-medium text-gray-900 mb-4">Write a Review</h4>
+              <form (ngSubmit)="submitReview()" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                  <div class="flex items-center space-x-2">
+                    <button 
+                      *ngFor="let star of [1,2,3,4,5]"
+                      type="button"
+                      (click)="reviewRating = star"
+                      class="text-2xl"
+                      [class.text-yellow-400]="star <= reviewRating"
+                      [class.text-gray-300]="star > reviewRating"
+                    >
+                      ★
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="reviewTitle"
+                    name="title"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Summary of your experience"
+                  >
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                  <textarea 
+                    [(ngModel)]="reviewContent"
+                    name="content"
+                    rows="4"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Share your experience with this product"
+                  ></textarea>
+                </div>
+                <div class="flex space-x-3">
+                  <button 
+                    type="submit"
+                    class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
+                  >
+                    Submit Review
+                  </button>
+                  <button 
+                    type="button"
+                    (click)="showReviewForm = false"
+                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Reviews List -->
+            <div class="space-y-6">
+              <div *ngFor="let review of reviews" class="bg-white border border-gray-200 rounded-lg p-6">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-3">
+                    <img 
+                      [src]="review.user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                      [alt]="review.user?.username"
+                      class="w-10 h-10 rounded-full object-cover"
+                    >
+                    <div>
+                      <p class="font-medium text-gray-900">{{ review.user?.username }}</p>
+                      <div class="flex items-center">
+                        <div class="flex items-center">
+                          <fa-icon 
+                            *ngFor="let star of [1,2,3,4,5]"
+                            [icon]="faStar" 
+                            class="w-4 h-4"
+                            [class.text-yellow-400]="star <= review.rating"
+                            [class.text-gray-300]="star > review.rating"
+                          ></fa-icon>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-500">{{ review.created_at | date }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="text-gray-400 hover:text-gray-600">
+                    <fa-icon [icon]="faFlag" class="w-4 h-4"></fa-icon>
+                  </button>
+                </div>
+                <div class="mt-4">
+                  <h4 class="font-medium text-gray-900 mb-2">{{ review.title }}</h4>
+                  <p class="text-gray-600">{{ review.content }}</p>
+                </div>
+                <div class="mt-4 flex items-center space-x-4 text-sm text-gray-500">
+                  <button class="flex items-center space-x-1 hover:text-gray-700">
+                    <fa-icon [icon]="faThumbsUp" class="w-4 h-4"></fa-icon>
+                    <span>Helpful ({{ review.helpful_count }})</span>
+                  </button>
+                  <button class="flex items-center space-x-1 hover:text-gray-700">
+                    <fa-icon [icon]="faMessageCircle" class="w-4 h-4"></fa-icon>
+                    <span>Reply</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div class="seller-actions">
-            <app-button
-              variant="secondary"
-              size="md"
-              [fullWidth]="true"
-              (clicked)="contactSeller()"
-            >
-              Contact Seller
-            </app-button>
+
+          <!-- Specifications Tab -->
+          <div *ngIf="activeTab === 'specifications'" class="space-y-4">
+            <div *ngFor="let spec of product.specifications" class="flex justify-between py-3 border-b border-gray-200">
+              <span class="font-medium text-gray-900">{{ spec.key }}</span>
+              <span class="text-gray-600">{{ spec.value }}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Related Products -->
-      <div class="related-products" *ngIf="relatedProducts$ | async as relatedProducts">
-        <h3>Related Products</h3>
-        <div class="products-grid">
-          <div 
-            class="product-card" 
-            *ngFor="let relatedProduct of relatedProducts"
-            [routerLink]="['/marketplace/product', relatedProduct.id]"
-          >
-            <div class="product-image">
-              <img 
-                [src]="relatedProduct.images[0] || '/assets/placeholder-product.jpg'" 
-                [alt]="relatedProduct.title"
-              >
-            </div>
-            <div class="product-info">
-              <h4>{{ relatedProduct.title }}</h4>
-              <p class="price">{{ relatedProduct.price | currency:relatedProduct.currency:'symbol':'1.0-0' }}</p>
+      <div class="border-t border-gray-200 pt-8">
+        <h3 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div *ngFor="let relatedProduct of relatedProducts" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+            <img 
+              [src]="relatedProduct.images[0]?.url || '/assets/images/placeholder.png'" 
+              [alt]="relatedProduct.name"
+              class="w-full h-48 object-cover"
+            >
+            <div class="p-4">
+              <h4 class="font-medium text-gray-900 mb-2">{{ relatedProduct.name }}</h4>
+              <div class="flex items-center justify-between">
+                <span class="text-lg font-bold text-gray-900">{{ relatedProduct.price | currency:'NGN' }}</span>
+                <div class="flex items-center">
+                  <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
+                  <span class="ml-1 text-sm text-gray-600">{{ relatedProduct.rating }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -245,624 +458,152 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
     </div>
 
     <!-- Loading State -->
-    <div class="loading-state" *ngIf="loading$ | async">
-      <div class="loading-spinner"></div>
-      <p>Loading product details...</p>
-    </div>
-
-    <!-- Error State -->
-    <div class="error-state" *ngIf="!(loading$ | async) && !(product$ | async)">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-      <h2>Product Not Found</h2>
-      <p>The product you're looking for doesn't exist or has been removed.</p>
-      <app-button variant="primary" (clicked)="goToMarketplace()">
-        Back to Marketplace
-      </app-button>
+    <div *ngIf="!product && isLoading" class="flex items-center justify-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
     </div>
   `,
   styles: [`
-    .product-detail-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    .product-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem;
-      margin-bottom: 3rem;
-    }
-
-    /* Product Images */
-    .product-images {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .main-image {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #f9fafb;
-    }
-
-    .main-image-img {
-      width: 100%;
-      height: 400px;
-      object-fit: cover;
-      transition: transform 0.2s;
-    }
-
-    .main-image:hover .main-image-img {
-      transform: scale(1.05);
-    }
-
-    .image-badges {
-      position: absolute;
-      top: 1rem;
-      left: 1rem;
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge.condition {
-      background: #10b981;
-      color: white;
-    }
-
-    .badge.featured {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .badge.negotiable {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .image-thumbnails {
-      display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-    }
-
-    .thumbnail {
-      width: 80px;
-      height: 80px;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .thumbnail.active {
-      border-color: #3b82f6;
-    }
-
-    .thumbnail img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .thumbnail:hover {
-      transform: scale(1.05);
-    }
-
-    /* Product Information */
-    .product-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    .product-header {
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 1.5rem;
-    }
-
-    .product-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0 0 1rem 0;
-      line-height: 1.3;
-    }
-
-    .product-meta {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .price {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    .location {
-      font-size: 1rem;
-      color: #6b7280;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .product-description h3 {
-      margin: 0 0 1rem 0;
-      color: #374151;
-      font-size: 1.25rem;
-    }
-
-    .product-description p {
-      color: #6b7280;
-      line-height: 1.6;
-      margin: 0;
-    }
-
-    .product-details {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .detail-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
-    .label {
-      font-weight: 600;
-      color: #374151;
-      min-width: 80px;
-    }
-
-    .value {
-      color: #6b7280;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .tag {
-      padding: 0.25rem 0.75rem;
-      background: #f3f4f6;
-      color: #374151;
-      border-radius: 20px;
-      font-size: 0.875rem;
-    }
-
-    /* Purchase Section */
-    .purchase-section {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 2rem;
-      background: #f9fafb;
-    }
-
-    .quantity-selector {
-      margin-bottom: 1.5rem;
-    }
-
-    .quantity-selector label {
+    :host {
       display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #374151;
-    }
-
-    .quantity-controls {
-      display: flex;
-      align-items: center;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      overflow: hidden;
-      width: fit-content;
-    }
-
-    .quantity-btn {
-      width: 40px;
-      height: 40px;
-      border: none;
-      background: #f3f4f6;
-      color: #374151;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .quantity-btn:hover:not(:disabled) {
-      background: #e5e7eb;
-    }
-
-    .quantity-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .quantity-input {
-      width: 60px;
-      height: 40px;
-      border: none;
-      text-align: center;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    .total-price {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-    }
-
-    .total-price .label {
-      font-size: 1.125rem;
-      color: #374151;
-    }
-
-    .total-price .price {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    .purchase-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .secondary-actions {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .action-btn {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.875rem;
-    }
-
-    .action-btn:hover {
-      background: #f3f4f6;
-    }
-
-    .favorite-btn.favorited {
-      background: #fef2f2;
-      border-color: #ef4444;
-      color: #ef4444;
-    }
-
-    .favorite-btn.favorited:hover {
-      background: #fee2e2;
-    }
-
-    /* Seller Section */
-    .seller-section {
-      margin-bottom: 3rem;
-    }
-
-    .seller-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 2rem;
-      background: white;
-    }
-
-    .seller-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .seller-header h3 {
-      margin: 0;
-      color: #1f2937;
-      font-size: 1.25rem;
-    }
-
-    .view-profile-btn {
-      color: #3b82f6;
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .view-profile-btn:hover {
-      text-decoration: underline;
-    }
-
-    .seller-info {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .seller-avatar {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      overflow: hidden;
-    }
-
-    .seller-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .seller-details h4 {
-      margin: 0 0 0.5rem 0;
-      color: #1f2937;
-      font-size: 1.125rem;
-    }
-
-    .seller-location {
-      margin: 0 0 1rem 0;
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-
-    .seller-stats {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    /* Related Products */
-    .related-products {
-      margin-bottom: 3rem;
-    }
-
-    .related-products h3 {
-      margin: 0 0 2rem 0;
-      color: #1f2937;
-      font-size: 1.5rem;
-    }
-
-    .products-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .product-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .product-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .product-card .product-image {
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .product-card .product-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.2s;
-    }
-
-    .product-card:hover .product-image img {
-      transform: scale(1.05);
-    }
-
-    .product-card .product-info {
-      padding: 1rem;
-    }
-
-    .product-card .product-info h4 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1rem;
-      color: #1f2937;
-    }
-
-    .product-card .product-info .price {
-      font-weight: 600;
-      color: #1f2937;
-      font-size: 1.125rem;
-    }
-
-    /* Loading State */
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      color: #6b7280;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Error State */
-    .error-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-      color: #6b7280;
-    }
-
-    .error-state svg {
-      margin-bottom: 1rem;
-      color: #d1d5db;
-    }
-
-    .error-state h2 {
-      margin: 0 0 0.5rem 0;
-      color: #374151;
-    }
-
-    .error-state p {
-      margin: 0 0 2rem 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .product-content {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .product-title {
-        font-size: 1.5rem;
-      }
-
-      .price {
-        font-size: 1.5rem;
-      }
-
-      .main-image-img {
-        height: 300px;
-      }
-
-      .secondary-actions {
-        flex-direction: column;
-      }
-
-      .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      }
     }
   `]
 })
-export class ProductDetailComponent implements OnInit, OnDestroy {
-  private marketplaceService = inject(MarketplaceService);
-  public cartService = inject(CartService);
-  private appStateService = inject(AppStateService);
+export class ProductDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private destroy$ = new Subject<void>();
+  private marketplaceService = inject(MarketplaceService);
+  private cartService = inject(CartService);
+  private authService = inject(AuthService);
+  private socialService = inject(SocialService);
 
-  // Observables
-  product$ = this.marketplaceService.currentProduct$;
-  loading$ = this.marketplaceService.loading$;
-  relatedProducts$ = this.marketplaceService.relatedProducts$;
+  // Icons
+  faHeart = faHeart;
+  faShoppingCart = faShoppingCart;
+  faStar = faStar;
+  faShare = faShare;
+  faEye = faEye;
+  faMapMarkerAlt = faMapMarkerAlt;
+  faClock = faClock;
+  faUser = faUser;
+  faStore = faStore;
+  faCheck = faCheck;
+  faTruck = faTruck;
+  faShieldAlt = faShieldAlt;
+  faArrowLeft = faArrowLeft;
+  faPlus = faPlus;
+  faMinus = faMinus;
+  faImages = faImages;
+  faThumbsUp = faThumbsUp;
+  faThumbsDown = faThumbsDown;
+  faMessageCircle = faTimesCircle;
+  faFlag = faFlag;
 
-  // Local state
-  selectedImage: string | null = null;
+  // Data
+  product: any = null;
+  relatedProducts: any[] = [];
+  reviews: any[] = [];
+  selectedImage: any = null;
+  isLoading = false;
+  
+  // State
   quantity = 1;
-  addingToCart = false;
-  buyingNow = false;
+  isInWishlist = false;
+  activeTab: 'description' | 'reviews' | 'specifications' = 'description';
+  showReviewForm = false;
+  
+  // Review form
+  reviewRating = 0;
+  reviewTitle = '';
+  reviewContent = '';
 
   ngOnInit(): void {
-    // Get product ID from route
-    this.route.params.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      const productId = parseInt(params['id']);
-      if (productId) {
-        this.loadProduct(productId);
-        this.loadRelatedProducts(productId);
-      }
-    });
+    this.loadProduct();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  private loadProduct(): void {
+    const productId = this.route.snapshot.paramMap.get('id');
+    if (!productId) {
+      this.router.navigate(['/app/marketplace']);
+      return;
+    }
 
-  loadProduct(productId: number): void {
-    this.marketplaceService.getProduct(productId).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (product) => {
-        this.selectedImage = product.images[0] || null;
-        // Increment view count
-        this.marketplaceService.incrementViewCount(productId).subscribe();
+    this.isLoading = true;
+    
+    this.marketplaceService.getProduct(productId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.product = response.data;
+          this.selectedImage = this.product.images[0];
+          this.loadRelatedProducts();
+          this.loadReviews();
+          this.checkWishlistStatus();
+          this.trackProductView();
+        }
+        this.isLoading = false;
       },
       error: (error) => {
-        console.error('Load product error:', error);
-        this.appStateService.addNotification({
-          type: 'error',
-          title: 'Error',
-          message: 'Failed to load product details.'
-        });
+        console.error('Error loading product:', error);
+        this.isLoading = false;
+        this.router.navigate(['/app/marketplace']);
       }
     });
   }
 
-  loadRelatedProducts(productId: number): void {
-    this.marketplaceService.getRelatedProducts(productId, 4).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe();
+  private loadRelatedProducts(): void {
+    if (!this.product) return;
+
+    const params = {
+      category_ids: [this.product.category_id],
+      exclude_id: this.product.id,
+      limit: 4
+    };
+
+    this.marketplaceService.getProducts(params).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.relatedProducts = response.data.items;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading related products:', error);
+      }
+    });
   }
 
-  selectImage(image: string): void {
+  private loadReviews(): void {
+    if (!this.product) return;
+
+    this.marketplaceService.getProductReviews(this.product.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.reviews = response.data;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading reviews:', error);
+      }
+    });
+  }
+
+  private checkWishlistStatus(): void {
+    // This would typically check against wishlist state
+    this.isInWishlist = false;
+  }
+
+  private trackProductView(): void {
+    if (!this.product) return;
+
+    this.marketplaceService.trackProductView(this.product.id).subscribe({
+      next: (response) => {
+        console.log('Product view tracked');
+      },
+      error: (error) => {
+        console.error('Error tracking product view:', error);
+      }
+    });
+  }
+
+  selectImage(image: any): void {
     this.selectedImage = image;
   }
 
@@ -879,143 +620,85 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   addToCart(): void {
-    this.product$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((product: Product | null) => {
-      if (product) {
-        this.addingToCart = true;
-        
-        this.cartService.addToCart({
-          product_id: product.id,
-          quantity: this.quantity
-        }).subscribe({
-          next: () => {
-            this.addingToCart = false;
-            this.appStateService.addNotification({
-              type: 'success',
-              title: 'Added to Cart',
-              message: `${product.title} has been added to your cart.`
-            });
-          },
-          error: (error) => {
-            this.addingToCart = false;
-            console.error('Add to cart error:', error);
-            this.appStateService.addNotification({
-              type: 'error',
-              title: 'Error',
-              message: 'Failed to add item to cart. Please try again.'
-            });
-          }
-        });
+    if (!this.product) return;
+
+    this.cartService.addToCart(this.product.id, this.quantity).subscribe({
+      next: (response) => {
+        if (response.success) {
+          console.log('Product added to cart');
+          // Show success message
+        }
+      },
+      error: (error) => {
+        console.error('Error adding to cart:', error);
       }
     });
   }
 
   buyNow(): void {
-    this.product$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((product: Product | null) => {
-      if (product) {
-        this.buyingNow = true;
-        
-        // Add to cart first, then redirect to checkout
-        this.cartService.addToCart({
-          product_id: product.id,
-          quantity: this.quantity
-        }).subscribe({
-          next: () => {
-            this.buyingNow = false;
-            this.router.navigate(['/checkout']);
-          },
-          error: (error) => {
-            this.buyingNow = false;
-            console.error('Buy now error:', error);
-            this.appStateService.addNotification({
-              type: 'error',
-              title: 'Error',
-              message: 'Failed to process purchase. Please try again.'
-            });
-          }
-        });
+    if (!this.product) return;
+
+    this.cartService.addToCart(this.product.id, this.quantity).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.router.navigate(['/app/checkout']);
+        }
+      },
+      error: (error) => {
+        console.error('Error adding to cart:', error);
       }
     });
   }
 
-  toggleFavorite(): void {
-    this.product$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((product: Product | null) => {
-      if (product) {
-        if (product.is_favorited) {
-          this.marketplaceService.removeFromFavorites(product.id).subscribe({
-            next: () => {
-              product.is_favorited = false;
-              product.favorites_count--;
-              this.appStateService.addNotification({
-                type: 'success',
-                title: 'Removed from Favorites',
-                message: `${product.title} has been removed from your favorites.`
-              });
-            },
-            error: (error) => {
-              console.error('Remove from favorites error:', error);
-            }
-          });
-        } else {
-          this.marketplaceService.addToFavorites(product.id).subscribe({
-            next: () => {
-              product.is_favorited = true;
-              product.favorites_count++;
-              this.appStateService.addNotification({
-                type: 'success',
-                title: 'Added to Favorites',
-                message: `${product.title} has been added to your favorites.`
-              });
-            },
-            error: (error) => {
-              console.error('Add to favorites error:', error);
-            }
-          });
-        }
-      }
-    });
+  toggleWishlist(): void {
+    if (!this.product) return;
+
+    // This would typically call a wishlist service
+    this.isInWishlist = !this.isInWishlist;
+    console.log('Toggle wishlist for product:', this.product.id);
   }
 
   shareProduct(): void {
-    this.product$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((product: Product | null) => {
-      if (product && navigator.share) {
-        navigator.share({
-          title: product.title,
-          text: product.description,
-          url: window.location.href
-        });
-      } else if (product) {
-        // Fallback: copy URL to clipboard
-        navigator.clipboard.writeText(window.location.href).then(() => {
-          this.appStateService.addNotification({
-            type: 'success',
-            title: 'Link Copied',
-            message: 'Product link has been copied to clipboard.'
-          });
-        });
+    if (!this.product) return;
+
+    this.socialService.shareProduct(this.product.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Handle sharing (copy link, open share dialog, etc.)
+          navigator.clipboard.writeText(window.location.href);
+          console.log('Product link copied to clipboard');
+        }
+      },
+      error: (error) => {
+        console.error('Error sharing product:', error);
       }
     });
   }
 
-  contactSeller(): void {
-    this.product$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((product: Product | null) => {
-      if (product) {
-        // Navigate to chat or contact page
-        this.router.navigate(['/chat', product.seller_id]);
+  submitReview(): void {
+    if (!this.product || !this.reviewRating || !this.reviewTitle || !this.reviewContent) {
+      return;
+    }
+
+    const reviewData = {
+      rating: this.reviewRating,
+      title: this.reviewTitle,
+      content: this.reviewContent
+    };
+
+    this.marketplaceService.createProductReview(this.product.id, reviewData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showReviewForm = false;
+          this.reviewRating = 0;
+          this.reviewTitle = '';
+          this.reviewContent = '';
+          this.loadReviews();
+        }
+      },
+      error: (error) => {
+        console.error('Error submitting review:', error);
       }
     });
-  }
-
-  goToMarketplace(): void {
-    this.router.navigate(['/marketplace']);
   }
 } 

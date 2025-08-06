@@ -1,72 +1,177 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
-
-interface ChatConversation {
-  id: string;
-  participantId: string;
-  participantName: string;
-  participantAvatar: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  isOnline: boolean;
-  lastSeen?: string;
-}
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import {
+  faComments,
+  faSearch,
+  faEllipsisH,
+  faTimes,
+  faCheck,
+  faClock,
+  faUser,
+  faStore,
+  faPrint,
+  faRulerVertical,
+  faVolumeMute,
+  faThumbtack,
+  faTrash,
+  faArchive,
+  faEllipsisV,
+  faCircle
+} from '@fortawesome/free-solid-svg-icons';
+import { ChatService } from '../../../core/services/chat.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ChatRoom, ChatMessage } from '../../../core/models';
 
 @Component({
   selector: 'app-chat-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
   template: `
-    <div class="chat-list-container">
-      <div class="chat-list-header">
-        <h1>Messages</h1>
-        <p>Your conversations and messages</p>
-      </div>
+    <div class="h-full flex flex-col">
+      <!-- Header -->
+      <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-xl font-bold text-gray-900">Messages</h1>
+            <p class="text-sm text-gray-500">{{ chatRooms.length }} conversations</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button 
+              (click)="startNewChat()"
+              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              title="New Chat"
+            >
+              <fa-icon [icon]="faComments" class="w-5 h-5"></fa-icon>
+            </button>
+            <button 
+              (click)="toggleSearch()"
+              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              title="Search"
+            >
+              <fa-icon [icon]="faSearch" class="w-5 h-5"></fa-icon>
+            </button>
+          </div>
+        </div>
 
-      <!-- Search -->
-      <div class="search-section">
-        <div class="search-box">
-          <input 
-            type="text" 
-            placeholder="Search conversations..."
-            [(ngModel)]="searchQuery"
-            (input)="onSearch()"
-            class="search-input"
-          >
+        <!-- Search Bar -->
+        <div *ngIf="showSearch" class="mt-4">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search conversations..."
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput()"
+              class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+            >
+            <button 
+              (click)="toggleSearch()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              <fa-icon [icon]="faTimes" class="w-4 h-4"></fa-icon>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Chat List -->
-      <div class="chat-list">
-        <div class="conversation-item" 
-             *ngFor="let conversation of filteredConversations"
-             [class.active]="selectedConversationId === conversation.id"
-             (click)="selectConversation(conversation.id)"
-             [routerLink]="['/app/chat', conversation.id]">
-          
-          <div class="conversation-avatar">
-            <img [src]="conversation.participantAvatar" [alt]="conversation.participantName">
-            <div class="online-indicator" [class.online]="conversation.isOnline"></div>
-          </div>
-          
-          <div class="conversation-content">
-            <div class="conversation-header">
-              <h3 class="participant-name">{{ conversation.participantName }}</h3>
-              <span class="last-message-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+      <div class="flex-1 overflow-y-auto">
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="flex items-center justify-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && chatRooms.length === 0" class="text-center py-12">
+          <fa-icon [icon]="faUser" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">No conversations yet</h2>
+          <p class="text-gray-500 mb-6">Start a conversation with other users or sellers</p>
+          <button 
+            (click)="startNewChat()"
+            class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+          >
+            Start a Chat
+          </button>
+        </div>
+
+        <!-- Chat Rooms -->
+        <div class="divide-y divide-gray-200">
+          <div 
+            *ngFor="let chat of filteredChatRooms"
+            (click)="selectChat(chat)"
+            class="flex items-center space-x-3 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+            [class.bg-blue-50]="selectedChatId === chat.id"
+          >
+            <!-- Avatar -->
+            <div class="relative flex-shrink-0">
+              <img 
+                [src]="getChatAvatar(chat)" 
+                [alt]="getChatName(chat)"
+                class="w-12 h-12 rounded-full object-cover"
+              >
+              <div 
+                *ngIf="getChatOnlineStatus(chat)"
+                class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"
+              ></div>
             </div>
-            
-            <div class="conversation-preview">
-              <p class="last-message">{{ conversation.lastMessage }}</p>
-              <div class="conversation-meta">
-                <span class="unread-count" *ngIf="conversation.unreadCount > 0">
-                  {{ conversation.unreadCount }}
+
+            <!-- Chat Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-medium text-gray-900 truncate">
+                  {{ getChatName(chat) }}
+                </h3>
+                <div class="flex items-center space-x-2">
+                  <span *ngIf="chat.pinned" class="text-yellow-500">
+                    <fa-icon [icon]="faPrint" class="w-3 h-3"></fa-icon>
+                  </span>
+                  <span class="text-xs text-gray-500">
+                    {{ formatTimestamp(chat.last_message?.created_at) }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between mt-1">
+                <p class="text-sm text-gray-500 truncate">
+                  <span *ngIf="chat.last_message?.sender_id === user?.id" class="text-gray-400">You: </span>
+                  {{ getLastMessagePreview(chat) }}
+                </p>
+                <div class="flex items-center space-x-2">
+                  <span 
+                    *ngIf="chat.unread_count > 0"
+                    class="inline-flex items-center justify-center w-5 h-5 bg-markt-primary text-white text-xs rounded-full"
+                  >
+                    {{ chat.unread_count > 99 ? '99+' : chat.unread_count }}
+                  </span>
+                  <button 
+                    (click)="showChatMenu(chat, $event)"
+                    class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <fa-icon [icon]="faEllipsisH" class="w-3 h-3"></fa-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Chat Type Indicator -->
+              <div class="flex items-center space-x-2 mt-1">
+                <span 
+                  *ngIf="chat.type === 'product'"
+                  class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                >
+                  <fa-icon [icon]="faStore" class="w-3 h-3 mr-1"></fa-icon>
+                  Product Chat
                 </span>
-                <span class="last-seen" *ngIf="!conversation.isOnline && conversation.lastSeen">
-                  Last seen {{ formatTime(conversation.lastSeen) }}
+                <span 
+                  *ngIf="chat.type === 'order'"
+                  class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                >
+                  <fa-icon [icon]="faRulerVertical" class="w-3 h-3 mr-1"></fa-icon>
+                  Order Chat
                 </span>
               </div>
             </div>
@@ -74,402 +179,307 @@ interface ChatConversation {
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="filteredConversations.length === 0">
-        <div class="empty-icon">💬</div>
-        <h3>No conversations yet</h3>
-        <p>Start a conversation by messaging a seller or buyer</p>
-        <app-button 
-          variant="primary" 
-          size="lg"
-          [routerLink]="['/app/marketplace']"
+      <!-- Chat Menu Dropdown -->
+      <div 
+        *ngIf="showMenu"
+        class="fixed inset-0 z-50"
+        (click)="hideChatMenu()"
+      ></div>
+      <div 
+        *ngIf="showMenu"
+        class="fixed z-50 bg-white rounded-md shadow-lg py-1 min-w-[160px]"
+        [style.left.px]="menuPosition.x"
+        [style.top.px]="menuPosition.y"
+      >
+        <button 
+          (click)="pinChat(selectedChat)"
+          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
-          Browse Marketplace
-        </app-button>
-      </div>
-
-      <!-- New Message Button -->
-      <div class="new-message-fab">
-        <app-button 
-          variant="primary" 
-          size="lg"
-          (clicked)="startNewConversation()"
+          <fa-icon [icon]="faPrint" class="w-4 h-4 mr-2"></fa-icon>
+          {{ selectedChat?.pinned ? 'Unpin' : 'Pin' }}
+        </button>
+        <button 
+          (click)="muteChat(selectedChat)"
+          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
-          ✉️ New Message
-        </app-button>
+          <fa-icon [icon]="faVolumeMute" class="w-4 h-4 mr-2"></fa-icon>
+          {{ selectedChat?.muted ? 'Unmute' : 'Mute' }}
+        </button>
+        <button 
+          (click)="archiveChat(selectedChat)"
+          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          <fa-icon [icon]="faArchive" class="w-4 h-4 mr-2"></fa-icon>
+          Archive
+        </button>
+        <hr class="my-1">
+        <button 
+          (click)="deleteChat(selectedChat)"
+          class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+        >
+          <fa-icon [icon]="faTrash" class="w-4 h-4 mr-2"></fa-icon>
+          Delete Chat
+        </button>
       </div>
     </div>
   `,
   styles: [`
-    .chat-list-container {
-      padding: 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-      position: relative;
-      min-height: 100vh;
-    }
-
-    .chat-list-header {
-      margin-bottom: 2rem;
-    }
-
-    .chat-list-header h1 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-
-    .chat-list-header p {
-      color: #7f8c8d;
-      font-size: 1.1rem;
-    }
-
-    .search-section {
-      margin-bottom: 2rem;
-    }
-
-    .search-box {
-      position: relative;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 1rem 1rem 1rem 3rem;
-      border: 1px solid #e9ecef;
-      border-radius: 12px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s ease;
-      background: white;
-    }
-
-    .search-input:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-
-    .search-box::before {
-      content: '🔍';
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.2rem;
-      color: #6c757d;
-      z-index: 1;
-    }
-
-    .chat-list {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-
-    .conversation-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.5rem;
-      border-bottom: 1px solid #e9ecef;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    .conversation-item:last-child {
-      border-bottom: none;
-    }
-
-    .conversation-item:hover {
-      background-color: #f8f9fa;
-    }
-
-    .conversation-item.active {
-      background-color: #e3f2fd;
-      border-left: 4px solid #007bff;
-    }
-
-    .conversation-avatar {
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .conversation-avatar img {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #e9ecef;
-    }
-
-    .online-indicator {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #6c757d;
-      border: 2px solid white;
-    }
-
-    .online-indicator.online {
-      background: #28a745;
-    }
-
-    .conversation-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .conversation-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .participant-name {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #2c3e50;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .last-message-time {
-      font-size: 0.8rem;
-      color: #6c757d;
-      flex-shrink: 0;
-    }
-
-    .conversation-preview {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .last-message {
-      margin: 0;
-      color: #6c757d;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
-    }
-
-    .conversation-meta {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.25rem;
-      flex-shrink: 0;
-    }
-
-    .unread-count {
-      background: #007bff;
-      color: white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .last-seen {
-      font-size: 0.8rem;
-      color: #adb5bd;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h3 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-
-    .empty-state p {
-      color: #6c757d;
-      margin-bottom: 2rem;
-    }
-
-    .new-message-fab {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 1000;
-    }
-
-    @media (max-width: 768px) {
-      .chat-list-container {
-        padding: 1rem;
-      }
-
-      .conversation-item {
-        padding: 1rem;
-      }
-
-      .conversation-avatar img {
-        width: 50px;
-        height: 50px;
-      }
-
-      .participant-name {
-        font-size: 1rem;
-      }
-
-      .last-message {
-        font-size: 0.8rem;
-      }
-
-      .new-message-fab {
-        bottom: 1rem;
-        right: 1rem;
-      }
+    :host {
+      display: block;
+      height: 100%;
     }
   `]
 })
 export class ChatListComponent implements OnInit {
+  private chatService = inject(ChatService);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
-  conversations: ChatConversation[] = [
-    {
-      id: '1',
-      participantId: 'user1',
-      participantName: 'John Doe',
-      participantAvatar: 'https://via.placeholder.com/60x60?text=JD',
-      lastMessage: 'Hi, I\'m interested in your wireless headphones. Is it still available?',
-      lastMessageTime: '2025-01-03T15:30:00Z',
-      unreadCount: 2,
-      isOnline: true
-    },
-    {
-      id: '2',
-      participantId: 'user2',
-      participantName: 'Jane Smith',
-      participantAvatar: 'https://via.placeholder.com/60x60?text=JS',
-      lastMessage: 'Thanks for the quick delivery! The product is exactly as described.',
-      lastMessageTime: '2025-01-03T14:15:00Z',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '2025-01-03T14:20:00Z'
-    },
-    {
-      id: '3',
-      participantId: 'user3',
-      participantName: 'Mike Johnson',
-      participantAvatar: 'https://via.placeholder.com/60x60?text=MJ',
-      lastMessage: 'Do you have this in other colors?',
-      lastMessageTime: '2025-01-03T13:45:00Z',
-      unreadCount: 1,
-      isOnline: true
-    },
-    {
-      id: '4',
-      participantId: 'user4',
-      participantName: 'Sarah Wilson',
-      participantAvatar: 'https://via.placeholder.com/60x60?text=SW',
-      lastMessage: 'Can you provide more details about the warranty?',
-      lastMessageTime: '2025-01-03T12:30:00Z',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '2025-01-03T12:35:00Z'
-    },
-    {
-      id: '5',
-      participantId: 'user5',
-      participantName: 'David Brown',
-      participantAvatar: 'https://via.placeholder.com/60x60?text=DB',
-      lastMessage: 'I\'ll place the order now. Thanks!',
-      lastMessageTime: '2025-01-03T11:20:00Z',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '2025-01-03T11:25:00Z'
-    }
-  ];
+  // Icons
+  faComments = faComments;
+  faSearch = faSearch;
+  faEllipsisH = faEllipsisH;
+  faTimes = faTimes;
+  faCheck = faCheck;
+  faClock = faClock;
+  faUser = faUser;
+  faStore = faStore;
+  faPrint = faPrint;
+  faRulerVertical = faRulerVertical;
+  faVolumeMute = faVolumeMute;
+  faThumbtack = faThumbtack;
+  faTrash = faTrash;
+  faArchive = faArchive;
+  faEllipsisV = faEllipsisV;
+  faCircle = faCircle;
 
-  filteredConversations: ChatConversation[] = [];
+  // Data
+  chatRooms: any[] = [];
+  user: any = null;
+  isLoading = false;
+  
+  // UI State
+  showSearch = false;
   searchQuery = '';
-  selectedConversationId: string | null = null;
+  selectedChatId: string | null = null;
+  showMenu = false;
+  selectedChat: any = null;
+  menuPosition = { x: 0, y: 0 };
+
+  get filteredChatRooms(): any[] {
+    if (!this.searchQuery) {
+      return this.chatRooms;
+    }
+    
+    return this.chatRooms.filter(chat => 
+      this.getChatName(chat).toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+      this.getLastMessagePreview(chat).toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+  }
 
   ngOnInit(): void {
-    this.loadConversations();
-    this.applyFilters();
+    this.loadUserData();
+    this.loadChatRooms();
   }
 
-  private loadConversations(): void {
-    // TODO: Load conversations from API
-    console.log('Loading conversations...');
-    this.filteredConversations = [...this.conversations];
+  private loadUserData(): void {
+    this.authService.authState$.subscribe(authState => {
+      this.user = authState.user;
+    });
   }
 
-  onSearch(): void {
-    this.applyFilters();
+  private loadChatRooms(): void {
+    this.isLoading = true;
+    
+    this.chatService.getChatRooms().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.chatRooms = response.data;
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading chat rooms:', error);
+        this.isLoading = false;
+      }
+    });
   }
 
-  private applyFilters(): void {
-    if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      this.filteredConversations = this.conversations.filter(conversation =>
-        conversation.participantName.toLowerCase().includes(query) ||
-        conversation.lastMessage.toLowerCase().includes(query)
-      );
-    } else {
-      this.filteredConversations = [...this.conversations];
+  toggleSearch(): void {
+    this.showSearch = !this.showSearch;
+    if (!this.showSearch) {
+      this.searchQuery = '';
     }
   }
 
-  selectConversation(conversationId: string): void {
-    this.selectedConversationId = conversationId;
-    // Mark as read
-    const conversation = this.conversations.find(c => c.id === conversationId);
-    if (conversation) {
-      conversation.unreadCount = 0;
+  onSearchInput(): void {
+    // Search is handled by the filteredChatRooms getter
+  }
+
+  selectChat(chat: any): void {
+    this.selectedChatId = chat.id;
+    this.router.navigate(['/app/chat', chat.id]);
+  }
+
+  startNewChat(): void {
+    this.router.navigate(['/app/chat/new']);
+  }
+
+  getChatAvatar(chat: any): string {
+    if (chat.type === 'product' && chat.product) {
+      return chat.product.images[0]?.url || '/assets/images/placeholder.png';
+    }
+    
+    const otherUser = this.getOtherUser(chat);
+    return otherUser?.profile_picture_url || '/assets/images/default-avatar.png';
+  }
+
+  getChatName(chat: any): string {
+    if (chat.type === 'product' && chat.product) {
+      return chat.product.name;
+    }
+    
+    const otherUser = this.getOtherUser(chat);
+    if (otherUser?.current_role === 'seller' && otherUser?.seller_account) {
+      return otherUser.seller_account.shop_name;
+    }
+    return otherUser?.username || 'Unknown User';
+  }
+
+  getOtherUser(chat: any): any {
+    if (!this.user) return null;
+    
+    return chat.participants.find((participant: any) => participant.id !== this.user.id);
+  }
+
+  getChatOnlineStatus(chat: any): boolean {
+    const otherUser = this.getOtherUser(chat);
+    return otherUser?.is_online || false;
+  }
+
+  getLastMessagePreview(chat: any): string {
+    if (!chat.last_message) {
+      return 'No messages yet';
+    }
+    
+    const message = chat.last_message;
+    
+    switch (message.type) {
+      case 'text':
+        return message.content;
+      case 'image':
+        return '📷 Image';
+      case 'video':
+        return '🎥 Video';
+      case 'file':
+        return '📎 File';
+      case 'product':
+        return '🛍️ Product';
+      default:
+        return 'Message';
     }
   }
 
-  formatTime(dateString: string): string {
-    const date = new Date(dateString);
+  formatTimestamp(timestamp: string): string {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      return diffInMinutes < 1 ? 'Just now' : `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d`;
     } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString();
+    }
+  }
+
+  showChatMenu(chat: any, event: MouseEvent): void {
+    event.stopPropagation();
+    
+    this.selectedChat = chat;
+    this.menuPosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+    this.showMenu = true;
+  }
+
+  hideChatMenu(): void {
+    this.showMenu = false;
+    this.selectedChat = null;
+  }
+
+  pinChat(chat: any): void {
+    if (!chat) return;
+    
+    this.chatService.pinChat(chat.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          chat.pinned = !chat.pinned;
+          this.hideChatMenu();
+        }
+      },
+      error: (error) => {
+        console.error('Error pinning chat:', error);
+      }
+    });
+  }
+
+  muteChat(chat: any): void {
+    if (!chat) return;
+    
+    this.chatService.muteChat(chat.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          chat.muted = !chat.muted;
+          this.hideChatMenu();
+        }
+      },
+      error: (error) => {
+        console.error('Error muting chat:', error);
+      }
+    });
+  }
+
+  archiveChat(chat: any): void {
+    if (!chat) return;
+    
+    this.chatService.archiveChat(chat.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.chatRooms = this.chatRooms.filter(c => c.id !== chat.id);
+          this.hideChatMenu();
+        }
+      },
+      error: (error) => {
+        console.error('Error archiving chat:', error);
+      }
+    });
+  }
+
+  deleteChat(chat: any): void {
+    if (!chat) return;
+    
+    if (confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      this.chatService.deleteChat(chat.id).subscribe({
+        next: () => {
+          this.chatRooms = this.chatRooms.filter(c => c.id !== chat.id);
+          this.hideChatMenu();
+        },
+        error: (error) => {
+          console.error('Error deleting chat:', error);
+        }
       });
     }
-  }
-
-  startNewConversation(): void {
-    // TODO: Implement new conversation modal
-    console.log('Starting new conversation...');
-    // For now, navigate to marketplace to find users
-    this.router.navigate(['/app/marketplace']);
   }
 } 

@@ -56,25 +56,25 @@ import { AuthService } from '../../../core/services/auth.service';
                 
                 <!-- Error Message -->
                 <div *ngIf="errorMessage" class="mx-4 mb-3 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                  {{ errorMessage }}
-                </div>
-                
+              {{ errorMessage }}
+            </div>
+            
                 <div class="flex px-4 py-3">
                   <button
-                    type="submit"
-                    [disabled]="forgotPasswordForm.invalid || loading"
+              type="submit"
+              [disabled]="forgotPasswordForm.invalid || loading"
                     class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 flex-1 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+            >
                     <span class="truncate">{{ loading ? 'Sending...' : 'Send reset link' }}</span>
                   </button>
                 </div>
-              </form>
+          </form>
               
               <p class="text-[#886a63] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">
                 <a [routerLink]="['/auth/login']" class="underline hover:no-underline">Remember your password? Sign in</a>
               </p>
-            </div>
-
+        </div>
+        
             <!-- Success Message -->
             <div *ngIf="emailSent" class="text-center py-8">
               <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">✓</div>
@@ -85,25 +85,25 @@ import { AuthService } from '../../../core/services/auth.service';
               <p class="text-[#886a63] text-sm font-normal leading-normal mb-6">
                 Click the link in the email to reset your password. The link will expire in 1 hour.
               </p>
-              
+          
               <div class="flex gap-4 justify-center">
                 <button
                   (click)="resendEmail()"
-                  [disabled]="resending"
+              [disabled]="resending"
                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em] disabled:opacity-50"
                 >
                   <span class="truncate">{{ resending ? 'Sending...' : 'Resend Email' }}</span>
                 </button>
-                
+            
                 <button
                   (click)="backToLogin()"
                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em]"
-                >
+             >
                   <span class="truncate">Back to Login</span>
                 </button>
-              </div>
-            </div>
-
+          </div>
+        </div>
+        
           </div>
         </div>
       </div>

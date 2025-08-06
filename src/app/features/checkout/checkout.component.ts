@@ -1,919 +1,623 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { 
+  faArrowLeft, 
+  faMapMarkerAlt, 
+  faPhone, 
+  faEnvelope,
+  faUser,
+  faCreditCard,
+  faTruck,
+  faShieldAlt,
+  faCheck,
+  faLock,
+  faEye,
+  faEyeSlash,
+  faPlus,
+  faEdit,
+  faTrash,
+  faCalendar,
+  faClock,
+  faStar,
+  faStore
+} from '@fortawesome/free-solid-svg-icons';
 import { CartService } from '../../core/services/cart.service';
-import { OrderService, CreateOrderRequest, PaymentMethod } from '../../core/services/order.service';
-import { AppStateService } from '../../core/services/app-state.service';
-import { ButtonComponent } from '../../shared/components/button/button.component';
-import { InputComponent } from '../../shared/components/input/input.component';
+import { OrderService } from '../../core/services/order.service';
+import { PaymentService } from '../../core/services/payment.service';
+import { AuthService } from '../../core/services/auth.service';
+import { MarketplaceService } from '../../core/services/marketplace.service';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, FontAwesomeModule],
   template: `
-    <div class="checkout-container">
-      <div class="checkout-header">
-        <h1>Checkout</h1>
-        <p>Complete your purchase</p>
+    <div class="space-y-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <button 
+            routerLink="/app/cart"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            <fa-icon [icon]="faArrowLeft" class="w-5 h-5"></fa-icon>
+          </button>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Checkout</h1>
+            <p class="text-gray-500">Complete your purchase</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+          <div class="flex items-center">
+            <fa-icon [icon]="faShieldAlt" class="w-4 h-4 mr-1"></fa-icon>
+            <span>Secure Checkout</span>
+          </div>
+        </div>
       </div>
 
-      <div class="checkout-content" *ngIf="!(loading$ | async)">
-        <!-- Checkout Steps -->
-        <div class="checkout-steps">
-          <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
-            <div class="step-number">1</div>
-            <div class="step-label">Shipping</div>
+      <!-- Checkout Steps -->
+      <div class="flex items-center justify-center space-x-8">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-markt-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+            1
           </div>
-          <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
-            <div class="step-number">2</div>
-            <div class="step-label">Payment</div>
-          </div>
-          <div class="step" [class.active]="currentStep === 3" [class.completed]="currentStep > 3">
-            <div class="step-number">3</div>
-            <div class="step-label">Review</div>
-          </div>
+          <span class="font-medium text-markt-primary">Shipping</span>
         </div>
-
-        <!-- Step 1: Shipping Information -->
-        <div class="checkout-step" *ngIf="currentStep === 1">
-          <div class="step-content">
-            <h2>Shipping Information</h2>
-            
-            <form [formGroup]="shippingForm" (ngSubmit)="onShippingSubmit()">
-              <div class="form-row">
-                <div class="form-group">
-                  <app-input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    label="First Name"
-                    placeholder="Enter your first name"
-                    formControlName="firstName"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('firstName')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-                <div class="form-group">
-                  <app-input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    label="Last Name"
-                    placeholder="Enter your last name"
-                    formControlName="lastName"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('lastName')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <app-input
-                  id="email"
-                  name="email"
-                  type="email"
-                  label="Email Address"
-                  placeholder="Enter your email address"
-                  formControlName="email"
-                  [required]="true"
-                  [errorMessage]="getErrorMessage('email')"
-                  [fullWidth]="true"
-                ></app-input>
-              </div>
-
-              <div class="form-group">
-                <app-input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  label="Phone Number"
-                  placeholder="Enter your phone number"
-                  formControlName="phone"
-                  [required]="true"
-                  [errorMessage]="getErrorMessage('phone')"
-                  [fullWidth]="true"
-                ></app-input>
-              </div>
-
-              <div class="form-group">
-                <app-input
-                  id="addressLine1"
-                  name="addressLine1"
-                  type="text"
-                  label="Address Line 1"
-                  placeholder="Enter your street address"
-                  formControlName="addressLine1"
-                  [required]="true"
-                  [errorMessage]="getErrorMessage('addressLine1')"
-                  [fullWidth]="true"
-                ></app-input>
-              </div>
-
-              <div class="form-group">
-                <app-input
-                  id="addressLine2"
-                  name="addressLine2"
-                  type="text"
-                  label="Address Line 2 (Optional)"
-                  placeholder="Apartment, suite, etc."
-                  formControlName="addressLine2"
-                  [fullWidth]="true"
-                ></app-input>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <app-input
-                    id="city"
-                    name="city"
-                    type="text"
-                    label="City"
-                    placeholder="Enter your city"
-                    formControlName="city"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('city')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-                <div class="form-group">
-                  <app-input
-                    id="state"
-                    name="state"
-                    type="text"
-                    label="State/Province"
-                    placeholder="Enter your state"
-                    formControlName="state"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('state')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <app-input
-                    id="postalCode"
-                    name="postalCode"
-                    type="text"
-                    label="Postal Code"
-                    placeholder="Enter your postal code"
-                    formControlName="postalCode"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('postalCode')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-                <div class="form-group">
-                  <app-input
-                    id="country"
-                    name="country"
-                    type="text"
-                    label="Country"
-                    placeholder="Enter your country"
-                    formControlName="country"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('country')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <app-button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  [loading]="processing"
-                  [disabled]="shippingForm.invalid || processing"
-                  [fullWidth]="true"
-                >
-                  Continue to Payment
-                </app-button>
-              </div>
-            </form>
+        <div class="w-16 h-1 bg-gray-200"></div>
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">
+            2
           </div>
+          <span class="font-medium text-gray-500">Payment</span>
         </div>
-
-        <!-- Step 2: Payment Information -->
-        <div class="checkout-step" *ngIf="currentStep === 2">
-          <div class="step-content">
-            <h2>Payment Information</h2>
-            
-            <form [formGroup]="paymentForm" (ngSubmit)="onPaymentSubmit()">
-              <div class="payment-methods">
-                <h3>Select Payment Method</h3>
-                
-                <div class="payment-option">
-                  <input 
-                    type="radio" 
-                    id="card" 
-                    name="paymentMethod" 
-                    value="card"
-                    formControlName="paymentMethod"
-                  >
-                  <label for="card" class="payment-label">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                    <span>Credit/Debit Card</span>
-                  </label>
-                </div>
-
-                <div class="payment-option">
-                  <input 
-                    type="radio" 
-                    id="paystack" 
-                    name="paymentMethod" 
-                    value="paystack"
-                    formControlName="paymentMethod"
-                  >
-                  <label for="paystack" class="payment-label">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                      <path d="M2 17l10 5 10-5"></path>
-                      <path d="M2 12l10 5 10-5"></path>
-                    </svg>
-                    <span>Paystack</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="card-details" *ngIf="paymentForm.get('paymentMethod')?.value === 'card'">
-                <div class="form-group">
-                  <app-input
-                    id="cardNumber"
-                    name="cardNumber"
-                    type="text"
-                    label="Card Number"
-                    placeholder="1234 5678 9012 3456"
-                    formControlName="cardNumber"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('cardNumber')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group">
-                    <app-input
-                      id="expiryDate"
-                      name="expiryDate"
-                      type="text"
-                      label="Expiry Date"
-                      placeholder="MM/YY"
-                      formControlName="expiryDate"
-                      [required]="true"
-                      [errorMessage]="getErrorMessage('expiryDate')"
-                      [fullWidth]="true"
-                    ></app-input>
-                  </div>
-                  <div class="form-group">
-                    <app-input
-                      id="cvv"
-                      name="cvv"
-                      type="text"
-                      label="CVV"
-                      placeholder="123"
-                      formControlName="cvv"
-                      [required]="true"
-                      [errorMessage]="getErrorMessage('cvv')"
-                      [fullWidth]="true"
-                    ></app-input>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <app-input
-                    id="cardholderName"
-                    name="cardholderName"
-                    type="text"
-                    label="Cardholder Name"
-                    placeholder="Name on card"
-                    formControlName="cardholderName"
-                    [required]="true"
-                    [errorMessage]="getErrorMessage('cardholderName')"
-                    [fullWidth]="true"
-                  ></app-input>
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <app-button
-                  variant="secondary"
-                  size="lg"
-                  (clicked)="previousStep()"
-                >
-                  Back to Shipping
-                </app-button>
-                <app-button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  [loading]="processing"
-                  [disabled]="paymentForm.invalid || processing"
-                >
-                  Continue to Review
-                </app-button>
-              </div>
-            </form>
+        <div class="w-16 h-1 bg-gray-200"></div>
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">
+            3
           </div>
+          <span class="font-medium text-gray-500">Review</span>
         </div>
+      </div>
 
-        <!-- Step 3: Order Review -->
-        <div class="checkout-step" *ngIf="currentStep === 3">
-          <div class="step-content">
-            <h2>Order Review</h2>
-            
-            <div class="review-sections">
-              <!-- Shipping Review -->
-              <div class="review-section">
-                <h3>Shipping Information</h3>
-                <div class="review-info">
-                  <p><strong>{{ shippingForm.get('firstName')?.value }} {{ shippingForm.get('lastName')?.value }}</strong></p>
-                  <p>{{ shippingForm.get('addressLine1')?.value }}</p>
-                  <p *ngIf="shippingForm.get('addressLine2')?.value">{{ shippingForm.get('addressLine2')?.value }}</p>
-                  <p>{{ shippingForm.get('city')?.value }}, {{ shippingForm.get('state')?.value }} {{ shippingForm.get('postalCode')?.value }}</p>
-                  <p>{{ shippingForm.get('country')?.value }}</p>
-                  <p>{{ shippingForm.get('email')?.value }}</p>
-                  <p>{{ shippingForm.get('phone')?.value }}</p>
-                </div>
-                <button class="edit-btn" (click)="editStep(1)">Edit</button>
-              </div>
-
-              <!-- Payment Review -->
-              <div class="review-section">
-                <h3>Payment Method</h3>
-                <div class="review-info">
-                  <p><strong>{{ getPaymentMethodDisplay() }}</strong></p>
-                  <p *ngIf="paymentForm.get('paymentMethod')?.value === 'card'">
-                    **** **** **** {{ paymentForm.get('cardNumber')?.value?.slice(-4) }}
-                  </p>
-                </div>
-                <button class="edit-btn" (click)="editStep(2)">Edit</button>
-              </div>
-
-              <!-- Order Items Review -->
-              <div class="review-section">
-                <h3>Order Items</h3>
-                <div class="order-items">
-                  <div class="order-item" *ngFor="let item of cartItems$ | async">
-                    <div class="item-image">
-                      <img [src]="item.product.images[0] || '/assets/placeholder-product.jpg'" [alt]="item.product.title">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Checkout Form -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Shipping Information -->
+          <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">Shipping Information</h2>
+            </div>
+            <div class="p-6">
+              <form [formGroup]="shippingForm" (ngSubmit)="onShippingSubmit()" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input 
+                      type="text" 
+                      formControlName="firstName"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      placeholder="Enter first name"
+                    >
+                    <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-500 text-sm mt-1">
+                      First name is required
                     </div>
-                    <div class="item-details">
-                      <h4>{{ item.product.title }}</h4>
-                      <p>Quantity: {{ item.quantity }}</p>
-                      <p class="item-price">{{ item.total_price | currency:item.product.currency:'symbol':'1.0-0' }}</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input 
+                      type="text" 
+                      formControlName="lastName"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      placeholder="Enter last name"
+                    >
+                    <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-500 text-sm mt-1">
+                      Last name is required
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    formControlName="email"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Enter email address"
+                  >
+                  <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
+                    Valid email is required
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    formControlName="phone"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Enter phone number"
+                  >
+                  <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-500 text-sm mt-1">
+                    Phone number is required
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input 
+                    type="text" 
+                    formControlName="address"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Enter street address"
+                  >
+                  <div *ngIf="shippingForm.get('address')?.invalid && shippingForm.get('address')?.touched" class="text-red-500 text-sm mt-1">
+                    Address is required
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input 
+                      type="text" 
+                      formControlName="city"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      placeholder="Enter city"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <select 
+                      formControlName="state"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    >
+                      <option value="">Select state</option>
+                      <option value="Lagos">Lagos</option>
+                      <option value="Abuja">Abuja</option>
+                      <option value="Rivers">Rivers</option>
+                      <option value="Kano">Kano</option>
+                      <option value="Oyo">Oyo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                    <input 
+                      type="text" 
+                      formControlName="postalCode"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      placeholder="Enter postal code"
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                  <textarea 
+                    formControlName="notes"
+                    rows="3"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                    placeholder="Any special instructions for delivery"
+                  ></textarea>
+                </div>
+
+                <div class="flex justify-end">
+                  <button 
+                    type="submit"
+                    [disabled]="shippingForm.invalid || isProcessing"
+                    class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue to Payment
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Payment Information (shown after shipping) -->
+          <div *ngIf="currentStep >= 2" class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">Payment Information</h2>
+            </div>
+            <div class="p-6">
+              <form [formGroup]="paymentForm" (ngSubmit)="onPaymentSubmit()" class="space-y-4">
+                <!-- Payment Methods -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
+                  <div class="space-y-3">
+                    <label 
+                      *ngFor="let method of paymentMethods" 
+                      class="flex items-center p-4 border border-gray-200 rounded-md hover:border-markt-primary cursor-pointer"
+                      [class.border-markt-primary]="selectedPaymentMethod === method.id"
+                    >
+                      <input 
+                        type="radio" 
+                        [value]="method.id"
+                        formControlName="paymentMethod"
+                        class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
+                      >
+                      <div class="ml-3 flex items-center">
+                        <fa-icon [icon]="method.icon" class="w-5 h-5 text-gray-600 mr-2"></fa-icon>
+                        <span class="font-medium text-gray-900">{{ method.name }}</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Card Details (if card payment selected) -->
+                <div *ngIf="selectedPaymentMethod === 'card'" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                    <div class="relative">
+                      <input 
+                        type="text" 
+                        formControlName="cardNumber"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                        placeholder="1234 5678 9012 3456"
+                        maxlength="19"
+                      >
+                      <fa-icon [icon]="faCreditCard" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></fa-icon>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                      <input 
+                        type="text" 
+                        formControlName="expiryDate"
+                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                      >
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                      <div class="relative">
+                        <input 
+                          [type]="showCvv ? 'text' : 'password'"
+                          formControlName="cvv"
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                          placeholder="123"
+                          maxlength="4"
+                        >
+                        <button 
+                          type="button"
+                          (click)="toggleCvv()"
+                          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <fa-icon [icon]="showCvv ? faEyeSlash : faEye" class="w-4 h-4"></fa-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                    <input 
+                      type="text" 
+                      formControlName="cardholderName"
+                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      placeholder="Enter cardholder name"
+                    >
+                  </div>
+                </div>
+
+                <div class="flex justify-between">
+                  <button 
+                    type="button"
+                    (click)="previousStep()"
+                    class="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    type="submit"
+                    [disabled]="paymentForm.invalid || isProcessing"
+                    class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Review Order
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Order Review (shown after payment) -->
+          <div *ngIf="currentStep >= 3" class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">Order Review</h2>
+            </div>
+            <div class="p-6">
+              <!-- Shipping Address -->
+              <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Shipping Address</h3>
+                <div class="bg-gray-50 rounded-lg p-4">
+                  <p class="font-medium">{{ shippingForm.value.firstName }} {{ shippingForm.value.lastName }}</p>
+                  <p class="text-gray-600">{{ shippingForm.value.address }}</p>
+                  <p class="text-gray-600">{{ shippingForm.value.city }}, {{ shippingForm.value.state }} {{ shippingForm.value.postalCode }}</p>
+                  <p class="text-gray-600">{{ shippingForm.value.phone }}</p>
+                  <p class="text-gray-600">{{ shippingForm.value.email }}</p>
+                </div>
+              </div>
+
+              <!-- Payment Method -->
+              <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Payment Method</h3>
+                <div class="bg-gray-50 rounded-lg p-4">
+                  <div class="flex items-center">
+                    <fa-icon [icon]="getPaymentMethodIcon()" class="w-5 h-5 text-gray-600 mr-2"></fa-icon>
+                    <span class="font-medium">{{ getPaymentMethodName() }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order Items -->
+              <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Order Items</h3>
+                <div class="space-y-3">
+                  <div *ngFor="let item of cartItems" class="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
+                    <img 
+                      [src]="item.product?.images[0]?.url || '/assets/images/placeholder.png'" 
+                      [alt]="item.product?.name"
+                      class="w-16 h-16 object-cover rounded-lg"
+                    >
+                    <div class="flex-1">
+                      <h4 class="font-medium text-gray-900">{{ item.product?.name }}</h4>
+                      <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'NGN' }}</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="form-actions">
-              <app-button
-                variant="secondary"
-                size="lg"
-                (clicked)="previousStep()"
-              >
-                Back to Payment
-              </app-button>
-              <app-button
-                variant="primary"
-                size="lg"
-                (clicked)="placeOrder()"
-                [loading]="processing"
-                [disabled]="processing"
-              >
-                Place Order
-              </app-button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading-state" *ngIf="loading$ | async">
-        <div class="loading-spinner"></div>
-        <p>Loading checkout information...</p>
-      </div>
-
-      <!-- Order Summary Sidebar -->
-      <div class="order-summary" *ngIf="!(loading$ | async)">
-        <div class="summary-header">
-          <h3>Order Summary</h3>
-        </div>
-
-        <div class="summary-items">
-          <div class="summary-item" *ngFor="let item of cartItems$ | async">
-            <div class="item-info">
-              <h4>{{ item.product.title }}</h4>
-              <p>Qty: {{ item.quantity }}</p>
-            </div>
-            <div class="item-price">
-              {{ item.total_price | currency:item.product.currency:'symbol':'1.0-0' }}
+              <div class="flex justify-between">
+                <button 
+                  type="button"
+                  (click)="previousStep()"
+                  class="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Back
+                </button>
+                <button 
+                  (click)="placeOrder()"
+                  [disabled]="isProcessing"
+                  class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span *ngIf="!isProcessing">Place Order</span>
+                  <span *ngIf="isProcessing">Processing...</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="summary-totals">
-          <div class="summary-row">
-            <span>Subtotal</span>
-            <span>{{ (cartSummary$ | async)?.subtotal | currency:'NGN':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="summary-row" *ngIf="(cartSummary$ | async) && (cartSummary$ | async)!.tax > 0">
-            <span>Tax</span>
-            <span>{{ (cartSummary$ | async)!.tax | currency:'NGN':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="summary-row" *ngIf="(cartSummary$ | async) && (cartSummary$ | async)!.shipping > 0">
-            <span>Shipping</span>
-            <span>{{ (cartSummary$ | async)!.shipping | currency:'NGN':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="summary-row total">
-            <span>Total</span>
-            <span>{{ (cartSummary$ | async)?.total | currency:'NGN':'symbol':'1.0-0' }}</span>
-          </div>
-        </div>
+        <!-- Order Summary -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow sticky top-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
+            </div>
+            <div class="p-6 space-y-4">
+              <!-- Order Items Summary -->
+              <div class="space-y-3">
+                <div *ngFor="let item of cartItems" class="flex justify-between text-sm">
+                  <div class="flex-1">
+                    <p class="font-medium text-gray-900">{{ item.product?.name }}</p>
+                    <p class="text-gray-500">Qty: {{ item.quantity }}</p>
+                  </div>
+                  <span class="font-medium">{{ item.price * item.quantity | currency:'NGN' }}</span>
+                </div>
+              </div>
 
-        <div class="summary-security">
-          <p>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            Secure checkout with SSL encryption
-          </p>
+              <!-- Totals -->
+              <div class="border-t border-gray-200 pt-4 space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Subtotal</span>
+                  <span class="font-medium">{{ cartSubtotal | currency:'NGN' }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Shipping</span>
+                  <span class="font-medium">{{ cartShipping | currency:'NGN' }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Tax</span>
+                  <span class="font-medium">{{ cartTax | currency:'NGN' }}</span>
+                </div>
+                <div class="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>{{ cartTotal | currency:'NGN' }}</span>
+                </div>
+              </div>
+
+              <!-- Security Notice -->
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center">
+                  <fa-icon [icon]="faLock" class="w-5 h-5 text-green-600 mr-2"></fa-icon>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Secure Checkout</p>
+                    <p class="text-xs text-green-600">Your payment information is encrypted and secure</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .checkout-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-      display: grid;
-      grid-template-columns: 1fr 350px;
-      gap: 2rem;
-      align-items: start;
-    }
-
-    /* Header */
-    .checkout-header {
-      grid-column: 1 / -1;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .checkout-header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-    }
-
-    .checkout-header p {
-      font-size: 1.125rem;
-      color: #6b7280;
-    }
-
-    /* Checkout Steps */
-    .checkout-steps {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 3rem;
-    }
-
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      position: relative;
-    }
-
-    .step:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      right: -1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 2rem;
-      height: 2px;
-      background: #e5e7eb;
-    }
-
-    .step.active .step-number {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .step.completed .step-number {
-      background: #10b981;
-      color: white;
-    }
-
-    .step-number {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 50%;
-      background: #e5e7eb;
-      color: #6b7280;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
-
-    .step-label {
-      font-weight: 500;
-      color: #374151;
-    }
-
-    .step.active .step-label {
-      color: #3b82f6;
-    }
-
-    .step.completed .step-label {
-      color: #10b981;
-    }
-
-    /* Step Content */
-    .checkout-step {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-    }
-
-    .step-content h2 {
-      margin: 0 0 2rem 0;
-      color: #1f2937;
-      font-size: 1.5rem;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    /* Payment Methods */
-    .payment-methods {
-      margin-bottom: 2rem;
-    }
-
-    .payment-methods h3 {
-      margin: 0 0 1rem 0;
-      color: #374151;
-    }
-
-    .payment-option {
-      margin-bottom: 1rem;
-    }
-
-    .payment-label {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .payment-label:hover {
-      border-color: #3b82f6;
-      background: #f8fafc;
-    }
-
-    input[type="radio"]:checked + .payment-label {
-      border-color: #3b82f6;
-      background: #eff6ff;
-    }
-
-    .card-details {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid #e5e7eb;
-    }
-
-    /* Review Sections */
-    .review-sections {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    .review-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 1.5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-    }
-
-    .review-section h3 {
-      margin: 0 0 1rem 0;
-      color: #374151;
-    }
-
-    .review-info p {
-      margin: 0 0 0.25rem 0;
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-
-    .edit-btn {
-      background: none;
-      border: 1px solid #d1d5db;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      color: #3b82f6;
-      cursor: pointer;
-      font-size: 0.875rem;
-      transition: all 0.2s;
-    }
-
-    .edit-btn:hover {
-      background: #eff6ff;
-      border-color: #3b82f6;
-    }
-
-    .order-items {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .order-item {
-      display: flex;
-      gap: 1rem;
-      padding: 1rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-    }
-
-    .item-image {
-      width: 60px;
-      height: 60px;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .item-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .item-details h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.875rem;
-      color: #374151;
-    }
-
-    .item-details p {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .item-price {
-      font-weight: 600;
-      color: #1f2937;
-      font-size: 0.875rem;
-    }
-
-    /* Loading State */
-    .loading-state {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      color: #6b7280;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Order Summary */
-    .order-summary {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
-      height: fit-content;
-      position: sticky;
-      top: 2rem;
-    }
-
-    .summary-header h3 {
-      margin: 0 0 1.5rem 0;
-      color: #1f2937;
-      font-size: 1.25rem;
-    }
-
-    .summary-items {
-      margin-bottom: 1.5rem;
-    }
-
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #f3f4f6;
-    }
-
-    .summary-item:last-child {
-      border-bottom: none;
-    }
-
-    .item-info h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.875rem;
-      color: #374151;
-    }
-
-    .item-info p {
-      margin: 0;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .item-price {
-      font-weight: 600;
-      color: #1f2937;
-      font-size: 0.875rem;
-    }
-
-    .summary-totals {
-      border-top: 1px solid #e5e7eb;
-      padding-top: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      font-size: 0.875rem;
-    }
-
-    .summary-row.total {
-      border-top: 1px solid #e5e7eb;
-      margin-top: 0.5rem;
-      padding-top: 1rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1f2937;
-    }
-
-    .summary-security {
-      border-top: 1px solid #e5e7eb;
-      padding-top: 1rem;
-    }
-
-    .summary-security p {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0;
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .checkout-container {
-        grid-template-columns: 1fr;
-      }
-
-      .order-summary {
-        position: static;
-        order: -1;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .checkout-steps {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .step:not(:last-child)::after {
-        display: none;
-      }
+    :host {
+      display: block;
     }
   `]
 })
 export class CheckoutComponent implements OnInit {
+  private fb = inject(FormBuilder);
   private cartService = inject(CartService);
   private orderService = inject(OrderService);
-  private appStateService = inject(AppStateService);
+  private paymentService = inject(PaymentService);
+  private authService = inject(AuthService);
+  private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
-  private fb = inject(FormBuilder);
 
-  // Observables
-  cartItems$ = this.cartService.cartItems$;
-  cartSummary$ = this.cartService.cartSummary$;
-  loading$ = this.cartService.loading$;
+  // Icons
+  faArrowLeft = faArrowLeft;
+  faMapMarkerAlt = faMapMarkerAlt;
+  faPhone = faPhone;
+  faEnvelope = faEnvelope;
+  faUser = faUser;
+  faCreditCard = faCreditCard;
+  faTruck = faTruck;
+  faShieldAlt = faShieldAlt;
+  faCheck = faCheck;
+  faLock = faLock;
+  faEye = faEye;
+  faEyeSlash = faEyeSlash;
+  faPlus = faPlus;
+  faEdit = faEdit;
+  faTrash = faTrash;
+  faCalendar = faCalendar;
+  faClock = faClock;
+  faStar = faStar;
+  faStore = faStore;
 
   // Forms
   shippingForm: FormGroup;
   paymentForm: FormGroup;
 
-  // Local state
+  // Data
+  cartItems: any[] = [];
+  cartSubtotal = 0;
+  cartShipping = 0;
+  cartTax = 0;
+  cartTotal = 0;
+  
+  // State
   currentStep = 1;
-  processing = false;
+  isProcessing = false;
+  showCvv = false;
+  selectedPaymentMethod = 'card';
+
+  // Payment methods
+  paymentMethods = [
+    { id: 'card', name: 'Credit/Debit Card', icon: this.faCreditCard },
+    { id: 'bank_transfer', name: 'Bank Transfer', icon: this.faCreditCard },
+    { id: 'wallet', name: 'Markt Wallet', icon: this.faCreditCard }
+  ];
 
   constructor() {
     this.shippingForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^\+?[\d\s-()]+$/)]],
-      addressLine1: ['', [Validators.required, Validators.minLength(5)]],
-      addressLine2: [''],
-      city: ['', [Validators.required, Validators.minLength(2)]],
-      state: ['', [Validators.required, Validators.minLength(2)]],
-      postalCode: ['', [Validators.required, Validators.minLength(3)]],
-      country: ['', [Validators.required, Validators.minLength(2)]]
+      phone: ['', Validators.required],
+      address: ['', Validators.required],
+      city: ['', Validators.required],
+      state: ['', Validators.required],
+      postalCode: ['', Validators.required],
+      notes: ['']
     });
 
     this.paymentForm = this.fb.group({
-      paymentMethod: ['card', [Validators.required]],
+      paymentMethod: ['card', Validators.required],
       cardNumber: ['', [Validators.required, Validators.pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)]],
       expiryDate: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]],
       cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
-      cardholderName: ['', [Validators.required, Validators.minLength(2)]]
+      cardholderName: ['', Validators.required]
     });
   }
 
   ngOnInit(): void {
-    // Load cart data
-    this.cartService.loadCart();
+    this.loadCartData();
+    this.loadUserData();
+    this.setupFormSubscriptions();
+  }
 
-    // Check if cart is empty
-    this.cartItems$.subscribe(items => {
-      if (items.length === 0) {
-        this.router.navigate(['/cart']);
+  private loadCartData(): void {
+    this.cartService.getCart().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.cartItems = response.data.items;
+          this.calculateTotals();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading cart:', error);
+        this.router.navigate(['/app/cart']);
       }
     });
+  }
+
+  private loadUserData(): void {
+    this.authService.authState$.subscribe(authState => {
+      if (authState.user) {
+        const user = authState.user;
+        this.shippingForm.patchValue({
+          firstName: user.first_name || '',
+          lastName: user.last_name || '',
+          email: user.email || '',
+          phone: user.phone_number || ''
+        });
+      }
+    });
+  }
+
+  private setupFormSubscriptions(): void {
+    this.paymentForm.get('paymentMethod')?.valueChanges.subscribe(method => {
+      this.selectedPaymentMethod = method;
+      this.updatePaymentValidation();
+    });
+  }
+
+  private updatePaymentValidation(): void {
+    const cardNumber = this.paymentForm.get('cardNumber');
+    const expiryDate = this.paymentForm.get('expiryDate');
+    const cvv = this.paymentForm.get('cvv');
+    const cardholderName = this.paymentForm.get('cardholderName');
+
+    if (this.selectedPaymentMethod === 'card') {
+      cardNumber?.setValidators([Validators.required, Validators.pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)]);
+      expiryDate?.setValidators([Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]);
+      cvv?.setValidators([Validators.required, Validators.pattern(/^\d{3,4}$/)]);
+      cardholderName?.setValidators([Validators.required]);
+    } else {
+      cardNumber?.clearValidators();
+      expiryDate?.clearValidators();
+      cvv?.clearValidators();
+      cardholderName?.clearValidators();
+    }
+
+    cardNumber?.updateValueAndValidity();
+    expiryDate?.updateValueAndValidity();
+    cvv?.updateValueAndValidity();
+    cardholderName?.updateValueAndValidity();
+  }
+
+  private calculateTotals(): void {
+    this.cartSubtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    this.cartShipping = this.cartSubtotal >= 5000 ? 0 : 500;
+    this.cartTax = this.cartSubtotal * 0.075; // 7.5% tax
+    this.cartTotal = this.cartSubtotal + this.cartShipping + this.cartTax;
   }
 
   onShippingSubmit(): void {
     if (this.shippingForm.valid) {
       this.currentStep = 2;
+    } else {
+      this.markFormGroupTouched(this.shippingForm);
     }
   }
 
   onPaymentSubmit(): void {
     if (this.paymentForm.valid) {
       this.currentStep = 3;
+    } else {
+      this.markFormGroupTouched(this.paymentForm);
     }
   }
 
@@ -923,84 +627,88 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  editStep(step: number): void {
-    this.currentStep = step;
+  toggleCvv(): void {
+    this.showCvv = !this.showCvv;
+  }
+
+  getPaymentMethodIcon(): any {
+    const method = this.paymentMethods.find(m => m.id === this.selectedPaymentMethod);
+    return method ? method.icon : this.faCreditCard;
+  }
+
+  getPaymentMethodName(): string {
+    const method = this.paymentMethods.find(m => m.id === this.selectedPaymentMethod);
+    return method ? method.name : 'Unknown';
+  }
+
+  private getPaymentDetails(): any {
+    if (this.selectedPaymentMethod === 'card') {
+      return {
+        card_number: this.paymentForm.value.cardNumber,
+        expiry_date: this.paymentForm.value.expiryDate,
+        cvv: this.paymentForm.value.cvv,
+        cardholder_name: this.paymentForm.value.cardholderName
+      };
+    }
+    return {};
+  }
+
+  private createOrderData(): any {
+    const user = this.authService.getCurrentUser();
+    const cart = this.cartService.getCurrentCart();
+    return {
+      cart_id: cart?.id,
+      shipping_address: {
+        firstName: user?.first_name || user?.username || '',
+        lastName: user?.last_name || '',
+        email: user?.email || '',
+        phone: user?.phone_number || '',
+        address: this.shippingForm.get('address')?.value || '',
+        city: this.shippingForm.get('city')?.value || '',
+        state: this.shippingForm.get('state')?.value || '',
+        postal_code: this.shippingForm.get('postalCode')?.value || '',
+        notes: this.shippingForm.get('notes')?.value || ''
+      },
+      payment_method: this.paymentForm.get('paymentMethod')?.value || 'card',
+      payment_details: this.getPaymentDetails()
+    };
   }
 
   placeOrder(): void {
-    if (this.shippingForm.valid && this.paymentForm.valid) {
-      this.processing = true;
-
-      // Get cart items for order
-      this.cartItems$.subscribe(items => {
-        const orderData = {
-          items: items.map(item => ({
-            product_id: item.product_id,
-            quantity: item.quantity
-          })),
-          shipping_address: this.shippingForm.value,
-          billing_address: this.shippingForm.value, // Use same address for billing
-          shipping_method_id: 'standard', // Default shipping method
-          payment_method: this.paymentForm.get('paymentMethod')?.value,
-          notes: ''
-        };
-
-        this.orderService.createOrder(orderData).subscribe({
-          next: (order) => {
-            this.processing = false;
-            this.appStateService.addNotification({
-              type: 'success',
-              title: 'Order Placed Successfully',
-              message: `Your order #${order.id} has been placed successfully.`
-            });
-            
-            // Clear cart and redirect to order confirmation
-            this.cartService.clearCart().subscribe(() => {
-              this.router.navigate(['/orders', order.id]);
-            });
-          },
-          error: (error) => {
-            this.processing = false;
-            console.error('Place order error:', error);
-            this.appStateService.addNotification({
-              type: 'error',
-              title: 'Order Failed',
-              message: 'Failed to place order. Please try again.'
-            });
-          }
-        });
-      });
+    if (!this.shippingForm.valid || !this.paymentForm.valid) {
+      return;
     }
+
+    this.isProcessing = true;
+
+    const orderData = this.createOrderData();
+
+    this.orderService.createOrder(orderData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Clear cart
+          this.cartService.clearCart().subscribe();
+          
+          // Navigate to order confirmation
+          this.router.navigate(['/app/orders', response.data.id]);
+        }
+        this.isProcessing = false;
+      },
+      error: (error) => {
+        console.error('Error placing order:', error);
+        this.isProcessing = false;
+      }
+    });
   }
 
-  getPaymentMethodDisplay(): string {
-    const method = this.paymentForm.get('paymentMethod')?.value;
-    switch (method) {
-      case 'card':
-        return 'Credit/Debit Card';
-      case 'paystack':
-        return 'Paystack';
-      default:
-        return 'Payment Method';
-    }
-  }
-
-  getErrorMessage(controlName: string): string {
-    const control = this.shippingForm.get(controlName) || this.paymentForm.get(controlName);
-    if (control?.errors && control.touched) {
-      if (control.errors['required']) {
-        return `${controlName.charAt(0).toUpperCase() + controlName.slice(1)} is required`;
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+      
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
       }
-      if (control.errors['email']) {
-        return 'Please enter a valid email address';
-      }
-      if (control.errors['minlength']) {
-        return `${controlName.charAt(0).toUpperCase() + controlName.slice(1)} must be at least ${control.errors['minlength'].requiredLength} characters`;
-      }
-      if (control.errors['pattern']) {
-        return `Please enter a valid ${controlName.replace(/([A-Z])/g, ' $1').toLowerCase()}`;
-      }
-    }
-    return '';
+    });
   }
 } 

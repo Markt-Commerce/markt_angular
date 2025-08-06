@@ -1,515 +1,398 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MarketplaceService, SearchFilters } from '../../../core/services/marketplace.service';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { MarketplaceService } from '../../../core/services/marketplace.service';
+import { SearchService } from '../../../core/services/search.service';
+import { Product } from '../../../core/models';
+import { Subject, takeUntil } from 'rxjs';
+import { CartService } from '../../../core/services/cart.service';
+import { AppStateService } from '../../../core/services/app-state.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, IconComponent, RouterLink],
   template: `
-    <div class="search-container">
-      <div class="search-header">
-        <h1>Search Results</h1>
-        <p *ngIf="searchQuery">Showing results for "{{ searchQuery }}"</p>
-      </div>
+    <div class="font-sans min-h-screen bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Search Header -->
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">Search Results</h1>
+          <p class="text-gray-600 mt-1" *ngIf="searchQuery">
+            Showing results for "<strong>{{ searchQuery }}</strong>"
+          </p>
+        </div>
 
-      <div class="search-content">
-        <!-- Search Filters -->
-        <aside class="search-filters">
-          <div class="filter-section">
-            <h3>Filters</h3>
-            
-            <div class="filter-group">
-              <label for="category">Category:</label>
-              <select id="category" [(ngModel)]="selectedCategory" (change)="applyFilters()">
-                <option value="">All Categories</option>
-                <option value="electronics">Electronics</option>
-                <option value="clothing">Clothing</option>
-                <option value="home">Home & Garden</option>
-                <option value="sports">Sports</option>
-                <option value="books">Books</option>
-                <option value="automotive">Automotive</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="priceRange">Price Range:</label>
-              <select id="priceRange" [(ngModel)]="selectedPriceRange" (change)="applyFilters()">
-                <option value="">Any Price</option>
-                <option value="0-1000">Under ₦1,000</option>
-                <option value="1000-5000">₦1,000 - ₦5,000</option>
-                <option value="5000-10000">₦5,000 - ₦10,000</option>
-                <option value="10000-50000">₦10,000 - ₦50,000</option>
-                <option value="50000+">Over ₦50,000</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="condition">Condition:</label>
-              <select id="condition" [(ngModel)]="selectedCondition" (change)="applyFilters()">
-                <option value="">Any Condition</option>
-                <option value="new">New</option>
-                <option value="used">Used</option>
-                <option value="refurbished">Refurbished</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="sortBy">Sort By:</label>
-              <select id="sortBy" [(ngModel)]="sortBy" (change)="applyFilters()">
-                <option value="relevance">Relevance</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-                <option value="newest">Newest First</option>
-                <option value="popular">Most Popular</option>
-              </select>
-            </div>
-
-            <app-button 
-              variant="secondary" 
-              size="sm" 
-              (clicked)="clearFilters()"
-              [fullWidth]="true"
-            >
-              Clear Filters
-            </app-button>
-          </div>
-        </aside>
+        <!-- Loading State -->
+        <div *ngIf="loading$ | async" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p class="mt-2 text-gray-600">Searching...</p>
+        </div>
 
         <!-- Search Results -->
-        <main class="search-results">
-          <div class="results-header">
-            <div class="results-count">
-              <span *ngIf="loading$ | async">Searching...</span>
-              <span *ngIf="(loading$ | async) === false">
-                {{ totalResults$ | async }} results found
-              </span>
-            </div>
+        <div *ngIf="!(loading$ | async)">
+          <!-- Results Summary -->
+          <div class="mb-6 text-sm text-gray-600" *ngIf="totalResults > 0">
+            {{ totalResults }} product{{ totalResults !== 1 ? 's' : '' }} found
           </div>
 
-          <!-- Loading State -->
-          <div class="loading-state" *ngIf="loading$ | async">
-            <div class="loading-spinner"></div>
-            <p>Searching for products...</p>
-          </div>
-
-          <!-- Results Grid -->
-          <div class="results-grid" *ngIf="(loading$ | async) === false">
+          <!-- Products Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="products.length > 0">
             <div 
-              class="product-card" 
-              *ngFor="let product of searchResults$ | async"
-              [routerLink]="['/marketplace/product', product.id]"
+              *ngFor="let product of products; trackBy: trackByProductId"
+              class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group"
             >
-              <div class="product-image">
+              <!-- Product Image -->
+              <div class="relative aspect-square bg-gray-100">
                 <img 
-                  [src]="product.images[0] || '/assets/placeholder-product.jpg'" 
-                  [alt]="product.title"
+                  [src]="getProductImageUrl(product)"
+                  [alt]="product.name"
+                  loading="lazy"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  [routerLink]="['/marketplace/product', product.id]"
                 >
-                <div class="product-badges">
-                  <span class="badge condition" *ngIf="product.condition">{{ product.condition }}</span>
-                  <span class="badge featured" *ngIf="product.is_featured">Featured</span>
-                </div>
-              </div>
-
-              <div class="product-info">
-                <h3 class="product-title">{{ product.title }}</h3>
-                <p class="product-description">{{ product.description | slice:0:100 }}{{ product.description.length > 100 ? '...' : '' }}</p>
                 
-                <div class="product-meta">
-                  <div class="seller-info">
-                    <span class="seller-name">{{ product.seller_name }}</span>
-                    <span class="location">{{ product.location }}</span>
-                  </div>
-                  
-                  <div class="product-stats">
-                    <span class="stat">{{ product.views_count }} views</span>
-                    <span class="stat">{{ product.favorites_count }} favorites</span>
+                <!-- Badges -->
+                <div class="absolute top-2 left-2 flex flex-col gap-1">
+                  <span class="badge verified" *ngIf="product.is_verified">
+                    <app-icon name="checkmark" size="12"></app-icon>
+                    Verified
+                  </span>
+                  <span class="badge featured" *ngIf="product.is_featured">Featured</span>
+                  <span 
+                    class="badge condition"
+                    [class]="getConditionColor(product.condition)"
+                  >
+                    {{ product.condition | titlecase }}
+                  </span>
+                </div>
+
+                <!-- Favorite Button -->
+                <button
+                  (click)="toggleFavorite(product)"
+                  class="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+                  [class.text-red-500]="isProductFavorited(product.id)"
+                  [class.text-gray-400]="!isProductFavorited(product.id)"
+                >
+                  <app-icon name="heart" size="16"></app-icon>
+                </button>
+              </div>
+              
+              <!-- Product Info -->
+              <div class="p-4">
+                <h3 class="product-title font-semibold text-gray-900 mb-2 line-clamp-2" [routerLink]="['/marketplace/product', product.id]">
+                  {{ product.name }}
+                </h3>
+                
+                <div class="seller-info flex items-center gap-2 mb-3">
+                  <img 
+                    [src]="product.seller.profile_picture_url || '/assets/placeholder-avatar.jpg'" 
+                    [alt]="getSellerDisplayName(product.seller)"
+                    class="w-6 h-6 rounded-full object-cover"
+                  >
+                  <span class="seller-name text-sm text-gray-600">{{ getSellerDisplayName(product.seller) }}</span>
+                  <span *ngIf="product.seller.verification_status === 'verified'" class="text-green-500">
+                    <app-icon name="checkmark" size="12"></app-icon>
+                  </span>
+                </div>
+
+                <!-- Price and Stats -->
+                <div class="flex items-center justify-between mb-3">
+                  <span class="price text-lg font-bold text-gray-900">
+                    {{ formatPrice(product.price, product.currency) }}
+                  </span>
+                  <div class="flex items-center gap-3 text-sm text-gray-500">
+                    <span class="flex items-center gap-1">
+                      <app-icon name="eye" size="14"></app-icon>
+                      {{ formatNumber(product.review_count) }}
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <app-icon name="star" size="14"></app-icon>
+                      {{ product.average_rating || 0 }}
+                    </span>
                   </div>
                 </div>
 
-                <div class="product-footer">
-                  <div class="price">{{ product.price | currency:product.currency:'symbol':'1.0-0' }}</div>
-                  <app-button 
-                    variant="primary" 
-                    size="sm"
-                    (clicked)="addToCart($event, product)"
+                <!-- Location and Category -->
+                <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <span class="flex items-center gap-1">
+                    <app-icon name="location" size="14"></app-icon>
+                    <span class="location">{{ product.seller.shop_name || 'Store' }}</span>
+                  </span>
+                  <span class="category">{{ getCategoryName(product) }}</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                  <button
+                    (click)="addToCart(product)"
+                    [disabled]="cartService.isProductInCart(product.id)"
+                    class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                   >
-                    Add to Cart
-                  </app-button>
+                    {{ cartService.isProductInCart(product.id) ? 'In Cart' : 'Add to Cart' }}
+                  </button>
+                  <button
+                    [routerLink]="['/marketplace/product', product.id]"
+                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                  >
+                    View
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Empty State -->
-          <div class="empty-state" *ngIf="(loading$ | async) === false && (searchResults$ | async)?.length === 0">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <h3>No results found</h3>
-            <p>Try adjusting your search terms or filters</p>
-            <app-button variant="primary" (clicked)="clearFilters()">
-              Clear Filters
-            </app-button>
+          <div *ngIf="products.length === 0" class="text-center py-12">
+            <div class="w-16 h-16 mx-auto mb-4 text-gray-400">
+              <app-icon name="search" size="64"></app-icon>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p class="text-gray-600">Try adjusting your search terms or filters</p>
+            <button 
+              routerLink="/marketplace"
+              class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Browse All Products
+            </button>
           </div>
-        </main>
+
+          <!-- Pagination -->
+          <div *ngIf="products.length > 0" class="mt-8 flex justify-center">
+            <div class="flex items-center gap-2">
+              <button
+                (click)="previousPage()"
+                [disabled]="currentPage === 1"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              <span class="px-4 py-2 text-gray-700">
+                Page {{ currentPage }} of {{ totalPages }}
+              </span>
+              
+              <button
+                (click)="nextPage()"
+                [disabled]="currentPage === totalPages"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .search-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    .search-header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-
-    .search-header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-    }
-
-    .search-header p {
-      font-size: 1.125rem;
-      color: #6b7280;
-    }
-
-    .search-content {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 2rem;
-    }
-
-    /* Search Filters */
-    .search-filters {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      height: fit-content;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .filter-section h3 {
-      margin: 0 0 1.5rem 0;
-      color: #1f2937;
-      font-size: 1.25rem;
-    }
-
-    .filter-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .filter-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #374151;
-    }
-
-    .filter-group select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      background: white;
-      font-size: 0.875rem;
-    }
-
-    /* Search Results */
-    .search-results {
-      min-height: 600px;
-    }
-
-    .results-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .results-count {
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-
-    /* Results Grid */
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .product-card {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: all 0.2s;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .product-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .product-image {
-      position: relative;
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .product-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.2s;
-    }
-
-    .product-card:hover .product-image img {
-      transform: scale(1.05);
-    }
-
-    .product-badges {
-      position: absolute;
-      top: 0.5rem;
-      left: 0.5rem;
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge.condition {
-      background: #10b981;
-      color: white;
-    }
-
-    .badge.featured {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .product-info {
-      padding: 1rem;
-    }
-
     .product-title {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 0.5rem 0;
-      line-height: 1.4;
+      cursor: pointer;
+      transition: color 0.2s ease;
     }
-
-    .product-description {
-      font-size: 0.875rem;
-      color: #6b7280;
-      line-height: 1.5;
-      margin: 0 0 1rem 0;
+    
+    .product-title:hover {
+      color: #2563eb;
     }
-
-    .product-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
+    
+    .badge {
+      @apply px-2 py-1 text-xs font-medium rounded-full;
     }
-
-    .seller-info {
-      display: flex;
-      flex-direction: column;
+    
+    .badge.verified {
+      @apply bg-green-100 text-green-800 flex items-center gap-1;
     }
-
-    .seller-name {
-      font-size: 0.875rem;
-      color: #6b7280;
+    
+    .badge.featured {
+      @apply bg-purple-100 text-purple-800;
     }
-
-    .location {
-      font-size: 0.75rem;
-      color: #9ca3af;
+    
+    .badge.condition {
+      @apply text-xs;
     }
-
-    .product-stats {
-      display: flex;
-      gap: 1rem;
+    
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-
-    .stat {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .product-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .price {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    /* Loading State */
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      color: #6b7280;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Empty State */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-      color: #6b7280;
-    }
-
-    .empty-state svg {
-      margin-bottom: 1rem;
-      color: #d1d5db;
-    }
-
-    .empty-state h3 {
-      margin: 0 0 0.5rem 0;
-      color: #374151;
-    }
-
-    .empty-state p {
-      margin: 0 0 1.5rem 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .search-content {
-        grid-template-columns: 1fr;
-      }
-
-      .search-filters {
-        order: 2;
-      }
-
-      .search-results {
-        order: 1;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .search-header h1 {
-        font-size: 2rem;
-      }
-
-      .results-grid {
-        grid-template-columns: 1fr;
-      }
+    
+    .seller-info img {
+      flex-shrink: 0;
     }
   `]
 })
 export class SearchComponent implements OnInit {
-  private marketplaceService = inject(MarketplaceService);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private destroy$ = new Subject<void>();
+  
+  marketplaceService = inject(MarketplaceService);
+  searchService = inject(SearchService);
+  cartService = inject(CartService);
+  appStateService = inject(AppStateService);
+  route = inject(ActivatedRoute);
 
   // Observables
-  searchResults$ = this.marketplaceService.products$;
-  loading$ = this.marketplaceService.loading$;
-  totalResults$ = this.marketplaceService.totalProducts$;
+  products: Product[] = [];
+  loading$ = this.searchService.loading$;
 
   // Search state
   searchQuery = '';
-  selectedCategory = '';
-  selectedPriceRange = '';
-  selectedCondition = '';
-  sortBy = 'relevance';
+  currentPage = 1;
+  totalPages = 1;
+  totalResults = 0;
+  perPage = 20;
 
-  ngOnInit(): void {
-    // Get search query from route
-    this.route.queryParams.subscribe(params => {
+  ngOnInit() {
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
       this.searchQuery = params['q'] || '';
-      this.performSearch();
+      this.currentPage = Number(params['page']) || 1;
+      
+      if (this.searchQuery) {
+        this.performSearch();
+      }
     });
   }
 
-  performSearch(): void {
-    const filters: SearchFilters = {
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  performSearch() {
+    const filters = {
       query: this.searchQuery,
-      category_id: this.selectedCategory ? parseInt(this.selectedCategory) : undefined,
-      condition: this.selectedCondition as 'new' | 'used' | 'refurbished' | undefined,
-      sort_by: this.sortBy as 'relevance' | 'price_low' | 'price_high' | 'newest' | 'oldest' | 'popular'
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort: 'relevance'
     };
 
-    // Add price range filter
-    if (this.selectedPriceRange) {
-      const [min, max] = this.selectedPriceRange.split('-');
-      if (min) filters.min_price = parseInt(min);
-      if (max && max !== '+') filters.max_price = parseInt(max);
+    this.searchService.search(filters).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (results) => {
+        this.products = results.products.items;
+        this.totalResults = results.products.total;
+        this.totalPages = results.products.pagination.total_pages;
+      },
+      error: (error) => {
+        console.error('Search error:', error);
+        this.products = [];
+        this.totalResults = 0;
+      }
+    });
+  }
+
+  addToCart(product: Product): void {
+    this.cartService.addToCart(product.id, 1).subscribe({
+      next: (response) => {
+        this.appStateService.showNotification({
+          type: 'success',
+          message: 'Added to Cart'
+        });
+      },
+      error: (error) => {
+        this.appStateService.showNotification({
+          type: 'error',
+          message: 'Error adding to cart'
+        });
+      }
+    });
+  }
+
+  toggleFavorite(product: Product): void {
+    if (this.isProductFavorited(product.id)) {
+      this.marketplaceService.removeFromFavorites(product.id).subscribe({
+        next: () => {
+          this.appStateService.showNotification({
+            type: 'success',
+            message: 'Removed from Favorites'
+          });
+        },
+        error: (error) => {
+          this.appStateService.showNotification({
+            type: 'error',
+            message: 'Error removing from favorites'
+          });
+        }
+      });
+    } else {
+      this.marketplaceService.addToFavorites(product.id).subscribe({
+        next: () => {
+          this.appStateService.showNotification({
+            type: 'success',
+            message: 'Added to Favorites'
+          });
+        },
+        error: (error) => {
+          this.appStateService.showNotification({
+            type: 'error',
+            message: 'Error adding to favorites'
+          });
+        }
+      });
     }
-
-    this.marketplaceService.searchProducts(filters);
   }
 
-  applyFilters(): void {
-    this.performSearch();
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.performSearch();
+    }
   }
 
-  clearFilters(): void {
-    this.selectedCategory = '';
-    this.selectedPriceRange = '';
-    this.selectedCondition = '';
-    this.sortBy = 'relevance';
-    this.performSearch();
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.performSearch();
+    }
   }
 
-  addToCart(event: Event, product: any): void {
-    event.preventDefault();
-    event.stopPropagation();
-    // Add to cart logic would be implemented here
-    console.log('Add to cart:', product);
+  // Utility methods
+  getProductImageUrl(product: Product): string {
+    return this.marketplaceService.getProductImageUrl(product, 'thumbnail');
+  }
+
+  formatPrice(price: number, currency: string | undefined): string {
+    const currencySymbol = currency === 'NGN' ? '₦' : '$';
+    return `${currencySymbol}${price.toLocaleString()}`;
+  }
+
+  formatNumber(num: number): string {
+    return this.marketplaceService.formatNumber(num);
+  }
+
+  getConditionColor(condition: string | undefined): string {
+    if (!condition) return 'text-gray-600 bg-gray-100';
+    
+    switch (condition.toLowerCase()) {
+      case 'new': return 'text-green-600 bg-green-100';
+      case 'like new': return 'text-blue-600 bg-blue-100';
+      case 'good': return 'text-yellow-600 bg-yellow-100';
+      case 'fair': return 'text-orange-600 bg-orange-100';
+      case 'poor': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  }
+
+  getSellerDisplayName(seller: Product['seller']): string {
+    return this.marketplaceService.getSellerDisplayName(seller);
+  }
+
+  isProductFavorited(productId: string): boolean {
+    return this.marketplaceService.isProductFavorited(productId);
+  }
+
+  getCategoryName(product: Product): string {
+    return product.category?.name || 'Uncategorized';
+  }
+
+  trackByProductId(index: number, product: Product): string {
+    return this.marketplaceService.trackByProductId(index, product);
   }
 }
