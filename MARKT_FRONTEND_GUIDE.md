@@ -98,6 +98,21 @@ Markt is a **social-first e-commerce platform** that combines social media featu
    - Protected routes and guards
 
 3. **Mobile Optimization**
+
+---
+
+## **🔑 Test Accounts**
+
+**Seller Account (for testing seller features):**
+- Email: `adebowalemorakinyo@gmail.com`
+- Password: `TestPassword123!`
+
+**Use this account to test:**
+- Seller dashboard functionality
+- Product listing and management
+- Order processing
+- Analytics and reporting
+- Seller-specific features
    - Responsive design for all screen sizes
    - Touch-friendly interactions
    - Mobile navigation and gestures
