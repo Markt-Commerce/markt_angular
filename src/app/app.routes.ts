@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from './core/guards/auth.guard';
+import { AuthGuard, GuestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -13,6 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
+    canActivate: [GuestGuard],
     children: [
       {
         path: 'login',
@@ -174,6 +175,10 @@ export const routes: Routes = [
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent)
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
         path: 'settings',

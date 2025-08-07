@@ -42,10 +42,10 @@ import { ApiService } from '../../core/services/api.service';
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold">
-              Welcome back, {{ getUserDisplayName() }}! 👋
+              {{ isSeller ? 'Seller Dashboard' : 'My Dashboard' }}
             </h1>
             <p class="text-markt-light mt-1">
-              Here's what's happening with your account today
+              {{ isSeller ? "Here's what's happening with your shop today" : "Here's what's happening with your account today" }}
             </p>
           </div>
           <div class="hidden md:block">
@@ -60,23 +60,23 @@ import { ApiService } from '../../core/services/api.service';
 
       <!-- Quick Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Cart Items -->
+        <!-- Cart Items (Buyers) / Products (Sellers) -->
         <div class="bg-white rounded-lg shadow p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-              <fa-icon [icon]="faShoppingCart" class="w-6 h-6"></fa-icon>
+              <fa-icon [icon]="isSeller ? faStore : faShoppingCart" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Cart Items</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ cartItemCount }}</p>
+              <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalProducts : cartItemCount }}</p>
             </div>
           </div>
           <div class="mt-4">
             <a
-              routerLink="/app/cart"
+              [routerLink]="isSeller ? '/app/seller/listings' : '/app/cart'"
               class="text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
-              View Cart →
+              {{ isSeller ? 'Manage Products' : 'View Cart' }} →
             </a>
           </div>
         </div>
@@ -88,16 +88,16 @@ import { ApiService } from '../../core/services/api.service';
               <fa-icon [icon]="faBox" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Orders</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.total }}</p>
+              <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalSales : orderStats.total }}</p>
             </div>
           </div>
           <div class="mt-4">
             <a
-              routerLink="/app/orders"
+              [routerLink]="isSeller ? '/app/seller/analytics' : '/app/orders'"
               class="text-sm text-green-600 hover:text-green-800 font-medium"
             >
-              View Orders →
+              {{ isSeller ? 'View Analytics' : 'View Orders' }} →
             </a>
           </div>
         </div>

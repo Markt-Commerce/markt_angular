@@ -14,6 +14,8 @@ import {
   faHeart
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-landing',
@@ -53,19 +55,38 @@ import { ApiService } from '../../core/services/api.service';
                       Markt is a social-first e-commerce platform that combines the best of social media with online shopping. Discover unique products, connect with sellers, and build your community.
                     </h2>
                   </div>
-                  <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
+                  <!-- Guest User Actions -->
+                  <div *ngIf="!(isAuthenticated$ | async)" class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
                     <button
                       class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-              [routerLink]="['/app/marketplace']"
-            >
-                      <span class="truncate">I'm a Buyer</span>
+                      [routerLink]="['/auth/register']"
+                    >
+                      <span class="truncate">Get Started</span>
                       <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                     </button>
                     <button
                       class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/app/seller']"
+                      [routerLink]="['/auth/login']"
                     >
-                      <span class="truncate">I'm a Seller</span>
+                      <span class="truncate">Sign In</span>
+                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                    </button>
+                  </div>
+                  
+                  <!-- Authenticated User Actions -->
+                  <div *ngIf="isAuthenticated$ | async" class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
+                    <button
+                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                      [routerLink]="['/app/dashboard']"
+                    >
+                      <span class="truncate">Go to Dashboard</span>
+                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                    </button>
+                    <button
+                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                      [routerLink]="['/app/marketplace']"
+                    >
+                      <span class="truncate">Browse Marketplace</span>
                       <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                     </button>
                   </div>
@@ -392,6 +413,16 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class LandingComponent implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
+
+  get isAuthenticated$() {
+    return this.authService.authState$.pipe(
+      map(state => {
+        console.log('🔍 Landing: Auth state changed:', state);
+        return state.isAuthenticated;
+      })
+    );
+  }
 
   // Font Awesome icons
   faUsers = faUsers;

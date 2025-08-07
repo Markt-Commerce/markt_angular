@@ -376,7 +376,12 @@ export interface CouponData {
 })
 export class ApiService {
   private http = inject(HttpClient);
-  private readonly API_BASE_URL = 'https://test.api.marktcommerce.com/api/v1';
+  private readonly API_BASE_URL = '/api/v1';
+  
+  // Configure HTTP options to include credentials (cookies)
+  private readonly httpOptions = {
+    withCredentials: true
+  };
 
   // ============================================================================
   // USER ENDPOINTS (25 endpoints)
@@ -1193,7 +1198,8 @@ export class ApiService {
     const httpParams = this.buildHttpParams(params);
     
     return this.http.get<ApiResponse<T>>(url, { 
-      params: httpParams
+      params: httpParams,
+      ...this.httpOptions
     }).pipe(
       catchError(this.handleError)
     );
@@ -1205,7 +1211,7 @@ export class ApiService {
   post<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     
-    return this.http.post<ApiResponse<T>>(url, data).pipe(
+    return this.http.post<ApiResponse<T>>(url, data, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }
@@ -1216,7 +1222,7 @@ export class ApiService {
   put<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     
-    return this.http.put<ApiResponse<T>>(url, data).pipe(
+    return this.http.put<ApiResponse<T>>(url, data, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }
@@ -1227,7 +1233,7 @@ export class ApiService {
   patch<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     
-    return this.http.patch<ApiResponse<T>>(url, data).pipe(
+    return this.http.patch<ApiResponse<T>>(url, data, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }
@@ -1238,7 +1244,7 @@ export class ApiService {
   delete<T>(endpoint: string): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     
-    return this.http.delete<ApiResponse<T>>(url).pipe(
+    return this.http.delete<ApiResponse<T>>(url, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }
@@ -1258,7 +1264,7 @@ export class ApiService {
       });
     }
     
-    return this.http.post<ApiResponse<T>>(url, formData).pipe(
+    return this.http.post<ApiResponse<T>>(url, formData, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }
@@ -1280,7 +1286,7 @@ export class ApiService {
       });
     }
     
-    return this.http.post<ApiResponse<T>>(url, formData).pipe(
+    return this.http.post<ApiResponse<T>>(url, formData, this.httpOptions).pipe(
       catchError(this.handleError)
     );
   }

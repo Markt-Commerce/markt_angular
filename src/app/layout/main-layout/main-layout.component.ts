@@ -59,6 +59,17 @@ import { map } from 'rxjs/operators';
               <span>Marketplace</span>
             </a>
             
+            <!-- Smart Dashboard Link (adapts based on user role) -->
+            <a routerLink="/app/dashboard" routerLinkActive="active" class="nav-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Dashboard</span>
+            </a>
+            
             <a routerLink="/app/community/feed" routerLinkActive="active" class="nav-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 21V14h2v7h4v-7h2v7h4v-7h2v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>
@@ -193,6 +204,18 @@ import { map } from 'rxjs/operators';
             </svg>
             Marketplace
           </a>
+          
+          <!-- Smart Dashboard Link (adapts based on user role) -->
+          <a routerLink="/app/dashboard" (click)="toggleMobileMenu()" class="mobile-nav-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Dashboard
+          </a>
+          
           <a routerLink="/app/community" (click)="toggleMobileMenu()" class="mobile-nav-link">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>

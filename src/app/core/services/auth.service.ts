@@ -56,19 +56,32 @@ export class AuthService {
    */
   private initializeAuth(): void {
     const userData = localStorage.getItem('markt_user');
+    const token = localStorage.getItem('markt_token');
+    
+    console.log('🔍 AuthService: Initializing auth...');
+    console.log('🔍 AuthService: User data exists:', !!userData);
+    console.log('🔍 AuthService: Token exists:', !!token);
+    
     if (userData) {
       try {
         const user = JSON.parse(userData);
+        console.log('🔍 AuthService: User parsed successfully:', user);
+        
+        // If we have user data, consider user authenticated even without token
+        // (some APIs might not return tokens or use different auth mechanisms)
         this.authStateSubject.next({
           user,
           isAuthenticated: true,
           isLoading: false,
           error: null
         });
+        console.log('🔍 AuthService: Auth state set to authenticated (with or without token)');
       } catch (error) {
         console.error('Error parsing user data:', error);
         this.clearAuth();
       }
+    } else {
+      console.log('🔍 AuthService: No user data found, staying unauthenticated');
     }
   }
 
@@ -155,12 +168,38 @@ export class AuthService {
     return this.apiService.login(credentials).pipe(
       tap({
         next: (response: any) => {
-          if (response.success && response.data) {
-            this.setUser(response.data);
+          console.log('Login response:', response);
+          console.log('Response data:', response?.data);
+          console.log('Response data keys:', response?.data ? Object.keys(response.data) : 'No data');
+          console.log('Response keys:', response ? Object.keys(response) : 'No response');
+          
+          // Handle both ApiResponse wrapper and direct data response
+          const userData = response?.data || response;
+          
+          // Check if response has valid user data (successful login)
+          if (userData && userData.id) {
+            // Store token if provided (check both data and top level)
+            let token = null;
+            if (userData.token || userData.access_token) {
+              token = userData.token || userData.access_token;
+            } else if (response.token || response.access_token) {
+              token = response.token || response.access_token;
+            }
+            
+            if (token) {
+              localStorage.setItem('markt_token', token);
+              console.log('Token stored:', token);
+            } else {
+              console.log('No token found in response - this might be normal for this API');
+            }
+            
+            // Set user regardless of token (some APIs don't return tokens)
+            this.setUser(userData);
           }
           this.setLoading(false);
         },
         error: (error: any) => {
+          console.error('Login error in auth service:', error);
           this.setError(error.message);
           this.setLoading(false);
         }
@@ -427,26 +466,33 @@ export class AuthService {
    * Set user and update auth state
    */
   private setUser(user: User): void {
+    console.log('🔍 AuthService: Setting user:', user);
     localStorage.setItem('markt_user', JSON.stringify(user));
+    console.log('🔍 AuthService: User stored in localStorage');
     this.authStateSubject.next({
       user,
       isAuthenticated: true,
       isLoading: false,
       error: null
     });
+    console.log('🔍 AuthService: Auth state updated with user');
   }
 
   /**
    * Clear authentication state
    */
   private clearAuth(): void {
+    console.log('🔍 AuthService: Clearing auth...');
     localStorage.removeItem('markt_user');
+    localStorage.removeItem('markt_token');
+    console.log('🔍 AuthService: Auth data removed from localStorage');
     this.authStateSubject.next({
       user: null,
       isAuthenticated: false,
       isLoading: false,
       error: null
     });
+    console.log('🔍 AuthService: Auth state cleared');
   }
 
   /**

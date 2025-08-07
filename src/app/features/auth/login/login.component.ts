@@ -278,13 +278,25 @@ export class LoginComponent implements OnInit {
         account_type: this.loginForm.value.accountType
       };
 
+      console.log('Attempting login with credentials:', credentials);
+
       this.authService.login(credentials).subscribe({
         next: (response) => {
-          if (response.success) {
-            // Navigate to dashboard
+          console.log('Login response:', response);
+          console.log('Response type:', typeof response);
+          console.log('Response keys:', response ? Object.keys(response) : 'No response');
+          
+          // Check if response has data (successful login)
+          // Handle both ApiResponse wrapper and direct data response
+          const userData = response?.data || response;
+          
+          if (userData && userData.id) {
+            console.log('Login successful, navigating...');
+            // Navigate to smart dashboard for all users
             this.router.navigate(['/app/dashboard']);
           } else {
-            this.errorMessage = response.message || 'Login failed';
+            console.log('Login failed - no valid user data in response');
+            this.errorMessage = response?.message || 'Login failed';
           }
           this.loading = false;
         },
