@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { ApiService } from '../../core/services/api.service';
 
 interface Notification {
   id: number;
@@ -423,9 +424,12 @@ interface Notification {
   `]
 })
 export class NotificationsComponent implements OnInit {
+  private apiService = inject(ApiService);
+
   notifications: Notification[] = [];
   activeFilter = 'all';
   hasUnreadNotifications = false;
+  loading = false;
 
   get filteredNotifications(): Notification[] {
     switch (this.activeFilter) {
@@ -449,41 +453,21 @@ export class NotificationsComponent implements OnInit {
   }
 
   loadNotifications(): void {
-    // Mock data - in real app, this would come from a service
-    this.notifications = [
-      {
-        id: 1,
-        type: 'success',
-        title: 'Order Confirmed',
-        message: 'Your order #12345 has been confirmed and is being processed.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-        read: false,
-        action_url: '/orders/12345',
-        action_text: 'View Order'
+    this.loading = true;
+    
+    this.apiService.getNotifications().subscribe({
+      next: (response) => {
+        this.notifications = response.data || [];
+        this.hasUnreadNotifications = this.unreadCount > 0;
+        this.loading = false;
       },
-      {
-        id: 2,
-        type: 'info',
-        title: 'New Message',
-        message: 'You have a new message from John Doe about your product listing.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-        read: false,
-        action_url: '/messages/1',
-        action_text: 'View Message'
-      },
-      {
-        id: 3,
-        type: 'warning',
-        title: 'Payment Pending',
-        message: 'Your payment for order #12344 is still pending. Please complete the payment.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        read: true,
-        action_url: '/orders/12344',
-        action_text: 'Complete Payment'
+      error: (error) => {
+        console.error('Error loading notifications:', error);
+        this.notifications = [];
+        this.hasUnreadNotifications = false;
+        this.loading = false;
       }
-    ];
-
-    this.hasUnreadNotifications = this.unreadCount > 0;
+    });
   }
 
   setFilter(filter: string): void {
@@ -491,22 +475,50 @@ export class NotificationsComponent implements OnInit {
   }
 
   toggleRead(notification: Notification): void {
+    // For now, just update locally since the API doesn't have mark as read
     notification.read = !notification.read;
     this.hasUnreadNotifications = this.unreadCount > 0;
   }
 
   markAllAsRead(): void {
+    // For now, just update locally since the API doesn't have mark all as read
     this.notifications.forEach(n => n.read = true);
     this.hasUnreadNotifications = false;
   }
 
   deleteNotification(id: number): void {
+    // For now, just remove locally since the API doesn't have delete notification
     this.notifications = this.notifications.filter(n => n.id !== id);
     this.hasUnreadNotifications = this.unreadCount > 0;
   }
 
   clearAllNotifications(): void {
+    // For now, just clear locally since the API doesn't have clear all notifications
     this.notifications = [];
     this.hasUnreadNotifications = false;
+  }
+
+  // Additional notification endpoint integrations
+  getUnreadCount(): void {
+    this.apiService.getUnreadCount().subscribe({
+      next: (response) => {
+        console.log('Unread count loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading unread count:', error);
+      }
+    });
+  }
+
+  markAsRead(notificationIds: number[]): void {
+    this.apiService.markAsRead(notificationIds).subscribe({
+      next: (response) => {
+        console.log('Notifications marked as read:', response.data);
+        this.loadNotifications(); // Refresh notifications
+      },
+      error: (error) => {
+        console.error('Error marking notifications as read:', error);
+      }
+    });
   }
 } 

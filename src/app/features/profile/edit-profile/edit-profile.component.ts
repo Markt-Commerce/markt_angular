@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-edit-profile',
@@ -446,13 +447,14 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class EditProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   profileForm!: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
+  profile: any; // Added to store profile data
 
   ngOnInit(): void {
     this.initForm();
@@ -478,24 +480,34 @@ export class EditProfileComponent implements OnInit {
   }
 
   private loadProfile(): void {
-    // Mock data - replace with actual API call
-    const mockProfile = {
-      username: 'johndoe',
-      full_name: 'John Doe',
-      email: 'john@example.com',
-      phone_number: '+1234567890',
-      bio: 'Passionate seller with 5+ years of experience in electronics.',
-      location: 'New York, NY',
-      website: 'https://johndoe.com',
-      twitter: '@johndoe',
-      instagram: '@johndoe',
-      linkedin: 'https://linkedin.com/in/johndoe',
-      email_notifications: true,
-      public_profile: true,
-      show_contact_info: false
-    };
+    this.loading = true;
+    
+    this.apiService.getProfile().subscribe({
+      next: (response) => {
+        this.profile = response.data;
+        this.populateForm();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile:', error);
+        this.loading = false;
+      }
+    });
+  }
 
-    this.profileForm.patchValue(mockProfile);
+  private populateForm(): void {
+    if (this.profile) {
+      this.profileForm.patchValue({
+        full_name: this.profile.full_name,
+        username: this.profile.username,
+        bio: this.profile.bio,
+        location: this.profile.location,
+        website: this.profile.website,
+        twitter: this.profile.twitter,
+        instagram: this.profile.instagram,
+        linkedin: this.profile.linkedin
+      });
+    }
   }
 
   onSubmit(): void {
@@ -504,18 +516,25 @@ export class EditProfileComponent implements OnInit {
       this.errorMessage = '';
       this.successMessage = '';
 
-      // const formData = this.profileForm.value;
-
-      // Mock API call - replace with actual service call
-      setTimeout(() => {
-        this.loading = false;
-        this.successMessage = 'Profile updated successfully!';
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 3000);
-      }, 1000);
+      const formData = this.profileForm.value;
+      
+      this.apiService.updateProfile(formData).subscribe({
+        next: (response) => {
+          this.loading = false;
+          this.successMessage = 'Profile updated successfully!';
+          this.router.navigate(['/app/profile']);
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.successMessage = '';
+          }, 3000);
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          this.loading = false;
+          this.errorMessage = 'Failed to update profile. Please try again.';
+        }
+      });
     }
   }
 

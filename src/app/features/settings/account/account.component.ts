@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-account',
@@ -408,6 +409,7 @@ export class AccountComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   personalInfoForm!: FormGroup;
   passwordForm!: FormGroup;
@@ -422,7 +424,7 @@ export class AccountComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
-    this.loadAccountInfo();
+    this.loadAccountData();
   }
 
   private initForms(): void {
@@ -455,16 +457,19 @@ export class AccountComponent implements OnInit {
     return null;
   }
 
-  private loadAccountInfo(): void {
-    // Mock data - replace with actual API call
-    const mockAccount = {
-      username: 'johndoe',
-      full_name: 'John Doe',
-      email: 'john@example.com',
-      phone_number: '+1234567890'
-    };
-
-    this.personalInfoForm.patchValue(mockAccount);
+  private loadAccountData(): void {
+    this.personalInfoLoading = true;
+    
+    this.apiService.getProfile().subscribe({
+      next: (response) => {
+        this.personalInfoForm.patchValue(response.data);
+        this.personalInfoLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading account data:', error);
+        this.personalInfoLoading = false;
+      }
+    });
   }
 
   updatePersonalInfo(): void {
@@ -475,15 +480,23 @@ export class AccountComponent implements OnInit {
 
       const formData = this.personalInfoForm.value;
 
-      // Mock API call - replace with actual service call
-      setTimeout(() => {
-        this.personalInfoLoading = false;
-        this.personalInfoSuccess = 'Personal information updated successfully!';
-        
-        setTimeout(() => {
-          this.personalInfoSuccess = '';
-        }, 3000);
-      }, 1000);
+      this.apiService.updateProfile(formData).subscribe({
+        next: (response) => {
+          this.personalInfoForm.patchValue(response.data);
+          this.personalInfoLoading = false;
+          this.personalInfoSuccess = 'Personal information updated successfully!';
+          
+          setTimeout(() => {
+            this.personalInfoSuccess = '';
+          }, 3000);
+        },
+        error: (error) => {
+          console.error('Error updating account:', error);
+          this.personalInfoLoading = false;
+          this.personalInfoError = 'Failed to update personal information.';
+          setTimeout(() => this.personalInfoError = '', 3000);
+        }
+      });
     }
   }
 
@@ -495,16 +508,23 @@ export class AccountComponent implements OnInit {
 
       const formData = this.passwordForm.value;
 
-      // Mock API call - replace with actual service call
-      setTimeout(() => {
-        this.passwordLoading = false;
-        this.passwordSuccess = 'Password changed successfully!';
-        this.passwordForm.reset();
-        
-        setTimeout(() => {
-          this.passwordSuccess = '';
-        }, 3000);
-      }, 1000);
+      this.apiService.changePassword(formData).subscribe({
+        next: (response) => {
+          this.passwordForm.reset();
+          this.passwordLoading = false;
+          this.passwordSuccess = 'Password changed successfully!';
+          
+          setTimeout(() => {
+            this.passwordSuccess = '';
+          }, 3000);
+        },
+        error: (error) => {
+          console.error('Error changing password:', error);
+          this.passwordLoading = false;
+          this.passwordError = 'Failed to change password.';
+          setTimeout(() => this.passwordError = '', 3000);
+        }
+      });
     }
   }
 
@@ -542,8 +562,16 @@ export class AccountComponent implements OnInit {
   }
 
   deleteAccount(): void {
-    // Mock account deletion - replace with actual implementation
-    alert('Account deletion would be implemented here');
+    this.apiService.deleteAccount().subscribe({
+      next: (response) => {
+        this.authService.logout();
+        this.router.navigate(['/auth/login']);
+      },
+      error: (error) => {
+        console.error('Error deleting account:', error);
+        alert('Failed to delete account.');
+      }
+    });
   }
 
   goBack(): void {

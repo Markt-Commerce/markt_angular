@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface PrivacySetting {
   id: string;
@@ -488,6 +489,7 @@ interface PrivacySetting {
 export class PrivacyComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   privacyForm!: FormGroup;
   loading = false;
@@ -622,53 +624,46 @@ export class PrivacyComponent implements OnInit {
   }
 
   private loadSettings(): void {
-    // Mock data - replace with actual API call
-    const mockSettings = {
-      profile_public: true,
-      show_email: false,
-      show_phone: false,
-      show_location: true,
-      allow_messages: true,
-      show_online_status: false,
-      allow_friend_requests: true,
-      show_purchase_history: false,
-      show_reviews: true,
-      show_favorites: true,
-      show_activity_feed: false,
-      analytics_tracking: true,
-      personalized_ads: false,
-      third_party_sharing: false
-    };
-
-    this.privacyForm.patchValue(mockSettings);
+    this.loading = true;
+    
+    this.apiService.getPrivacySettings().subscribe({
+      next: (response) => {
+        this.privacyForm.patchValue(response.data);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading privacy settings:', error);
+        this.loading = false;
+      }
+    });
   }
 
   saveSettings(): void {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
-
-          // const formData = this.privacyForm.value;
-
-    // Mock API call - replace with actual service call
-    setTimeout(() => {
-      this.loading = false;
-      this.successMessage = 'Privacy settings saved successfully!';
-      
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
-    }, 1000);
+    
+    const formData = this.privacyForm.value;
+    
+    this.apiService.updatePrivacySettings(formData).subscribe({
+      next: (response) => {
+        this.loading = false;
+        this.successMessage = 'Privacy settings updated successfully!';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error updating privacy settings:', error);
+        this.loading = false;
+        this.errorMessage = 'Failed to update privacy settings.';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   resetSettings(): void {
     if (confirm('Are you sure you want to reset all privacy settings to defaults?')) {
       this.loadSettings();
-      this.successMessage = 'Settings reset to defaults!';
-      
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
+      // TODO: Replace with actual backend call
     }
   }
 
@@ -691,7 +686,7 @@ export class PrivacyComponent implements OnInit {
 
   viewLoginHistory(): void {
     // Mock login history view - replace with actual implementation
-    alert('Login history would be displayed here');
+    
   }
 
   downloadData(): void {

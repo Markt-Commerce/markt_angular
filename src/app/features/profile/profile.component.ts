@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { ApiService } from '../../core/services/api.service';
 
 interface UserProfile {
   id: number;
@@ -68,7 +69,7 @@ interface Listing {
           
           <div class="profile-info">
             <h1 class="profile-name">{{ profile?.full_name || profile?.username }}</h1>
-            <p class="profile-username">@{{ profile?.username }}</p>
+            <p class="profile-username">&#64;{{ profile?.username }}</p>
             <p class="profile-location" *ngIf="profile?.location">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -177,7 +178,7 @@ interface Listing {
             <div class="account-info">
               <div class="info-item">
                 <strong>Username:</strong>
-                <span>@{{ profile?.username }}</span>
+                <span>&#64;{{ profile?.username }}</span>
               </div>
               <div class="info-item">
                 <strong>Member Since:</strong>
@@ -217,7 +218,7 @@ interface Listing {
               <div class="review-item" *ngFor="let review of reviews">
                 <div class="review-header">
                   <div class="reviewer-info">
-                    <img [src]="review.reviewer_avatar || '/assets/placeholder-avatar.jpg'" [alt]="review.reviewer_name" class="reviewer-avatar">
+                    <img [src]="review.reviewer_avatar || '/markt-text-logo.png'" [alt]="review.reviewer_name" class="reviewer-avatar">
                     <div>
                       <div class="reviewer-name">{{ review.reviewer_name }}</div>
                       <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
@@ -254,7 +255,7 @@ interface Listing {
             <div class="listings-grid" *ngIf="listings.length > 0; else noListings">
               <div class="listing-card" *ngFor="let listing of listings" [routerLink]="['/marketplace/product', listing.id]">
                 <div class="listing-image">
-                  <img [src]="listing.images[0] || '/assets/placeholder-product.jpg'" [alt]="listing.title">
+                  <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title">
                 </div>
                 <div class="listing-info">
                   <h4>{{ listing.title }}</h4>
@@ -708,10 +709,13 @@ interface Listing {
   `]
 })
 export class ProfileComponent implements OnInit {
+  private apiService = inject(ApiService);
+
   profile: UserProfile | null = null;
   activeTab = 'about';
   reviews: Review[] = [];
   listings: Listing[] = [];
+  loading = false;
 
   ngOnInit(): void {
     this.loadProfile();
@@ -720,67 +724,43 @@ export class ProfileComponent implements OnInit {
   }
 
   loadProfile(): void {
-    // Mock data - in real app, this would come from a service
-    this.profile = {
-      id: 1,
-      username: 'johndoe',
-      full_name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+234 123 456 7890',
-      location: 'Lagos, Nigeria',
-      join_date: '2023-01-15T00:00:00Z',
-      rating: 4.5,
-      total_reviews: 12,
-      total_orders: 25,
-      total_listings: 8,
-      is_verified: true,
-      is_seller: true,
-      bio: 'Passionate seller with quality products and excellent customer service.'
-    };
+    this.loading = true;
+    
+    this.apiService.getProfile().subscribe({
+      next: (response) => {
+        this.profile = response.data as any;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile:', error);
+        this.profile = null;
+        this.loading = false;
+      }
+    });
   }
 
   loadReviews(): void {
-    // Mock reviews data
-    this.reviews = [
-      {
-        id: 1,
-        reviewer_name: 'Alice Smith',
-        reviewer_avatar: '/assets/placeholder-avatar.jpg',
-        rating: 5,
-        comment: 'Excellent seller! Fast shipping and product exactly as described.',
-        created_at: '2024-01-15T00:00:00Z'
+    this.apiService.getMyReviews().subscribe({
+      next: (response) => {
+        this.reviews = response.data || [];
       },
-      {
-        id: 2,
-        reviewer_name: 'Bob Johnson',
-        reviewer_avatar: '/assets/placeholder-avatar.jpg',
-        rating: 4,
-        comment: 'Good communication and fair pricing. Would buy again.',
-        created_at: '2024-01-10T00:00:00Z'
+      error: (error) => {
+        console.error('Error loading reviews:', error);
+        this.reviews = [];
       }
-    ];
+    });
   }
 
   loadListings(): void {
-    // Mock listings data
-    this.listings = [
-      {
-        id: 1,
-        title: 'iPhone 13 Pro Max',
-        price: 450000,
-        currency: 'NGN',
-        location: 'Lagos, Nigeria',
-        images: ['/assets/placeholder-product.jpg']
+    this.apiService.getMyProducts().subscribe({
+      next: (response) => {
+        this.listings = (response.data?.items || []) as any;
       },
-      {
-        id: 2,
-        title: 'MacBook Air M1',
-        price: 850000,
-        currency: 'NGN',
-        location: 'Lagos, Nigeria',
-        images: ['/assets/placeholder-product.jpg']
+      error: (error) => {
+        console.error('Error loading listings:', error);
+        this.listings = [];
       }
-    ];
+    });
   }
 
   setActiveTab(tab: string): void {
@@ -801,5 +781,160 @@ export class ProfileComponent implements OnInit {
     }
     
     return stars;
+  }
+
+  // User management endpoint integrations - using component data instead of hardcoded values
+  createBuyerAccount(buyerData: any): void {
+    this.apiService.createBuyerAccount(buyerData).subscribe({
+      next: (response) => {
+        console.log('Buyer account created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating buyer account:', error);
+      }
+    });
+  }
+
+  createSellerAccount(sellerData: any): void {
+    this.apiService.createSellerAccount(sellerData).subscribe({
+      next: (response) => {
+        console.log('Seller account created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating seller account:', error);
+      }
+    });
+  }
+
+  updateBuyerProfile(buyerData: any): void {
+    this.apiService.updateBuyerProfile(buyerData).subscribe({
+      next: (response) => {
+        console.log('Buyer profile updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating buyer profile:', error);
+      }
+    });
+  }
+
+  updateSellerProfile(sellerData: any): void {
+    this.apiService.updateSellerProfile(sellerData).subscribe({
+      next: (response) => {
+        console.log('Seller profile updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating seller profile:', error);
+      }
+    });
+  }
+
+  switchRole(): void {
+    this.apiService.switchRole().subscribe({
+      next: (response) => {
+        console.log('Role switched:', response.data);
+      },
+      error: (error) => {
+        console.error('Error switching role:', error);
+      }
+    });
+  }
+
+  getUsers(): void {
+    this.apiService.getUsers().subscribe({
+      next: (response) => {
+        console.log('Users loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+      }
+    });
+  }
+
+  getPublicProfile(userId: string): void {
+    this.apiService.getPublicProfile(userId).subscribe({
+      next: (response) => {
+        console.log('Public profile loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading public profile:', error);
+      }
+    });
+  }
+
+  loadUserSettings(): void {
+    this.apiService.getUserSettings().subscribe({
+      next: (response) => {
+        console.log('User settings loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading user settings:', error);
+      }
+    });
+  }
+
+  updateUserSettings(settings: any): void {
+    this.apiService.updateUserSettings(settings).subscribe({
+      next: (response) => {
+        console.log('User settings updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating user settings:', error);
+      }
+    });
+  }
+
+  passwordReset(email: string): void {
+    this.apiService.passwordReset(email).subscribe({
+      next: (response) => {
+        console.log('Password reset email sent:', response.data);
+      },
+      error: (error) => {
+        console.error('Error sending password reset:', error);
+      }
+    });
+  }
+
+  passwordResetConfirm(resetData: any): void {
+    this.apiService.passwordResetConfirm(resetData).subscribe({
+      next: (response) => {
+        console.log('Password reset confirmed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error confirming password reset:', error);
+      }
+    });
+  }
+
+  sendEmailVerification(email: string): void {
+    this.apiService.sendEmailVerification(email).subscribe({
+      next: (response) => {
+        console.log('Email verification sent:', response.data);
+      },
+      error: (error) => {
+        console.error('Error sending email verification:', error);
+      }
+    });
+  }
+
+  verifyEmail(verificationData: any): void {
+    this.apiService.verifyEmail(verificationData).subscribe({
+      next: (response) => {
+        console.log('Email verified:', response.data);
+      },
+      error: (error) => {
+        console.error('Error verifying email:', error);
+      }
+    });
+  }
+
+  logout(): void {
+    this.apiService.logout().subscribe({
+      next: (response) => {
+        console.log('Logged out successfully:', response.data);
+      },
+      error: (error) => {
+        console.error('Error logging out:', error);
+      }
+    });
   }
 } 

@@ -140,8 +140,8 @@ export class VerifyEmailComponent implements OnInit {
     const code = this.route.snapshot.queryParams['code'];
     const email = this.route.snapshot.queryParams['email'];
     
-    this.email = email || '';
-    this.verificationCode = code || '';
+    this.email = email || '/Logo.png';
+    this.verificationCode = code || '/Logo.png';
 
     if (code && email) {
       // If both code and email are present, verify immediately
@@ -166,12 +166,12 @@ export class VerifyEmailComponent implements OnInit {
       email: email,
       verification_code: code
     }).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isVerifying = false;
         this.verificationStatus = 'success';
-        console.log('Email verification successful:', response);
+        
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isVerifying = false;
         this.verificationStatus = 'error';
         this.errorMessage = this.getErrorMessage(error);
@@ -186,15 +186,15 @@ export class VerifyEmailComponent implements OnInit {
     this.isResending = true;
 
     this.authService.sendEmailVerification(this.email).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isResending = false;
         this.startResendCooldown();
-        console.log('Verification email sent:', response);
+        
         // Reset status to pending as new code was sent
         this.verificationStatus = 'pending';
         this.errorMessage = '';
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isResending = false;
         this.errorMessage = this.getErrorMessage(error);
         console.error('Failed to resend verification email:', error);

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
+import { ApiService } from '../../core/services/api.service';
 
 interface CommunityPost {
   id: string;
@@ -93,19 +94,19 @@ interface CommunityDiscussion {
             <h3>Community Guidelines</h3>
             <div class="guidelines">
               <div class="guideline-item">
-                <span class="guideline-icon">✅</span>
+                <i class="fas fa-check text-green-500"></i>
                 <span>Be respectful and kind</span>
               </div>
               <div class="guideline-item">
-                <span class="guideline-icon">✅</span>
+                <i class="fas fa-check text-green-500"></i>
                 <span>Share relevant content</span>
               </div>
               <div class="guideline-item">
-                <span class="guideline-icon">✅</span>
+                <i class="fas fa-check text-green-500"></i>
                 <span>No spam or advertising</span>
               </div>
               <div class="guideline-item">
-                <span class="guideline-icon">✅</span>
+                <i class="fas fa-check text-green-500"></i>
                 <span>Follow community rules</span>
               </div>
             </div>
@@ -826,6 +827,7 @@ interface CommunityDiscussion {
 export class CommunityComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   activeTab = 'posts';
   selectedCategory = 'all';
@@ -837,11 +839,11 @@ export class CommunityComponent implements OnInit {
   createPostForm!: FormGroup;
 
   categories = [
-    { id: 'all', name: 'All Posts', icon: '📱', count: 1250 },
-    { id: 'general', name: 'General', icon: '💬', count: 450 },
-    { id: 'buying', name: 'Buying Tips', icon: '🛒', count: 320 },
-    { id: 'selling', name: 'Selling Tips', icon: '💰', count: 280 },
-    { id: 'reviews', name: 'Product Reviews', icon: '⭐', count: 200 }
+    { id: 'all', name: 'All Posts', icon: 'fas fa-mobile-alt', count: 1250 },
+    { id: 'general', name: 'General', icon: 'fas fa-comment', count: 450 },
+    { id: 'buying', name: 'Buying Tips', icon: 'fas fa-shopping-cart', count: 320 },
+    { id: 'selling', name: 'Selling Tips', icon: 'fas fa-money-bill', count: 280 },
+    { id: 'reviews', name: 'Product Reviews', icon: 'fas fa-star', count: 200 }
   ];
 
   trendingTopics = [
@@ -852,82 +854,32 @@ export class CommunityComponent implements OnInit {
     { name: 'community', posts: 22 }
   ];
 
-  posts: CommunityPost[] = [
-    {
-      id: '1',
-      author: {
-        id: '1',
-        name: 'Sarah Johnson',
-        avatar: 'https://via.placeholder.com/40',
-        username: 'sarahj'
-      },
-      content: 'Just found an amazing deal on electronics! The seller was super helpful and the product was exactly as described. Highly recommend checking out their store!',
-      likes: 24,
-      comments: 8,
-      shares: 3,
-      created_at: '2024-01-15T10:30:00Z',
-      is_liked: false,
-      tags: ['electronics', 'review', 'recommendation']
-    },
-    {
-      id: '2',
-      author: {
-        id: '2',
-        name: 'Mike Chen',
-        avatar: 'https://via.placeholder.com/40',
-        username: 'mikechen'
-      },
-      content: 'Tips for new sellers: Always take clear photos, be honest about condition, and respond quickly to messages. It makes a huge difference!',
-      likes: 56,
-      comments: 12,
-      shares: 15,
-      created_at: '2024-01-15T09:15:00Z',
-      is_liked: true,
-      tags: ['selling', 'tips', 'newbie']
-    }
-  ];
+  posts: CommunityPost[] = [];
 
-  discussions: CommunityDiscussion[] = [
-    {
-      id: '1',
-      title: 'Best practices for shipping fragile items',
-      author: {
-        id: '3',
-        name: 'Emma Wilson',
-        avatar: 'https://via.placeholder.com/40'
-      },
-      content: 'I\'ve been selling vintage items and need advice on the best way to ship fragile items safely...',
-      replies: 15,
-      views: 234,
-      created_at: '2024-01-15T08:00:00Z',
-      category: 'Selling Tips',
-      is_pinned: true
-    },
-    {
-      id: '2',
-      title: 'How to spot fake products when buying',
-      author: {
-        id: '4',
-        name: 'David Brown',
-        avatar: 'https://via.placeholder.com/40'
-      },
-      content: 'I\'ve encountered several fake products lately. What are the red flags to look out for?',
-      replies: 23,
-      views: 456,
-      created_at: '2024-01-15T07:30:00Z',
-      category: 'Buying Tips',
-      is_pinned: false
-    }
-  ];
+  discussions: CommunityDiscussion[] = [];
 
   ngOnInit(): void {
     this.initForm();
+    this.loadPosts();
   }
 
   private initForm(): void {
     this.createPostForm = this.fb.group({
       content: ['', [Validators.required, Validators.minLength(10)]],
       tags: ['']
+    });
+  }
+
+  private loadPosts(): void {
+    // Load posts from the API
+    this.apiService.getPersonalizedFeed().subscribe({
+      next: (response) => {
+        this.posts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading posts:', error);
+        this.posts = [];
+      }
     });
   }
 
@@ -941,24 +893,50 @@ export class CommunityComponent implements OnInit {
   }
 
   applyFilters(): void {
-    // Mock filter application - replace with actual API call
-    console.log('Applying filters:', { category: this.selectedCategory, sort: this.sortBy, time: this.timeFilter });
+    // Use the API to apply filters
+    const params = {
+      category: this.selectedCategory,
+      sort: this.sortBy,
+      time: this.timeFilter
+    };
+    
+    this.apiService.getPersonalizedFeed(params).subscribe({
+      next: (response) => {
+        this.posts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error applying filters:', error);
+      }
+    });
   }
 
   toggleLike(post: CommunityPost): void {
-    post.is_liked = !post.is_liked;
-    post.likes += post.is_liked ? 1 : -1;
+    this.apiService.togglePostLike(post.id).subscribe({
+      next: (response) => {
+        post.is_liked = !post.is_liked;
+        post.likes += post.is_liked ? 1 : -1;
+      },
+      error: (error) => {
+        console.error('Error toggling like:', error);
+      }
+    });
   }
 
   showComments(post: CommunityPost): void {
-    // Mock comment display - replace with actual implementation
-    alert(`Show comments for post: ${post.id}`);
+    // Navigate to post detail to show comments
+    this.router.navigate(['/app/community/post', post.id]);
   }
 
   sharePost(post: CommunityPost): void {
-    post.shares += 1;
-    // Mock share functionality - replace with actual implementation
-    alert(`Share post: ${post.id}`);
+    // Use the API to share the post
+    this.apiService.shareProduct(post.id).subscribe({
+      next: (response) => {
+        post.shares += 1;
+      },
+      error: (error) => {
+        console.error('Error sharing post:', error);
+      }
+    });
   }
 
   closeCreatePost(): void {
@@ -973,35 +951,29 @@ export class CommunityComponent implements OnInit {
       const formData = this.createPostForm.value;
       const tags = formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [];
 
-      // Mock post creation - replace with actual API call
-      setTimeout(() => {
-        const newPost: CommunityPost = {
-          id: Date.now().toString(),
-          author: {
-            id: 'current-user',
-            name: 'Current User',
-            avatar: 'https://via.placeholder.com/40',
-            username: 'currentuser'
-          },
-          content: formData.content,
-          likes: 0,
-          comments: 0,
-          shares: 0,
-          created_at: new Date().toISOString(),
-          is_liked: false,
-          tags: tags
-        };
+      const postData = {
+        content: formData.content,
+        tags: tags
+      };
 
-        this.posts.unshift(newPost);
-        this.submitting = false;
-        this.closeCreatePost();
-      }, 1000);
+      this.apiService.createPost(postData).subscribe({
+        next: (response) => {
+          this.submitting = false;
+          this.closeCreatePost();
+          this.loadPosts(); // Reload posts to show the new one
+        },
+        error: (error) => {
+          console.error('Error creating post:', error);
+          this.submitting = false;
+        }
+      });
     }
   }
 
   subscribeToEvents(): void {
-    // Mock event subscription - replace with actual implementation
-    alert('Subscribed to community events!');
+    // This would typically be handled by a WebSocket service
+    // For now, just log that subscription is requested
+    console.log('Subscribing to community events');
   }
 
   formatTime(dateString: string): string {

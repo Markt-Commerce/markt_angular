@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface UserProfile {
   id: string;
@@ -50,7 +51,7 @@ interface Review {
         <div class="profile-cover">
           <div class="profile-avatar">
             <img 
-              [src]="profile?.avatar_url || '/assets/default-avatar.png'" 
+              [src]="profile?.avatar_url || '/markt-text-logo.png'" 
               [alt]="profile?.full_name"
               class="avatar-image"
             >
@@ -63,20 +64,20 @@ interface Review {
         <div class="profile-info">
           <div class="profile-main">
             <h1 class="profile-name">{{ profile?.full_name }}</h1>
-            <p class="profile-username">@{{ profile?.username }}</p>
+            <p class="profile-username">&#64;{{ profile?.username }}</p>
             <p *ngIf="profile?.bio" class="profile-bio">{{ profile?.bio }}</p>
             
             <div class="profile-meta">
               <div *ngIf="profile?.location" class="meta-item">
-                <span class="meta-icon">📍</span>
+                <i class="fas fa-map-marker-alt text-gray-500"></i>
                 <span>{{ profile?.location }}</span>
               </div>
               <div *ngIf="profile?.website" class="meta-item">
-                <span class="meta-icon">🌐</span>
+                <i class="fas fa-globe text-gray-500"></i>
                 <a [href]="profile?.website" target="_blank" class="meta-link">{{ profile?.website }}</a>
               </div>
               <div class="meta-item">
-                <span class="meta-icon">📅</span>
+                <i class="fas fa-calendar text-gray-500"></i>
                 <span>Member since {{ profile?.member_since | date:'MMM yyyy' }}</span>
               </div>
             </div>
@@ -151,7 +152,7 @@ interface Review {
           <!-- Products Tab -->
           <div *ngIf="activeTab === 'products'" class="products-tab">
             <div *ngIf="products.length === 0" class="empty-state">
-              <div class="empty-icon">📦</div>
+              <i class="fas fa-box text-gray-400 text-4xl"></i>
               <h3>No products yet</h3>
               <p>This user hasn't listed any products yet.</p>
             </div>
@@ -608,97 +609,58 @@ interface Review {
 export class UserProfileComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   profile?: UserProfile;
   products: Product[] = [];
   reviews: Review[] = [];
   activeTab = 'products';
   isFollowing = false;
+  loading = true;
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadProducts();
-    this.loadReviews();
   }
 
-  loadUserProfile(): void {
-    // Mock data - replace with actual API call
-    this.profile = {
-      id: '1',
-      username: 'johndoe',
-      full_name: 'John Doe',
-      avatar_url: '/assets/avatar.jpg',
-      bio: 'Passionate seller with 5+ years of experience in electronics and gadgets. I specialize in vintage cameras and modern tech accessories.',
-      location: 'New York, NY',
-      website: 'https://johndoe.com',
-      twitter: '@johndoe',
-      instagram: '@johndoe',
-      linkedin: 'https://linkedin.com/in/johndoe',
-      member_since: '2020-03-15',
-      total_products: 24,
-      total_sales: 156,
-      rating: 4.8,
-      review_count: 89,
-      is_verified: true,
-      is_seller: true
-    };
-  }
+  private loadUserProfile(): void {
+    const userId = this.route.snapshot.paramMap.get('id');
+    
+    if (userId) {
+      this.loading = true;
+      
+      this.apiService.getUserProfile(userId).subscribe({
+        next: (response) => {
+          this.profile = response.data as any;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading user profile:', error);
+          this.loading = false;
+        }
+      });
 
-  loadProducts(): void {
-    // Mock data - replace with actual API call
-    this.products = [
-      {
-        id: '1',
-        name: 'Canon AE-1 Camera',
-        price: 250,
-        image_url: '/assets/camera.jpg',
-        condition: 'excellent',
-        created_at: '2024-01-15'
-      },
-      {
-        id: '2',
-        name: 'MacBook Pro 2020',
-        price: 1200,
-        image_url: '/assets/macbook.jpg',
-        condition: 'good',
-        created_at: '2024-01-10'
-      },
-      {
-        id: '3',
-        name: 'Yamaha FG800 Guitar',
-        price: 180,
-        image_url: '/assets/guitar.jpg',
-        condition: 'like new',
-        created_at: '2024-01-08'
-      }
-    ];
-  }
+      // Load user's products
+      this.apiService.getUserProducts(userId).subscribe({
+        next: (response) => {
+          this.products = (response.data?.items || []) as any;
+        },
+        error: (error) => {
+          console.error('Error loading user products:', error);
+          this.products = [];
+        }
+      });
 
-  loadReviews(): void {
-    // Mock data - replace with actual API call
-    this.reviews = [
-      {
-        id: '1',
-        reviewer_name: 'Sarah Johnson',
-        rating: 5,
-        comment: 'Excellent seller! The camera was exactly as described and shipped quickly. Highly recommended!',
-        created_at: '2024-01-20'
-      },
-      {
-        id: '2',
-        reviewer_name: 'Mike Wilson',
-        rating: 4,
-        comment: 'Great communication and fast shipping. Product was in good condition as advertised.',
-        created_at: '2024-01-18'
-      },
-      {
-        id: '3',
-        reviewer_name: 'Emily Davis',
-        rating: 5,
-        comment: 'Amazing experience! The seller was very helpful and the product exceeded my expectations.',
-        created_at: '2024-01-15'
-      }
-    ];
+      // Load user's reviews
+      this.apiService.getUserReviews(userId).subscribe({
+        next: (response) => {
+          this.reviews = response.data || [];
+        },
+        error: (error) => {
+          console.error('Error loading user reviews:', error);
+          this.reviews = [];
+        }
+      });
+    }
   }
 
   setActiveTab(tab: string): void {

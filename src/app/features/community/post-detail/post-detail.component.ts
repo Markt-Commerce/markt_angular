@@ -1,8 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -416,15 +417,16 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   post = {
     id: 1,
     author: {
-      name: 'John Doe',
-      avatar: '/assets/placeholder-avatar.jpg'
+              name: 'User',
+      avatar: '""'
     },
     content: 'Just found an amazing deal on the marketplace! Check out this vintage camera I scored for a great price. The seller was super helpful and the item was exactly as described. I\'ve been looking for this model for months and finally found it in perfect condition. The community here is really great for finding unique items and connecting with local sellers.',
-    image: '/assets/placeholder-product.jpg',
+    image: '""',
     likes: 24,
     comments: 8,
     shares: 3,
@@ -437,7 +439,7 @@ export class PostDetailComponent implements OnInit {
       id: 1,
       author: {
         name: 'Sarah Wilson',
-        avatar: '/assets/placeholder-avatar.jpg'
+        avatar: '""'
       },
       content: 'That\'s a beautiful camera! I love vintage photography equipment. How much did you get it for?',
       createdAt: new Date('2024-01-15T11:00:00Z')
@@ -446,7 +448,7 @@ export class PostDetailComponent implements OnInit {
       id: 2,
       author: {
         name: 'Mike Johnson',
-        avatar: '/assets/placeholder-avatar.jpg'
+        avatar: '""'
       },
       content: 'Great find! I\'ve been using Markt for a while now and the quality of items is always impressive.',
       createdAt: new Date('2024-01-15T11:30:00Z')
@@ -454,31 +456,72 @@ export class PostDetailComponent implements OnInit {
   ];
 
   newComment = '';
+  loading = false;
 
   ngOnInit(): void {
-    // In a real app, you would fetch the post data based on the route parameter
+    this.loadPost();
+  }
+
+  private loadPost(): void {
     const postId = this.route.snapshot.paramMap.get('id');
-    console.log('Loading post:', postId);
+    
+    if (postId) {
+      this.loading = true;
+      
+      this.apiService.getPost(postId).subscribe({
+        next: (response) => {
+          this.post = response.data;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading post:', error);
+          this.loading = false;
+        }
+      });
+
+      // Load post comments
+      this.apiService.getPostComments(postId).subscribe({
+        next: (response) => {
+          this.comments = response.data || [];
+        },
+        error: (error) => {
+          console.error('Error loading post comments:', error);
+          this.comments = [];
+        }
+      });
+    }
   }
 
   goBack(): void {
     this.router.navigate(['/app/feed']);
   }
 
-  addComment(): void {
-    if (this.newComment.trim()) {
-      const comment = {
-        id: this.comments.length + 1,
-        author: {
-          name: 'Current User',
-          avatar: '/assets/placeholder-avatar.jpg'
+  likePost(): void {
+    if (this.post) {
+      this.apiService.likePost(this.post.id.toString()).subscribe({
+        next: (response) => {
+          this.post!.isLiked = !this.post!.isLiked;
+          this.post!.likes += this.post!.isLiked ? 1 : -1;
         },
-        content: this.newComment,
-        createdAt: new Date()
-      };
-      
-      this.comments.unshift(comment);
-      this.newComment = '';
+        error: (error) => {
+          console.error('Error liking post:', error);
+        }
+      });
+    }
+  }
+
+  addComment(): void {
+    if (this.newComment.trim() && this.post) {
+      this.apiService.commentOnPost(this.post.id.toString(), { content: this.newComment }).subscribe({
+        next: (response) => {
+          this.comments.push(response.data);
+          this.post!.comments += 1;
+          this.newComment = '';
+        },
+        error: (error) => {
+          console.error('Error adding comment:', error);
+        }
+      });
     }
   }
 } 

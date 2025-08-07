@@ -27,6 +27,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
 import { CartService } from '../../core/services/cart.service';
 import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-marketplace',
@@ -238,7 +239,7 @@ import { AppStateService } from '../../core/services/app-state.service';
               <!-- Grid View -->
               <div *ngIf="viewMode === 'grid'" class="relative">
                 <img 
-                  [src]="product.images[0]?.url || '/assets/images/placeholder.png'" 
+                  [src]="product.images[0]?.url || '/markt-text-logo.png'" 
                   [alt]="product.name"
                   class="w-full h-48 object-cover"
                 >
@@ -275,7 +276,7 @@ import { AppStateService } from '../../core/services/app-state.service';
               <!-- List View -->
               <div *ngIf="viewMode === 'list'" class="flex space-x-4">
                 <img 
-                  [src]="product.images[0]?.url || '/assets/images/placeholder.png'" 
+                  [src]="product.images[0]?.url || '/markt-text-logo.png'" 
                   [alt]="product.name"
                   class="w-24 h-24 object-cover rounded-lg"
                 >
@@ -384,6 +385,7 @@ export class MarketplaceComponent implements OnInit {
   private searchService = inject(SearchService);
   private appStateService = inject(AppStateService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faSearch = faSearch;
@@ -427,6 +429,8 @@ export class MarketplaceComponent implements OnInit {
   
   // Mock data
   locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
+  recommendedProducts: any[] = [];
+  trendingProducts: any[] = [];
 
   ngOnInit(): void {
     this.loadMarketplaceData();
@@ -436,31 +440,29 @@ export class MarketplaceComponent implements OnInit {
   private loadMarketplaceData(): void {
     this.isLoading = true;
     
-    // Load products
-    this.marketplaceService.getProducts().subscribe({
+    // Load marketplace products
+    this.apiService.getMarketplaceProducts().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.products = response.data.items;
-          this.totalResults = response.data.pagination.total_items;
-          this.totalPages = response.data.pagination.total_pages;
-        }
+        this.products = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total_items || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading products:', error);
+        console.error('Error loading marketplace products:', error);
+        this.products = [];
         this.isLoading = false;
       }
     });
 
     // Load categories
-    this.marketplaceService.getCategories().subscribe({
+    this.apiService.getCategories().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.categories = response.data;
-        }
+        this.categories = response.data || [];
       },
       error: (error) => {
         console.error('Error loading categories:', error);
+        this.categories = [];
       }
     });
   }
@@ -551,7 +553,7 @@ export class MarketplaceComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           // Show success message
-          console.log('Product added to cart');
+          
         }
       },
       error: (error) => {
@@ -562,7 +564,7 @@ export class MarketplaceComponent implements OnInit {
 
   toggleWishlist(product: any): void {
     // This would typically call a wishlist service
-    console.log('Toggle wishlist for product:', product.id);
+    
   }
 
   isInWishlist(product: any): boolean {
@@ -604,5 +606,64 @@ export class MarketplaceComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  // Additional marketplace endpoint integrations
+  getProducts(): void {
+    this.apiService.getProducts().subscribe({
+      next: (response) => {
+        this.products = response.data?.items || [];
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.products = [];
+      }
+    });
+  }
+
+  getRecommendedProducts(): void {
+    this.apiService.getRecommendedProducts().subscribe({
+      next: (response) => {
+        this.recommendedProducts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading recommended products:', error);
+        this.recommendedProducts = [];
+      }
+    });
+  }
+
+  getTrendingProducts(): void {
+    this.apiService.getTrendingProducts().subscribe({
+      next: (response) => {
+        this.trendingProducts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading trending products:', error);
+        this.trendingProducts = [];
+      }
+    });
+  }
+
+  trackProductView(productId: string): void {
+    this.apiService.trackProductView(productId).subscribe({
+      next: (response) => {
+        console.log('Product view tracked:', response.data);
+      },
+      error: (error) => {
+        console.error('Error tracking product view:', error);
+      }
+    });
+  }
+
+  upvoteReview(reviewId: string): void {
+    this.apiService.upvoteReview(reviewId).subscribe({
+      next: (response) => {
+        console.log('Review upvoted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error upvoting review:', error);
+      }
+    });
   }
 }

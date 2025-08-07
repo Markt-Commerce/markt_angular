@@ -66,14 +66,14 @@ export class ProfileService {
   getProfile(): Observable<any> {
     return this.apiService.getProfile().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           this.updateProfileState({
             profile: response.data as UserProfile,
             isLoading: false,
             error: null
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to load profile'
@@ -102,14 +102,14 @@ export class ProfileService {
   updateProfile(profileData: any): Observable<any> {
     return this.apiService.updateProfile(profileData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           this.updateProfileState({
             profile: response.data as UserProfile,
             isLoading: false,
             error: null
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update profile'
@@ -127,14 +127,14 @@ export class ProfileService {
     
     return this.apiService.updateBuyerProfile(buyerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           this.updateProfileState({
             profile: response.data as UserProfile,
             isLoading: false,
             error: null
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update buyer profile'
@@ -150,14 +150,14 @@ export class ProfileService {
   updateSellerProfile(sellerData: any): Observable<any> {
     return this.apiService.updateSellerProfile(sellerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           this.updateProfileState({
             profile: response.data as UserProfile,
             isLoading: false,
             error: null
           });
         },
-        error: (error) => {
+        error: (error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update seller profile'
@@ -175,7 +175,7 @@ export class ProfileService {
     
     return this.apiService.uploadProfilePicture(file).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateProfileState({
               profile: {
@@ -185,7 +185,7 @@ export class ProfileService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error uploading profile picture:', error);
           this.setError(error.message);
           this.setLoading(false);

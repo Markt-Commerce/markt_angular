@@ -29,6 +29,7 @@ import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { CartService } from '../../../core/services/cart.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/social.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -63,7 +64,7 @@ import { SocialService } from '../../../core/services/social.service';
           <!-- Main Image -->
           <div class="relative">
             <img 
-              [src]="selectedImage?.url || product.images[0]?.url || '/assets/images/placeholder.png'" 
+              [src]="selectedImage?.url || product.images[0]?.url || '/markt-text-logo.png'" 
               [alt]="product.name"
               class="w-full h-96 object-cover rounded-lg shadow-lg"
             >
@@ -192,7 +193,7 @@ import { SocialService } from '../../../core/services/social.service';
             <h3 class="text-lg font-medium text-gray-900 mb-4">Seller Information</h3>
             <div class="flex items-center space-x-4">
               <img 
-                [src]="product.seller?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                [src]="product.seller?.profile_picture_url || '/markt-text-logo.png'" 
                 [alt]="product.seller?.shop_name"
                 class="w-12 h-12 rounded-full object-cover"
               >
@@ -380,7 +381,7 @@ import { SocialService } from '../../../core/services/social.service';
                 <div class="flex items-start justify-between">
                   <div class="flex items-center space-x-3">
                     <img 
-                      [src]="review.user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                      [src]="review.user?.profile_picture_url || '/markt-text-logo.png'" 
                       [alt]="review.user?.username"
                       class="w-10 h-10 rounded-full object-cover"
                     >
@@ -438,7 +439,7 @@ import { SocialService } from '../../../core/services/social.service';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div *ngFor="let relatedProduct of relatedProducts" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
             <img 
-              [src]="relatedProduct.images[0]?.url || '/assets/images/placeholder.png'" 
+              [src]="relatedProduct.images[0]?.url || '/markt-text-logo.png'" 
               [alt]="relatedProduct.name"
               class="w-full h-48 object-cover"
             >
@@ -475,6 +476,7 @@ export class ProductDetailComponent implements OnInit {
   private cartService = inject(CartService);
   private authService = inject(AuthService);
   private socialService = inject(SocialService);
+  private apiService = inject(ApiService);
 
   // Icons
   faHeart = faHeart;
@@ -504,6 +506,8 @@ export class ProductDetailComponent implements OnInit {
   reviews: any[] = [];
   selectedImage: any = null;
   isLoading = false;
+  recommendedProducts: any[] = [];
+  trendingProducts: any[] = [];
   
   // State
   quantity = 1;
@@ -522,31 +526,49 @@ export class ProductDetailComponent implements OnInit {
 
   private loadProduct(): void {
     const productId = this.route.snapshot.paramMap.get('id');
-    if (!productId) {
-      this.router.navigate(['/app/marketplace']);
-      return;
-    }
-
-    this.isLoading = true;
     
-    this.marketplaceService.getProduct(productId).subscribe({
-      next: (response) => {
-        if (response.success) {
+    if (productId) {
+      this.isLoading = true;
+      
+      this.apiService.getProduct(productId).subscribe({
+        next: (response) => {
           this.product = response.data;
           this.selectedImage = this.product.images[0];
           this.loadRelatedProducts();
           this.loadReviews();
           this.checkWishlistStatus();
           this.trackProductView();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading product:', error);
+          this.isLoading = false;
+          this.router.navigate(['/app/marketplace']);
         }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading product:', error);
-        this.isLoading = false;
-        this.router.navigate(['/app/marketplace']);
-      }
-    });
+      });
+
+      // Load product reviews
+      this.apiService.getProductReviews(productId).subscribe({
+        next: (response) => {
+          this.reviews = response.data || [];
+        },
+        error: (error) => {
+          console.error('Error loading product reviews:', error);
+          this.reviews = [];
+        }
+      });
+
+      // Load similar products
+      this.apiService.getSimilarProducts(productId).subscribe({
+        next: (response) => {
+          this.relatedProducts = response.data || [];
+        },
+        error: (error) => {
+          console.error('Error loading similar products:', error);
+          this.relatedProducts = [];
+        }
+      });
+    }
   }
 
   private loadRelatedProducts(): void {
@@ -590,15 +612,62 @@ export class ProductDetailComponent implements OnInit {
     this.isInWishlist = false;
   }
 
-  private trackProductView(): void {
-    if (!this.product) return;
-
-    this.marketplaceService.trackProductView(this.product.id).subscribe({
+  // Additional product endpoint integrations
+  createProductReview(reviewData: any): void {
+    this.apiService.createProductReview(this.product.id, reviewData).subscribe({
       next: (response) => {
-        console.log('Product view tracked');
+        console.log('Product review created:', response.data);
+        this.loadReviews(); // Refresh reviews
+      },
+      error: (error) => {
+        console.error('Error creating product review:', error);
+      }
+    });
+  }
+
+  upvoteReview(reviewId: string): void {
+    this.apiService.upvoteReview(reviewId).subscribe({
+      next: (response) => {
+        console.log('Review upvoted:', response.data);
+        this.loadReviews(); // Refresh reviews
+      },
+      error: (error) => {
+        console.error('Error upvoting review:', error);
+      }
+    });
+  }
+
+  trackProductView(): void {
+    this.apiService.trackProductView(this.product.id).subscribe({
+      next: (response) => {
+        console.log('Product view tracked:', response.data);
       },
       error: (error) => {
         console.error('Error tracking product view:', error);
+      }
+    });
+  }
+
+  loadRecommendedProducts(): void {
+    this.apiService.getRecommendedProducts().subscribe({
+      next: (response) => {
+        this.recommendedProducts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading recommended products:', error);
+        this.recommendedProducts = [];
+      }
+    });
+  }
+
+  loadTrendingProducts(): void {
+    this.apiService.getTrendingProducts().subscribe({
+      next: (response) => {
+        this.trendingProducts = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading trending products:', error);
+        this.trendingProducts = [];
       }
     });
   }
@@ -625,7 +694,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(this.product.id, this.quantity).subscribe({
       next: (response) => {
         if (response.success) {
-          console.log('Product added to cart');
+          
           // Show success message
         }
       },
@@ -655,7 +724,7 @@ export class ProductDetailComponent implements OnInit {
 
     // This would typically call a wishlist service
     this.isInWishlist = !this.isInWishlist;
-    console.log('Toggle wishlist for product:', this.product.id);
+    
   }
 
   shareProduct(): void {
@@ -666,7 +735,7 @@ export class ProductDetailComponent implements OnInit {
         if (response.success) {
           // Handle sharing (copy link, open share dialog, etc.)
           navigator.clipboard.writeText(window.location.href);
-          console.log('Product link copied to clipboard');
+          
         }
       },
       error: (error) => {

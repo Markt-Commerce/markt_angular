@@ -4,6 +4,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface Category {
   id: number;
@@ -434,6 +435,7 @@ interface MediaFile {
 export class CreateRequestComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   requestForm!: FormGroup;
   submitting = false;
@@ -550,19 +552,65 @@ export class CreateRequestComponent implements OnInit {
     if (this.requestForm.valid) {
       this.submitting = true;
       
-      const formData = {
-        ...this.requestForm.value,
-        tags: this.requestForm.value.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag),
-        mediaIds: this.selectedMedia.map(media => media.id).filter(id => id)
+      const formData = this.requestForm.value;
+      
+      // Prepare the request data for API
+      const requestData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        budget_min: formData.budgetMin,
+        budget_max: formData.budgetMax,
+        location: formData.location,
+        urgency: formData.urgency,
+        tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
+        expires_at: formData.expiryDate
       };
 
-      // TODO: Submit to API
-      console.log('Creating request:', formData);
-      
-      setTimeout(() => {
-        this.submitting = false;
-        this.router.navigate(['/app/requests']);
-      }, 2000);
+      this.apiService.createRequest(requestData).subscribe({
+        next: (response) => {
+          this.submitting = false;
+          this.router.navigate(['/app/requests', response.data.id]);
+        },
+        error: (error) => {
+          console.error('Error creating request:', error);
+          this.submitting = false;
+        }
+      });
     }
+  }
+
+  // Request image endpoint integrations
+  addRequestImage(requestId: string, imageFile: File): void {
+    this.apiService.addRequestImage(requestId, imageFile).subscribe({
+      next: (response) => {
+        console.log('Request image added:', response.data);
+      },
+      error: (error) => {
+        console.error('Error adding request image:', error);
+      }
+    });
+  }
+
+  deleteRequestImage(requestId: string, imageId: string): void {
+    this.apiService.deleteRequestImage(requestId, parseInt(imageId)).subscribe({
+      next: (response) => {
+        console.log('Request image deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting request image:', error);
+      }
+    });
+  }
+
+  getRequestImages(requestId: string): void {
+    this.apiService.getRequestImages(requestId).subscribe({
+      next: (response) => {
+        console.log('Request images loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading request images:', error);
+      }
+    });
   }
 } 

@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface OrderItem {
   id: string;
@@ -86,7 +87,7 @@ interface Order {
             </div>
             <div class="status-timeline">
               <div class="timeline-item" [class]="getTimelineStatus('ordered')">
-                <div class="timeline-icon">📋</div>
+                <i class="fas fa-clipboard-list text-blue-500"></i>
                 <div class="timeline-content">
                   <h4>Order Placed</h4>
                   <p>{{ formatDate(order.date) }}</p>
@@ -100,14 +101,14 @@ interface Order {
                 </div>
               </div>
               <div class="timeline-item" [class]="getTimelineStatus('shipped')">
-                <div class="timeline-icon">📦</div>
+                <i class="fas fa-box text-orange-500"></i>
                 <div class="timeline-content">
                   <h4>Shipped</h4>
                   <p *ngIf="order.trackingNumber">Tracking: {{ order.trackingNumber }}</p>
                 </div>
               </div>
               <div class="timeline-item" [class]="getTimelineStatus('delivered')">
-                <div class="timeline-icon">✅</div>
+                <i class="fas fa-check text-green-500"></i>
                 <div class="timeline-content">
                   <h4>Delivered</h4>
                   <p *ngIf="order.estimatedDelivery">Est. {{ formatDate(order.estimatedDelivery) }}</p>
@@ -788,6 +789,7 @@ interface Order {
 export class OrderDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
   loading = true;
   order: Order | null = null;
@@ -799,65 +801,63 @@ export class OrderDetailComponent implements OnInit {
   private loadOrder(): void {
     const orderId = this.route.snapshot.paramMap.get('id');
     
-    // TODO: Load order from API
-    // For now, using mock data
-    setTimeout(() => {
-      this.order = {
-        id: orderId || '1',
-        orderNumber: 'ORD-001',
-        customerName: 'John Doe',
-        customerEmail: 'john.doe@example.com',
-        customerPhone: '+234 801 234 5678',
-        total: 25000,
-        subtotal: 23000,
-        tax: 1150,
-        shipping: 850,
-        discount: 0,
-        status: 'processing',
-        paymentStatus: 'paid',
-        paymentMethod: 'Paystack',
-        date: '2025-01-03T10:30:00Z',
-        shippingAddress: {
-          street: '123 Main Street',
-          city: 'Lagos',
-          state: 'Lagos',
-          postalCode: '100001',
-          country: 'Nigeria'
+    if (orderId) {
+      this.apiService.getOrder(orderId).subscribe({
+        next: (response) => {
+          // Transform API response to match local Order interface
+          const apiOrder = response.data;
+          this.order = {
+            id: apiOrder.id,
+            orderNumber: apiOrder.order_number,
+            customerName: apiOrder.buyer?.buyername || 'Unknown',
+            customerEmail: '',
+            customerPhone: '',
+            total: apiOrder.total,
+            subtotal: apiOrder.subtotal,
+            tax: apiOrder.tax || 0,
+            shipping: apiOrder.shipping_fee || 0,
+            discount: apiOrder.discount || 0,
+            status: this.mapOrderStatus(apiOrder.status),
+            paymentStatus: 'paid', // Default assumption
+            paymentMethod: apiOrder.payment_method || 'Unknown',
+            date: apiOrder.created_at,
+            shippingAddress: {
+              street: apiOrder.shipping_address?.street || '',
+              city: apiOrder.shipping_address?.city || '',
+              state: apiOrder.shipping_address?.state || '',
+              postalCode: apiOrder.shipping_address?.postal_code || '',
+              country: apiOrder.shipping_address?.country || ''
+            },
+            billingAddress: {
+              street: apiOrder.shipping_address?.street || '',
+              city: apiOrder.shipping_address?.city || '',
+              state: apiOrder.shipping_address?.state || '',
+              postalCode: apiOrder.shipping_address?.postal_code || '',
+              country: apiOrder.shipping_address?.country || ''
+            },
+            items: apiOrder.items?.map((item: any) => ({
+              id: item.id,
+              productId: item.product_id,
+              productName: item.product?.name || 'Unknown Product',
+              productImage: item.product?.images?.[0]?.media?.url || '',
+              price: item.price,
+              quantity: item.quantity,
+              total: item.price * item.quantity,
+              status: item.status
+            })) || []
+          };
+          this.loading = false;
         },
-        billingAddress: {
-          street: '123 Main Street',
-          city: 'Lagos',
-          state: 'Lagos',
-          postalCode: '100001',
-          country: 'Nigeria'
-        },
-        items: [
-          {
-            id: '1',
-            productId: 'PROD-001',
-            productName: 'Wireless Bluetooth Headphones',
-            productImage: 'https://via.placeholder.com/60x60?text=Headphones',
-            price: 15000,
-            quantity: 1,
-            total: 15000,
-            status: 'processing'
-          },
-          {
-            id: '2',
-            productId: 'PROD-002',
-            productName: 'Phone Case',
-            productImage: 'https://via.placeholder.com/60x60?text=Case',
-            price: 8000,
-            quantity: 1,
-            total: 8000,
-            status: 'processing'
-          }
-        ],
-        notes: 'Please deliver during business hours.'
-      };
-      
+        error: (error) => {
+          console.error('Error loading order:', error);
+          this.loading = false;
+          this.order = null;
+        }
+      });
+    } else {
       this.loading = false;
-    }, 1000);
+      this.order = null;
+    }
   }
 
   getStatusLabel(status: string): string {
@@ -892,6 +892,19 @@ export class OrderDetailComponent implements OnInit {
     });
   }
 
+  private mapOrderStatus(apiStatus: string): 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' {
+    const statusMap: Record<string, 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'> = {
+      'pending': 'pending',
+      'confirmed': 'processing',
+      'processing': 'processing',
+      'shipped': 'shipped',
+      'delivered': 'delivered',
+      'cancelled': 'cancelled',
+      'refunded': 'refunded'
+    };
+    return statusMap[apiStatus] || 'pending';
+  }
+
   getTimelineStatus(step: string): string {
     if (!this.order) return 'pending';
     
@@ -905,45 +918,81 @@ export class OrderDetailComponent implements OnInit {
   }
 
   processOrder(): void {
-    if (this.order && this.order.status === 'pending') {
-      this.order.status = 'processing';
-      this.order.items.forEach(item => item.status = 'processing');
+    if (this.order) {
+      // Use updateOrderItemStatus for each item in the order
+      const updatePromises = this.order.items.map(item => 
+        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'processing' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        alert('Order processed successfully!');
+        this.loadOrder(); // Reload the order to get updated status
+      }).catch(error => {
+        console.error('Error processing order:', error);
+        alert('Failed to process order.');
+      });
     }
   }
 
   shipOrder(): void {
-    if (this.order && this.order.status === 'processing') {
-      this.order.status = 'shipped';
-      this.order.items.forEach(item => item.status = 'shipped');
-      this.order.trackingNumber = 'TRK' + Math.random().toString(36).substr(2, 6).toUpperCase();
-      this.order.estimatedDelivery = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    if (this.order) {
+      // Use updateOrderItemStatus for each item in the order
+      const updatePromises = this.order.items.map(item => 
+        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'shipped' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        alert('Order shipped successfully!');
+        this.loadOrder(); // Reload the order to get updated status
+      }).catch(error => {
+        console.error('Error shipping order:', error);
+        alert('Failed to ship order.');
+      });
     }
   }
 
   updateTracking(): void {
-    // TODO: Implement tracking update modal
-    console.log('Update tracking for order:', this.order?.id);
+    // TODO: Implement tracking update modal using apiService
+    // For now, do nothing - backend will handle tracking updates
   }
 
   markDelivered(): void {
-    if (this.order && this.order.status === 'shipped') {
-      this.order.status = 'delivered';
-      this.order.items.forEach(item => item.status = 'delivered');
+    if (this.order) {
+      // Use updateOrderItemStatus for each item in the order
+      const updatePromises = this.order.items.map(item => 
+        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'delivered' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        alert('Order marked as delivered successfully!');
+        this.loadOrder(); // Reload the order to get updated status
+      }).catch(error => {
+        console.error('Error marking order as delivered:', error);
+        alert('Failed to mark order as delivered.');
+      });
     }
   }
 
   cancelOrder(): void {
-    if (confirm('Are you sure you want to cancel this order?')) {
-      if (this.order) {
-        this.order.status = 'cancelled';
-        this.order.items.forEach(item => item.status = 'cancelled');
-      }
+    if (this.order && confirm('Are you sure you want to cancel this order?')) {
+      // Use updateOrderItemStatus for each item in the order
+      const updatePromises = this.order.items.map(item => 
+        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'cancelled' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        alert('Order cancelled successfully!');
+        this.loadOrder(); // Reload the order to get updated status
+      }).catch(error => {
+        console.error('Error cancelling order:', error);
+        alert('Failed to cancel order.');
+      });
     }
   }
 
   printInvoice(): void {
-    // TODO: Implement invoice printing
-    console.log('Print invoice for order:', this.order?.id);
+    // TODO: Implement invoice printing using apiService
+    // For now, just use browser print
     window.print();
   }
 } 

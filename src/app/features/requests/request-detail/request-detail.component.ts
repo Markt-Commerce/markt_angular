@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface BuyerRequest {
   id: string;
@@ -711,8 +712,9 @@ interface Offer {
   `]
 })
 export class RequestDetailComponent implements OnInit {
-  private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private apiService = inject(ApiService);
 
   loading = true;
   request: BuyerRequest | null = null;
@@ -727,62 +729,33 @@ export class RequestDetailComponent implements OnInit {
   private loadRequest(): void {
     const requestId = this.route.snapshot.paramMap.get('id');
     
-    // TODO: Load request from API
-    setTimeout(() => {
-      this.request = {
-        id: requestId || '1',
-        title: 'Looking for Wireless Bluetooth Headphones',
-        description: 'I need high-quality wireless headphones with noise cancellation. The headphones should have good battery life (at least 20 hours), comfortable ear cushions, and support for multiple devices. I prefer over-ear design but open to on-ear if the quality is exceptional.',
-        category: 'Electronics',
-        budget: 25000,
-        status: 'open',
-        buyerName: 'John Doe',
-        buyerAvatar: 'https://via.placeholder.com/50x50?text=JD',
-        buyerId: 'user1',
-        createdAt: '2025-01-03T10:00:00Z',
-        expiresAt: '2025-01-10T10:00:00Z',
-        offersCount: 3,
-        viewsCount: 23,
-        tags: ['wireless', 'bluetooth', 'noise-cancellation', 'over-ear'],
-        location: 'Lagos, Nigeria',
-        urgency: 'medium',
-        mediaUrls: [
-          'https://via.placeholder.com/300x200?text=Reference+1',
-          'https://via.placeholder.com/300x200?text=Reference+2'
-        ],
-        isOwner: false
-      };
-
-      this.offers = [
-        {
-          id: '1',
-          sellerName: 'TechStore NG',
-          sellerAvatar: 'https://via.placeholder.com/40x40?text=TS',
-          sellerId: 'seller1',
-          productName: 'Sony WH-1000XM4 Wireless Headphones',
-          productImage: 'https://via.placeholder.com/60x60?text=Sony',
-          price: 22000,
-          message: 'Perfect match for your requirements! These Sony headphones have excellent noise cancellation, 30-hour battery life, and are very comfortable for long listening sessions.',
-          createdAt: '2025-01-03T11:30:00Z',
-          status: 'pending'
+    if (requestId) {
+      this.loading = true;
+      
+      this.apiService.getRequest(requestId).subscribe({
+        next: (response) => {
+          this.request = response.data;
+          this.loading = false;
         },
-        {
-          id: '2',
-          sellerName: 'AudioHub',
-          sellerAvatar: 'https://via.placeholder.com/40x40?text=AH',
-          sellerId: 'seller2',
-          productName: 'Bose QuietComfort 45',
-          productImage: 'https://via.placeholder.com/60x60?text=Bose',
-          price: 24000,
-          message: 'Premium Bose headphones with industry-leading noise cancellation. 24-hour battery life and ultra-comfortable design.',
-          createdAt: '2025-01-03T12:15:00Z',
-          status: 'pending'
+        error: (error) => {
+          console.error('Error loading request:', error);
+          this.loading = false;
         }
-      ];
+      });
 
+      // Load offers for this request
+      this.apiService.getRequestOffers(requestId).subscribe({
+        next: (response) => {
+          this.offers = response.data || [];
       this.filteredOffers = [...this.offers];
-      this.loading = false;
-    }, 1000);
+        },
+        error: (error) => {
+          console.error('Error loading offers:', error);
+          this.offers = [];
+          this.filteredOffers = [];
+        }
+      });
+    }
   }
 
   getStatusLabel(status: string): string {
@@ -845,7 +818,7 @@ export class RequestDetailComponent implements OnInit {
   acceptOffer(offerId: string): void {
     if (confirm('Are you sure you want to accept this offer?')) {
       // TODO: Accept offer via API
-      console.log('Accepting offer:', offerId);
+      
       const offer = this.offers.find(o => o.id === offerId);
       if (offer) {
         offer.status = 'accepted';
@@ -857,7 +830,7 @@ export class RequestDetailComponent implements OnInit {
   rejectOffer(offerId: string): void {
     if (confirm('Are you sure you want to reject this offer?')) {
       // TODO: Reject offer via API
-      console.log('Rejecting offer:', offerId);
+      
       const offer = this.offers.find(o => o.id === offerId);
       if (offer) {
         offer.status = 'rejected';
@@ -869,7 +842,7 @@ export class RequestDetailComponent implements OnInit {
   withdrawOffer(offerId: string): void {
     if (confirm('Are you sure you want to withdraw this offer?')) {
       // TODO: Withdraw offer via API
-      console.log('Withdrawing offer:', offerId);
+      
       const offer = this.offers.find(o => o.id === offerId);
       if (offer) {
         offer.status = 'withdrawn';
@@ -881,7 +854,7 @@ export class RequestDetailComponent implements OnInit {
   cancelRequest(): void {
     if (confirm('Are you sure you want to cancel this request?')) {
       // TODO: Cancel request via API
-      console.log('Cancelling request:', this.request?.id);
+      
       if (this.request) {
         this.request.status = 'cancelled';
       }

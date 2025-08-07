@@ -92,7 +92,7 @@ export class PaymentService {
     
     return this.apiService.getPayments(params).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updatePaymentState({
               payments: response.data.payments,
@@ -101,7 +101,7 @@ export class PaymentService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching payments:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -118,7 +118,7 @@ export class PaymentService {
     
     return this.apiService.createPayment(paymentData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updatePaymentState({
               currentPayment: response.data,
@@ -127,7 +127,7 @@ export class PaymentService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error creating payment:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -144,7 +144,7 @@ export class PaymentService {
     
     return this.apiService.processPayment(paymentId, paymentData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updatePaymentState({
               currentPayment: response.data,
@@ -153,7 +153,7 @@ export class PaymentService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error processing payment:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -168,13 +168,13 @@ export class PaymentService {
   verifyPayment(paymentId: string): Observable<any> {
     return this.apiService.verifyPayment(paymentId).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             // Update payment status
             this.updatePaymentStatus(paymentId, response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error verifying payment:', error);
         }
       })
@@ -187,14 +187,14 @@ export class PaymentService {
   getPayment(paymentId: string): Observable<any> {
     return this.apiService.getPayment(paymentId).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updatePaymentState({
               currentPayment: response.data
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching payment:', error);
         }
       })

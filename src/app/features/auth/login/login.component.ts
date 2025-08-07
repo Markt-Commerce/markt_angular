@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-login',
@@ -232,6 +233,7 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
   loginForm!: FormGroup;
   loading = false;
@@ -263,53 +265,23 @@ export class LoginComponent implements OnInit {
       const credentials = {
         email: this.loginForm.value.email,
         password: this.loginForm.value.password,
-        account_type: this.loginForm.value.accountType || 'buyer'
+        account_type: this.loginForm.value.accountType
       };
 
       this.authService.login(credentials).subscribe({
         next: (response) => {
+          if (response.success) {
+            // Navigate to dashboard
+            this.router.navigate(['/app/dashboard']);
+          } else {
+            this.errorMessage = response.message || 'Login failed';
+          }
           this.loading = false;
-          console.log('Login successful:', response);
-          
-          // Navigate to main app after successful login
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/app/marketplace';
-          console.log('Login successful, redirecting to:', returnUrl);
-          
-          // Use Angular router for better integration
-          this.router.navigateByUrl(returnUrl).then(
-            success => {
-              if (success) {
-                console.log('Navigation successful');
-              } else {
-                console.log('Navigation failed, falling back to window.location');
-                window.location.href = returnUrl;
-              }
-            },
-            error => {
-              console.error('Navigation error:', error);
-              window.location.href = returnUrl;
-            }
-          );
         },
         error: (error) => {
-          this.loading = false;
           console.error('Login error:', error);
-          
-          if (error.message?.includes('CORS_ERROR')) {
-            this.errorMessage = 'CORS Error: Backend configuration issue. For development, please use a CORS browser extension or contact the backend team.';
-          } else if (error.status === 401) {
-            // Check if it's an account type issue
-            if (error.error?.message?.includes('not found')) {
-              const accountType = this.loginForm.value.accountType;
-              this.errorMessage = `${accountType.charAt(0).toUpperCase() + accountType.slice(1)} account not found. Try switching account type.`;
-            } else {
-              this.errorMessage = 'Invalid email or password';
-            }
-          } else if (error.status === 0) {
-            this.errorMessage = 'Unable to connect to server. Please check your internet connection.';
-          } else {
-            this.errorMessage = error.message || 'An error occurred during login. Please try again.';
-          }
+          this.errorMessage = error.message || 'Login failed. Please try again.';
+          this.loading = false;
         }
       });
     }

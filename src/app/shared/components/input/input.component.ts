@@ -304,7 +304,7 @@ export class InputComponent implements ControlValueAccessor {
 
   // ControlValueAccessor implementation
   writeValue(value: string): void {
-    this.value = value || '';
+    this.value = value || '/Logo.png';
   }
 
   registerOnChange(fn: (value: string) => void): void {

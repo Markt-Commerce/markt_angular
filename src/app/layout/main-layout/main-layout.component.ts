@@ -824,7 +824,7 @@ export class MainLayoutComponent implements OnInit {
           created_at: new Date().toISOString()
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Logout error:', error);
         this.appStateService.addNotification({
           type: 'error',

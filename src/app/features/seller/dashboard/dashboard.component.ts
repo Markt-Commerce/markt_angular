@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface DashboardStats {
   totalSales: number;
@@ -36,7 +37,7 @@ interface RecentOrder {
       <!-- Stats Cards -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon">💰</div>
+          <i class="fas fa-money-bill text-green-500"></i>
           <div class="stat-content">
             <h3>Total Sales</h3>
             <p class="stat-value">₦{{ stats.totalSales.toLocaleString() }}</p>
@@ -45,7 +46,7 @@ interface RecentOrder {
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">📦</div>
+          <i class="fas fa-box text-blue-500"></i>
           <div class="stat-content">
             <h3>Total Orders</h3>
             <p class="stat-value">{{ stats.totalOrders }}</p>
@@ -90,7 +91,7 @@ interface RecentOrder {
             size="lg"
             [routerLink]="['/app/seller/listings']"
           >
-            <span>📋</span>
+            <i class="fas fa-clipboard-list"></i>
             Manage Products
           </app-button>
           
@@ -99,7 +100,7 @@ interface RecentOrder {
             size="lg"
             [routerLink]="['/app/orders']"
           >
-            <span>📦</span>
+            <i class="fas fa-box"></i>
             View Orders
           </app-button>
           
@@ -447,6 +448,12 @@ interface RecentOrder {
   `]
 })
 export class DashboardComponent implements OnInit {
+  private apiService = inject(ApiService);
+
+  loading = false;
+  analytics: any = null;
+  topProducts: any[] = [];
+
   stats: DashboardStats = {
     totalSales: 1250000,
     totalOrders: 156,
@@ -460,7 +467,7 @@ export class DashboardComponent implements OnInit {
     {
       id: '1',
       orderNumber: 'ORD-001',
-      customerName: 'John Doe',
+              customerName: 'Customer',
       total: 25000,
       status: 'pending',
       date: '2025-01-03T10:30:00Z',
@@ -496,13 +503,54 @@ export class DashboardComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Load dashboard data
     this.loadDashboardData();
   }
 
   private loadDashboardData(): void {
-    // TODO: Load real data from API
-    console.log('Loading dashboard data...');
+    this.loading = true;
+    
+    // Load seller analytics
+    this.apiService.getSellerAnalytics().subscribe({
+      next: (response) => {
+        this.analytics = response.data;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading seller analytics:', error);
+        this.loading = false;
+      }
+    });
+
+    // Load recent orders
+    this.apiService.getMyOrders({ limit: 5 }).subscribe({
+      next: (response) => {
+        // Transform API response to match RecentOrder interface
+        this.recentOrders = (response.data?.items || []).map((order: any) => ({
+          id: order.id,
+          orderNumber: order.order_number,
+          customerName: order.buyer?.buyername || 'Unknown Customer',
+          total: order.total,
+          status: order.status,
+          date: order.created_at,
+          items: order.items?.length || 0
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading recent orders:', error);
+        this.recentOrders = [];
+      }
+    });
+
+    // Load top products
+    this.apiService.getMyProducts({ sort: 'sales', limit: 5 }).subscribe({
+      next: (response) => {
+        this.topProducts = response.data?.items || [];
+      },
+      error: (error) => {
+        console.error('Error loading top products:', error);
+        this.topProducts = [];
+      }
+    });
   }
 
   getStatusLabel(status: string): string {

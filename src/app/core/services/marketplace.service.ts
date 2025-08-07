@@ -374,11 +374,11 @@ export class MarketplaceService {
   getProductImageUrl(product: Product, size: 'thumbnail' | 'medium' | 'large' = 'medium'): string {
     if (product.images && product.images.length > 0) {
       const featuredImage = product.images.find(img => img.is_featured) || product.images[0];
-      return featuredImage.media?.url || '';
+      return featuredImage.media?.url || '/Logo.png';
     }
     
     // Return placeholder image
-    return '/assets/images/product-placeholder.jpg';
+    return '""';
   }
 
   /**
@@ -386,10 +386,10 @@ export class MarketplaceService {
    */
   getProductGalleryImages(product: Product): string[] {
     if (!product.images || product.images.length === 0) {
-      return ['/assets/images/product-placeholder.jpg'];
+      return ['""'];
     }
     
-    return product.images.map(img => img.media?.url || '').filter(url => url);
+    return product.images.map(img => img.media?.url || '/Logo.png').filter(url => url);
   }
 
   /**

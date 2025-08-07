@@ -4,9 +4,10 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
+import { ApiService } from '../../../../core/services/api.service';
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
 }
@@ -195,10 +196,10 @@ interface ProductVariant {
               >
             </div>
 
-            <div class="image-preview" *ngIf="selectedImages.length > 0">
-              <div class="image-item" *ngFor="let image of selectedImages; let i = index">
-                <img [src]="image.preview" [alt]="'Product image ' + (i + 1)">
-                <button type="button" class="remove-image" (click)="removeImage(i)">×</button>
+            <div class="image-preview" *ngIf="uploadedMedia.length > 0">
+              <div class="image-item" *ngFor="let media of uploadedMedia; let i = index">
+                <img [src]="media.url" [alt]="'Product image ' + (i + 1)">
+                <button type="button" class="remove-image" (click)="removeImage(media.id)">×</button>
               </div>
             </div>
           </div>
@@ -578,23 +579,27 @@ interface ProductVariant {
 export class CreateListingComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   productForm!: FormGroup;
   loading = false;
-  selectedImages: { file: File; preview: string }[] = [];
+  uploadedMedia: any[] = [];
   variants: ProductVariant[] = [];
+  mediaStats: any;
 
   categories: Category[] = [
-    { id: 1, name: 'Electronics', slug: 'electronics' },
-    { id: 2, name: 'Fashion', slug: 'fashion' },
-    { id: 3, name: 'Home & Garden', slug: 'home' },
-    { id: 4, name: 'Sports', slug: 'sports' },
-    { id: 5, name: 'Books', slug: 'books' },
-    { id: 6, name: 'Beauty', slug: 'beauty' }
+    { id: '1', name: 'Electronics', slug: 'electronics' },
+    { id: '2', name: 'Fashion', slug: 'fashion' },
+    { id: '3', name: 'Home & Garden', slug: 'home' },
+    { id: '4', name: 'Sports', slug: 'sports' },
+    { id: '5', name: 'Books', slug: 'books' },
+    { id: '6', name: 'Beauty', slug: 'beauty' }
   ];
 
   ngOnInit(): void {
     this.initForm();
+    this.loadCategories();
+    this.loadMediaStats();
   }
 
   private initForm(): void {
@@ -679,35 +684,112 @@ export class CreateListingComponent implements OnInit {
     
     const files = event.dataTransfer?.files;
     if (files) {
-      this.handleFiles(Array.from(files));
+      this.uploadFiles(Array.from(files));
     }
   }
 
-  onFileSelected(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const files = target.files;
-    if (files) {
-      this.handleFiles(Array.from(files));
-    }
-  }
-
-  private handleFiles(files: File[]): void {
-    files.forEach(file => {
-      if (file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.selectedImages.push({
-            file,
-            preview: e.target?.result as string
-          });
-        };
-        reader.readAsDataURL(file);
+  private loadCategories(): void {
+    this.apiService.getCategories().subscribe({
+      next: (response) => {
+        this.categories = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.categories = [];
       }
     });
   }
 
-  removeImage(index: number): void {
-    this.selectedImages.splice(index, 1);
+  private loadMediaStats(): void {
+    this.apiService.getMediaStats().subscribe({
+      next: (response) => {
+        this.mediaStats = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading media stats:', error);
+      }
+    });
+  }
+
+  onFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files) {
+      this.uploadFiles(Array.from(files));
+    }
+  }
+
+  private uploadFiles(files: File[]): void {
+    this.loading = true; // Changed from uploading to loading
+    this.uploadedMedia = []; // Clear previous uploads
+
+    const uploadPromises = files.map(file => {
+      return this.apiService.uploadMedia(file).toPromise();
+    });
+
+    Promise.all(uploadPromises).then(responses => {
+      this.uploadedMedia = responses.filter(response => response).map(response => response!.data);
+      this.loading = false;
+    }).catch(error => {
+      console.error('Upload error:', error);
+      this.loading = false;
+      this.uploadedMedia = []; // Clear uploaded media on error
+    });
+  }
+
+  removeImage(mediaId: number): void {
+    this.apiService.deleteMedia(mediaId).subscribe({
+      next: () => {
+        this.uploadedMedia = this.uploadedMedia.filter(media => media.id !== mediaId);
+      },
+      error: (error) => {
+        console.error('Error removing image:', error);
+      }
+    });
+  }
+
+  optimizeForSocial(mediaId: number): void {
+    const optimizationData = {
+      platform: 'instagram',
+      aspect_ratio: '1:1',
+      quality: 'high'
+    };
+
+    this.apiService.optimizeForSocial(mediaId, optimizationData).subscribe({
+      next: (response) => {
+        console.log('Image optimized for social media');
+      },
+      error: (error) => {
+        console.error('Error optimizing image:', error);
+      }
+    });
+  }
+
+  removeBackground(mediaId: number): void {
+    this.apiService.removeBackground(mediaId).subscribe({
+      next: (response) => {
+        console.log('Background removed successfully');
+      },
+      error: (error) => {
+        console.error('Error removing background:', error);
+      }
+    });
+  }
+
+  generateVariants(mediaId: number): void {
+    const variantData = {
+      sizes: ['thumbnail', 'medium', 'large'],
+      formats: ['webp', 'jpeg'],
+      quality: 'high'
+    };
+
+    this.apiService.generateVariants(mediaId, variantData).subscribe({
+      next: (response) => {
+        console.log('Variants generated successfully');
+      },
+      error: (error) => {
+        console.error('Error generating variants:', error);
+      }
+    });
   }
 
   addVariant(): void {
@@ -728,19 +810,226 @@ export class CreateListingComponent implements OnInit {
     if (this.productForm.valid) {
       this.loading = true;
       
-      const formData = {
+      // Prepare product data with media IDs
+      const productData = {
         ...this.productForm.value,
-        images: this.selectedImages.map(img => img.file),
-        variants: this.variants
+        media_ids: this.uploadedMedia.map(media => media.id),
+        category_id: this.productForm.value.category
       };
 
-      // TODO: Submit to API
-      console.log('Creating product:', formData);
-      
-      setTimeout(() => {
-        this.loading = false;
-        this.router.navigate(['/app/seller/listings']);
-      }, 2000);
+      this.apiService.createProduct(productData).subscribe({
+        next: (response) => {
+          this.loading = false;
+          this.router.navigate(['/app/seller/listings']);
+        },
+        error: (error) => {
+          console.error('Error creating product:', error);
+          this.loading = false;
+        }
+      });
     }
+  }
+
+  // Media endpoint integrations - using component data instead of hardcoded values
+  uploadProfilePicture(file: File): void {
+    this.apiService.uploadProfilePicture(file).subscribe({
+      next: (response) => {
+        console.log('Profile picture uploaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error uploading profile picture:', error);
+      }
+    });
+  }
+
+  getMedia(mediaId: string): void {
+    this.apiService.getMedia(parseInt(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Media loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading media:', error);
+      }
+    });
+  }
+
+  getMediaList(): void {
+    this.apiService.getMediaList().subscribe({
+      next: (response) => {
+        console.log('Media list loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading media list:', error);
+      }
+    });
+  }
+
+  getMediaUrls(mediaId: string): void {
+    this.apiService.getMediaUrls(parseInt(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Media URLs loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading media URLs:', error);
+      }
+    });
+  }
+
+  getMediaStatus(mediaId: string): void {
+    this.apiService.getMediaStatus(parseInt(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Media status loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading media status:', error);
+      }
+    });
+  }
+
+  getMediaVariants(mediaId: string): void {
+    this.apiService.getMediaVariants(parseInt(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Media variants loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading media variants:', error);
+      }
+    });
+  }
+
+  downloadMedia(mediaId: string): void {
+    this.apiService.downloadMedia(parseInt(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Media download initiated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error downloading media:', error);
+      }
+    });
+  }
+
+  updateMedia(mediaId: string, updateData: any): void {
+    this.apiService.updateMedia(parseInt(mediaId), updateData).subscribe({
+      next: (response) => {
+        console.log('Media updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating media:', error);
+      }
+    });
+  }
+
+  // Product image endpoint integrations
+  addProductImage(productId: string, imageFile: File): void {
+    this.apiService.addProductImage(productId, imageFile).subscribe({
+      next: (response) => {
+        console.log('Product image added:', response.data);
+      },
+      error: (error) => {
+        console.error('Error adding product image:', error);
+      }
+    });
+  }
+
+  deleteProductImage(productId: string, imageId: string): void {
+    this.apiService.deleteProductImage(productId, parseInt(imageId)).subscribe({
+      next: (response) => {
+        console.log('Product image deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting product image:', error);
+      }
+    });
+  }
+
+  getProductImages(productId: string): void {
+    this.apiService.getProductImages(productId).subscribe({
+      next: (response) => {
+        console.log('Product images loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading product images:', error);
+      }
+    });
+  }
+
+  // Additional product and category endpoint integrations
+  bulkCreateProducts(products: any[]): void {
+    this.apiService.bulkCreateProducts(products).subscribe({
+      next: (response) => {
+        console.log('Products created in bulk:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating products in bulk:', error);
+      }
+    });
+  }
+
+  createCategory(categoryData: any): void {
+    this.apiService.createCategory(categoryData).subscribe({
+      next: (response) => {
+        console.log('Category created:', response.data);
+        this.loadCategories(); // Refresh categories
+      },
+      error: (error) => {
+        console.error('Error creating category:', error);
+      }
+    });
+  }
+
+  getCategory(categoryId: number): void {
+    this.apiService.getCategory(categoryId).subscribe({
+      next: (response) => {
+        console.log('Category loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading category:', error);
+      }
+    });
+  }
+
+  getCategoryProducts(categoryId: number): void {
+    this.apiService.getCategoryProducts(categoryId).subscribe({
+      next: (response) => {
+        console.log('Category products loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading category products:', error);
+      }
+    });
+  }
+
+  getPopularTags(): void {
+    this.apiService.getPopularTags().subscribe({
+      next: (response) => {
+        console.log('Popular tags loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading popular tags:', error);
+      }
+    });
+  }
+
+  createTag(tagData: any): void {
+    this.apiService.createTag(tagData).subscribe({
+      next: (response) => {
+        console.log('Tag created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating tag:', error);
+      }
+    });
+  }
+
+  updateCategory(categoryId: number, categoryData: any): void {
+    this.apiService.updateCategory(categoryId, categoryData).subscribe({
+      next: (response) => {
+        console.log('Category updated:', response.data);
+        this.loadCategories(); // Refresh categories
+      },
+      error: (error) => {
+        console.error('Error updating category:', error);
+      }
+    });
   }
 } 

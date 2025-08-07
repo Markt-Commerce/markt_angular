@@ -70,7 +70,7 @@ import { ChatService } from '../../../core/services/chat.service';
           <div class="flex items-center space-x-3">
             <div class="relative">
               <img 
-                [src]="user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                [src]="user?.profile_picture_url || '/Logo.png'" 
                 alt="Profile" 
                 class="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
               >
@@ -390,7 +390,7 @@ import { ChatService } from '../../../core/services/chat.service';
                   class="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors"
                 >
                   <img 
-                    [src]="user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                    [src]="user?.profile_picture_url || '/Logo.png'" 
                     alt="Profile" 
                     class="w-8 h-8 rounded-full object-cover"
                   >
@@ -569,7 +569,7 @@ export class AppLayoutComponent implements OnInit {
       next: () => {
         this.router.navigate(['/landing']);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Logout error:', error);
         this.router.navigate(['/landing']);
       }

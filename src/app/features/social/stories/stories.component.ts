@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,8 @@ import {
 import { SocialService } from '../../../core/services/social.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Story, StoryCreate } from '../../../core/models';
+import { ApiService } from '../../../core/services/api.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-stories',
@@ -102,7 +104,7 @@ import { Story, StoryCreate } from '../../../core/models';
               <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <img 
-                    [src]="story.user.profile_picture_url || '/assets/default-avatar.png'" 
+                    [src]="story.user.profile_picture_url || '/markt-text-logo.png'" 
                     [alt]="story.user.username"
                     class="w-8 h-8 rounded-full border-2 border-white"
                   >
@@ -334,6 +336,9 @@ export class StoriesComponent implements OnInit, OnDestroy {
   selectedStory: Story | null = null;
   menuPosition = { x: 0, y: 0 };
 
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+
   constructor(
     private socialService: SocialService,
     private authService: AuthService
@@ -350,15 +355,17 @@ export class StoriesComponent implements OnInit, OnDestroy {
   /**
    * Load all stories
    */
-  loadStories(): void {
+  private loadStories(): void {
     this.isLoading = true;
-    this.socialService.getStories().subscribe({
-      next: (stories) => {
-        this.stories = stories;
+    
+    this.apiService.getStories().subscribe({
+      next: (response) => {
+        this.stories = response.data || [];
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading stories:', error);
+        this.stories = [];
         this.isLoading = false;
       }
     });
@@ -434,8 +441,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
    * View a story
    */
   viewStory(story: Story): void {
-    // Navigate to story viewer or open modal
-    console.log('Viewing story:', story);
+    this.router.navigate(['/app/social/stories', story.id]);
   }
 
   /**
@@ -444,7 +450,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
   likeStory(story: Story, event: Event): void {
     event.stopPropagation();
     // Implement like functionality
-    console.log('Liking story:', story);
+    
   }
 
   /**
@@ -453,7 +459,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
   commentOnStory(story: Story, event: Event): void {
     event.stopPropagation();
     // Implement comment functionality
-    console.log('Commenting on story:', story);
+    
   }
 
   /**
@@ -462,7 +468,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
   shareStory(story: Story, event: Event): void {
     event.stopPropagation();
     // Implement share functionality
-    console.log('Sharing story:', story);
+    
   }
 
   /**
@@ -542,5 +548,105 @@ export class StoriesComponent implements OnInit, OnDestroy {
     } else {
       return date.toLocaleDateString();
     }
+  }
+
+  // Additional social collection and story endpoint integrations
+  createCollection(collectionData: any): void {
+    this.apiService.createCollection(collectionData).subscribe({
+      next: (response) => {
+        console.log('Collection created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating collection:', error);
+      }
+    });
+  }
+
+  deleteCollection(collectionId: string): void {
+    this.apiService.deleteCollection(collectionId).subscribe({
+      next: (response) => {
+        console.log('Collection deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting collection:', error);
+      }
+    });
+  }
+
+  getCollection(collectionId: string): void {
+    this.apiService.getCollection(collectionId).subscribe({
+      next: (response) => {
+        console.log('Collection loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading collection:', error);
+      }
+    });
+  }
+
+  getCollections(): void {
+    this.apiService.getCollections().subscribe({
+      next: (response) => {
+        console.log('Collections loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading collections:', error);
+      }
+    });
+  }
+
+  createStoryViaApi(storyData: any): void {
+    this.apiService.createStory(storyData).subscribe({
+      next: (response) => {
+        console.log('Story created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating story:', error);
+      }
+    });
+  }
+
+  deleteStoryViaApi(storyId: string): void {
+    this.apiService.deleteStory(storyId).subscribe({
+      next: (response) => {
+        console.log('Story deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting story:', error);
+      }
+    });
+  }
+
+  getStory(storyId: string): void {
+    this.apiService.getStory(storyId).subscribe({
+      next: (response) => {
+        console.log('Story loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading story:', error);
+      }
+    });
+  }
+
+  removeBookmark(postId: string): void {
+    this.apiService.removeBookmark(postId).subscribe({
+      next: (response) => {
+        console.log('Bookmark removed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error removing bookmark:', error);
+      }
+    });
+  }
+
+  updateCollection(collectionId: string, collectionData: any): void {
+    this.apiService.updateCollection(collectionId, collectionData).subscribe({
+      next: (response) => {
+        console.log('Collection updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating collection:', error);
+      }
+    });
   }
 } 

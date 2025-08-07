@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { SearchService } from '../../../core/services/search.service';
 import { Product } from '../../../core/models';
@@ -10,6 +10,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { CartService } from '../../../core/services/cart.service';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-search',
@@ -89,7 +90,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
                 
                 <div class="seller-info flex items-center gap-2 mb-3">
                   <img 
-                    [src]="product.seller.profile_picture_url || '/assets/placeholder-avatar.jpg'" 
+                    [src]="product.seller.profile_picture_url || '/markt-text-logo.png'" 
                     [alt]="getSellerDisplayName(product.seller)"
                     class="w-6 h-6 rounded-full object-cover"
                   >
@@ -234,6 +235,8 @@ export class SearchComponent implements OnInit {
   cartService = inject(CartService);
   appStateService = inject(AppStateService);
   route = inject(ActivatedRoute);
+  router = inject(Router);
+  apiService = inject(ApiService);
 
   // Observables
   products: Product[] = [];
@@ -245,14 +248,26 @@ export class SearchComponent implements OnInit {
   totalPages = 1;
   totalResults = 0;
   perPage = 20;
+  searchType = 'products';
+  loading = false;
+  limit = 20;
+  offset = 0;
+  selectedCategory = '';
+  priceRange = { min: 0, max: 0 };
+  sortBy = 'relevance';
+  budgetRange = { min: 0, max: 0 };
+  requestStatus = '';
+  userRole = '';
+  searchResults: any[] = [];
+  shops: any[] = [];
+  requests: any[] = [];
+  niches: any[] = [];
+  users: any[] = [];
 
-  ngOnInit() {
-    this.route.queryParams.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
       this.searchQuery = params['q'] || '';
-      this.currentPage = Number(params['page']) || 1;
-      
+      this.searchType = params['type'] || 'products';
       if (this.searchQuery) {
         this.performSearch();
       }
@@ -264,27 +279,185 @@ export class SearchComponent implements OnInit {
     this.destroy$.complete();
   }
 
-  performSearch() {
-    const filters = {
-      query: this.searchQuery,
-      page: this.currentPage,
-      per_page: this.perPage,
-      sort: 'relevance'
-    };
+  performSearch(): void {
+    if (!this.searchQuery.trim()) return;
 
-    this.searchService.search(filters).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (results) => {
-        this.products = results.products.items;
-        this.totalResults = results.products.total;
-        this.totalPages = results.products.pagination.total_pages;
+    this.loading = true;
+    this.updateUrl();
+
+    switch (this.searchType) {
+      case 'global':
+        this.performGlobalSearch();
+        break;
+      case 'products':
+        this.performProductSearch();
+        break;
+      case 'shops':
+        this.performShopSearch();
+        break;
+      case 'requests':
+        this.performRequestSearch();
+        break;
+      case 'niches':
+        this.performNicheSearch();
+        break;
+      case 'users':
+        this.performUserSearch();
+        break;
+      default:
+        this.performProductSearch();
+    }
+  }
+
+  private performGlobalSearch(): void {
+    this.apiService.globalSearch(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset
+    }).subscribe({
+      next: (response) => {
+        this.searchResults = response.data;
+        this.loading = false;
       },
       error: (error) => {
-        console.error('Search error:', error);
-        this.products = [];
-        this.totalResults = 0;
+        console.error('Global search error:', error);
+        this.loading = false;
       }
+    });
+  }
+
+  private performProductSearch(): void {
+    this.apiService.searchProducts(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset,
+      category: this.selectedCategory,
+      price_min: this.priceRange.min,
+      price_max: this.priceRange.max,
+      sort: this.sortBy
+    }).subscribe({
+      next: (response) => {
+        this.products = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Product search error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  private performShopSearch(): void {
+    this.apiService.searchShops(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset,
+      category: this.selectedCategory
+    }).subscribe({
+      next: (response) => {
+        this.shops = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Shop search error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  private performRequestSearch(): void {
+    this.apiService.searchRequests(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset,
+      category: this.selectedCategory,
+      budget_min: this.budgetRange.min,
+      budget_max: this.budgetRange.max,
+      status: this.requestStatus
+    }).subscribe({
+      next: (response) => {
+        this.requests = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Request search error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  private performNicheSearch(): void {
+    this.apiService.searchNiches(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset
+    }).subscribe({
+      next: (response) => {
+        this.niches = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Niche search error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  private performUserSearch(): void {
+    this.apiService.searchUsers(this.searchQuery, {
+      limit: this.limit,
+      offset: this.offset,
+      role: this.userRole
+    }).subscribe({
+      next: (response) => {
+        this.users = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('User search error:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  onSearchTypeChange(): void {
+    this.currentPage = 1;
+    this.offset = 0;
+    this.performSearch();
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.offset = 0;
+    this.performSearch();
+  }
+
+  onSortChange(): void {
+    this.currentPage = 1;
+    this.offset = 0;
+    this.performSearch();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.offset = (page - 1) * this.limit;
+    this.performSearch();
+  }
+
+  private updateUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.searchQuery,
+        type: this.searchType,
+        page: this.currentPage
+      },
+      queryParamsHandling: 'merge'
     });
   }
 

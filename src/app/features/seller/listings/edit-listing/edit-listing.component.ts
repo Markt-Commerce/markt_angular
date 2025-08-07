@@ -4,24 +4,8 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  status: 'active' | 'inactive' | 'draft';
-  category: string;
-  imageUrl: string;
-  sku: string;
-  weight: number;
-  tags: string[];
-  freeShipping: boolean;
-  shippingCost: number;
-  returnPolicy: boolean;
-  returnDays: number;
-}
+import { ApiService } from '../../../../core/services/api.service';
+import { Product } from '../../../../core/models';
 
 @Component({
   selector: 'app-edit-listing',
@@ -188,16 +172,16 @@ interface Product {
         <div class="form-section">
           <h2>Current Images</h2>
           
-          <div class="current-images" *ngIf="product?.imageUrl">
+          <div class="current-images" *ngIf="product?.images?.length">
             <div class="image-item">
-              <img [src]="product?.imageUrl" [alt]="product?.name || 'Product image'">
+              <img [src]="product?.images?.[0]?.media?.url || '/Logo.png'" [alt]="product?.name || 'Product image'">
               <div class="image-overlay">
                 <span>Current Image</span>
               </div>
             </div>
           </div>
 
-          <div class="no-images" *ngIf="!product?.imageUrl">
+          <div class="no-images" *ngIf="!product?.images?.length">
             <p>No images uploaded yet</p>
           </div>
         </div>
@@ -476,6 +460,7 @@ export class EditListingComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
   productForm!: FormGroup;
   loading = true;
@@ -529,30 +514,21 @@ export class EditListingComponent implements OnInit {
   private loadProduct(): void {
     const productId = this.route.snapshot.paramMap.get('id');
     
-    // TODO: Load product from API
-    // For now, using mock data
-    setTimeout(() => {
-      this.product = {
-        id: productId || '1',
-        name: 'Wireless Bluetooth Headphones',
-        description: 'High-quality wireless headphones with noise cancellation and long battery life.',
-        price: 15000,
-        stock: 25,
-        status: 'active',
-        category: 'electronics',
-        imageUrl: 'https://via.placeholder.com/300x200?text=Headphones',
-        sku: 'WH-001',
-        weight: 0.5,
-        tags: ['electronics', 'wireless', 'bluetooth'],
-        freeShipping: true,
-        shippingCost: 0,
-        returnPolicy: true,
-        returnDays: 30
-      };
-
+    if (productId) {
+      this.loading = true;
+      
+      this.apiService.getProduct(productId).subscribe({
+        next: (response) => {
+          this.product = response.data;
       this.populateForm();
       this.loading = false;
-    }, 1000);
+        },
+        error: (error) => {
+          console.error('Error loading product:', error);
+          this.loading = false;
+        }
+      });
+    }
   }
 
   private populateForm(): void {
@@ -560,18 +536,21 @@ export class EditListingComponent implements OnInit {
       this.productForm.patchValue({
         name: this.product.name,
         description: this.product.description,
-        sku: this.product.sku,
         price: this.product.price,
         stock: this.product.stock,
-        weight: this.product.weight,
-        category: this.product.category,
-        tags: this.product.tags?.join(', ') || '',
-        freeShipping: this.product.freeShipping,
-        shippingCost: this.product.shippingCost,
-        returnPolicy: this.product.returnPolicy,
-        returnDays: this.product.returnDays,
+        category: this.product.category?.name || '',
+        sku: this.product.sku || '',
+        weight: this.product.weight || 0,
+        tags: this.product.tag_ids?.join(', ') || '',
+        freeShipping: false, // Default value since not in API model
+        shippingCost: 0, // Default value since not in API model
+        returnPolicy: false, // Default value since not in API model
+        returnDays: 30, // Default value since not in API model
         status: this.product.status
       });
+      
+      // this.variants = this.product.variants || []; // This line was removed from the new_code, so it's removed here.
+      // this.selectedImages = this.product.images?.map((url: string) => ({ file: null, preview: url })) || []; // This line was removed from the new_code, so it's removed here.
     }
   }
 
@@ -600,21 +579,42 @@ export class EditListingComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.productForm.valid) {
+    if (this.productForm.valid && this.product) {
       this.saving = true;
       
-      const formData = {
-        ...this.productForm.value,
-        tags: this.productForm.value.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+      const formData = this.productForm.value;
+      
+      // Prepare the product data for API
+      const productData: any = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        stock: formData.stock,
+        category: formData.category,
+        sku: formData.sku,
+        weight: formData.weight,
+        tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
+        freeShipping: formData.freeShipping,
+        shippingCost: formData.shippingCost,
+        returnPolicy: formData.returnPolicy,
+        returnDays: formData.returnDays,
+        images: this.product?.images?.[0]?.media?.url ? [this.product.images[0].media.url] : []
       };
 
-      // TODO: Submit to API
-      console.log('Updating product:', formData);
-      
-      setTimeout(() => {
+      this.updateProduct(productData);
+    }
+  }
+
+  private updateProduct(productData: any): void {
+    this.apiService.updateProduct(this.product!.id, productData).subscribe({
+      next: (response) => {
         this.saving = false;
         this.router.navigate(['/app/seller/listings']);
-      }, 2000);
+      },
+      error: (error) => {
+        console.error('Error updating product:', error);
+        this.saving = false;
     }
+    });
   }
 } 

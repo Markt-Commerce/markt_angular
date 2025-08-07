@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface BuyerRequest {
   id: string;
@@ -565,6 +566,7 @@ export class CreateOfferComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
   loading = true;
   submitting = false;
@@ -573,6 +575,7 @@ export class CreateOfferComponent implements OnInit {
   filteredProducts: Product[] = [];
   selectedProduct: Product | null = null;
   productSearch = '';
+  selectedImages: Array<{ file: File; preview: string }> = [];
 
   offerForm!: FormGroup;
 
@@ -593,18 +596,20 @@ export class CreateOfferComponent implements OnInit {
   private loadRequest(): void {
     const requestId = this.route.snapshot.paramMap.get('id');
     
-    // TODO: Load request from API
-    setTimeout(() => {
-      this.request = {
-        id: requestId || '1',
-        title: 'Looking for Wireless Bluetooth Headphones',
-        description: 'I need high-quality wireless headphones with noise cancellation and long battery life.',
-        budget: 25000,
-        buyerName: 'John Doe',
-        category: 'Electronics'
-      };
-      this.loading = false;
-    }, 1000);
+    if (requestId) {
+      this.loading = true;
+      
+      this.apiService.getRequest(requestId).subscribe({
+        next: (response) => {
+          this.request = response.data;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading request:', error);
+          this.loading = false;
+        }
+      });
+    }
   }
 
   private loadProducts(): void {
@@ -612,28 +617,28 @@ export class CreateOfferComponent implements OnInit {
     this.products = [
       {
         id: '1',
-        name: 'Sony WH-1000XM4 Wireless Headphones',
+        name: 'Wireless Headphones',
         description: 'Premium noise-cancelling headphones with 30-hour battery life',
         price: 22000,
-        imageUrl: 'https://via.placeholder.com/250x150?text=Sony+WH-1000XM4',
+        imageUrl: '""',
         stock: 5,
         category: 'Electronics'
       },
       {
         id: '2',
-        name: 'Bose QuietComfort 45',
+        name: 'Noise Cancelling Headphones',
         description: 'Industry-leading noise cancellation with premium comfort',
         price: 24000,
-        imageUrl: 'https://via.placeholder.com/250x150?text=Bose+QC45',
+        imageUrl: '""',
         stock: 3,
         category: 'Electronics'
       },
       {
         id: '3',
-        name: 'Samsung Galaxy Buds Pro',
+        name: 'Wireless Earbuds',
         description: 'Wireless earbuds with active noise cancellation',
         price: 15000,
-        imageUrl: 'https://via.placeholder.com/250x150?text=Galaxy+Buds+Pro',
+        imageUrl: '""',
         stock: 8,
         category: 'Electronics'
       }
@@ -690,22 +695,57 @@ export class CreateOfferComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.offerForm.valid && this.selectedProduct) {
+    if (this.offerForm.valid && this.request) {
       this.submitting = true;
       
-      const offerData = {
-        ...this.offerForm.value,
-        productId: this.selectedProduct.id,
-        requestId: this.request?.id
+      const formData = this.offerForm.value;
+      
+      // Prepare the offer data for API
+      const offerData: any = {
+        request_id: this.request.id,
+        product_name: formData.productName,
+        product_description: formData.productDescription,
+        price: formData.price,
+        quantity: formData.quantity,
+        delivery_time: formData.deliveryTime,
+        delivery_cost: formData.deliveryCost,
+        message: formData.message,
+        images: this.selectedImages.map(img => img.file)
       };
 
-      // TODO: Submit offer to API
-      console.log('Submitting offer:', offerData);
-      
-      setTimeout(() => {
-        this.submitting = false;
-        this.router.navigate(['/app/requests', this.request?.id]);
-      }, 2000);
+      // First upload images if any
+      if (this.selectedImages.length > 0) {
+        const uploadPromises = this.selectedImages.map(img => 
+          this.apiService.uploadMedia(img.file).toPromise()
+        );
+        
+        Promise.all(uploadPromises).then(uploadResponses => {
+          const imageUrls = uploadResponses.map(response => response?.data?.url).filter(url => url);
+          offerData['images'] = imageUrls;
+          
+          // Now create the offer
+          this.createOffer(offerData);
+        }).catch(error => {
+          console.error('Error uploading images:', error);
+          this.submitting = false;
+        });
+      } else {
+        // Create offer without images
+        this.createOffer(offerData);
+      }
     }
+  }
+
+  private createOffer(offerData: any): void {
+    this.apiService.createOffer(offerData.request_id, offerData).subscribe({
+      next: (response) => {
+        this.submitting = false;
+        this.router.navigate(['/app/offers', response.data.id]);
+      },
+      error: (error) => {
+        console.error('Error creating offer:', error);
+        this.submitting = false;
+      }
+    });
   }
 } 

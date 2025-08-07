@@ -143,12 +143,12 @@ export class ForgotPasswordComponent implements OnInit {
       this.email = this.forgotPasswordForm.value.email;
 
       this.authService.forgotPassword(this.email).subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.loading = false;
           this.emailSent = true;
-          console.log('Password reset email sent:', response);
+          
         },
-        error: (error) => {
+        error: (error: any) => {
           this.loading = false;
           console.error('Password reset error:', error);
           
@@ -169,11 +169,11 @@ export class ForgotPasswordComponent implements OnInit {
     this.errorMessage = '';
 
     this.authService.forgotPassword(this.email).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.resending = false;
-        console.log('Password reset email resent:', response);
+        
       },
-      error: (error) => {
+      error: (error: any) => {
         this.resending = false;
         console.error('Password reset resend error:', error);
         this.errorMessage = 'Failed to resend email. Please try again.';

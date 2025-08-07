@@ -225,10 +225,6 @@ export const routes: Routes = [
             loadComponent: () => import('./features/seller/analytics/analytics.component').then(m => m.AnalyticsComponent)
           }
         ]
-      },
-      {
-        path: 'api-test',
-        loadComponent: () => import('./features/api-test/api-test').then(m => m.ApiTestComponent)
       }
     ]
   },

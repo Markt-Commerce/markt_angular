@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
+import { ApiService } from '../../core/services/api.service';
 
 interface Offer {
   id: string;
@@ -91,7 +92,7 @@ interface Offer {
 
       <div class="offers-list">
         <div *ngIf="filteredOffers.length === 0" class="empty-state">
-          <div class="empty-icon">📦</div>
+          <i class="fas fa-box text-gray-400 text-4xl"></i>
           <h3>No offers found</h3>
           <p>You haven't made any offers yet, or no offers match your current filters.</p>
           <app-button
@@ -451,6 +452,7 @@ interface Offer {
 })
 export class OffersComponent implements OnInit {
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   offers: Offer[] = [];
   filteredOffers: Offer[] = [];
@@ -459,6 +461,7 @@ export class OffersComponent implements OnInit {
   sortBy = 'created_at';
   currentPage = 1;
   itemsPerPage = 10;
+  loading = false;
 
   get totalOffers(): number {
     return this.offers.length;
@@ -486,47 +489,21 @@ export class OffersComponent implements OnInit {
     this.loadOffers();
   }
 
-  loadOffers(): void {
-    // Mock data - replace with actual API call
-    this.offers = [
-      {
-        id: '1',
-        request_id: 'req1',
-        request_title: 'Looking for vintage camera equipment',
-        buyer_name: 'John Smith',
-        product_name: 'Canon AE-1 Camera',
-        price: 250,
-        status: 'pending',
-        created_at: '2024-01-15T10:30:00Z',
-        expires_at: '2024-01-22T10:30:00Z',
-        message: 'I have a Canon AE-1 in excellent condition with original leather case.'
+  private loadOffers(): void {
+    this.loading = true;
+    
+    this.apiService.getMyOffers().subscribe({
+      next: (response) => {
+        this.offers = response.data || [];
+        this.filterOffers();
+        this.loading = false;
       },
-      {
-        id: '2',
-        request_id: 'req2',
-        request_title: 'Need laptop for programming',
-        buyer_name: 'Sarah Johnson',
-        product_name: 'MacBook Pro 2020',
-        price: 1200,
-        status: 'accepted',
-        created_at: '2024-01-10T14:20:00Z',
-        expires_at: '2024-01-17T14:20:00Z',
-        message: 'MacBook Pro with 16GB RAM, perfect for development work.'
-      },
-      {
-        id: '3',
-        request_id: 'req3',
-        request_title: 'Searching for acoustic guitar',
-        buyer_name: 'Mike Wilson',
-        product_name: 'Yamaha FG800',
-        price: 180,
-        status: 'rejected',
-        created_at: '2024-01-08T09:15:00Z',
-        expires_at: '2024-01-15T09:15:00Z',
-        message: 'Yamaha FG800 acoustic guitar, barely used, comes with case.'
+      error: (error) => {
+        console.error('Error loading offers:', error);
+        this.offers = [];
+        this.loading = false;
       }
-    ];
-    this.filterOffers();
+    });
   }
 
   filterOffers(): void {
@@ -578,7 +555,7 @@ export class OffersComponent implements OnInit {
 
   withdrawOffer(offerId: string): void {
     if (confirm('Are you sure you want to withdraw this offer?')) {
-      // Mock API call
+      // TODO: Replace with actual API call
       const offer = this.offers.find(o => o.id === offerId);
       if (offer) {
         offer.status = 'withdrawn';

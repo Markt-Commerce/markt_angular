@@ -33,6 +33,7 @@ import {
 import { RequestService } from '../../core/services/request.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-requests',
@@ -221,7 +222,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="request.buyer?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                  [src]="request.buyer?.profile_picture_url || '/markt-text-logo.png'" 
                   [alt]="request.buyer?.username"
                   class="w-10 h-10 rounded-full object-cover"
                 >
@@ -318,7 +319,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-6">
                 <button 
-                  (click)="upvoteRequest(request)"
+                  (click)="upvoteRequest(request.id)"
                   class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
                   [class.text-blue-500]="request.is_upvoted"
                 >
@@ -400,6 +401,7 @@ export class RequestsComponent implements OnInit {
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faSearch = faSearch;
@@ -477,7 +479,7 @@ export class RequestsComponent implements OnInit {
       sort_by: this.sortBy
     };
 
-    this.requestService.getRequests(params).subscribe({
+    this.apiService.getRequests(params).subscribe({
       next: (response) => {
         if (response.success) {
           this.requests = response.data.items;
@@ -608,16 +610,64 @@ export class RequestsComponent implements OnInit {
     return classMap[status] || 'bg-gray-100 text-gray-800';
   }
 
-  upvoteRequest(request: any): void {
-    this.requestService.upvoteRequest(request.id).subscribe({
+  // Additional request endpoint integrations
+  deleteRequest(requestId: string): void {
+    this.apiService.deleteRequest(requestId).subscribe({
       next: (response) => {
-        if (response.success) {
-          request.is_upvoted = !request.is_upvoted;
-          request.upvotes = response.data.upvotes;
-        }
+        console.log('Request deleted:', response.data);
+        this.loadRequests(); // Refresh requests list
+      },
+      error: (error) => {
+        console.error('Error deleting request:', error);
+      }
+    });
+  }
+
+  updateRequest(requestId: string, requestData: any): void {
+    this.apiService.updateRequest(requestId, requestData).subscribe({
+      next: (response) => {
+        console.log('Request updated:', response.data);
+        this.loadRequests(); // Refresh requests list
+      },
+      error: (error) => {
+        console.error('Error updating request:', error);
+      }
+    });
+  }
+
+  updateRequestStatus(requestId: string, status: string): void {
+    const statusData = { status };
+    this.apiService.updateRequestStatus(requestId, statusData).subscribe({
+      next: (response) => {
+        console.log('Request status updated:', response.data);
+        this.loadRequests(); // Refresh requests list
+      },
+      error: (error) => {
+        console.error('Error updating request status:', error);
+      }
+    });
+  }
+
+  upvoteRequest(requestId: string): void {
+    this.apiService.upvoteRequest(requestId).subscribe({
+      next: (response) => {
+        console.log('Request upvoted:', response.data);
+        this.loadRequests(); // Refresh requests list
       },
       error: (error) => {
         console.error('Error upvoting request:', error);
+      }
+    });
+  }
+
+  withdrawOffer(offerId: string): void {
+    this.apiService.withdrawOffer(offerId).subscribe({
+      next: (response) => {
+        console.log('Offer withdrawn:', response.data);
+        this.loadRequests(); // Refresh requests list
+      },
+      error: (error) => {
+        console.error('Error withdrawing offer:', error);
       }
     });
   }

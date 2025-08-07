@@ -23,6 +23,7 @@ import {
 import { CartService } from '../../core/services/cart.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-cart',
@@ -80,7 +81,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <!-- Product Image -->
                   <div class="flex-shrink-0">
                     <img 
-                      [src]="item.product?.images[0]?.url || '/assets/images/placeholder.png'" 
+                      [src]="item.product?.images[0]?.url || '/markt-text-logo.png'" 
                       [alt]="item.product?.name"
                       class="w-20 h-20 object-cover rounded-lg"
                     >
@@ -135,7 +136,7 @@ import { AuthService } from '../../core/services/auth.service';
                         <label class="text-sm font-medium text-gray-700">Quantity:</label>
                         <div class="flex items-center border border-gray-300 rounded-md">
                           <button 
-                            (click)="updateQuantity(item, item.quantity - 1)"
+                            (click)="updateQuantity(item.id, item.quantity - 1)"
                             [disabled]="item.quantity <= 1"
                             class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -143,7 +144,7 @@ import { AuthService } from '../../core/services/auth.service';
                           </button>
                           <span class="px-4 py-2 text-sm font-medium">{{ item.quantity }}</span>
                           <button 
-                            (click)="updateQuantity(item, item.quantity + 1)"
+                            (click)="updateQuantity(item.id, item.quantity + 1)"
                             [disabled]="item.quantity >= 99"
                             class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -162,7 +163,7 @@ import { AuthService } from '../../core/services/auth.service';
                           <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
                         </button>
                         <button 
-                          (click)="removeItem(item)"
+                          (click)="removeItem(item.id)"
                           class="text-gray-400 hover:text-red-500 transition-colors"
                           title="Remove Item"
                         >
@@ -182,7 +183,7 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <img 
-                    [src]="sellerGroup.seller?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                    [src]="sellerGroup.seller?.profile_picture_url || '/markt-text-logo.png'" 
                     [alt]="sellerGroup.seller?.shop_name"
                     class="w-8 h-8 rounded-full object-cover"
                   >
@@ -310,7 +311,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div *ngFor="let product of recentlyViewed" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
             <img 
-              [src]="product.images[0]?.url || '/assets/images/placeholder.png'" 
+              [src]="product.images[0]?.url || '/markt-text-logo.png'" 
               [alt]="product.name"
               class="w-full h-48 object-cover"
             >
@@ -319,7 +320,7 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="flex items-center justify-between">
                 <span class="text-lg font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
                 <button 
-                  (click)="addToCart(product)"
+                  (click)="addToCart(product.id, 1)"
                   class="bg-markt-primary text-white px-3 py-1 rounded-md hover:bg-markt-secondary transition-colors text-sm"
                 >
                   Add to Cart
@@ -342,6 +343,7 @@ export class CartComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faTrash = faTrash;
@@ -371,6 +373,10 @@ export class CartComponent implements OnInit {
   recentlyViewed: any[] = [];
   canCheckout = true;
   errorMessage: string = '';
+  loading = false;
+  selectedAddress: any = null;
+  selectedPaymentMethod: string = '';
+  orderNotes: string = '';
 
   ngOnInit(): void {
     this.loadCart();
@@ -378,10 +384,19 @@ export class CartComponent implements OnInit {
   }
 
   private loadCart(): void {
-    this.cartService.getCart().subscribe(cart => {
-      if (cart) {
-        this.cartItems = cart.items || [];
-        this.cartItemCount = cart.total_items || 0;
+    this.loading = true;
+    
+    this.apiService.getCart().subscribe({
+      next: (response) => {
+        this.cartItems = response.data?.items || [];
+        this.cartItemCount = response.data?.total_items || 0;
+        this.calculateTotals();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading cart:', error);
+        this.cartItems = [];
+        this.loading = false;
       }
     });
   }
@@ -391,7 +406,7 @@ export class CartComponent implements OnInit {
     this.recentlyViewed = [];
   }
 
-  private calculateCartTotals(): void {
+  private calculateTotals(): void {
     this.cartSubtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     this.cartShipping = this.calculateShipping();
     this.cartTax = this.cartSubtotal * 0.075; // 7.5% tax
@@ -444,16 +459,14 @@ export class CartComponent implements OnInit {
     return 500; // Standard shipping cost
   }
 
-  updateQuantity(item: any, newQuantity: number): void {
+  updateQuantity(itemId: string, newQuantity: number): void {
     if (newQuantity < 1 || newQuantity > 99) {
       return;
     }
 
-    this.cartService.updateCartItem(item.id, newQuantity).subscribe({
+    this.apiService.updateCartItem(itemId, { quantity: newQuantity }).subscribe({
       next: (response) => {
-        if (response.success) {
-          console.log('Quantity updated');
-        }
+        this.loadCart(); // Reload cart to get updated totals
       },
       error: (error) => {
         console.error('Error updating quantity:', error);
@@ -461,12 +474,10 @@ export class CartComponent implements OnInit {
     });
   }
 
-  removeItem(item: any): void {
-    this.cartService.removeCartItem(item.id).subscribe({
+  removeItem(itemId: string): void {
+    this.apiService.removeFromCart(itemId).subscribe({
       next: (response) => {
-        if (response.success) {
-          console.log('Item removed from cart');
-        }
+        this.loadCart(); // Reload cart
       },
       error: (error) => {
         console.error('Error removing item:', error);
@@ -476,21 +487,68 @@ export class CartComponent implements OnInit {
 
   moveToWishlist(item: any): void {
     // This would typically call a wishlist service
-    console.log('Move to wishlist:', item);
+    
     
     // Remove from cart after moving to wishlist
-    this.removeItem(item);
+    this.removeItem(item.id);
   }
 
-  addToCart(product: any): void {
-    this.cartService.addToCart(product.id, 1).subscribe({
+  // Additional cart endpoint integrations
+  addToCart(productId: string, quantity: number = 1): void {
+    const cartData = {
+      product_id: productId,
+      quantity: quantity
+    };
+
+    this.apiService.addToCart(cartData).subscribe({
       next: (response) => {
-        if (response.success) {
-          console.log('Product added to cart');
-        }
+        console.log('Item added to cart:', response.data);
+        this.loadCart(); // Refresh cart data
       },
       error: (error) => {
-        console.error('Error adding to cart:', error);
+        console.error('Error adding item to cart:', error);
+      }
+    });
+  }
+
+  checkoutCart(): void {
+    const checkoutData = {
+      shipping_address: this.selectedAddress,
+      payment_method: this.selectedPaymentMethod,
+      notes: this.orderNotes
+    };
+
+    this.apiService.checkoutCart(checkoutData).subscribe({
+      next: (response) => {
+        console.log('Cart checked out:', response.data);
+        // Navigate to order confirmation
+        this.router.navigate(['/app/orders', response.data.id]);
+      },
+      error: (error) => {
+        console.error('Error checking out cart:', error);
+      }
+    });
+  }
+
+  removeCartItem(itemId: string): void {
+    this.apiService.removeCartItem(itemId).subscribe({
+      next: (response) => {
+        console.log('Item removed from cart:', response.data);
+        this.loadCart(); // Refresh cart data
+      },
+      error: (error) => {
+        console.error('Error removing item from cart:', error);
+      }
+    });
+  }
+
+  toggleWishlist(productId: string): void {
+    this.apiService.toggleWishlist(productId).subscribe({
+      next: (response) => {
+        console.log('Wishlist toggled:', response.data);
+      },
+      error: (error) => {
+        console.error('Error toggling wishlist:', error);
       }
     });
   }
@@ -504,11 +562,11 @@ export class CartComponent implements OnInit {
   }
 
   clearCart(): void {
-    this.cartService.clearCart().subscribe({
+    this.apiService.clearCart().subscribe({
       next: (response) => {
-        if (response.success) {
-          console.log('Cart cleared');
-        }
+        this.cartItems = [];
+        this.cartItemCount = 0;
+        this.calculateTotals();
       },
       error: (error) => {
         console.error('Error clearing cart:', error);
@@ -521,8 +579,8 @@ export class CartComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           this.cartDiscount = response.data.discount_amount;
-          this.calculateCartTotals();
-          console.log('Coupon applied');
+          this.calculateTotals();
+          
         }
       },
       error: (error) => {

@@ -18,7 +18,8 @@ import {
   Payment,
   Notification,
   ChatRoom,
-  ChatMessage
+  ChatMessage,
+  RegisterResponse
 } from '../models';
 
 @Injectable({
@@ -33,8 +34,8 @@ export class ApiService {
   // ============================================================================
 
   // Authentication
-  register(userData: any): Observable<ApiResponse<User>> {
-    return this.post<User>('/users/register', userData);
+  register(userData: any): Observable<ApiResponse<RegisterResponse>> {
+    return this.post<RegisterResponse>('/users/register', userData);
   }
 
   login(credentials: any): Observable<ApiResponse<User>> {
@@ -1050,5 +1051,166 @@ export class ApiService {
 
   markMessagesAsRead(roomId: string, messageIds: string[]): Observable<ApiResponse<any>> {
     return this.post<any>(`/chats/rooms/${roomId}/messages/read`, { message_ids: messageIds });
+  }
+
+  // ============================================================================
+  // ADDITIONAL MISSING ENDPOINTS
+  // ============================================================================
+
+  // User Management - Missing methods
+  getMyOffers(): Observable<ApiResponse<any>> {
+    return this.get<any>('/users/my-offers');
+  }
+
+  getMyReviews(): Observable<ApiResponse<any>> {
+    return this.get<any>('/users/my-reviews');
+  }
+
+  getUserProfile(userId: string): Observable<ApiResponse<User>> {
+    return this.get<User>(`/users/${userId}/profile`);
+  }
+
+  getUserProducts(userId: string): Observable<ApiResponse<PaginatedResponse<Product>>> {
+    return this.get<PaginatedResponse<Product>>(`/users/${userId}/products`);
+  }
+
+  getUserReviews(userId: string): Observable<ApiResponse<any>> {
+    return this.get<any>(`/users/${userId}/reviews`);
+  }
+
+  getUserAddresses(): Observable<ApiResponse<any>> {
+    return this.get<any>('/users/addresses');
+  }
+
+  changePassword(passwordData: any): Observable<ApiResponse<any>> {
+    return this.post<any>('/users/change-password', passwordData);
+  }
+
+  deleteAccount(): Observable<ApiResponse<any>> {
+    return this.delete<any>('/users/account');
+  }
+
+  // Settings Management - Missing methods
+  getPrivacySettings(): Observable<ApiResponse<any>> {
+    return this.get<any>('/users/privacy-settings');
+  }
+
+  updatePrivacySettings(settings: any): Observable<ApiResponse<any>> {
+    return this.patch<any>('/users/privacy-settings', settings);
+  }
+
+  getNotificationSettings(): Observable<ApiResponse<any>> {
+    return this.get<any>('/users/notification-settings');
+  }
+
+  updateNotificationSettings(settings: any): Observable<ApiResponse<any>> {
+    return this.patch<any>('/users/notification-settings', settings);
+  }
+
+  // Analytics - Missing methods
+  getSalesAnalytics(): Observable<ApiResponse<any>> {
+    return this.get<any>('/analytics/seller/sales');
+  }
+
+  getProductAnalytics(): Observable<ApiResponse<any>> {
+    return this.get<any>('/analytics/seller/products');
+  }
+
+  getCustomerAnalytics(): Observable<ApiResponse<any>> {
+    return this.get<any>('/analytics/seller/customers');
+  }
+
+  getSellerAnalytics(): Observable<ApiResponse<any>> {
+    return this.get<any>('/analytics/seller/dashboard');
+  }
+
+  // Social - Missing methods
+  getSocialFeed(): Observable<ApiResponse<any>> {
+    return this.get<any>('/socials/feed');
+  }
+
+  // Onboarding - Missing methods
+  completeOnboarding(onboardingData: any): Observable<ApiResponse<any>> {
+    return this.post<any>('/users/onboarding', onboardingData);
+  }
+
+  // Marketplace - Missing methods
+  getMarketplaceProducts(): Observable<ApiResponse<PaginatedResponse<Product>>> {
+    return this.get<PaginatedResponse<Product>>('/products/marketplace');
+  }
+
+  getFeaturedProducts(): Observable<ApiResponse<Product[]>> {
+    return this.get<Product[]>('/products/featured');
+  }
+
+  getTrendingRequests(): Observable<ApiResponse<any[]>> {
+    return this.get<any[]>('/requests/trending');
+  }
+
+  getCommunityHighlights(): Observable<ApiResponse<any[]>> {
+    return this.get<any[]>('/socials/community/highlights');
+  }
+
+  // Community - Missing methods
+  getCommunityFeed(): Observable<ApiResponse<any>> {
+    return this.get<any>('/socials/community/feed');
+  }
+
+  likeCommunityPost(postId: string): Observable<ApiResponse<any>> {
+    return this.post<any>(`/socials/community/posts/${postId}/like`);
+  }
+
+  commentOnCommunityPost(postId: string, commentData: any): Observable<ApiResponse<any>> {
+    return this.post<any>(`/socials/community/posts/${postId}/comments`, commentData);
+  }
+
+  // Chat - Missing methods
+  getChatList(): Observable<ApiResponse<any>> {
+    return this.get<any>('/chats/list');
+  }
+
+  getChatRoom(roomId: string): Observable<ApiResponse<ChatRoom>> {
+    return this.get<ChatRoom>(`/chats/rooms/${roomId}`);
+  }
+
+  // Orders - Missing methods
+  getMyOrders(params?: any): Observable<ApiResponse<PaginatedResponse<Order>>> {
+    return this.get<PaginatedResponse<Order>>('/orders/my-orders', params);
+  }
+
+  // Additional missing methods
+  getSimilarProducts(productId: string): Observable<ApiResponse<Product[]>> {
+    return this.get<Product[]>(`/products/${productId}/similar`);
+  }
+
+  commentOnPost(postId: string, commentData: any): Observable<ApiResponse<any>> {
+    return this.post<any>(`/socials/posts/${postId}/comments`, commentData);
+  }
+
+  toggleWishlist(productId: string): Observable<ApiResponse<any>> {
+    return this.post<any>(`/products/${productId}/wishlist`);
+  }
+
+  // Social Post Reactions
+  likePost(postId: string): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.API_BASE_URL}/socials/posts/${postId}/like`, {})
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  unlikePost(postId: string): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(`${this.API_BASE_URL}/socials/posts/${postId}/like`)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  // Cart Management
+  removeFromCart(itemId: string): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(`${this.API_BASE_URL}/cart/items/${itemId}`)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 }

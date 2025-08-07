@@ -3,16 +3,21 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface ChatMessage {
   id: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar: string;
+  room_id: string;
+  sender_id: string;
   content: string;
-  timestamp: string;
-  isRead: boolean;
-  type: 'text' | 'image' | 'file';
+  message_type: 'text' | 'image' | 'file' | 'system';
+  message_data?: Record<string, any>;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+  // Additional properties for UI
+  senderName?: string;
+  senderAvatar?: string;
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -76,24 +81,24 @@ interface ChatParticipant {
             
             <div class="message-item" 
                  *ngFor="let message of group.messages"
-                 [class.sent]="message.senderId === 'currentUser'"
-                 [class.received]="message.senderId !== 'currentUser'">
+                 [class.sent]="message.sender_id === 'currentUser'"
+                 [class.received]="message.sender_id !== 'currentUser'">
               
-              <div class="message-avatar" *ngIf="message.senderId !== 'currentUser'">
+              <div class="message-avatar" *ngIf="message.sender_id !== 'currentUser'">
                 <img [src]="message.senderAvatar" [alt]="message.senderName">
               </div>
               
               <div class="message-content">
                 <div class="message-bubble">
-                  <div class="message-text" *ngIf="message.type === 'text'">
+                  <div class="message-text" *ngIf="message.message_type === 'text'">
                     {{ message.content }}
                   </div>
                   
-                  <div class="message-attachment" *ngIf="message.type === 'image'">
+                  <div class="message-attachment" *ngIf="message.message_type === 'image'">
                     <img [src]="message.attachmentUrl" [alt]="message.attachmentName">
                   </div>
                   
-                  <div class="message-file" *ngIf="message.type === 'file'">
+                  <div class="message-file" *ngIf="message.message_type === 'file'">
                     <div class="file-info">
                       <span class="file-icon">📎</span>
                       <span class="file-name">{{ message.attachmentName }}</span>
@@ -109,9 +114,9 @@ interface ChatParticipant {
                   </div>
                   
                   <div class="message-meta">
-                    <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-                    <span class="message-status" *ngIf="message.senderId === 'currentUser'">
-                      {{ message.isRead ? '✓✓' : '✓' }}
+                    <span class="message-time">{{ formatTime(message.created_at) }}</span>
+                    <span class="message-status" *ngIf="message.sender_id === 'currentUser'">
+                      {{ message.is_read ? '✓✓' : '✓' }}
                     </span>
                   </div>
                 </div>
@@ -566,6 +571,7 @@ interface ChatParticipant {
 export class ChatDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
   participant: ChatParticipant | null = null;
   messages: ChatMessage[] = [];
@@ -573,6 +579,8 @@ export class ChatDetailComponent implements OnInit {
   newMessage = '';
   isTyping = false;
   showInfo = false;
+  loading = false;
+  roomId: string = '';
 
   ngOnInit(): void {
     this.loadChat();
@@ -581,69 +589,47 @@ export class ChatDetailComponent implements OnInit {
   private loadChat(): void {
     const conversationId = this.route.snapshot.paramMap.get('id');
     
-    // TODO: Load chat from API
-    // For now, using mock data
-    setTimeout(() => {
-      this.participant = {
-        id: 'user1',
-        name: 'John Doe',
-        avatar: 'https://via.placeholder.com/40x40?text=JD',
-        isOnline: true
-      };
-
-      this.messages = [
-        {
-          id: '1',
-          senderId: 'user1',
-          senderName: 'John Doe',
-          senderAvatar: 'https://via.placeholder.com/32x32?text=JD',
-          content: 'Hi! I\'m interested in your wireless headphones. Is it still available?',
-          timestamp: '2025-01-03T15:30:00Z',
-          isRead: true,
-          type: 'text'
+    if (conversationId) {
+      this.loading = true;
+      
+      // Load chat room details
+      this.apiService.getChatRoom(conversationId).subscribe({
+        next: (response) => {
+          // ChatRoom doesn't have participants, we need to get participant info differently
+          // For now, we'll set a placeholder participant
+          this.participant = {
+            id: response.data.buyer_id || response.data.seller_id,
+            name: 'Chat Participant',
+            avatar: '/assets/default-avatar.png',
+            isOnline: false
+          };
+          this.loading = false;
         },
-        {
-          id: '2',
-          senderId: 'currentUser',
-          senderName: 'You',
-          senderAvatar: 'https://via.placeholder.com/32x32?text=ME',
-          content: 'Yes, it\'s still available! It\'s in excellent condition.',
-          timestamp: '2025-01-03T15:32:00Z',
-          isRead: true,
-          type: 'text'
-        },
-        {
-          id: '3',
-          senderId: 'user1',
-          senderName: 'John Doe',
-          senderAvatar: 'https://via.placeholder.com/32x32?text=JD',
-          content: 'Great! Can you send me some more photos?',
-          timestamp: '2025-01-03T15:35:00Z',
-          isRead: true,
-          type: 'text'
-        },
-        {
-          id: '4',
-          senderId: 'currentUser',
-          senderName: 'You',
-          senderAvatar: 'https://via.placeholder.com/32x32?text=ME',
-          content: 'Sure! Here are some additional photos.',
-          timestamp: '2025-01-03T15:40:00Z',
-          isRead: false,
-          type: 'image',
-          attachmentUrl: 'https://via.placeholder.com/300x200?text=Product+Photo'
+        error: (error) => {
+          console.error('Error loading chat room:', error);
+          this.loading = false;
         }
-      ];
+      });
 
-      this.groupMessages();
-    }, 1000);
+      // Load chat messages
+      this.apiService.getChatMessages(conversationId).subscribe({
+        next: (response) => {
+          this.messages = response.data || [];
+          this.groupMessages();
+        },
+        error: (error) => {
+          console.error('Error loading chat messages:', error);
+          this.messages = [];
+        }
+      });
+    }
   }
 
   private groupMessages(): void {
     const groups: Record<string, ChatMessage[]> = {};
     
     this.messages.forEach(message => {
-      const date = new Date(message.timestamp).toDateString();
+      const date = new Date(message.created_at).toDateString();
       if (!groups[date]) {
         groups[date] = [];
       }
@@ -667,41 +653,45 @@ export class ChatDetailComponent implements OnInit {
 
     if (!this.newMessage.trim()) return;
 
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      senderId: 'currentUser',
-      senderName: 'You',
-      senderAvatar: 'https://via.placeholder.com/32x32?text=ME',
-      content: this.newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      type: 'text'
-    };
+    if (this.route.snapshot.paramMap.get('id')) {
+      const conversationId = this.route.snapshot.paramMap.get('id')!;
+      const messageData = {
+        content: this.newMessage,
+        type: 'text'
+      };
 
-    this.messages.push(message);
-    this.newMessage = '';
-    this.groupMessages();
-    this.scrollToBottom();
+      this.apiService.sendMessage(conversationId, messageData).subscribe({
+        next: (response) => {
+          this.messages.push(response.data);
+          this.newMessage = '';
+          this.groupMessages();
+          this.scrollToBottom();
+        },
+        error: (error) => {
+          console.error('Error sending message:', error);
+        }
+      });
+    }
   }
 
   onTyping(): void {
     // TODO: Send typing indicator to server
-    console.log('User is typing...');
+    
   }
 
   attachFile(): void {
     // TODO: Implement file attachment
-    console.log('Attach file');
+    
   }
 
   attachImage(): void {
     // TODO: Implement image attachment
-    console.log('Attach image');
+    
   }
 
   downloadFile(url: string): void {
     // TODO: Implement file download
-    console.log('Download file:', url);
+    
   }
 
   toggleInfo(): void {
@@ -710,13 +700,13 @@ export class ChatDetailComponent implements OnInit {
 
   viewProfile(): void {
     // TODO: Navigate to user profile
-    console.log('View profile');
+    
   }
 
   blockUser(): void {
     if (confirm('Are you sure you want to block this user?')) {
       // TODO: Implement block user
-      console.log('Block user');
+      
     }
   }
 
@@ -755,5 +745,117 @@ export class ChatDetailComponent implements OnInit {
         container.scrollTop = container.scrollHeight;
       }
     }, 100);
+  }
+
+  // Additional chat endpoint integrations
+  createChatRoom(roomData: any): void {
+    this.apiService.createChatRoom(roomData).subscribe({
+      next: (response) => {
+        console.log('Chat room created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating chat room:', error);
+      }
+    });
+  }
+
+  deleteChatRoom(roomId: string): void {
+    this.apiService.deleteChatRoom(roomId).subscribe({
+      next: (response) => {
+        console.log('Chat room deleted:', response.data);
+        this.router.navigate(['/app/chat']);
+      },
+      error: (error) => {
+        console.error('Error deleting chat room:', error);
+      }
+    });
+  }
+
+  getChatRooms(): void {
+    this.apiService.getChatRooms().subscribe({
+      next: (response) => {
+        console.log('Chat rooms loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading chat rooms:', error);
+      }
+    });
+  }
+
+  getCommentReactions(commentId: string): void {
+    this.apiService.getCommentReactions(commentId).subscribe({
+      next: (response) => {
+        console.log('Comment reactions loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading comment reactions:', error);
+      }
+    });
+  }
+
+  getMessageReactions(messageId: string): void {
+    this.apiService.getMessageReactions(messageId).subscribe({
+      next: (response) => {
+        console.log('Message reactions loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading message reactions:', error);
+      }
+    });
+  }
+
+  markMessagesAsRead(messageIds: string[]): void {
+    this.apiService.markMessagesAsRead(this.roomId, messageIds).subscribe({
+      next: (response) => {
+        console.log('Messages marked as read:', response.data);
+      },
+      error: (error) => {
+        console.error('Error marking messages as read:', error);
+      }
+    });
+  }
+
+  muteChatRoom(roomId: string): void {
+    this.apiService.muteChatRoom(roomId).subscribe({
+      next: (response) => {
+        console.log('Chat room muted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error muting chat room:', error);
+      }
+    });
+  }
+
+  pinChatRoom(roomId: string): void {
+    this.apiService.pinChatRoom(roomId).subscribe({
+      next: (response) => {
+        console.log('Chat room pinned:', response.data);
+      },
+      error: (error) => {
+        console.error('Error pinning chat room:', error);
+      }
+    });
+  }
+
+  removeCommentReaction(commentId: string, reactionType: string): void {
+    this.apiService.removeCommentReaction(commentId, reactionType).subscribe({
+      next: (response) => {
+        console.log('Comment reaction removed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error removing comment reaction:', error);
+      }
+    });
+  }
+
+  removeMessageReaction(messageId: string, reactionType: string): void {
+    this.apiService.removeMessageReaction(messageId, reactionType).subscribe({
+      next: (response) => {
+        console.log('Message reaction removed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error removing message reaction:', error);
+      }
+    });
   }
 } 

@@ -174,7 +174,7 @@ export class ChatService {
    */
   sendImageMessage(roomId: string, imageUrl: string, caption?: string): Observable<any> {
     const messageData: SendMessage = {
-      content: caption || '',
+      content: caption || '/Logo.png',
       message_type: 'image',
       message_data: { image_url: imageUrl }
     };
@@ -376,7 +376,7 @@ export class ChatService {
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
+        
         this.updateChatState({ isConnected: true });
         this.authenticateWebSocket();
       };
@@ -387,7 +387,7 @@ export class ChatService {
       };
       
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
+        
         this.updateChatState({ isConnected: false });
         // Attempt to reconnect after 5 seconds
         setTimeout(() => this.initializeWebSocket(), 5000);
@@ -446,7 +446,7 @@ export class ChatService {
         this.handleRoomUpdate(data.data);
         break;
       default:
-        console.log('Unknown WebSocket message type:', data.type);
+        
     }
   }
 
@@ -475,7 +475,7 @@ export class ChatService {
    */
   private handleTypingIndicator(data: any): void {
     // Implement typing indicator logic
-    console.log('Typing indicator:', data);
+    
   }
 
   /**
@@ -572,7 +572,7 @@ export class ChatService {
    */
   private getAuthToken(): string {
     // This should get the token from your auth service
-    return localStorage.getItem('markt_token') || '';
+    return localStorage.getItem('markt_token') || '/Logo.png';
   }
 
   /**
@@ -795,8 +795,8 @@ export class ChatService {
       if (!a.pinned && b.pinned) return 1;
       
       // Then by last message time (newest first)
-      const aTime = new Date(a.last_message_at || '').getTime();
-      const bTime = new Date(b.last_message_at || '').getTime();
+      const aTime = new Date(a.last_message_at || '/Logo.png').getTime();
+      const bTime = new Date(b.last_message_at || '/Logo.png').getTime();
       return bTime - aTime;
     });
   }
@@ -806,8 +806,8 @@ export class ChatService {
    */
   sortChatRoomsByLastMessage(chatRooms: ChatRoom[]): ChatRoom[] {
     return chatRooms.sort((a, b) => {
-      const aTime = new Date(a.last_message_at || '').getTime();
-      const bTime = new Date(b.last_message_at || '').getTime();
+      const aTime = new Date(a.last_message_at || '/Logo.png').getTime();
+      const bTime = new Date(b.last_message_at || '/Logo.png').getTime();
       return bTime - aTime;
     });
   }

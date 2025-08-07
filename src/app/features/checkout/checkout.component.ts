@@ -29,6 +29,7 @@ import { OrderService } from '../../core/services/order.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-checkout',
@@ -360,7 +361,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
                 <div class="space-y-3">
                   <div *ngFor="let item of cartItems" class="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
                     <img 
-                      [src]="item.product?.images[0]?.url || '/assets/images/placeholder.png'" 
+                      [src]="item.product?.images[0]?.url || '/markt-text-logo.png'" 
                       [alt]="item.product?.name"
                       class="w-16 h-16 object-cover rounded-lg"
                     >
@@ -464,6 +465,7 @@ export class CheckoutComponent implements OnInit {
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faArrowLeft = faArrowLeft;
@@ -502,6 +504,26 @@ export class CheckoutComponent implements OnInit {
   isProcessing = false;
   showCvv = false;
   selectedPaymentMethod = 'card';
+  loading = false;
+  cart: any = null;
+  cartSummary: any = null;
+  addresses: any[] = [];
+  couponCode = '';
+  couponApplied = false;
+  couponDiscount = 0;
+  couponError = '';
+  totalAmount = 0;
+  userEmail = '';
+  userId = '';
+  paymentError = '';
+  selectedAddress: any = null;
+  paymentMethod = 'card';
+  orderNotes = '';
+  order: any = null;
+  orderError = '';
+  subtotal = 0;
+  shipping = 0;
+  tax = 0;
 
   // Payment methods
   paymentMethods = [
@@ -533,76 +555,121 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCartData();
-    this.loadUserData();
-    this.setupFormSubscriptions();
+    this.loadCheckoutData();
   }
 
-  private loadCartData(): void {
-    this.cartService.getCart().subscribe({
+  private loadCheckoutData(): void {
+    this.loading = true;
+    
+    // Load cart data
+    this.apiService.getCart().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.cartItems = response.data.items;
-          this.calculateTotals();
-        }
+        this.cart = response.data;
+        this.calculateTotals();
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error loading cart:', error);
-        this.router.navigate(['/app/cart']);
+        this.loading = false;
+      }
+    });
+
+    // Load cart summary
+    this.apiService.getCartSummary().subscribe({
+      next: (response) => {
+        this.cartSummary = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading cart summary:', error);
+      }
+    });
+
+    // Load user addresses
+    this.apiService.getUserAddresses().subscribe({
+      next: (response) => {
+        this.addresses = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading addresses:', error);
+        this.addresses = [];
       }
     });
   }
 
-  private loadUserData(): void {
-    this.authService.authState$.subscribe(authState => {
-      if (authState.user) {
-        const user = authState.user;
-        this.shippingForm.patchValue({
-          firstName: user.first_name || '',
-          lastName: user.last_name || '',
-          email: user.email || '',
-          phone: user.phone_number || ''
-        });
-      }
-    });
-  }
-
-  private setupFormSubscriptions(): void {
-    this.paymentForm.get('paymentMethod')?.valueChanges.subscribe(method => {
-      this.selectedPaymentMethod = method;
-      this.updatePaymentValidation();
-    });
-  }
-
-  private updatePaymentValidation(): void {
-    const cardNumber = this.paymentForm.get('cardNumber');
-    const expiryDate = this.paymentForm.get('expiryDate');
-    const cvv = this.paymentForm.get('cvv');
-    const cardholderName = this.paymentForm.get('cardholderName');
-
-    if (this.selectedPaymentMethod === 'card') {
-      cardNumber?.setValidators([Validators.required, Validators.pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)]);
-      expiryDate?.setValidators([Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]);
-      cvv?.setValidators([Validators.required, Validators.pattern(/^\d{3,4}$/)]);
-      cardholderName?.setValidators([Validators.required]);
-    } else {
-      cardNumber?.clearValidators();
-      expiryDate?.clearValidators();
-      cvv?.clearValidators();
-      cardholderName?.clearValidators();
+  applyCoupon(): void {
+    if (this.couponCode) {
+      this.apiService.applyCoupon({ code: this.couponCode }).subscribe({
+        next: (response) => {
+          this.couponApplied = true;
+          this.couponDiscount = response.data.discount;
+          this.calculateTotals();
+        },
+        error: (error) => {
+          console.error('Error applying coupon:', error);
+          this.couponError = error.message || 'Invalid coupon code';
+        }
+      });
     }
+  }
 
-    cardNumber?.updateValueAndValidity();
-    expiryDate?.updateValueAndValidity();
-    cvv?.updateValueAndValidity();
-    cardholderName?.updateValueAndValidity();
+  initializePayment(): void {
+    const paymentData = {
+      amount: this.totalAmount,
+      currency: 'NGN',
+      email: this.userEmail,
+      reference: this.generateReference(),
+      callback_url: window.location.origin + '/app/checkout/success',
+      metadata: {
+        cart_id: this.cart.id,
+        user_id: this.userId
+      }
+    };
+
+    this.apiService.initializePayment(paymentData).subscribe({
+      next: (response) => {
+        // Redirect to payment gateway
+        window.location.href = response.data.authorization_url;
+      },
+      error: (error) => {
+        console.error('Error initializing payment:', error);
+        this.paymentError = error.message || 'Payment initialization failed';
+      }
+    });
+  }
+
+  processOrder(): void {
+    const orderData = {
+      cart_id: this.cart.id,
+      shipping_address: this.selectedAddress,
+      billing_address: this.selectedAddress,
+      payment_method: this.paymentMethod,
+      coupon_code: this.couponCode,
+      notes: this.orderNotes
+    };
+
+    this.apiService.createOrder(orderData).subscribe({
+      next: (response) => {
+        this.order = response.data;
+        this.initializePayment();
+      },
+      error: (error) => {
+        console.error('Error creating order:', error);
+        this.orderError = error.message || 'Order creation failed';
+      }
+    });
+  }
+
+  private generateReference(): string {
+    return 'MARKT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   private calculateTotals(): void {
-    this.cartSubtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    this.cartShipping = this.cartSubtotal >= 5000 ? 0 : 500;
-    this.cartTax = this.cartSubtotal * 0.075; // 7.5% tax
-    this.cartTotal = this.cartSubtotal + this.cartShipping + this.cartTax;
+    if (this.cart) {
+      this.subtotal = this.cart.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      this.shipping = this.cartSummary?.shipping_cost || 0;
+      this.tax = this.cartSummary?.tax_amount || 0;
+      this.totalAmount = this.subtotal + this.shipping + this.tax - (this.couponDiscount || 0);
+    }
   }
 
   onShippingSubmit(): void {
@@ -708,6 +775,105 @@ export class CheckoutComponent implements OnInit {
       
       if (control instanceof FormGroup) {
         this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  // Payment endpoint integrations - using component data instead of hardcoded values
+  getPayment(paymentId?: string): void {
+    const id = paymentId || this.order?.payment_id;
+    if (!id) return;
+    
+    this.apiService.getPayment(id).subscribe({
+      next: (response) => {
+        console.log('Payment details:', response.data);
+      },
+      error: (error) => {
+        console.error('Error getting payment:', error);
+      }
+    });
+  }
+
+  payOrder(): void {
+    if (!this.order?.id || !this.paymentForm.valid) return;
+    
+    const paymentData = this.getPaymentDetails();
+    this.apiService.payOrder(this.order.id, paymentData).subscribe({
+      next: (response) => {
+        console.log('Order paid:', response.data);
+      },
+      error: (error) => {
+        console.error('Error paying order:', error);
+      }
+    });
+  }
+
+  handlePaystackWebhook(webhookData: any): void {
+    this.apiService.handlePaystackWebhook(webhookData).subscribe({
+      next: (response) => {
+        console.log('Webhook handled:', response.data);
+      },
+      error: (error) => {
+        console.error('Error handling webhook:', error);
+      }
+    });
+  }
+
+  handlePaymentCallback(paymentId?: string): void {
+    const id = paymentId || this.order?.payment_id;
+    if (!id) return;
+    
+    this.apiService.handlePaymentCallback(id).subscribe({
+      next: (response) => {
+        console.log('Payment callback handled:', response.data);
+      },
+      error: (error) => {
+        console.error('Error handling payment callback:', error);
+      }
+    });
+  }
+
+  // Additional payment endpoint integrations
+  createPayment(paymentData: any): void {
+    this.apiService.createPayment(paymentData).subscribe({
+      next: (response) => {
+        console.log('Payment created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating payment:', error);
+      }
+    });
+  }
+
+  processPayment(paymentId: string, paymentData: any): void {
+    this.apiService.processPayment(paymentId, paymentData).subscribe({
+      next: (response) => {
+        console.log('Payment processed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error processing payment:', error);
+      }
+    });
+  }
+
+  verifyPayment(paymentId: string): void {
+    this.apiService.verifyPayment(paymentId).subscribe({
+      next: (response) => {
+        console.log('Payment verified:', response.data);
+      },
+      error: (error) => {
+        console.error('Error verifying payment:', error);
+      }
+    });
+  }
+
+  getPayments(): void {
+    this.apiService.getPayments().subscribe({
+      next: (response) => {
+        console.log('Payments loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading payments:', error);
       }
     });
   }

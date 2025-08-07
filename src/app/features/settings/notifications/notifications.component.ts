@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface NotificationSetting {
   id: string;
@@ -528,6 +529,7 @@ interface NotificationSetting {
 export class NotificationsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   notificationsForm!: FormGroup;
   loading = false;
@@ -686,42 +688,46 @@ export class NotificationsComponent implements OnInit {
   }
 
   private loadSettings(): void {
-    // Mock data - replace with actual API call
-    const mockSettings = {
-      quiet_hours_enabled: true,
-      quiet_hours_start: '22:00',
-      quiet_hours_end: '08:00'
-    };
-
-    this.notificationsForm.patchValue(mockSettings);
+    this.loading = true;
+    
+    this.apiService.getNotificationSettings().subscribe({
+      next: (response) => {
+        this.notificationsForm.patchValue(response.data);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading notification settings:', error);
+        this.loading = false;
+      }
+    });
   }
 
   saveSettings(): void {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
-
-          // const formData = this.notificationsForm.value;
-
-    // Mock API call - replace with actual service call
-    setTimeout(() => {
-      this.loading = false;
-      this.successMessage = 'Notification settings saved successfully!';
-      
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
-    }, 1000);
+    
+    const formData = this.notificationsForm.value;
+    
+    this.apiService.updateNotificationSettings(formData).subscribe({
+      next: (response) => {
+        this.loading = false;
+        this.successMessage = 'Notification settings updated successfully!';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error updating notification settings:', error);
+        this.loading = false;
+        this.errorMessage = 'Failed to update notification settings.';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   resetSettings(): void {
     if (confirm('Are you sure you want to reset all notification settings to defaults?')) {
       this.loadSettings();
-      this.successMessage = 'Settings reset to defaults!';
-      
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
+      // TODO: Replace with actual backend call
     }
   }
 

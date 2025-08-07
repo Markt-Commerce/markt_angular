@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/social.service';
 import { Observable } from 'rxjs';
 import { User } from '../../../core/models/auth.model';
+import { ApiService } from '../../../core/services/api.service';
 
 interface FeedPost {
   id: string;
@@ -213,6 +214,7 @@ interface FeedPost {
 export class FeedComponent implements OnInit {
   private authService = inject(AuthService);
   private socialService = inject(SocialService);
+  private apiService = inject(ApiService);
 
   // Icons
   faHeart = faHeart;
@@ -235,20 +237,24 @@ export class FeedComponent implements OnInit {
   posts: FeedPost[] = [];
   currentPage = 1;
   hasMorePosts = true;
+  loading = false;
 
-  ngOnInit() {
-    this.loadPosts();
-    this.loadStories();
+  ngOnInit(): void {
+    this.loadFeed();
   }
 
-  loadPosts(): void {
-    this.socialService.getFeed({ page: this.currentPage }).subscribe({
+  private loadFeed(): void {
+    this.loading = true;
+    
+    this.apiService.getCommunityFeed().subscribe({
       next: (response) => {
-        this.posts = (response.items || []).map(post => this.mapPostToFeedPost(post));
-        this.hasMorePosts = response.pagination?.has_next || false;
+        this.posts = response.data || [];
+        this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading posts:', error);
+        console.error('Error loading community feed:', error);
+        this.posts = [];
+        this.loading = false;
       }
     });
   }
@@ -326,18 +332,30 @@ export class FeedComponent implements OnInit {
   }
 
   likePost(postId: string): void {
-    this.socialService.likePost(postId).subscribe({
+    this.apiService.likeCommunityPost(postId).subscribe({
       next: (response) => {
-        if (response) {
-          const post = this.posts.find(p => p.id === postId);
-          if (post) {
-            post.likes++;
-            post.isLiked = true;
-          }
+        const post = this.posts.find(p => p.id === postId);
+        if (post) {
+          post.isLiked = !post.isLiked;
+          post.likes += post.isLiked ? 1 : -1;
         }
       },
       error: (error) => {
         console.error('Error liking post:', error);
+      }
+    });
+  }
+
+  commentOnPost(postId: string, comment: string): void {
+    this.apiService.commentOnCommunityPost(postId, { content: comment }).subscribe({
+      next: (response) => {
+        const post = this.posts.find(p => p.id === postId);
+        if (post) {
+          post.comments += 1;
+        }
+      },
+      error: (error) => {
+        console.error('Error commenting on post:', error);
       }
     });
   }

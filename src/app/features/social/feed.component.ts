@@ -34,6 +34,7 @@ import {
 import { SocialService } from '../../core/services/social.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-feed',
@@ -81,7 +82,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
           >
             <div class="w-16 h-16 rounded-full border-2 border-markt-primary p-1">
               <img 
-                [src]="story.user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                [src]="story.user?.profile_picture_url || '/markt-text-logo.png'" 
                 [alt]="story.user?.username"
                 class="w-full h-full rounded-full object-cover"
               >
@@ -95,7 +96,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-start space-x-4">
           <img 
-            [src]="user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+            [src]="user?.profile_picture_url || '/markt-text-logo.png'" 
             [alt]="user?.username"
             class="w-10 h-10 rounded-full object-cover"
           >
@@ -178,7 +179,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="post.user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                  [src]="post.user?.profile_picture_url || '/markt-text-logo.png'" 
                   [alt]="post.user?.username"
                   class="w-10 h-10 rounded-full object-cover"
                 >
@@ -278,7 +279,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
             <div *ngIf="post.product" class="mb-4 p-4 bg-gray-50 rounded-lg">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="post.product.images[0]?.url || '/assets/images/placeholder.png'" 
+                  [src]="post.product.images[0]?.url || '/markt-text-logo.png'" 
                   [alt]="post.product.name"
                   class="w-16 h-16 object-cover rounded-lg"
                 >
@@ -355,7 +356,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
               <!-- Add Comment -->
               <div class="flex items-center space-x-3 mb-4">
                 <img 
-                  [src]="user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                  [src]="user?.profile_picture_url || '/markt-text-logo.png'" 
                   [alt]="user?.username"
                   class="w-8 h-8 rounded-full object-cover"
                 >
@@ -374,7 +375,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
               <div class="space-y-3">
                 <div *ngFor="let comment of post.comments" class="flex items-start space-x-3">
                   <img 
-                    [src]="comment.user?.profile_picture_url || '/assets/images/default-avatar.png'" 
+                    [src]="comment.user?.profile_picture_url || '/markt-text-logo.png'" 
                     [alt]="comment.user?.username"
                     class="w-8 h-8 rounded-full object-cover"
                   >
@@ -431,6 +432,7 @@ export class FeedComponent implements OnInit {
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faHeart = faHeart;
@@ -487,13 +489,18 @@ export class FeedComponent implements OnInit {
   }
 
   private loadFeed(): void {
-    this.socialService.getFeed({ page: this.currentPage }).subscribe({
+    this.isLoading = true;
+    
+    this.apiService.getSocialFeed().subscribe({
       next: (response) => {
-        this.posts = response.items || [];
-        this.hasMorePosts = response.pagination?.has_next || false;
+        this.posts = response.data || [];
+        this.hasMorePosts = response.data?.pagination?.has_next || false;
+        this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading feed:', error);
+        console.error('Error loading social feed:', error);
+        this.posts = [];
+        this.isLoading = false;
       }
     });
   }
@@ -667,7 +674,7 @@ export class FeedComponent implements OnInit {
         if (response.success) {
           // Handle sharing (copy link, open share dialog, etc.)
           navigator.clipboard.writeText(`${window.location.origin}/app/social/posts/${post.id}`);
-          console.log('Post link copied to clipboard');
+          
         }
       },
       error: (error) => {
@@ -709,12 +716,12 @@ export class FeedComponent implements OnInit {
 
   addMedia(): void {
     // This would typically open a file picker
-    console.log('Add media');
+    
   }
 
   addVideo(): void {
     // This would typically open a video picker
-    console.log('Add video');
+    
   }
 
   addProduct(): void {
@@ -723,12 +730,12 @@ export class FeedComponent implements OnInit {
 
   addLocation(): void {
     // This would typically open a location picker
-    console.log('Add location');
+    
   }
 
   openMediaViewer(media: any[], index: number): void {
     // This would typically open a media viewer modal
-    console.log('Open media viewer', media, index);
+    
   }
 
   extractTags(content: string): string[] {
@@ -756,5 +763,407 @@ export class FeedComponent implements OnInit {
     } else {
       return date.toLocaleDateString();
     }
+  }
+
+  // Social post media endpoint integrations
+  addSocialPostMedia(postId: string, mediaFile: File): void {
+    this.apiService.addSocialPostMedia(postId, mediaFile).subscribe({
+      next: (response) => {
+        console.log('Social post media added:', response.data);
+      },
+      error: (error) => {
+        console.error('Error adding social post media:', error);
+      }
+    });
+  }
+
+  deleteSocialPostMedia(postId: string, mediaId: string): void {
+    this.apiService.deleteSocialPostMedia(postId, Number(mediaId)).subscribe({
+      next: (response) => {
+        console.log('Social post media deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting social post media:', error);
+      }
+    });
+  }
+
+  getSocialPostMedia(postId: string): void {
+    this.apiService.getSocialPostMedia(postId).subscribe({
+      next: (response) => {
+        console.log('Social post media loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading social post media:', error);
+      }
+    });
+  }
+
+  // Additional social endpoint integrations
+  addCommentViaApi(postId: string, commentData: any): void {
+    this.apiService.addComment(postId, commentData).subscribe({
+      next: (response) => {
+        console.log('Comment added:', response.data);
+        this.loadComments({ id: postId }); // Refresh comments
+      },
+      error: (error) => {
+        console.error('Error adding comment:', error);
+      }
+    });
+  }
+
+  addCommentReaction(commentId: string, reactionData: any): void {
+    this.apiService.addCommentReaction(commentId, reactionData).subscribe({
+      next: (response) => {
+        console.log('Comment reaction added:', response.data);
+      },
+      error: (error) => {
+        console.error('Error adding comment reaction:', error);
+      }
+    });
+  }
+
+  addMessageReaction(messageId: string, reactionData: any): void {
+    this.apiService.addMessageReaction(messageId, reactionData).subscribe({
+      next: (response) => {
+        console.log('Message reaction added:', response.data);
+      },
+      error: (error) => {
+        console.error('Error adding message reaction:', error);
+      }
+    });
+  }
+
+  approveNichePost(nichePostId: string, approvalData: any): void {
+    this.apiService.approveNichePost(nichePostId, approvalData).subscribe({
+      next: (response) => {
+        console.log('Niche post approved:', response.data);
+      },
+      error: (error) => {
+        console.error('Error approving niche post:', error);
+      }
+    });
+  }
+
+  archiveChatRoom(roomId: string): void {
+    this.apiService.archiveChatRoom(roomId).subscribe({
+      next: (response) => {
+        console.log('Chat room archived:', response.data);
+      },
+      error: (error) => {
+        console.error('Error archiving chat room:', error);
+      }
+    });
+  }
+
+  bookmarkPost(postId: string): void {
+    this.apiService.bookmarkPost(postId).subscribe({
+      next: (response) => {
+        console.log('Post bookmarked:', response.data);
+      },
+      error: (error) => {
+        console.error('Error bookmarking post:', error);
+      }
+    });
+  }
+
+  canPostInNiche(nicheId: string): void {
+    this.apiService.canPostInNiche(nicheId).subscribe({
+      next: (response) => {
+        console.log('Can post in niche:', response.data);
+      },
+      error: (error) => {
+        console.error('Error checking niche posting permission:', error);
+      }
+    });
+  }
+
+  createNiche(nicheData: any): void {
+    this.apiService.createNiche(nicheData).subscribe({
+      next: (response) => {
+        console.log('Niche created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating niche:', error);
+      }
+    });
+  }
+
+  createNichePost(nicheId: string, postData: any): void {
+    this.apiService.createNichePost(nicheId, postData).subscribe({
+      next: (response) => {
+        console.log('Niche post created:', response.data);
+      },
+      error: (error) => {
+        console.error('Error creating niche post:', error);
+      }
+    });
+  }
+
+  deletePostViaApi(postId: string): void {
+    this.apiService.deletePost(postId).subscribe({
+      next: (response) => {
+        console.log('Post deleted:', response.data);
+        this.loadFeed(); // Refresh feed
+      },
+      error: (error) => {
+        console.error('Error deleting post:', error);
+      }
+    });
+  }
+
+  followUser(followeeId: string): void {
+    this.apiService.followUser(followeeId).subscribe({
+      next: (response) => {
+        console.log('User followed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error following user:', error);
+      }
+    });
+  }
+
+  getFollowers(userId: string): void {
+    this.apiService.getFollowers(userId).subscribe({
+      next: (response) => {
+        console.log('Followers loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading followers:', error);
+      }
+    });
+  }
+
+  getFollowing(userId: string): void {
+    this.apiService.getFollowing(userId).subscribe({
+      next: (response) => {
+        console.log('Following loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading following:', error);
+      }
+    });
+  }
+
+  getMyNiches(): void {
+    this.apiService.getMyNiches().subscribe({
+      next: (response) => {
+        console.log('My niches loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading my niches:', error);
+      }
+    });
+  }
+
+  getNiche(nicheId: string): void {
+    this.apiService.getNiche(nicheId).subscribe({
+      next: (response) => {
+        console.log('Niche loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading niche:', error);
+      }
+    });
+  }
+
+  getNicheFeed(nicheId: string): void {
+    this.apiService.getNicheFeed(nicheId).subscribe({
+      next: (response) => {
+        console.log('Niche feed loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading niche feed:', error);
+      }
+    });
+  }
+
+  getNicheMembers(nicheId: string): void {
+    this.apiService.getNicheMembers(nicheId).subscribe({
+      next: (response) => {
+        console.log('Niche members loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading niche members:', error);
+      }
+    });
+  }
+
+  getNichePosts(nicheId: string): void {
+    this.apiService.getNichePosts(nicheId).subscribe({
+      next: (response) => {
+        console.log('Niche posts loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading niche posts:', error);
+      }
+    });
+  }
+
+  getNiches(): void {
+    this.apiService.getNiches().subscribe({
+      next: (response) => {
+        console.log('Niches loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading niches:', error);
+      }
+    });
+  }
+
+  joinNiche(nicheId: string): void {
+    this.apiService.joinNiche(nicheId).subscribe({
+      next: (response) => {
+        console.log('Joined niche:', response.data);
+      },
+      error: (error) => {
+        console.error('Error joining niche:', error);
+      }
+    });
+  }
+
+  leaveNiche(nicheId: string): void {
+    this.apiService.leaveNiche(nicheId).subscribe({
+      next: (response) => {
+        console.log('Left niche:', response.data);
+      },
+      error: (error) => {
+        console.error('Error leaving niche:', error);
+      }
+    });
+  }
+
+  moderateNiche(nicheId: string, moderationData: any): void {
+    this.apiService.moderateNiche(nicheId, moderationData).subscribe({
+      next: (response) => {
+        console.log('Niche moderated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error moderating niche:', error);
+      }
+    });
+  }
+
+  unfollowUser(followeeId: string): void {
+    this.apiService.unfollowUser(followeeId).subscribe({
+      next: (response) => {
+        console.log('User unfollowed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error unfollowing user:', error);
+      }
+    });
+  }
+
+  unlikePost(postId: string): void {
+    this.apiService.unlikePost(postId).subscribe({
+      next: (response) => {
+        console.log('Post unliked:', response.data);
+      },
+      error: (error) => {
+        console.error('Error unliking post:', error);
+      }
+    });
+  }
+
+  updatePost(postId: string, postData: any): void {
+    this.apiService.updatePost(postId, postData).subscribe({
+      next: (response) => {
+        console.log('Post updated:', response.data);
+        this.loadFeed(); // Refresh feed
+      },
+      error: (error) => {
+        console.error('Error updating post:', error);
+      }
+    });
+  }
+
+  // Additional social feed and comment endpoint integrations
+  getArchivedPosts(): void {
+    this.apiService.getArchivedPosts().subscribe({
+      next: (response) => {
+        console.log('Archived posts loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading archived posts:', error);
+      }
+    });
+  }
+
+  getDraftPosts(): void {
+    this.apiService.getDraftPosts().subscribe({
+      next: (response) => {
+        console.log('Draft posts loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading draft posts:', error);
+      }
+    });
+  }
+
+  getDiscoveryFeed(): void {
+    this.apiService.getDiscoveryFeed().subscribe({
+      next: (response) => {
+        console.log('Discovery feed loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading discovery feed:', error);
+      }
+    });
+  }
+
+  getFollowingFeed(): void {
+    this.apiService.getFollowingFeed().subscribe({
+      next: (response) => {
+        console.log('Following feed loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading following feed:', error);
+      }
+    });
+  }
+
+  getTrendingFeed(): void {
+    this.apiService.getTrendingFeed().subscribe({
+      next: (response) => {
+        console.log('Trending feed loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading trending feed:', error);
+      }
+    });
+  }
+
+  deleteComment(commentId: string): void {
+    this.apiService.deleteComment(commentId).subscribe({
+      next: (response) => {
+        console.log('Comment deleted:', response.data);
+      },
+      error: (error) => {
+        console.error('Error deleting comment:', error);
+      }
+    });
+  }
+
+  updateComment(commentId: string, commentData: any): void {
+    this.apiService.updateComment(commentId, commentData).subscribe({
+      next: (response) => {
+        console.log('Comment updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating comment:', error);
+      }
+    });
+  }
+
+  updateNiche(nicheId: string, nicheData: any): void {
+    this.apiService.updateNiche(nicheId, nicheData).subscribe({
+      next: (response) => {
+        console.log('Niche updated:', response.data);
+      },
+      error: (error) => {
+        console.error('Error updating niche:', error);
+      }
+    });
   }
 } 

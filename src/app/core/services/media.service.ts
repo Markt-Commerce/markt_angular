@@ -58,7 +58,7 @@ export class MediaService {
     
     return this.apiService.uploadMedia(file).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             const newMedia = response.data;
             const currentMedia = this.getMediaState().media;
@@ -72,7 +72,7 @@ export class MediaService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error uploading media:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -97,12 +97,12 @@ export class MediaService {
   getMedia(mediaId: string): Observable<any> {
     return this.apiService.getMedia(parseInt(mediaId)).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateMediaState({ currentMedia: response.data });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching media:', error);
         }
       })
@@ -120,7 +120,7 @@ export class MediaService {
           const updatedMedia = currentMedia.filter((m: Media) => m.id !== mediaId);
           this.updateMediaState({ media: updatedMedia });
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error deleting media:', error);
         }
       })
@@ -163,7 +163,7 @@ export class MediaService {
     
     return this.apiService.getMediaList(params).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateMediaState({
               media: response.data.media,
@@ -172,7 +172,7 @@ export class MediaService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching media list:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -260,7 +260,7 @@ export class MediaService {
    * Delete request image
    */
   deleteRequestImage(requestId: string, imageId: number): Observable<any> {
-    return this.apiService.deleteRequestImage(requestId, imageId);
+    return this.apiService.deleteRequestImage(requestId, Number(imageId));
   }
 
   // ============================================================================
@@ -482,7 +482,7 @@ export class MediaService {
    * Get media thumbnail URL
    */
   getMediaThumbnailUrl(media: Media): string {
-    return media.thumbnail_url || media.url || '';
+    return media.thumbnail_url || media.url || '/Logo.png';
   }
 
   /**
@@ -491,15 +491,15 @@ export class MediaService {
   getMediaUrlBySize(media: Media, size: 'thumbnail' | 'mobile' | 'tablet' | 'desktop'): string {
     switch (size) {
       case 'thumbnail':
-        return media.thumbnail_url || media.url || '';
+        return media.thumbnail_url || media.url || '/Logo.png';
       case 'mobile':
-        return media.mobile_url || media.url || '';
+        return media.mobile_url || media.url || '/Logo.png';
       case 'tablet':
-        return media.tablet_url || media.url || '';
+        return media.tablet_url || media.url || '/Logo.png';
       case 'desktop':
-        return media.desktop_url || media.url || '';
+        return media.desktop_url || media.url || '/Logo.png';
       default:
-        return media.url || '';
+        return media.url || '/Logo.png';
     }
   }
 
@@ -509,13 +509,13 @@ export class MediaService {
   getSocialMediaUrl(media: Media, platform: 'story' | 'square' | 'post'): string {
     switch (platform) {
       case 'story':
-        return media.social_story_url || media.url || '';
+        return media.social_story_url || media.url || '/Logo.png';
       case 'square':
-        return media.social_square_url || media.url || '';
+        return media.social_square_url || media.url || '/Logo.png';
       case 'post':
-        return media.social_post_url || media.url || '';
+        return media.social_post_url || media.url || '/Logo.png';
       default:
-        return media.url || '';
+        return media.url || '/Logo.png';
     }
   }
 
@@ -659,7 +659,7 @@ export class MediaService {
           );
           this.updateMediaState({ media: updatedMedia });
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error updating media:', error);
         }
       })
@@ -669,21 +669,21 @@ export class MediaService {
   getMediaUrl(media: Media, type: 'thumbnail' | 'mobile' | 'tablet' | 'desktop' | 'social' | 'social_story' | 'social_square' | 'social_post' = 'desktop'): string {
     switch (type) {
       case 'thumbnail':
-        return media.thumbnail_url || media.original_url || '';
+        return media.thumbnail_url || media.original_url || '/Logo.png';
       case 'mobile':
-        return media.mobile_url || media.original_url || '';
+        return media.mobile_url || media.original_url || '/Logo.png';
       case 'tablet':
-        return media.tablet_url || media.original_url || '';
+        return media.tablet_url || media.original_url || '/Logo.png';
       case 'desktop':
-        return media.desktop_url || media.original_url || '';
+        return media.desktop_url || media.original_url || '/Logo.png';
       case 'social_story':
-        return media.social_story_url || media.original_url || '';
+        return media.social_story_url || media.original_url || '/Logo.png';
       case 'social_square':
-        return media.social_square_url || media.original_url || '';
+        return media.social_square_url || media.original_url || '/Logo.png';
       case 'social_post':
-        return media.social_post_url || media.original_url || '';
+        return media.social_post_url || media.original_url || '/Logo.png';
       default:
-        return media.original_url || '';
+        return media.original_url || '/Logo.png';
     }
   }
 } 

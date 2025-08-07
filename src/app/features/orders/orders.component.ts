@@ -30,6 +30,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-orders',
@@ -228,7 +229,7 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="space-y-3">
               <div *ngFor="let item of order.items" class="flex items-center space-x-4">
                 <img
-                  [src]="item.product?.images[0]?.url || '/assets/images/placeholder.png'"
+                  [src]="item.product?.images[0]?.url || '/markt-text-logo.png'"
                   [alt]="item.product?.name"
                   class="w-16 h-16 object-cover rounded-lg"
                 >
@@ -268,7 +269,7 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="flex items-center space-x-3">
                 <button
                   *ngIf="canReviewOrder(order)"
-                  (click)="reviewOrder(order)"
+                  (click)="navigateToReview(order)"
                   class="text-markt-primary hover:text-markt-secondary font-medium text-sm"
                 >
                   Write Review
@@ -335,6 +336,7 @@ export class OrdersComponent implements OnInit {
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Font Awesome Icons
   faSearch = faSearch;
@@ -388,24 +390,23 @@ export class OrdersComponent implements OnInit {
 
   private loadOrders(): void {
     this.isLoading = true;
-
+    
     const params = {
-      page: this.currentPage,
-      search: this.searchQuery,
       status: this.statusFilter,
-      sort_by: this.sortBy
+      page: this.currentPage,
+      limit: 10 // Assuming a default limit for pagination
     };
 
-    this.orderService.getOrders().subscribe({
+    this.apiService.getMyOrders(params).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.orders = response.data;
-          this.totalResults = response.data.length;
-        }
+        this.orders = response.data?.items || [];
+        this.totalResults = response.data?.pagination?.total_items || 0;
+        this.totalPages = response.data?.pagination?.total_pages || 1;
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading orders:', error);
+        this.orders = [];
         this.isLoading = false;
       }
     });
@@ -508,7 +509,7 @@ export class OrdersComponent implements OnInit {
     return ['pending', 'confirmed'].includes(order.status);
   }
 
-  reviewOrder(order: any): void {
+  navigateToReview(order: any): void {
     this.router.navigate(['/app/orders', order.id, 'review']);
   }
 
@@ -529,10 +530,62 @@ export class OrdersComponent implements OnInit {
 
   downloadInvoice(order: any): void {
     // This would typically call an API to generate and download the invoice
-    console.log('Downloading invoice for order:', order.id);
+    
   }
 
-  trackOrder(order: any): void {
-    this.router.navigate(['/app/orders', order.id, 'track']);
+  // Additional order endpoint integrations
+  getOrders(): void {
+    this.apiService.getOrders().subscribe({
+      next: (response) => {
+        console.log('Orders loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading orders:', error);
+      }
+    });
+  }
+
+  getSellerOrders(): void {
+    this.apiService.getSellerOrders().subscribe({
+      next: (response) => {
+        console.log('Seller orders loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading seller orders:', error);
+      }
+    });
+  }
+
+  getSellerOrderStats(): void {
+    this.apiService.getSellerOrderStats().subscribe({
+      next: (response) => {
+        console.log('Seller order stats loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading seller order stats:', error);
+      }
+    });
+  }
+
+  reviewOrder(orderId: string, reviewData: any): void {
+    this.apiService.reviewOrder(orderId, reviewData).subscribe({
+      next: (response) => {
+        console.log('Order reviewed:', response.data);
+      },
+      error: (error) => {
+        console.error('Error reviewing order:', error);
+      }
+    });
+  }
+
+  trackOrder(orderId: string): void {
+    this.apiService.trackOrder(orderId).subscribe({
+      next: (response) => {
+        console.log('Order tracking loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error tracking order:', error);
+      }
+    });
   }
 } 

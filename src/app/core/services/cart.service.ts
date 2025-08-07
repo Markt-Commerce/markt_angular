@@ -27,12 +27,12 @@ export class CartService {
   getCart(): Observable<any> {
     return this.apiService.getCart().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.cartSubject.next(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading cart:', error);
         }
       })
@@ -71,12 +71,12 @@ export class CartService {
     const updateData = { quantity };
     return this.apiService.updateCartItem(itemId, updateData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error updating cart item:', error);
         }
       })
@@ -89,12 +89,12 @@ export class CartService {
   removeCartItem(itemId: string): Observable<any> {
     return this.apiService.removeCartItem(itemId).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error removing cart item:', error);
         }
       })
@@ -107,12 +107,12 @@ export class CartService {
   clearCart(): Observable<any> {
     return this.apiService.clearCart().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.cartSubject.next(null);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error clearing cart:', error);
         }
       })
@@ -132,12 +132,12 @@ export class CartService {
   applyCoupon(couponCode: string): Observable<any> {
     return this.apiService.applyCoupon({ coupon_code: couponCode }).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error applying coupon:', error);
         }
       })
@@ -150,13 +150,13 @@ export class CartService {
   checkout(checkoutData: Checkout): Observable<any> {
     return this.apiService.checkoutCart(checkoutData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             // Clear cart after successful checkout
             this.cartSubject.next(null);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error during checkout:', error);
         }
       })

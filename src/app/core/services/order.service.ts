@@ -59,7 +59,7 @@ export class OrderService {
     
     return this.apiService.getOrders().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateOrderState({
               orders: response.data,
@@ -68,7 +68,7 @@ export class OrderService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching orders:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -85,7 +85,7 @@ export class OrderService {
     
     return this.apiService.createOrder(orderData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             const newOrder = response.data;
             const currentOrders = this.getOrderState().orders;
@@ -97,7 +97,7 @@ export class OrderService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error creating order:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -112,14 +112,14 @@ export class OrderService {
   getOrder(orderId: string): Observable<any> {
     return this.apiService.getOrder(orderId).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateOrderState({
               currentOrder: response.data
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching order:', error);
         }
       })
@@ -132,13 +132,13 @@ export class OrderService {
   payOrder(orderId: string, paymentData: any): Observable<any> {
     return this.apiService.payOrder(orderId, paymentData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             // Update order status
             this.updateOrderStatus(orderId, response.data.status);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error paying order:', error);
         }
       })
@@ -171,7 +171,7 @@ export class OrderService {
     
     return this.apiService.getSellerOrders(params).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateOrderState({
               sellerOrders: response.data.items,
@@ -180,7 +180,7 @@ export class OrderService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching seller orders:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -212,7 +212,7 @@ export class OrderService {
           }));
           this.updateOrderState({ orders: updatedOrders });
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error updating order item status:', error);
         }
       })

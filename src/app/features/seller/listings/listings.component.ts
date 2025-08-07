@@ -3,21 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { Router } from '@angular/router';
+import { ApiService } from '../../../core/services/api.service';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  status: 'active' | 'inactive' | 'draft';
-  category: string;
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  sales: number;
-  rating: number;
-}
+import { Product } from '../../../core/models';
 
 @Component({
   selector: 'app-listings',
@@ -107,7 +96,7 @@ interface Product {
           </div>
 
           <div class="product-image">
-            <img [src]="product.imageUrl" [alt]="product.name">
+            <img [src]="product.images[0].media.url || '/Logo.png'" [alt]="product.name">
             <div class="product-status" [class]="product.status">
               {{ product.status }}
             </div>
@@ -123,8 +112,8 @@ interface Product {
               </span>
             </div>
             <div class="product-stats">
-              <span class="product-sales">{{ product.sales }} sales</span>
-              <span class="product-rating">⭐ {{ product.rating.toFixed(1) }}</span>
+              <span class="product-sales">{{ product.view_count || 0 }} views</span>
+              <span class="product-rating">⭐ {{ product.average_rating.toFixed(1) || '0.0' }}</span>
             </div>
           </div>
 
@@ -163,7 +152,7 @@ interface Product {
 
       <!-- Empty State -->
       <div class="empty-state" *ngIf="filteredProducts.length === 0">
-        <div class="empty-icon">📦</div>
+        <i class="fas fa-box text-gray-400 text-4xl"></i>
         <h3>No products found</h3>
         <p>Try adjusting your search or filters</p>
         <app-button 
@@ -513,79 +502,10 @@ interface Product {
   `]
 })
 export class ListingsComponent implements OnInit {
-  products: Product[] = [
-    {
-      id: '1',
-      name: 'Wireless Bluetooth Headphones',
-      description: 'High-quality wireless headphones with noise cancellation and long battery life.',
-      price: 15000,
-      stock: 25,
-      status: 'active',
-      category: 'electronics',
-      imageUrl: 'https://via.placeholder.com/300x200?text=Headphones',
-      createdAt: '2025-01-01T10:00:00Z',
-      updatedAt: '2025-01-03T15:30:00Z',
-      sales: 45,
-      rating: 4.7
-    },
-    {
-      id: '2',
-      name: 'Smart Fitness Watch',
-      description: 'Advanced fitness tracking with heart rate monitor and GPS.',
-      price: 25000,
-      stock: 12,
-      status: 'active',
-      category: 'electronics',
-      imageUrl: 'https://via.placeholder.com/300x200?text=Smart+Watch',
-      createdAt: '2025-01-02T09:00:00Z',
-      updatedAt: '2025-01-03T14:20:00Z',
-      sales: 32,
-      rating: 4.5
-    },
-    {
-      id: '3',
-      name: 'Ergonomic Laptop Stand',
-      description: 'Adjustable laptop stand for better posture and comfort.',
-      price: 5000,
-      stock: 8,
-      status: 'active',
-      category: 'home',
-      imageUrl: 'https://via.placeholder.com/300x200?text=Laptop+Stand',
-      createdAt: '2025-01-01T11:00:00Z',
-      updatedAt: '2025-01-02T16:45:00Z',
-      sales: 28,
-      rating: 4.8
-    },
-    {
-      id: '4',
-      name: 'Premium Phone Case',
-      description: 'Durable phone case with shock absorption and stylish design.',
-      price: 3000,
-      stock: 50,
-      status: 'active',
-      category: 'electronics',
-      imageUrl: 'https://via.placeholder.com/300x200?text=Phone+Case',
-      createdAt: '2025-01-01T12:00:00Z',
-      updatedAt: '2025-01-03T10:15:00Z',
-      sales: 25,
-      rating: 4.3
-    },
-    {
-      id: '5',
-      name: 'USB-C Fast Charging Cable',
-      description: 'High-speed charging cable compatible with all USB-C devices.',
-      price: 1500,
-      stock: 3,
-      status: 'active',
-      category: 'electronics',
-      imageUrl: 'https://via.placeholder.com/300x200?text=USB+Cable',
-      createdAt: '2025-01-02T08:00:00Z',
-      updatedAt: '2025-01-03T09:30:00Z',
-      sales: 22,
-      rating: 4.6
-    }
-  ];
+  private router = inject(Router);
+  private apiService = inject(ApiService);
 
+  products: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProducts: string[] = [];
   searchQuery = '';
@@ -595,16 +515,28 @@ export class ListingsComponent implements OnInit {
   currentPage = 1;
   totalPages = 1;
   itemsPerPage = 10;
+  loading = false;
 
   ngOnInit(): void {
     this.loadProducts();
-    this.applyFilters();
   }
 
   private loadProducts(): void {
-    // TODO: Load products from API
-    console.log('Loading products...');
-    this.filteredProducts = [...this.products];
+    this.loading = true;
+    
+    // Use the API service to load seller's products
+    this.apiService.getMyProducts().subscribe({
+      next: (response) => {
+        this.products = response.data?.items || [];
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+        this.products = [];
+        this.loading = false;
+      }
+    });
   }
 
   onSearch(): void {
@@ -637,16 +569,16 @@ export class ListingsComponent implements OnInit {
 
     // Category filter
     if (this.categoryFilter) {
-      filtered = filtered.filter(product => product.category === this.categoryFilter);
+      filtered = filtered.filter(product => product.category?.name === this.categoryFilter);
     }
 
     // Sort
     switch (this.sortBy) {
       case 'newest':
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case 'oldest':
-        filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;
       case 'price-low':
         filtered.sort((a, b) => a.price - b.price);
@@ -655,7 +587,7 @@ export class ListingsComponent implements OnInit {
         filtered.sort((a, b) => b.price - a.price);
         break;
       case 'sales':
-        filtered.sort((a, b) => b.sales - a.sales);
+        filtered.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         break;
     }
 
@@ -689,30 +621,63 @@ export class ListingsComponent implements OnInit {
 
   deleteProduct(productId: string): void {
     if (confirm('Are you sure you want to delete this product?')) {
-      // TODO: Delete product via API
-      this.products = this.products.filter(p => p.id !== productId);
-      this.applyFilters();
+      this.apiService.deleteProduct(productId).subscribe({
+        next: () => {
+          this.products = this.products.filter(p => p.id !== productId);
+          this.applyFilters();
+        },
+        error: (error) => {
+          console.error('Error deleting product:', error);
+        }
+      });
     }
   }
 
   bulkActivate(): void {
-    // TODO: Bulk activate products via API
-    console.log('Activating products:', this.selectedProducts);
-    this.selectedProducts = [];
+    if (this.selectedProducts.length > 0) {
+      // Use API to bulk update product status
+      const updatePromises = this.selectedProducts.map(productId =>
+        this.apiService.updateProduct(productId, { status: 'active' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        this.loadProducts(); // Reload to get updated status
+        this.selectedProducts = [];
+      }).catch(error => {
+        console.error('Error bulk activating products:', error);
+      });
+    }
   }
 
   bulkDeactivate(): void {
-    // TODO: Bulk deactivate products via API
-    console.log('Deactivating products:', this.selectedProducts);
-    this.selectedProducts = [];
+    if (this.selectedProducts.length > 0) {
+      // Use API to bulk update product status
+      const updatePromises = this.selectedProducts.map(productId =>
+        this.apiService.updateProduct(productId, { status: 'inactive' }).toPromise()
+      );
+      
+      Promise.all(updatePromises).then(() => {
+        this.loadProducts(); // Reload to get updated status
+        this.selectedProducts = [];
+      }).catch(error => {
+        console.error('Error bulk deactivating products:', error);
+      });
+    }
   }
 
   bulkDelete(): void {
-    if (confirm(`Are you sure you want to delete ${this.selectedProducts.length} products?`)) {
-      // TODO: Bulk delete products via API
-      this.products = this.products.filter(p => !this.selectedProducts.includes(p.id));
-      this.selectedProducts = [];
-      this.applyFilters();
+    if (this.selectedProducts.length > 0 && confirm(`Are you sure you want to delete ${this.selectedProducts.length} products?`)) {
+      // Use API to bulk delete products
+      const deletePromises = this.selectedProducts.map(productId =>
+        this.apiService.deleteProduct(productId).toPromise()
+      );
+      
+      Promise.all(deletePromises).then(() => {
+        this.loadProducts(); // Reload to get updated list
+        this.selectedProducts = [];
+      }).catch(error => {
+        console.error('Error bulk deleting products:', error);
+      });
     }
   }
 

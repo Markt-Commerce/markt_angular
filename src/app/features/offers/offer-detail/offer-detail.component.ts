@@ -4,6 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface Offer {
   id: string;
@@ -98,7 +99,7 @@ interface Request {
                 <div class="seller-details">
                   <h3>{{ offer!.seller.name }}</h3>
                   <div class="seller-meta">
-                    <span class="seller-username">@{{ offer!.seller.username }}</span>
+                    <span class="seller-username">&#64;{{ offer!.seller.username }}</span>
                     <span class="seller-rating">⭐ {{ offer!.seller.rating }} ({{ offer!.seller.review_count }} reviews)</span>
                     <span *ngIf="offer!.seller.is_verified" class="verified-badge">✓ Verified</span>
                   </div>
@@ -851,6 +852,7 @@ export class OfferDetailComponent implements OnInit {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   offer?: Offer;
   request?: Request;
@@ -879,91 +881,47 @@ export class OfferDetailComponent implements OnInit {
   private loadOffer(): void {
     const offerId = this.route.snapshot.paramMap.get('id');
     
-    // Mock data - replace with actual API call
-    this.offer = {
-      id: offerId || '1',
-      request_id: '1',
-      seller: {
-        id: '1',
-        name: 'Sarah Johnson',
-        avatar: 'https://via.placeholder.com/60',
-        username: 'sarahj',
-        rating: 4.8,
-        review_count: 127,
-        is_verified: true
-      },
-      product: {
-        name: 'Vintage Leather Jacket',
-        description: 'High-quality vintage leather jacket in excellent condition. Perfect for motorcycle enthusiasts.',
-        condition: 'Excellent',
-        images: ['https://via.placeholder.com/120', 'https://via.placeholder.com/120']
-      },
-      price: 150,
-      currency: 'USD',
-      quantity: 1,
-      delivery_time: 3,
-      delivery_cost: 15,
-      total_price: 165,
-      status: 'pending',
-      created_at: '2024-01-15T10:30:00Z',
-      expires_at: '2024-01-22T10:30:00Z',
-      message: 'I have this exact jacket in excellent condition. It\'s been well-maintained and comes with a care kit.',
-      terms: 'Payment via secure payment method. Returns accepted within 7 days if not as described.'
-    };
+    if (offerId) {
+      // Use the actual API service to get offer details
+      this.apiService.getRequestOffers(offerId).subscribe({
+        next: (response) => {
+          if (response.data && response.data.length > 0) {
+            this.offer = response.data[0]; // Get the first offer
+            this.loadRequest();
+            this.loadSimilarOffers();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading offer:', error);
+        }
+      });
+    }
   }
 
   private loadRequest(): void {
-    // Mock data - replace with actual API call
-    this.request = {
-      id: '1',
-      title: 'Looking for Vintage Leather Jacket',
-      description: 'I\'m looking for a vintage leather jacket in good condition. Size M or L preferred. Budget up to $200.',
-      category: 'Clothing',
-      budget_min: 50,
-      budget_max: 200,
-      buyer: {
-        id: '2',
-        name: 'Mike Chen',
-        avatar: 'https://via.placeholder.com/40'
-      },
-      created_at: '2024-01-10T14:00:00Z',
-      expires_at: '2024-01-25T14:00:00Z',
-      status: 'open'
-    };
+    if (this.offer?.request_id) {
+      this.apiService.getRequest(this.offer.request_id).subscribe({
+        next: (response) => {
+          this.request = response.data;
+        },
+        error: (error) => {
+          console.error('Error loading request:', error);
+        }
+      });
+    }
   }
 
   private loadSimilarOffers(): void {
-    // Mock data - replace with actual API call
-    this.similarOffers = [
-      {
-        id: '2',
-        request_id: '1',
-        seller: {
-          id: '3',
-          name: 'David Wilson',
-          avatar: 'https://via.placeholder.com/40',
-          username: 'davidw',
-          rating: 4.5,
-          review_count: 89,
-          is_verified: false
+    if (this.offer?.request_id) {
+      this.apiService.getRequestOffers(this.offer.request_id).subscribe({
+        next: (response) => {
+          this.similarOffers = response.data.filter(o => o.id !== this.offer?.id);
         },
-        product: {
-          name: 'Leather Jacket',
-          description: 'Classic leather jacket',
-          condition: 'Good',
-          images: ['https://via.placeholder.com/40']
-        },
-        price: 180,
-        currency: 'USD',
-        quantity: 1,
-        delivery_time: 5,
-        delivery_cost: 20,
-        total_price: 200,
-        status: 'pending',
-        created_at: '2024-01-15T09:00:00Z',
-        expires_at: '2024-01-22T09:00:00Z'
-      }
-    ];
+        error: (error) => {
+          console.error('Error loading similar offers:', error);
+        }
+      });
+    }
   }
 
   getStatusText(status?: string): string {
@@ -1000,12 +958,20 @@ export class OfferDetailComponent implements OnInit {
     if (confirm('Are you sure you want to accept this offer?')) {
       this.accepting = true;
       
-      // Mock API call - replace with actual implementation
-      setTimeout(() => {
-        this.offer!.status = 'accepted';
-        this.accepting = false;
-        alert('Offer accepted successfully!');
-      }, 1000);
+      if (this.offer?.id) {
+        this.apiService.acceptOffer(this.offer.id).subscribe({
+          next: (response) => {
+            this.accepting = false;
+            this.offer!.status = 'accepted';
+            // Optionally navigate back to requests
+            this.router.navigate(['/app/requests', this.request?.id]);
+          },
+          error: (error) => {
+            console.error('Error accepting offer:', error);
+            this.accepting = false;
+          }
+        });
+      }
     }
   }
 
@@ -1013,12 +979,20 @@ export class OfferDetailComponent implements OnInit {
     if (confirm('Are you sure you want to reject this offer?')) {
       this.rejecting = true;
       
-      // Mock API call - replace with actual implementation
-      setTimeout(() => {
-        this.offer!.status = 'rejected';
-        this.rejecting = false;
-        alert('Offer rejected.');
-      }, 1000);
+      if (this.offer?.id) {
+        this.apiService.rejectOffer(this.offer.id).subscribe({
+          next: (response) => {
+            this.rejecting = false;
+            this.offer!.status = 'rejected';
+            // Optionally navigate back to requests
+            this.router.navigate(['/app/requests', this.request?.id]);
+          },
+          error: (error) => {
+            console.error('Error rejecting offer:', error);
+            this.rejecting = false;
+          }
+        });
+      }
     }
   }
 
@@ -1031,14 +1005,23 @@ export class OfferDetailComponent implements OnInit {
     if (this.counterOfferForm.valid) {
       this.submittingCounter = true;
       
-      // const formData = this.counterOfferForm.value;
+      const formData = this.counterOfferForm.value;
       
-      // Mock API call - replace with actual implementation
-      setTimeout(() => {
-        this.submittingCounter = false;
-        this.closeCounterOffer();
-        alert('Counter offer sent successfully!');
-      }, 1000);
+      if (this.offer?.id) {
+        // Use the createOffer endpoint for counter offers
+        this.apiService.createOffer(this.offer.request_id, formData).subscribe({
+          next: (response) => {
+            this.submittingCounter = false;
+            this.closeCounterOffer();
+            // Optionally navigate to the new offer
+            this.router.navigate(['/app/offers', response.data.id]);
+          },
+          error: (error) => {
+            console.error('Error submitting counter offer:', error);
+            this.submittingCounter = false;
+          }
+        });
+      }
     }
   }
 
@@ -1056,7 +1039,7 @@ export class OfferDetailComponent implements OnInit {
 
   showImageGallery(): void {
     // Mock image gallery - replace with actual implementation
-    alert('Image gallery would open here');
+    
   }
 
   viewOffer(offerId: string): void {

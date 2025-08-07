@@ -29,6 +29,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ChatService } from '../../core/services/chat.service';
 import { RequestService } from '../../core/services/request.service';
 import { ProfileService } from '../../core/services/profile.service';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -49,7 +50,7 @@ import { ProfileService } from '../../core/services/profile.service';
           </div>
           <div class="hidden md:block">
             <img
-              [src]="user?.profile_picture_url || '/assets/images/default-avatar.png'"
+              [src]="user?.profile_picture_url || '/markt-text-logo.png'"
               alt="Profile"
               class="w-16 h-16 rounded-full border-4 border-white/20"
             >
@@ -396,6 +397,7 @@ export class DashboardComponent implements OnInit {
   private requestService = inject(RequestService);
   private profileService = inject(ProfileService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Font Awesome Icons
   faShoppingBag = faShoppingCart;
@@ -430,6 +432,9 @@ export class DashboardComponent implements OnInit {
   unreadMessages = 0;
   recentOrders: any[] = [];
   recentNotifications: any[] = [];
+  recentRequests: any[] = [];
+  notifications: any[] = [];
+  loading = true;
 
   // Stats
   orderStats = {
@@ -451,34 +456,52 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadDashboardData(): void {
-    // Load user data
-    this.authService.authState$.subscribe(authState => {
-      this.user = authState.user;
+    this.loading = true;
+    
+    // Load user profile
+    this.apiService.getProfile().subscribe({
+      next: (response) => {
+        this.user = response.data;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading user profile:', error);
+        this.loading = false;
+      }
     });
 
-    // Load cart data
-    this.cartService.getCartItemCount$().subscribe(count => {
-      this.cartItemCount = count;
+    // Load recent orders
+    this.apiService.getMyOrders({ limit: 5 }).subscribe({
+      next: (response) => {
+        this.recentOrders = response.data?.items || [];
+      },
+      error: (error) => {
+        console.error('Error loading recent orders:', error);
+        this.recentOrders = [];
+      }
     });
 
-    // Load notification data
-    this.notificationService.getUnreadCount$().subscribe(count => {
-      this.unreadNotifications = count;
+    // Load recent requests
+    this.apiService.getMyRequests({ limit: 5 }).subscribe({
+      next: (response) => {
+        this.recentRequests = response.data?.items || [];
+      },
+      error: (error) => {
+        console.error('Error loading recent requests:', error);
+        this.recentRequests = [];
+      }
     });
-
-    // Load chat data
-    this.chatService.getUnreadCount$().subscribe(count => {
-      this.unreadMessages = count;
-    });
-
-    // Load orders
-    this.orderService.getOrders().subscribe();
 
     // Load notifications
-    this.notificationService.getNotifications().subscribe();
-
-    // Load recent data
-    this.loadRecentData();
+    this.apiService.getNotifications({ limit: 5 }).subscribe({
+      next: (response) => {
+        this.notifications = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading notifications:', error);
+        this.notifications = [];
+      }
+    });
   }
 
   private loadRecentData(): void {

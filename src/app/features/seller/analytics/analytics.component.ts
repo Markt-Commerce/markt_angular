@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
 
 interface AnalyticsData {
   revenue: {
@@ -197,7 +198,7 @@ interface ChartData {
         <h2>Inventory Status</h2>
         <div class="inventory-grid">
           <div class="inventory-card">
-            <div class="inventory-icon active">📦</div>
+            <i class="fas fa-box text-blue-500"></i>
             <div class="inventory-content">
               <h3>Active Products</h3>
               <p>{{ analytics.products.active }}</p>
@@ -263,7 +264,7 @@ interface ChartData {
             📈 Export Revenue Data
           </app-button>
           <app-button variant="secondary" size="md">
-            📋 Export Order History
+            <i class="fas fa-clipboard-list"></i> Export Order History
           </app-button>
         </div>
       </div>
@@ -641,6 +642,13 @@ interface ChartData {
   `]
 })
 export class AnalyticsComponent implements OnInit {
+  private apiService = inject(ApiService);
+
+  loading = false;
+  salesData: any = null;
+  productPerformance: any[] = [];
+  customerInsights: any = null;
+
   analytics: AnalyticsData = {
     revenue: {
       total: 2500000,
@@ -664,7 +672,7 @@ export class AnalyticsComponent implements OnInit {
       topSelling: [
         { name: 'Wireless Headphones', sales: 45, revenue: 675000 },
         { name: 'Smart Watch', sales: 32, revenue: 480000 },
-        { name: 'Laptop Stand', sales: 28, revenue: 140000 },
+        { name: 'Computer Stand', sales: 28, revenue: 140000 },
         { name: 'Phone Case', sales: 25, revenue: 75000 },
         { name: 'USB Cable', sales: 22, revenue: 33000 }
       ]
@@ -688,8 +696,89 @@ export class AnalyticsComponent implements OnInit {
   }
 
   private loadAnalyticsData(): void {
-    // TODO: Load real analytics data from API
-    console.log('Loading analytics data...');
+    this.loading = true;
+    
+    // Load sales analytics
+    this.apiService.getSalesAnalytics().subscribe({
+      next: (response) => {
+        this.salesData = response.data;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading sales analytics:', error);
+        this.loading = false;
+      }
+    });
+
+    // Load product performance
+    this.apiService.getProductAnalytics().subscribe({
+      next: (response) => {
+        this.productPerformance = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading product analytics:', error);
+        this.productPerformance = [];
+      }
+    });
+
+    // Load customer insights
+    this.apiService.getCustomerAnalytics().subscribe({
+      next: (response) => {
+        this.customerInsights = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading customer analytics:', error);
+        this.customerInsights = [];
+      }
+    });
+  }
+
+  // Additional analytics endpoint integrations
+  getSellerCustomers(): void {
+    this.apiService.getSellerCustomers().subscribe({
+      next: (response) => {
+        this.customerInsights = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading customer analytics:', error);
+        this.customerInsights = null;
+      }
+    });
+  }
+
+  getSellerDashboard(): void {
+    this.apiService.getSellerDashboard().subscribe({
+      next: (response) => {
+        console.log('Seller dashboard loaded:', response.data);
+      },
+      error: (error) => {
+        console.error('Error loading seller dashboard:', error);
+      }
+    });
+  }
+
+  getSellerSales(): void {
+    this.apiService.getSellerSales().subscribe({
+      next: (response) => {
+        this.salesData = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading sales analytics:', error);
+        this.salesData = null;
+      }
+    });
+  }
+
+  getSellerProducts(): void {
+    this.apiService.getSellerProducts().subscribe({
+      next: (response) => {
+        this.productPerformance = response.data;
+      },
+      error: (error) => {
+        console.error('Error loading product analytics:', error);
+        this.productPerformance = [];
+      }
+    });
   }
 
   getPerformancePercentage(revenue: number): number {

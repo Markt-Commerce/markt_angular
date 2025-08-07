@@ -53,7 +53,7 @@ export class NotificationService {
     
     return this.apiService.getNotifications(params).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateNotificationState({
               notifications: response.data.items,
@@ -63,7 +63,7 @@ export class NotificationService {
             });
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching notifications:', error);
           this.setLoading(false);
         }
@@ -77,12 +77,12 @@ export class NotificationService {
   getUnreadCount(): Observable<any> {
     return this.apiService.getUnreadCount().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.updateUnreadCount(response.data.count);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error fetching unread count:', error);
         }
       })
@@ -100,7 +100,7 @@ export class NotificationService {
           const updatedNotifications = currentNotifications.filter(n => n.id !== notificationId);
           this.updateNotificationState({ notifications: updatedNotifications });
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error marking notification as read:', error);
         }
       })

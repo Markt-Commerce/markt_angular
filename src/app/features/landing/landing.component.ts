@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -13,6 +13,7 @@ import {
   faStar,
   faHeart
 } from '@fortawesome/free-solid-svg-icons';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-landing',
@@ -317,7 +318,7 @@ import {
               <div class="col-span-1 md:col-span-2">
                 <div class="flex items-center gap-4 mb-6">
                   <div class="size-14 lg:size-16 xl:size-18">
-                    <img src="/Logo.png" alt="Markt" class="w-full h-full object-contain invert">
+                    <img src="/markt-text-logo.png" alt="Markt" class="w-full h-full object-contain invert">
                   </div>
                   <h3 class="text-white text-3xl lg:text-4xl xl:text-5xl font-bold">Markt</h3>
                 </div>
@@ -389,7 +390,9 @@ import {
     }
   `]
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
+  private apiService = inject(ApiService);
+
   // Font Awesome icons
   faUsers = faUsers;
   faSearch = faSearch;
@@ -399,4 +402,53 @@ export class LandingComponent {
   faArrowRight = faArrowRight;
   faStar = faStar;
   faHeart = faHeart;
+
+  // Data properties
+  loading = false;
+  featuredProducts: any[] = [];
+  trendingRequests: any[] = [];
+  communityHighlights: any[] = [];
+
+  ngOnInit(): void {
+    this.loadLandingData();
+  }
+
+  private loadLandingData(): void {
+    this.loading = true;
+    
+    // Load featured products
+    this.apiService.getFeaturedProducts().subscribe({
+      next: (response) => {
+        this.featuredProducts = response.data || [];
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading featured products:', error);
+        this.featuredProducts = [];
+        this.loading = false;
+      }
+    });
+
+    // Load trending requests
+    this.apiService.getTrendingRequests().subscribe({
+      next: (response) => {
+        this.trendingRequests = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading trending requests:', error);
+        this.trendingRequests = [];
+      }
+    });
+
+    // Load community highlights
+    this.apiService.getCommunityHighlights().subscribe({
+      next: (response) => {
+        this.communityHighlights = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error loading community highlights:', error);
+        this.communityHighlights = [];
+      }
+    });
+  }
 } 

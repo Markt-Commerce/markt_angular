@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { ApiService } from '../../core/services/api.service';
 
 interface SettingsSection {
   id: string;
@@ -205,7 +206,12 @@ interface SettingsSection {
     }
   `]
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
+  private apiService = inject(ApiService);
+  
+  loading = false;
+  userProfile: any = null;
+
   settingsSections: SettingsSection[] = [
     {
       id: 'account',
@@ -240,7 +246,7 @@ export class SettingsComponent {
       id: 'shipping',
       title: 'Shipping Addresses',
       description: 'Manage your shipping addresses for faster checkout and delivery.',
-      icon: '📦',
+              icon: 'fas fa-box',
       route: '/app/settings/shipping'
     },
     {
@@ -255,5 +261,25 @@ export class SettingsComponent {
   contactSupport(): void {
     // Mock support contact - replace with actual implementation
     window.open('mailto:support@marktcommerce.com', '_blank');
+  }
+
+  ngOnInit(): void {
+    this.loadSettingsData();
+  }
+
+  private loadSettingsData(): void {
+    this.loading = true;
+    
+    // Load user profile for settings overview
+    this.apiService.getProfile().subscribe({
+      next: (response) => {
+        this.userProfile = response.data;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading user profile:', error);
+        this.loading = false;
+      }
+    });
   }
 } 

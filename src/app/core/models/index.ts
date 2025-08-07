@@ -39,6 +39,12 @@ export interface BuyerSimple {
 }
 
 // User Models
+export interface RegisterResponse {
+  user: User;
+  token: string;
+  message?: string;
+}
+
 export interface Address {
   latitude: number;
   longitude: number;
@@ -1272,7 +1278,7 @@ export interface FollowResponse {
 
 export interface FollowingList {
   items: User[];
-  pagination: Pagination;
+  pagination: Pagination; 
 }
 
 export interface FollowersList {

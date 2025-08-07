@@ -125,13 +125,13 @@ export class AuthService {
     
     return this.apiService.register(userData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
           this.setLoading(false);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
           this.setLoading(false);
         }
@@ -147,13 +147,13 @@ export class AuthService {
     
     return this.apiService.login(credentials).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
           this.setLoading(false);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
           this.setLoading(false);
         }
@@ -170,7 +170,7 @@ export class AuthService {
         next: () => {
           this.clearAuth();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Logout error:', error);
           // Clear auth even if logout fails
           this.clearAuth();
@@ -185,12 +185,12 @@ export class AuthService {
   getProfile(): Observable<any> {
     return this.apiService.getProfile().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -203,12 +203,12 @@ export class AuthService {
   updateProfile(profileData: any): Observable<any> {
     return this.apiService.updateProfile(profileData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -221,12 +221,12 @@ export class AuthService {
   createBuyerAccount(buyerData: any): Observable<any> {
     return this.apiService.createBuyerAccount(buyerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -239,12 +239,12 @@ export class AuthService {
   createSellerAccount(sellerData: any): Observable<any> {
     return this.apiService.createSellerAccount(sellerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -257,12 +257,12 @@ export class AuthService {
   updateBuyerProfile(buyerData: any): Observable<any> {
     return this.apiService.updateBuyerProfile(buyerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -275,12 +275,12 @@ export class AuthService {
   updateSellerProfile(sellerData: any): Observable<any> {
     return this.apiService.updateSellerProfile(sellerData).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             this.setUser(response.data);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -293,12 +293,12 @@ export class AuthService {
   switchRole(): Observable<any> {
     return this.apiService.switchRole().pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data?.user) {
             this.setUser(response.data.user);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })
@@ -339,7 +339,7 @@ export class AuthService {
   uploadProfilePicture(file: File): Observable<any> {
     return this.apiService.uploadProfilePicture(file).pipe(
       tap({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success && response.data) {
             // Update user profile picture
             const currentUser = this.getCurrentUser();
@@ -349,7 +349,7 @@ export class AuthService {
             }
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           this.setError(error.message);
         }
       })

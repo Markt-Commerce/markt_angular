@@ -24,6 +24,7 @@ import {
 import { ChatService } from '../../../core/services/chat.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChatRoom, ChatMessage } from '../../../core/models';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-chat-list',
@@ -234,6 +235,7 @@ export class ChatListComponent implements OnInit {
   private chatService = inject(ChatService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   // Icons
   faComments = faComments;
@@ -279,7 +281,7 @@ export class ChatListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserData();
-    this.loadChatRooms();
+    this.loadChatList();
   }
 
   private loadUserData(): void {
@@ -288,18 +290,19 @@ export class ChatListComponent implements OnInit {
     });
   }
 
-  private loadChatRooms(): void {
+  private loadChatList(): void {
     this.isLoading = true;
     
-    this.chatService.getChatRooms().subscribe({
+    this.apiService.getChatList().subscribe({
       next: (response) => {
         if (response.success) {
-          this.chatRooms = response.data;
+          this.chatRooms = response.data || [];
         }
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading chat rooms:', error);
+        console.error('Error loading chat list:', error);
+        this.chatRooms = [];
         this.isLoading = false;
       }
     });
@@ -327,11 +330,11 @@ export class ChatListComponent implements OnInit {
 
   getChatAvatar(chat: any): string {
     if (chat.type === 'product' && chat.product) {
-      return chat.product.images[0]?.url || '/assets/images/placeholder.png';
+      return chat.product.images[0]?.url || '""';
     }
     
     const otherUser = this.getOtherUser(chat);
-    return otherUser?.profile_picture_url || '/assets/images/default-avatar.png';
+    return otherUser?.profile_picture_url || '""';
   }
 
   getChatName(chat: any): string {

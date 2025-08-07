@@ -562,7 +562,7 @@ export class SocialService {
    * Check if user is following another user
    */
   isFollowing(followeeId: string): Observable<boolean> {
-    return this.getFollowing(this.authService.getCurrentUser()?.id || '', { followee_id: followeeId }).pipe(
+    return this.getFollowing(this.authService.getCurrentUser()?.id || '/Logo.png', { followee_id: followeeId }).pipe(
       map(response => response.items.length > 0)
     );
   }
@@ -576,8 +576,8 @@ export class SocialService {
       following: this.getFollowing(userId, { per_page: 1 })
     }).pipe(
       map(({ followers, following }) => ({
-        followers: followers.pagination.total_items,
-        following: following.pagination.total_items
+        followers: followers.pagination?.total_items,
+        following: following.pagination?.total_items
       }))
     );
   }

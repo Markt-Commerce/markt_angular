@@ -4,6 +4,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterRequest } from '../../../core/models/auth.model';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-register',
@@ -15,7 +16,7 @@ import { RegisterRequest } from '../../../core/models/auth.model';
         <!-- Header -->
         <div class="text-center">
           <div class="flex justify-center mb-6">
-            <img src="/Logo.png" alt="Markt" class="h-12 w-auto" />
+            <img src="/markt-text-logo.png" alt="Markt" class="h-12 w-auto" />
           </div>
           <h2 class="text-3xl font-bold tracking-tight text-gray-900">Join Markt</h2>
           <p class="mt-2 text-sm text-gray-600">
@@ -270,10 +271,12 @@ export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private apiService = inject(ApiService);
 
   registerForm!: FormGroup;
   loading = false;
   errorMessage = '';
+  usernameChecking = false;
 
   get isSellerAccount(): boolean {
     return this.registerForm?.get('account_type')?.value === 'seller';
@@ -329,35 +332,24 @@ export class RegisterComponent implements OnInit {
         account_type: formData.account_type
       };
 
-      this.authService.register(registerData).subscribe({
+      this.apiService.register(registerData).subscribe({
         next: (response) => {
-          console.log('Registration successful:', response);
-          // AuthService will handle navigation to email verification
+          if (response.success) {
+            // Store user data and token
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            
+            // Navigate to onboarding or dashboard
+            this.router.navigate(['/app/onboarding']);
+          } else {
+            this.errorMessage = response.message || 'Registration failed';
+          }
+          this.loading = false;
         },
         error: (error) => {
-          console.error('Registration failed:', error);
+          console.error('Registration error:', error);
+          this.errorMessage = error.message || 'Registration failed. Please try again.';
           this.loading = false;
-          
-          // Handle different error types
-          if (error.status === 422 && error.error?.errors) {
-            // Backend validation errors
-            const validationErrors = error.error.errors;
-            if (validationErrors.json?.password) {
-              this.errorMessage = validationErrors.json.password[0];
-            } else if (validationErrors.json?.email) {
-              this.errorMessage = validationErrors.json.email[0];
-            } else if (validationErrors.json?.username) {
-              this.errorMessage = validationErrors.json.username[0];
-            } else {
-              this.errorMessage = 'Please check your information and try again.';
-            }
-          } else if (error.status === 409) {
-            this.errorMessage = 'An account with this email or username already exists.';
-          } else if (error.status === 0) {
-            this.errorMessage = 'Unable to connect to server. Please check your internet connection.';
-          } else {
-            this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
-          }
         }
       });
     } else {
@@ -406,5 +398,24 @@ export class RegisterComponent implements OnInit {
     }
     
     return '';
+  }
+
+  checkUsername(): void {
+    const username = this.registerForm.value.username;
+    if (username && username.length >= 3) {
+      this.apiService.checkUsername(username).subscribe({
+        next: (response) => {
+          // Assuming response.success is true if username is available
+          // You might need to adjust this based on your API response structure
+          // For now, we'll just set a flag to indicate availability
+          // this.usernameAvailable = response.success; 
+          this.usernameChecking = false;
+        },
+        error: (error) => {
+          console.error('Username check error:', error);
+          this.usernameChecking = false;
+        }
+      });
+    }
   }
 } 
