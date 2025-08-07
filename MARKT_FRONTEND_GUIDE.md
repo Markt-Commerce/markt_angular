@@ -297,7 +297,85 @@ git checkout feature/shared/header
 
 ---
 
-## **🚀 Quick Start Guide**
+## **🚀 Getting Started - First Time Setup**
+
+### **For Reuben (or any new developer):**
+
+**Step 1: Initial Setup**
+```bash
+# Clone the repository
+git clone https://github.com/Markt-Commerce/markt_angular.git
+cd markt_angular
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Access application
+http://localhost:4200
+```
+
+**Step 2: Understand Your Role**
+- You're the **Social Features Specialist**
+- Focus on: Community, Chat, Seller Tools, Notifications
+- You have **7 feature branches** to work on
+- Coordinate with Heris on **3 shared component branches**
+
+**Step 3: Choose Your First Branch**
+```bash
+# Start with community features
+git checkout feature/reuben/community
+
+# Or start with social feed
+git checkout feature/reuben/feed
+
+# Or start with posts
+git checkout feature/reuben/posts
+```
+
+**Step 4: Understand the Codebase**
+- **Angular 17** with standalone components
+- **Tailwind CSS** for styling
+- **RxJS** for state management
+- **Session-based authentication** (cookies, not tokens)
+
+**Step 5: Key Files to Explore**
+```
+src/app/features/community/          # Your main area
+src/app/features/chat/              # Messaging features
+src/app/features/notifications/     # Notification system
+src/app/features/seller/            # Seller tools
+src/app/core/services/              # API services
+src/app/shared/components/          # Reusable components
+```
+
+**Step 6: Daily Workflow**
+```bash
+# Start of day
+git checkout develop
+git pull origin develop
+git checkout feature/reuben/[your-component]
+
+# During work
+git add .
+git commit -m "feat: add social feed posts"
+git push origin feature/reuben/[your-component]
+
+# End of day
+git push origin feature/reuben/[your-component]
+```
+
+**Step 7: Communication**
+- **Daily standup**: 15 minutes with Heris
+- **Code reviews**: Review each other's PRs
+- **Shared components**: Coordinate with Heris on buttons, inputs, header
+- **Backend sync**: Talk to Ife about API needs
+
+---
+
+## **🎯 Quick Start Guide**
 
 **Environment Setup:**
 1. Clone the repository
@@ -482,3 +560,61 @@ git checkout feature/shared/header
 - Focus on accessibility and usability
 
 ---
+
+## **🔧 Troubleshooting & Common Issues**
+
+### **Setup Issues:**
+```bash
+# If npm install fails
+rm -rf node_modules package-lock.json
+npm install
+
+# If Angular CLI issues
+npm install -g @angular/cli@latest
+
+# If port 4200 is busy
+npm start -- --port 4201
+```
+
+### **Git Issues:**
+```bash
+# If you're on wrong branch
+git branch  # see current branch
+git checkout feature/reuben/[component]  # switch to correct branch
+
+# If develop is ahead
+git checkout develop
+git pull origin develop
+git checkout feature/reuben/[component]
+git merge develop
+
+# If you have conflicts
+git status  # see conflicted files
+# Resolve conflicts manually, then:
+git add .
+git commit -m "fix: resolve merge conflicts"
+```
+
+### **Development Issues:**
+```bash
+# If app won't start
+npm start
+
+# If changes not showing
+# Check browser cache or hard refresh (Ctrl+F5)
+
+# If API calls failing
+# Check proxy.conf.json and ensure backend is running
+```
+
+### **Common Questions:**
+- **"Which branch should I work on?"** → Pick any of your 7 feature branches
+- **"How do I know what to build?"** → Check the task distribution section
+- **"What if I need help?"** → Ask Heris or check the API documentation
+- **"How do I test my changes?"** → Create PR to develop branch
+
+---
+
+**This comprehensive guide covers everything you and Reuben need to work efficiently on Markt! 🚀**
+
+**Remember**: Communication is key. Talk to each other daily, review each other's code, and coordinate on shared components. The goal is to build an amazing social e-commerce platform together!
