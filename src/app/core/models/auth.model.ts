@@ -9,6 +9,25 @@ export interface RegisterRequest {
   password: string;
   phone_number: string;
   account_type: 'buyer' | 'seller';
+  seller_data?: {
+    shop_name: string;
+    description: string;
+    category_ids: number[];
+    policies: Record<string, string>;
+  };
+  buyer_data?: {
+    buyername: string;
+    shipping_address: {
+      street: string;
+      house_number: string;
+      city: string;
+      state: string;
+      country: string;
+      postal_code: string;
+      latitude: number;
+      longitude: number;
+    };
+  };
 }
 
 export interface User {
