@@ -107,10 +107,53 @@ Markt is a **social-first e-commerce platform** that combines social media featu
 
 ## **📁 Git Workflow**
 
-**Branch Strategy:**
-- **Main branch**: Production-ready code
-- **Develop branch**: Integration branch for testing
-- **Feature branches**: `feature/heris/[component]` or `feature/reuben/[component]`
+**Complete Branch Structure:**
+```
+master (production)
+├── develop (integration)
+├── feature/heris/marketplace     # Product browsing
+├── feature/heris/cart            # Shopping cart
+├── feature/heris/checkout        # Checkout process
+├── feature/heris/profile         # User profiles
+├── feature/heris/search          # Product search
+├── feature/heris/product-detail  # Product details
+├── feature/reuben/community      # Community overview
+├── feature/reuben/feed           # Social feed
+├── feature/reuben/posts          # Post creation/display
+├── feature/reuben/chat           # Messaging
+├── feature/reuben/notifications  # Notifications
+├── feature/reuben/seller-dashboard    # Seller dashboard
+├── feature/reuben/seller-listings     # Product management
+├── feature/reuben/analytics      # Sales analytics
+├── feature/shared/buttons        # Shared button components
+├── feature/shared/inputs         # Shared form inputs
+└── feature/shared/header         # Shared header component
+```
+
+**Branch Assignment:**
+
+### **Heris (E-commerce) - 6 branches:**
+- `feature/heris/marketplace` - Main marketplace
+- `feature/heris/cart` - Shopping cart
+- `feature/heris/checkout` - Checkout process
+- `feature/heris/profile` - User profiles
+- `feature/heris/search` - Product search
+- `feature/heris/product-detail` - Product details
+
+### **Reuben (Social Features) - 7 branches:**
+- `feature/reuben/community` - Community overview
+- `feature/reuben/feed` - Social feed
+- `feature/reuben/posts` - Post creation/display
+- `feature/reuben/chat` - Messaging
+- `feature/reuben/notifications` - Notifications
+- `feature/reuben/seller-dashboard` - Seller dashboard
+- `feature/reuben/seller-listings` - Product management
+- `feature/reuben/analytics` - Sales analytics
+
+### **Shared Components - 3 branches:**
+- `feature/shared/buttons` - Button components
+- `feature/shared/inputs` - Form inputs
+- `feature/shared/header` - Header component
 
 **Workflow Rules:**
 1. **Never merge directly to main** - always go through develop
@@ -119,9 +162,9 @@ Markt is a **social-first e-commerce platform** that combines social media featu
 4. **Communicate on shared areas** - coordinate on components you both use
 
 **Conflict Prevention:**
-- Heris works on e-commerce features (marketplace, cart, checkout)
-- Reuben works on social features (community, chat, seller tools)
-- Coordinate on shared components (buttons, inputs, layout)
+- Heris works on e-commerce features (marketplace, cart, checkout, profiles, search, product-detail)
+- Reuben works on social features (community, feed, posts, chat, notifications, seller tools, analytics)
+- Coordinate on shared components (buttons, inputs, header)
 - Daily sync on any overlapping areas
 
 **Daily Git Commands:**
@@ -129,14 +172,77 @@ Markt is a **social-first e-commerce platform** that combines social media featu
 # Start of day
 git checkout develop
 git pull origin develop
-git checkout feature/your-branch
+git checkout feature/heris/[your-component]  # or feature/reuben/[component]
 
 # During work
 git add .
 git commit -m "feat: add product filtering"
+git push origin feature/heris/[your-component]
 
 # End of day
-git push origin feature/your-branch
+git push origin feature/heris/[your-component]
+```
+
+**Branch Switching Examples:**
+
+**For Heris:**
+```bash
+# Work on marketplace
+git checkout feature/heris/marketplace
+
+# Work on cart
+git checkout feature/heris/cart
+
+# Work on checkout
+git checkout feature/heris/checkout
+
+# Work on profiles
+git checkout feature/heris/profile
+
+# Work on search
+git checkout feature/heris/search
+
+# Work on product details
+git checkout feature/heris/product-detail
+```
+
+**For Reuben:**
+```bash
+# Work on community
+git checkout feature/reuben/community
+
+# Work on social feed
+git checkout feature/reuben/feed
+
+# Work on posts
+git checkout feature/reuben/posts
+
+# Work on chat
+git checkout feature/reuben/chat
+
+# Work on notifications
+git checkout feature/reuben/notifications
+
+# Work on seller dashboard
+git checkout feature/reuben/seller-dashboard
+
+# Work on seller listings
+git checkout feature/reuben/seller-listings
+
+# Work on analytics
+git checkout feature/reuben/analytics
+```
+
+**For Shared Components:**
+```bash
+# Work on buttons (coordinate with each other)
+git checkout feature/shared/buttons
+
+# Work on inputs (coordinate with each other)
+git checkout feature/shared/inputs
+
+# Work on header (coordinate with each other)
+git checkout feature/shared/header
 ```
 
 ---
