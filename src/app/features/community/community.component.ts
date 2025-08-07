@@ -952,7 +952,7 @@ export class CommunityComponent implements OnInit {
       const tags = formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [];
 
       const postData = {
-        content: formData.content,
+        caption: formData.content,
         tags: tags
       };
 

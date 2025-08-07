@@ -750,7 +750,8 @@ export class CreateListingComponent implements OnInit {
   optimizeForSocial(mediaId: number): void {
     const optimizationData = {
       platform: 'instagram',
-      aspect_ratio: '1:1',
+      post_type: 'post',
+      aspect_ratio: 1,
       quality: 'high'
     };
 
@@ -777,9 +778,10 @@ export class CreateListingComponent implements OnInit {
 
   generateVariants(mediaId: number): void {
     const variantData = {
+      variant_type: 'image',
+      quality: 'high',
       sizes: ['thumbnail', 'medium', 'large'],
-      formats: ['webp', 'jpeg'],
-      quality: 'high'
+      formats: ['webp', 'jpeg']
     };
 
     this.apiService.generateVariants(mediaId, variantData).subscribe({

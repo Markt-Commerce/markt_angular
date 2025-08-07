@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject, debounceTime, distinctUntilChanged, switchMap, combineLatest, forkJoin } from 'rxjs';
+import { Observable, BehaviorSubject, forkJoin } from 'rxjs';
 import { ApiService } from './api.service';
 import { Product, User, BuyerRequest, PaginatedResponse } from '../models';
 import { tap, map } from 'rxjs/operators';
@@ -35,6 +35,41 @@ export interface SearchParams {
   filters?: SearchFilters;
 }
 
+export interface ProductSearchParams {
+  query: string;
+  category_ids?: number[];
+  price_min?: number;
+  price_max?: number;
+  rating_min?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}
+
+export interface RequestSearchParams {
+  query: string;
+  category_ids?: number[];
+  budget_min?: number;
+  budget_max?: number;
+  status?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}
+
+export interface GlobalSearchResponse {
+  products?: Product[];
+  users?: User[];
+  requests?: BuyerRequest[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -56,8 +91,8 @@ export class SearchService {
     );
   }
 
-  searchProducts(params: any): Observable<PaginatedResponse<Product>> {
-    return this.apiService.searchProducts(params).pipe(
+  searchProducts(params: ProductSearchParams): Observable<PaginatedResponse<Product>> {
+    return this.apiService.searchProducts(params.query, params).pipe(
       map(response => ({
         items: response.data?.items || [],
         pagination: response.data?.pagination || { page: 1, limit: 10, total: 0 }
@@ -65,8 +100,8 @@ export class SearchService {
     );
   }
 
-  searchRequests(params: any): Observable<PaginatedResponse<BuyerRequest>> {
-    return this.apiService.searchRequests(params).pipe(
+  searchRequests(params: RequestSearchParams): Observable<PaginatedResponse<BuyerRequest>> {
+    return this.apiService.searchRequests(params.query, params).pipe(
       map(response => ({
         items: response.data?.items || [],
         pagination: response.data?.pagination || { page: 1, limit: 10, total: 0 }
@@ -79,12 +114,13 @@ export class SearchService {
     users: User[];
     requests: BuyerRequest[];
   }> {
-    const params = { query, ...filters };
+    const productParams: ProductSearchParams = { query, ...filters };
+    const requestParams: RequestSearchParams = { query, ...filters };
     
     return forkJoin({
-      products: this.searchProducts(params),
+      products: this.searchProducts(productParams),
       users: this.searchUsers(query, filters),
-      requests: this.searchRequests(params)
+      requests: this.searchRequests(requestParams)
     }).pipe(
       map(response => ({
         products: response.products.items || [],
@@ -118,9 +154,13 @@ export class SearchService {
   /**
    * Search all content
    */
-  search(params: any): Observable<any> {
+  search(params: SearchParams): Observable<{
+    products: Product[];
+    users: User[];
+    requests: BuyerRequest[];
+  }> {
     this.loadingSubject.next(true);
-    return this.searchAll(params.query, params).pipe(
+    return this.searchAll(params.query, params.filters).pipe(
       tap(() => this.loadingSubject.next(false))
     );
   }
@@ -133,11 +173,13 @@ export class SearchService {
     return this.apiService.globalSearch(query, { limit: 5 }).pipe(
       map(response => {
         const suggestions: string[] = [];
-        if (response.data?.products) {
-          suggestions.push(...response.data.products.map((p: any) => p.name));
+        const data = response.data as GlobalSearchResponse;
+        
+        if (data?.products) {
+          suggestions.push(...data.products.map(product => product.name));
         }
-        if (response.data?.users) {
-          suggestions.push(...response.data.users.map((u: any) => u.username));
+        if (data?.users) {
+          suggestions.push(...data.users.map(user => user.username));
         }
         return suggestions.slice(0, 5);
       })

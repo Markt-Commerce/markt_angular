@@ -87,6 +87,13 @@ export class AuthService {
   }
 
   /**
+   * Get authentication token from localStorage
+   */
+  getToken(): string | null {
+    return localStorage.getItem('markt_token');
+  }
+
+  /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {

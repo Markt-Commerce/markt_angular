@@ -1,26 +1,375 @@
-import { Injectable, inject, isDevMode } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { 
   ApiResponse, 
   PaginatedResponse, 
-  ErrorResponse,
-  User,
-  Product,
-  Order,
-  Cart,
-  BuyerRequest,
-  Media,
-  Category,
-  Niche,
-  Post,
-  Payment,
-  Notification,
-  ChatRoom,
-  ChatMessage,
+  User, 
+  Product, 
+  Order, 
+  OrderItem, 
+  Cart, 
+  CartItem, 
+  CartSummary,
+  BuyerRequest, 
+  SellerOffer, 
+  Media, 
+  Category, 
+  Niche, 
+  Post, 
+  PostComment, 
+  Story, 
+  Collection, 
+  ChatRoom, 
+  ChatMessage, 
+  Payment, 
+  Notification, 
+  Review,
+  Tracking,
   RegisterResponse
 } from '../models';
+
+export interface UserData {
+  username: string;
+  email: string;
+  phone_number: string;
+  password: string;
+  account_type: 'buyer' | 'seller';
+  seller_data?: {
+    shop_name: string;
+    description: string;
+    category_ids: number[];
+    policies: Record<string, string>;
+  };
+  buyer_data?: {
+    buyername: string;
+    shipping_address: {
+      latitude: number;
+      longitude: number;
+      street: string;
+      house_number: string;
+      city: string;
+      state: string;
+      country: string;
+      postal_code: string;
+    };
+  };
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  account_type: 'buyer' | 'seller';
+}
+
+export interface ProfileData {
+  username?: string;
+  email?: string;
+  phone_number?: string;
+  profile_picture?: string;
+}
+
+export interface BuyerData {
+  buyername: string;
+  shipping_address: {
+    latitude: number;
+    longitude: number;
+    street: string;
+    house_number: string;
+    city: string;
+    state: string;
+    country: string;
+    postal_code: string;
+  };
+}
+
+export interface SellerData {
+  shop_name: string;
+  description: string;
+  category_ids: number[];
+  policies: Record<string, string>;
+}
+
+export interface PasswordResetData {
+  email: string;
+  code: string;
+  new_password: string;
+}
+
+export interface EmailVerificationData {
+  email: string;
+  verification_code: string;
+}
+
+export interface UserParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  role?: 'buyer' | 'seller';
+  status?: 'active' | 'inactive';
+  [key: string]: unknown;
+}
+
+export interface ShopParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_ids?: number[];
+  location?: string;
+  [key: string]: unknown;
+}
+
+export interface ProductParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_ids?: string[];
+  price_min?: number;
+  price_max?: number;
+  rating_min?: number;
+  seller_id?: string;
+  status?: 'active' | 'inactive' | 'draft';
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  [key: string]: unknown;
+}
+
+export interface ProductData {
+  name: string;
+  description: string;
+  price: number;
+  compare_at_price?: number;
+  cost_per_item?: number;
+  sku?: string;
+  barcode?: string;
+  stock: number;
+  weight?: number;
+  status?: 'active' | 'inactive' | 'draft';
+  category_ids: string[];
+  tag_ids?: string[];
+  media_ids?: string[];
+  product_metadata?: Record<string, unknown>;
+}
+
+export interface OrderData {
+  cart_id: string;
+  shipping_address: {
+    latitude: number;
+    longitude: number;
+    street: string;
+    house_number: string;
+    city: string;
+    state: string;
+    country: string;
+    postal_code: string;
+  };
+  payment_method: string;
+  customer_note?: string;
+}
+
+export interface PaymentData {
+  order_id: string;
+  amount: number;
+  currency?: string;
+  method?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CartData {
+  product_id: string;
+  variant_id?: string;
+  quantity?: number;
+}
+
+export interface CartItemUpdateData {
+  quantity: number;
+}
+
+export interface CheckoutData {
+  shipping_address: {
+    latitude: number;
+    longitude: number;
+    street: string;
+    house_number: string;
+    city: string;
+    state: string;
+    country: string;
+    postal_code: string;
+  };
+  payment_method: string;
+  customer_note?: string;
+}
+
+export interface RequestData {
+  title: string;
+  description: string;
+  budget?: number;
+  expires_at?: string;
+  category_ids: string[];
+  media_ids?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface RequestParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_ids?: string[];
+  status?: 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED';
+  budget_min?: number;
+  budget_max?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  [key: string]: unknown;
+}
+
+export interface OfferData {
+  product_id?: string;
+  price: number;
+  message: string;
+}
+
+export interface StatusUpdateData {
+  status: string;
+  reason?: string;
+}
+
+export interface MediaParams {
+  page?: number;
+  per_page?: number;
+  media_type?: 'image' | 'video';
+  user_id?: string;
+  is_public?: boolean;
+  [key: string]: unknown;
+}
+
+export interface SocialOptimizationData {
+  platform: string;
+  post_type: string;
+  aspect_ratio?: number;
+}
+
+export interface VariantData {
+  variant_type: string;
+  quality: string;
+  width?: number;
+  height?: number;
+  format?: string;
+}
+
+export interface CategoryData {
+  name: string;
+  description?: string;
+  parent_id?: string;
+  is_active?: boolean;
+}
+
+export interface NicheData {
+  name: string;
+  description: string;
+  category_ids: string[];
+  tags?: string[];
+  visibility: 'public' | 'private' | 'restricted';
+  max_members?: number;
+  allow_buyer_posts?: boolean;
+  allow_seller_posts?: boolean;
+  require_approval?: boolean;
+  rules?: string[];
+  settings?: Record<string, unknown>;
+}
+
+export interface PostData {
+  caption: string;
+  category_ids?: string[];
+  media_ids?: string[];
+  products?: { product_id: string }[];
+  tags?: string[];
+  status?: 'draft' | 'published' | 'archived';
+}
+
+export interface CommentData {
+  content: string;
+  parent_id?: string;
+}
+
+export interface ReactionData {
+  reaction_type: string;
+}
+
+export interface StoryData {
+  media_url: string;
+  media_type: 'image' | 'video';
+  duration?: number;
+  caption?: string;
+}
+
+export interface CollectionData {
+  name: string;
+  description?: string;
+  is_public?: boolean;
+  is_collaborative?: boolean;
+}
+
+export interface SearchParams {
+  query: string;
+  page?: number;
+  per_page?: number;
+  type?: string;
+  category_ids?: number[];
+  price_min?: number;
+  price_max?: number;
+  rating_min?: number;
+  locations?: string[];
+  sort_by?: string;
+}
+
+export interface AnalyticsParams {
+  start_date?: string;
+  end_date?: string;
+  period?: 'day' | 'week' | 'month' | 'year';
+}
+
+export interface ModerationData {
+  action: 'warn' | 'suspend' | 'ban' | 'delete';
+  reason: string;
+  duration?: number;
+  target_user_id?: string;
+}
+
+export interface WebhookData {
+  event: string;
+  data: Record<string, unknown>;
+  signature?: string;
+}
+
+export interface OrderParams {
+  page?: number;
+  per_page?: number;
+  status?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  [key: string]: unknown;
+}
+
+export interface OrderStats {
+  total_orders: number;
+  pending_orders: number;
+  completed_orders: number;
+  cancelled_orders: number;
+  total_revenue: number;
+  average_order_value: number;
+}
+
+export interface ReviewData {
+  rating: number;
+  title?: string;
+  content: string;
+}
+
+export interface CouponData {
+  code: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -34,11 +383,11 @@ export class ApiService {
   // ============================================================================
 
   // Authentication
-  register(userData: any): Observable<ApiResponse<RegisterResponse>> {
+  register(userData: UserData): Observable<ApiResponse<RegisterResponse>> {
     return this.post<RegisterResponse>('/users/register', userData);
   }
 
-  login(credentials: any): Observable<ApiResponse<User>> {
+  login(credentials: LoginCredentials): Observable<ApiResponse<User>> {
     return this.post<User>('/users/login', credentials);
   }
 
@@ -51,58 +400,58 @@ export class ApiService {
     return this.get<User>('/users/profile');
   }
 
-  updateProfile(profileData: any): Observable<ApiResponse<User>> {
+  updateProfile(profileData: ProfileData): Observable<ApiResponse<User>> {
     return this.patch<User>('/users/profile', profileData);
   }
 
-  createBuyerAccount(buyerData: any): Observable<ApiResponse<User>> {
+  createBuyerAccount(buyerData: BuyerData): Observable<ApiResponse<User>> {
     return this.post<User>('/users/create-buyer', buyerData);
   }
 
-  createSellerAccount(sellerData: any): Observable<ApiResponse<User>> {
+  createSellerAccount(sellerData: SellerData): Observable<ApiResponse<User>> {
     return this.post<User>('/users/create-seller', sellerData);
   }
 
-  updateBuyerProfile(buyerData: any): Observable<ApiResponse<User>> {
+  updateBuyerProfile(buyerData: BuyerData): Observable<ApiResponse<User>> {
     return this.patch<User>('/users/profile/buyer', buyerData);
   }
 
-  updateSellerProfile(sellerData: any): Observable<ApiResponse<User>> {
+  updateSellerProfile(sellerData: SellerData): Observable<ApiResponse<User>> {
     return this.patch<User>('/users/profile/seller', sellerData);
   }
 
-  switchRole(): Observable<ApiResponse<any>> {
-    return this.post<any>('/users/switch-role');
+  switchRole(): Observable<ApiResponse<{ user: User; message: string }>> {
+    return this.post<{ user: User; message: string }>('/users/switch-role');
   }
 
   // Password & Email Management
-  passwordReset(email: string): Observable<ApiResponse<any>> {
-    return this.post<any>('/users/password-reset', { email });
+  passwordReset(email: string): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/password-reset', { email });
   }
 
-  passwordResetConfirm(data: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/users/password-reset/confirm', data);
+  passwordResetConfirm(data: PasswordResetData): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/password-reset/confirm', data);
   }
 
-  sendEmailVerification(email: string): Observable<ApiResponse<any>> {
-    return this.post<any>('/users/email-verification/send', { email });
+  sendEmailVerification(email: string): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/email-verification/send', { email });
   }
 
-  verifyEmail(data: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/users/email-verification/verify', data);
+  verifyEmail(data: EmailVerificationData): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/email-verification/verify', data);
   }
 
   // User Management
-  getUsers(params?: any): Observable<ApiResponse<PaginatedResponse<User>>> {
+  getUsers(params?: UserParams): Observable<ApiResponse<PaginatedResponse<User>>> {
     return this.get<PaginatedResponse<User>>('/users/', params);
   }
 
-  getUserSettings(): Observable<ApiResponse<any>> {
-    return this.get<any>('/users/settings');
+  getUserSettings(): Observable<ApiResponse<Record<string, unknown>>> {
+    return this.get<Record<string, unknown>>('/users/settings');
   }
 
-  updateUserSettings(settings: any): Observable<ApiResponse<any>> {
-    return this.patch<any>('/users/settings', settings);
+  updateUserSettings(settings: Record<string, unknown>): Observable<ApiResponse<Record<string, unknown>>> {
+    return this.patch<Record<string, unknown>>('/users/settings', settings);
   }
 
   uploadProfilePicture(file: File): Observable<ApiResponse<Media>> {
@@ -114,35 +463,35 @@ export class ApiService {
   }
 
   // Shop Discovery
-  getShops(params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>('/users/shops', params);
+  getShops(params?: ShopParams): Observable<ApiResponse<PaginatedResponse<Record<string, unknown>>>> {
+    return this.get<PaginatedResponse<Record<string, unknown>>>('/users/shops', params);
   }
 
-  getTrendingShops(): Observable<ApiResponse<any>> {
-    return this.get<any>('/users/shops/trending');
+  getTrendingShops(): Observable<ApiResponse<Record<string, unknown>[]>> {
+    return this.get<Record<string, unknown>[]>('/users/shops/trending');
   }
 
   getShopCategories(): Observable<ApiResponse<Category[]>> {
     return this.get<Category[]>('/users/shops/categories');
   }
 
-  getShopDetails(shopId: number): Observable<ApiResponse<any>> {
-    return this.get<any>(`/users/shops/${shopId}`);
+  getShopDetails(shopId: number): Observable<ApiResponse<Record<string, unknown>>> {
+    return this.get<Record<string, unknown>>(`/users/shops/${shopId}`);
   }
 
-  checkUsername(username: string): Observable<ApiResponse<any>> {
-    return this.get<any>('/users/check-username', { username });
+  checkUsername(username: string): Observable<ApiResponse<{ available: boolean; message?: string }>> {
+    return this.get<{ available: boolean; message?: string }>('/users/check-username', { username });
   }
 
   // ============================================================================
   // PRODUCT ENDPOINTS (15 endpoints)
   // ============================================================================
 
-  getProducts(params?: any): Observable<ApiResponse<PaginatedResponse<Product>>> {
+  getProducts(params?: ProductParams): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.get<PaginatedResponse<Product>>('/products/', params);
   }
 
-  createProduct(productData: any): Observable<ApiResponse<Product>> {
+  createProduct(productData: ProductData): Observable<ApiResponse<Product>> {
     return this.post<Product>('/products/', productData);
   }
 
@@ -150,7 +499,7 @@ export class ApiService {
     return this.get<Product>(`/products/${productId}`);
   }
 
-  updateProduct(productId: string, productData: any): Observable<ApiResponse<Product>> {
+  updateProduct(productId: string, productData: ProductData): Observable<ApiResponse<Product>> {
     return this.put<Product>(`/products/${productId}`, productData);
   }
 
@@ -158,39 +507,39 @@ export class ApiService {
     return this.delete<void>(`/products/${productId}`);
   }
 
-  bulkCreateProducts(products: any[]): Observable<ApiResponse<any>> {
-    return this.post<any>('/products/bulk', products);
+  bulkCreateProducts(products: ProductData[]): Observable<ApiResponse<{ success: string[]; errors: string[] }>> {
+    return this.post<{ success: string[]; errors: string[] }>('/products/bulk', products);
   }
 
-  getTrendingProducts(params?: any): Observable<ApiResponse<Product[]>> {
+  getTrendingProducts(params?: ProductParams): Observable<ApiResponse<Product[]>> {
     return this.get<Product[]>('/products/trending', params);
   }
 
-  getRecommendedProducts(params?: any): Observable<ApiResponse<Product[]>> {
+  getRecommendedProducts(params?: ProductParams): Observable<ApiResponse<Product[]>> {
     return this.get<Product[]>('/products/recommended', params);
   }
 
-  getProductReviews(productId: string, params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>(`/products/${productId}/reviews`, params);
+  getProductReviews(productId: string, params?: ProductParams): Observable<ApiResponse<{ items: unknown[]; pagination: unknown }>> {
+    return this.get<{ items: unknown[]; pagination: unknown }>(`/products/${productId}/reviews`, params);
   }
 
-  createProductReview(productId: string, reviewData: any): Observable<ApiResponse<any>> {
-    return this.post<any>(`/products/${productId}/reviews`, reviewData);
+  addProductReview(productId: string, reviewData: { rating: number; title?: string; content: string }): Observable<ApiResponse<unknown>> {
+    return this.post<unknown>(`/products/${productId}/reviews`, reviewData);
   }
 
-  upvoteReview(reviewId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/products/reviews/${reviewId}/upvote`);
+  upvoteReview(reviewId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
+    return this.post<{ success: boolean; new_count: number }>(`/products/reviews/${reviewId}/upvote`);
   }
 
   trackProductView(productId: string): Observable<ApiResponse<void>> {
     return this.post<void>(`/products/${productId}/view`);
   }
 
-  shareProduct(productId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/products/${productId}/share`);
+  shareProduct(productId: string): Observable<ApiResponse<{ success: boolean; share_url: string }>> {
+    return this.post<{ success: boolean; share_url: string }>(`/products/${productId}/share`);
   }
 
-  getMyProducts(params?: any): Observable<ApiResponse<PaginatedResponse<Product>>> {
+  getMyProducts(params?: ProductParams): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.get<PaginatedResponse<Product>>('/products/seller/my-products', params);
   }
 
@@ -202,11 +551,11 @@ export class ApiService {
     return this.get<Order[]>('/orders/');
   }
 
-  createOrder(orderData: any): Observable<ApiResponse<Order>> {
+  createOrder(orderData: OrderData): Observable<ApiResponse<Order>> {
     return this.post<Order>('/orders/', orderData);
   }
 
-  payOrder(orderId: string, paymentData: any): Observable<ApiResponse<Order>> {
+  payOrder(orderId: string, paymentData: PaymentData): Observable<ApiResponse<Order>> {
     return this.post<Order>(`/orders/${orderId}/pay`, paymentData);
   }
 
@@ -214,24 +563,24 @@ export class ApiService {
     return this.get<Order>(`/orders/${orderId}`);
   }
 
-  getSellerOrders(params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>('/orders/seller', params);
+  getSellerOrders(params?: OrderParams): Observable<ApiResponse<PaginatedResponse<Order>>> {
+    return this.get<PaginatedResponse<Order>>('/orders/seller', params);
   }
 
-  getSellerOrderStats(): Observable<ApiResponse<any>> {
-    return this.get<any>('/orders/seller/stats');
+  getSellerOrderStats(): Observable<ApiResponse<OrderStats>> {
+    return this.get<OrderStats>('/orders/seller/stats');
   }
 
-  updateOrderItemStatus(orderItemId: number, statusData: any): Observable<ApiResponse<any>> {
-    return this.patch<any>(`/orders/seller/items/${orderItemId}`, statusData);
+  updateOrderItemStatus(orderItemId: number, statusData: StatusUpdateData): Observable<ApiResponse<OrderItem>> {
+    return this.patch<OrderItem>(`/orders/seller/items/${orderItemId}`, statusData);
   }
 
-  trackOrder(orderId: string): Observable<ApiResponse<any>> {
-    return this.get<any>(`/orders/${orderId}/track`);
+  trackOrder(orderId: string): Observable<ApiResponse<Tracking[]>> {
+    return this.get<Tracking[]>(`/orders/${orderId}/track`);
   }
 
-  reviewOrder(orderId: string, reviewData: any): Observable<ApiResponse<any>> {
-    return this.post<any>(`/orders/${orderId}/review`, reviewData);
+  reviewOrder(orderId: string, reviewData: ReviewData): Observable<ApiResponse<Review>> {
+    return this.post<Review>(`/orders/${orderId}/review`, reviewData);
   }
 
   // ============================================================================
@@ -246,84 +595,84 @@ export class ApiService {
     return this.delete<void>('/cart/');
   }
 
-  addToCart(cartData: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/cart/add', cartData);
+  addToCart(cartData: CartData): Observable<ApiResponse<CartItem>> {
+    return this.post<CartItem>('/cart/add', cartData);
   }
 
-  updateCartItem(itemId: string, quantityData: any): Observable<ApiResponse<any>> {
-    return this.put<any>(`/cart/items/${itemId}`, quantityData);
+  updateCartItem(itemId: string, quantityData: CartItemUpdateData): Observable<ApiResponse<CartItem>> {
+    return this.put<CartItem>(`/cart/items/${itemId}`, quantityData);
   }
 
   removeCartItem(itemId: string): Observable<ApiResponse<void>> {
     return this.delete<void>(`/cart/items/${itemId}`);
   }
 
-  checkoutCart(checkoutData: any): Observable<ApiResponse<Order>> {
+  checkoutCart(checkoutData: CheckoutData): Observable<ApiResponse<Order>> {
     return this.post<Order>('/cart/checkout', checkoutData);
   }
 
-  getCartSummary(): Observable<ApiResponse<any>> {
-    return this.get<any>('/cart/summary');
+  getCartSummary(): Observable<ApiResponse<CartSummary>> {
+    return this.get<CartSummary>('/cart/summary');
   }
 
-  applyCoupon(couponData: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/cart/coupon', couponData);
+  applyCoupon(couponData: CouponData): Observable<ApiResponse<{ discount_amount: number; message: string }>> {
+    return this.post<{ discount_amount: number; message: string }>('/cart/coupon', couponData);
   }
 
   // ============================================================================
   // REQUEST ENDPOINTS (12 endpoints)
   // ============================================================================
 
-  getRequests(params?: any): Observable<ApiResponse<PaginatedResponse<any>>> {
-    return this.get<PaginatedResponse<any>>('/requests/', params);
+  getRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
+    return this.get<PaginatedResponse<BuyerRequest>>('/requests/', params);
   }
 
-  createRequest(requestData: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/requests/', requestData);
+  createRequest(requestData: RequestData): Observable<ApiResponse<BuyerRequest>> {
+    return this.post<BuyerRequest>('/requests/', requestData);
   }
 
-  getMyRequests(params?: any): Observable<ApiResponse<PaginatedResponse<any>>> {
-    return this.get<PaginatedResponse<any>>('/requests/my-requests', params);
+  getMyRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
+    return this.get<PaginatedResponse<BuyerRequest>>('/requests/my-requests', params);
   }
 
-  getRequest(requestId: string): Observable<ApiResponse<any>> {
-    return this.get<any>(`/requests/${requestId}`);
+  getRequest(requestId: string): Observable<ApiResponse<BuyerRequest>> {
+    return this.get<BuyerRequest>(`/requests/${requestId}`);
   }
 
-  updateRequest(requestId: string, requestData: any): Observable<ApiResponse<any>> {
-    return this.put<any>(`/requests/${requestId}`, requestData);
+  updateRequest(requestId: string, requestData: RequestData): Observable<ApiResponse<BuyerRequest>> {
+    return this.put<BuyerRequest>(`/requests/${requestId}`, requestData);
   }
 
   deleteRequest(requestId: string): Observable<ApiResponse<void>> {
     return this.delete<void>(`/requests/${requestId}`);
   }
 
-  updateRequestStatus(requestId: string, statusData: any): Observable<ApiResponse<any>> {
-    return this.put<any>(`/requests/${requestId}/status`, statusData);
+  updateRequestStatus(requestId: string, statusData: StatusUpdateData): Observable<ApiResponse<BuyerRequest>> {
+    return this.put<BuyerRequest>(`/requests/${requestId}/status`, statusData);
   }
 
-  upvoteRequest(requestId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/requests/${requestId}/upvote`);
+  upvoteRequest(requestId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
+    return this.post<{ success: boolean; new_count: number }>(`/requests/${requestId}/upvote`);
   }
 
-  getRequestOffers(requestId: string): Observable<ApiResponse<any[]>> {
-    return this.get<any[]>(`/requests/${requestId}/offers`);
+  getRequestOffers(requestId: string): Observable<ApiResponse<SellerOffer[]>> {
+    return this.get<SellerOffer[]>(`/requests/${requestId}/offers`);
   }
 
-  createOffer(requestId: string, offerData: any): Observable<ApiResponse<any>> {
-    return this.post<any>(`/requests/${requestId}/offers`, offerData);
+  createOffer(requestId: string, offerData: OfferData): Observable<ApiResponse<SellerOffer>> {
+    return this.post<SellerOffer>(`/requests/${requestId}/offers`, offerData);
   }
 
-  acceptOffer(offerId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/requests/offers/${offerId}/accept`);
+  acceptOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    return this.post<SellerOffer>(`/requests/offers/${offerId}/accept`);
   }
 
-  rejectOffer(offerId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/requests/offers/${offerId}/reject`);
+  rejectOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    return this.post<SellerOffer>(`/requests/offers/${offerId}/reject`);
   }
 
-  withdrawOffer(offerId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/requests/offers/${offerId}/withdraw`);
+  withdrawOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    return this.post<SellerOffer>(`/requests/offers/${offerId}/withdraw`);
   }
 
   // ============================================================================
@@ -350,7 +699,7 @@ export class ApiService {
     return this.get<any>(`/media/${mediaId}/status`);
   }
 
-  optimizeForSocial(mediaId: number, optimizationData: any): Observable<ApiResponse<any>> {
+  optimizeForSocial(mediaId: number, optimizationData: SocialOptimizationData): Observable<ApiResponse<any>> {
     return this.post<any>(`/media/${mediaId}/social-optimize`, optimizationData);
   }
 
@@ -358,7 +707,7 @@ export class ApiService {
     return this.post<any>(`/media/${mediaId}/remove-background`);
   }
 
-  getMediaList(params?: any): Observable<ApiResponse<any>> {
+  getMediaList(params?: MediaParams): Observable<ApiResponse<any>> {
     return this.get<any>('/media/', params);
   }
 
@@ -410,7 +759,7 @@ export class ApiService {
     return this.get<any>(`/media/${mediaId}/variants`);
   }
 
-  generateVariants(mediaId: number, variantData: any): Observable<ApiResponse<any>> {
+  generateVariants(mediaId: number, variantData: VariantData): Observable<ApiResponse<any>> {
     return this.post<any>(`/media/${mediaId}/generate-variants`, variantData);
   }
 
@@ -426,7 +775,7 @@ export class ApiService {
     return this.get<Category[]>('/categories/');
   }
 
-  createCategory(categoryData: any): Observable<ApiResponse<Category>> {
+  createCategory(categoryData: CategoryData): Observable<ApiResponse<Category>> {
     return this.post<Category>('/categories/', categoryData);
   }
 
@@ -434,7 +783,7 @@ export class ApiService {
     return this.get<Category>(`/categories/${categoryId}`);
   }
 
-  updateCategory(categoryId: number, categoryData: any): Observable<ApiResponse<Category>> {
+  updateCategory(categoryId: number, categoryData: CategoryData): Observable<ApiResponse<Category>> {
     return this.put<Category>(`/categories/${categoryId}`, categoryData);
   }
 
@@ -458,7 +807,7 @@ export class ApiService {
     return this.get<PaginatedResponse<any>>('/socials/niches', params);
   }
 
-  createNiche(nicheData: any): Observable<ApiResponse<any>> {
+  createNiche(nicheData: NicheData): Observable<ApiResponse<any>> {
     return this.post<any>('/socials/niches', nicheData);
   }
 
@@ -466,7 +815,7 @@ export class ApiService {
     return this.get<any>(`/socials/niches/${nicheId}`);
   }
 
-  updateNiche(nicheId: string, nicheData: any): Observable<ApiResponse<any>> {
+  updateNiche(nicheId: string, nicheData: NicheData): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/niches/${nicheId}`, nicheData);
   }
 
@@ -482,7 +831,7 @@ export class ApiService {
     return this.get<any>(`/socials/niches/${nicheId}/members`, params);
   }
 
-  moderateNiche(nicheId: string, moderationData: any): Observable<ApiResponse<any>> {
+  moderateNiche(nicheId: string, moderationData: ModerationData): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/niches/${nicheId}/moderate`, moderationData);
   }
 
@@ -520,7 +869,7 @@ export class ApiService {
     return this.get<any[]>(`/socials/comments/${commentId}/reactions`);
   }
 
-  addCommentReaction(commentId: string, reactionData: any): Observable<ApiResponse<any>> {
+  addCommentReaction(commentId: string, reactionData: ReactionData): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/comments/${commentId}/reactions`, reactionData);
   }
 
@@ -536,11 +885,11 @@ export class ApiService {
     return this.get<any>('/payments/', params);
   }
 
-  createPayment(paymentData: any): Observable<ApiResponse<Payment>> {
+  createPayment(paymentData: PaymentData): Observable<ApiResponse<Payment>> {
     return this.post<Payment>('/payments/create', paymentData);
   }
 
-  processPayment(paymentId: string, paymentData: any): Observable<ApiResponse<Payment>> {
+  processPayment(paymentId: string, paymentData: PaymentData): Observable<ApiResponse<Payment>> {
     return this.post<Payment>(`/payments/${paymentId}/process`, paymentData);
   }
 
@@ -552,7 +901,7 @@ export class ApiService {
     return this.get<Payment>(`/payments/${paymentId}`);
   }
 
-  handlePaystackWebhook(webhookData: any): Observable<ApiResponse<any>> {
+  handlePaystackWebhook(webhookData: WebhookData): Observable<ApiResponse<any>> {
     return this.post<any>('/payments/webhook/paystack', webhookData);
   }
 
@@ -612,7 +961,7 @@ export class ApiService {
     return this.get<any[]>('/socials/stories');
   }
 
-  createStory(storyData: any): Observable<ApiResponse<any>> {
+  createStory(storyData: StoryData): Observable<ApiResponse<any>> {
     return this.post<any>('/socials/stories', storyData);
   }
 
@@ -632,7 +981,7 @@ export class ApiService {
     return this.get<any[]>('/socials/collections');
   }
 
-  createCollection(collectionData: any): Observable<ApiResponse<any>> {
+  createCollection(collectionData: CollectionData): Observable<ApiResponse<any>> {
     return this.post<any>('/socials/collections', collectionData);
   }
 
@@ -640,7 +989,7 @@ export class ApiService {
     return this.get<any>(`/socials/collections/${collectionId}`);
   }
 
-  updateCollection(collectionId: string, collectionData: any): Observable<ApiResponse<any>> {
+  updateCollection(collectionId: string, collectionData: CollectionData): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/collections/${collectionId}`, collectionData);
   }
 
@@ -716,7 +1065,7 @@ export class ApiService {
     return this.get<any[]>(`/chat/messages/${messageId}/reactions`);
   }
 
-  addMessageReaction(messageId: string, reactionData: any): Observable<ApiResponse<any>> {
+  addMessageReaction(messageId: string, reactionData: ReactionData): Observable<ApiResponse<any>> {
     return this.post<any>(`/chat/messages/${messageId}/reactions`, reactionData);
   }
 
@@ -800,7 +1149,7 @@ export class ApiService {
     return this.get<any>('/admin/moderation/queue', params);
   }
 
-  takeModerationAction(actionData: any): Observable<ApiResponse<any>> {
+  takeModerationAction(actionData: ModerationData): Observable<ApiResponse<any>> {
     return this.post<any>('/admin/moderation/actions', actionData);
   }
 
@@ -1001,7 +1350,7 @@ export class ApiService {
   // SOCIAL ENDPOINTS (Additional methods)
   // ============================================================================
 
-  createPost(postData: any): Observable<ApiResponse<any>> {
+  createPost(postData: PostData): Observable<ApiResponse<any>> {
     return this.post<any>('/socials/posts', postData);
   }
 
@@ -1009,7 +1358,7 @@ export class ApiService {
     return this.get<any>(`/socials/posts/${postId}`);
   }
 
-  updatePost(postId: string, postData: any): Observable<ApiResponse<any>> {
+  updatePost(postId: string, postData: PostData): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/posts/${postId}`, postData);
   }
 
@@ -1025,11 +1374,11 @@ export class ApiService {
     return this.get<any>(`/socials/posts/${postId}/comments`, params);
   }
 
-  addComment(postId: string, commentData: any): Observable<ApiResponse<any>> {
+  addComment(postId: string, commentData: CommentData): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/posts/${postId}/comments`, commentData);
   }
 
-  updateComment(commentId: string, commentData: any): Observable<ApiResponse<any>> {
+  updateComment(commentId: string, commentData: CommentData): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/comments/${commentId}`, commentData);
   }
 
@@ -1037,7 +1386,7 @@ export class ApiService {
     return this.delete<any>(`/socials/comments/${commentId}`);
   }
 
-  createNichePost(nicheId: string, postData: any): Observable<ApiResponse<any>> {
+  createNichePost(nicheId: string, postData: PostData): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/niches/${nicheId}/posts`, postData);
   }
 

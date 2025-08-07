@@ -35,6 +35,11 @@ interface Offer {
   expires_at: string;
   message?: string;
   terms?: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  sellerId?: string;
+  productName?: string;
+  productId?: string;
 }
 
 interface Request {
@@ -886,7 +891,7 @@ export class OfferDetailComponent implements OnInit {
       this.apiService.getRequestOffers(offerId).subscribe({
         next: (response) => {
           if (response.data && response.data.length > 0) {
-            this.offer = response.data[0]; // Get the first offer
+            this.offer = response.data[0] as any; // Get the first offer
             this.loadRequest();
             this.loadSimilarOffers();
           }
@@ -902,7 +907,7 @@ export class OfferDetailComponent implements OnInit {
     if (this.offer?.request_id) {
       this.apiService.getRequest(this.offer.request_id).subscribe({
         next: (response) => {
-          this.request = response.data;
+          this.request = response.data as any;
         },
         error: (error) => {
           console.error('Error loading request:', error);
@@ -915,7 +920,7 @@ export class OfferDetailComponent implements OnInit {
     if (this.offer?.request_id) {
       this.apiService.getRequestOffers(this.offer.request_id).subscribe({
         next: (response) => {
-          this.similarOffers = response.data.filter(o => o.id !== this.offer?.id);
+          this.similarOffers = response.data.filter(o => o.id !== this.offer?.id) as any[];
         },
         error: (error) => {
           console.error('Error loading similar offers:', error);

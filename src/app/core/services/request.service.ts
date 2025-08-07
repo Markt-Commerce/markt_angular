@@ -7,7 +7,9 @@ import {
   BuyerRequestUpdate,
   SellerOffer,
   SellerOfferCreate,
-  RequestStatus
+  RequestStatus,
+  ApiResponse,
+  PaginatedResponse
 } from '../models';
 import { tap, map } from 'rxjs/operators';
 
@@ -29,6 +31,34 @@ export interface RequestFilters {
   sort_order?: 'asc' | 'desc';
 }
 
+export interface RequestParams {
+  page?: number;
+  per_page?: number;
+  status?: RequestStatus;
+  category_ids?: string[];
+  budget_min?: number;
+  budget_max?: number;
+  search?: string;
+  sort_by?: 'created_at' | 'budget' | 'expires_at';
+  sort_order?: 'asc' | 'desc';
+  [key: string]: unknown;
+}
+
+export interface StatusUpdateData {
+  status: RequestStatus;
+  reason?: string;
+}
+
+export interface RequestStatistics {
+  total_requests: number;
+  open_requests: number;
+  fulfilled_requests: number;
+  closed_requests: number;
+  expired_requests: number;
+  my_requests: number;
+  my_offers: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -45,8 +75,6 @@ export class RequestService {
 
   public requestState$ = this.requestStateSubject.asObservable();
 
-  constructor() {}
-
   // ============================================================================
   // REQUEST OPERATIONS
   // ============================================================================
@@ -54,12 +82,12 @@ export class RequestService {
   /**
    * Get all requests
    */
-  getRequests(params?: any): Observable<any> {
+  getRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
     this.setLoading(true);
     
     return this.apiService.getRequests(params).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<PaginatedResponse<BuyerRequest>>) => {
           if (response.success) {
             this.updateRequestState({
               requests: response.data.items,
@@ -68,7 +96,7 @@ export class RequestService {
             });
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error fetching requests:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -80,12 +108,12 @@ export class RequestService {
   /**
    * Create new request
    */
-  createRequest(requestData: BuyerRequestCreate): Observable<any> {
+  createRequest(requestData: BuyerRequestCreate): Observable<ApiResponse<BuyerRequest>> {
     this.setLoading(true);
     
     return this.apiService.createRequest(requestData).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<BuyerRequest>) => {
           if (response.success) {
             const newRequest = response.data;
             const currentRequests = this.getRequestState().requests;
@@ -100,7 +128,7 @@ export class RequestService {
             });
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error creating request:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -112,12 +140,12 @@ export class RequestService {
   /**
    * Get my requests
    */
-  getMyRequests(params?: any): Observable<any> {
+  getMyRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
     this.setLoading(true);
     
     return this.apiService.getMyRequests(params).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<PaginatedResponse<BuyerRequest>>) => {
           if (response.success) {
             this.updateRequestState({
               myRequests: response.data.items,
@@ -126,7 +154,7 @@ export class RequestService {
             });
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error fetching my requests:', error);
           this.setError(error.message);
           this.setLoading(false);
@@ -138,18 +166,24 @@ export class RequestService {
   /**
    * Get single request
    */
-  getRequest(requestId: string): Observable<any> {
+  getRequest(requestId: string): Observable<ApiResponse<BuyerRequest>> {
+    this.setLoading(true);
+    
     return this.apiService.getRequest(requestId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<BuyerRequest>) => {
           if (response.success) {
             this.updateRequestState({
-              currentRequest: response.data
+              currentRequest: response.data,
+              isLoading: false,
+              error: null
             });
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error fetching request:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -158,17 +192,32 @@ export class RequestService {
   /**
    * Update request
    */
-  updateRequest(requestId: string, requestData: BuyerRequestUpdate): Observable<any> {
-    return this.apiService.updateRequest(requestId, requestData).pipe(
+  updateRequest(requestId: string, requestData: BuyerRequestUpdate): Observable<ApiResponse<BuyerRequest>> {
+    this.setLoading(true);
+    
+    // Convert BuyerRequestUpdate to RequestData format
+    const apiRequestData = {
+      title: requestData.title || '',
+      description: requestData.description || '',
+      budget: requestData.budget,
+      expires_at: requestData.expires_at,
+      category_ids: requestData.category_ids || [],
+      media_ids: requestData.media_ids,
+      metadata: requestData.metadata
+    };
+    
+    return this.apiService.updateRequest(requestId, apiRequestData).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<BuyerRequest>) => {
           if (response.success) {
-            const updatedRequest = response.data;
-            this.updateRequestInState(requestId, updatedRequest);
+            this.updateRequestInState(requestId, response.data);
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error updating request:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -177,16 +226,21 @@ export class RequestService {
   /**
    * Delete request
    */
-  deleteRequest(requestId: string): Observable<any> {
+  deleteRequest(requestId: string): Observable<ApiResponse<void>> {
+    this.setLoading(true);
+    
     return this.apiService.deleteRequest(requestId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<void>) => {
           if (response.success) {
             this.removeRequestFromState(requestId);
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error deleting request:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -195,16 +249,21 @@ export class RequestService {
   /**
    * Update request status
    */
-  updateRequestStatus(requestId: string, statusData: any): Observable<any> {
+  updateRequestStatus(requestId: string, statusData: StatusUpdateData): Observable<ApiResponse<BuyerRequest>> {
+    this.setLoading(true);
+    
     return this.apiService.updateRequestStatus(requestId, statusData).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<BuyerRequest>) => {
           if (response.success) {
-            this.updateRequestStatusInState(requestId, statusData.status);
+            this.updateRequestStatusInState(requestId, response.data.status);
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error updating request status:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -213,51 +272,46 @@ export class RequestService {
   /**
    * Upvote request
    */
-  upvoteRequest(requestId: string): Observable<any> {
+  upvoteRequest(requestId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
     return this.apiService.upvoteRequest(requestId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<{ success: boolean; new_count: number }>) => {
           if (response.success) {
-            // Update upvote count in state
-            this.updateRequestUpvotes(requestId, response.data.upvotes);
+            this.updateRequestUpvotes(requestId, response.data.new_count);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error upvoting request:', error);
+          this.setError(error.message);
         }
       })
     );
   }
 
-  // ============================================================================
-  // OFFER OPERATIONS
-  // ============================================================================
-
   /**
    * Get request offers
    */
-  getRequestOffers(requestId: string): Observable<any> {
+  getRequestOffers(requestId: string): Observable<ApiResponse<SellerOffer[]>> {
     return this.apiService.getRequestOffers(requestId);
   }
 
   /**
-   * Create offer
+   * Add offer to request
    */
-  addOffer(requestId: string, offerData: SellerOfferCreate): Observable<any> {
+  addOffer(requestId: string, offerData: SellerOfferCreate): Observable<ApiResponse<SellerOffer>> {
+    this.setLoading(true);
+    
     return this.apiService.createOffer(requestId, offerData).pipe(
       tap({
-        next: (response: any) => {
-          const currentRequest = this.getCurrentRequest();
-          if (currentRequest) {
-            const newOffer = response.data as SellerOffer;
-            const updatedOffers = [...currentRequest.offers, newOffer];
-            this.updateRequestState({
-              currentRequest: { ...currentRequest, offers: updatedOffers }
-            });
+        next: (response: ApiResponse<SellerOffer>) => {
+          if (response.success) {
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error adding offer:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -266,20 +320,21 @@ export class RequestService {
   /**
    * Accept offer
    */
-  acceptOffer(offerId: string): Observable<any> {
+  acceptOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    this.setLoading(true);
+    
     return this.apiService.acceptOffer(offerId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<SellerOffer>) => {
           if (response.success) {
-            // Update request status to fulfilled
-            const currentRequest = this.getCurrentRequest();
-            if (currentRequest) {
-              this.updateRequestStatusInState(currentRequest.id, 'FULFILLED');
-            }
+            this.updateOfferStatus(offerId, 'accepted');
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error accepting offer:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -288,17 +343,21 @@ export class RequestService {
   /**
    * Reject offer
    */
-  rejectOffer(offerId: string): Observable<any> {
+  rejectOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    this.setLoading(true);
+    
     return this.apiService.rejectOffer(offerId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<SellerOffer>) => {
           if (response.success) {
-            // Update offer status in state
             this.updateOfferStatus(offerId, 'rejected');
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error rejecting offer:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -307,17 +366,21 @@ export class RequestService {
   /**
    * Withdraw offer
    */
-  withdrawOffer(offerId: string): Observable<any> {
+  withdrawOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
+    this.setLoading(true);
+    
     return this.apiService.withdrawOffer(offerId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<SellerOffer>) => {
           if (response.success) {
-            // Update offer status in state
             this.updateOfferStatus(offerId, 'withdrawn');
+            this.setLoading(false);
           }
         },
-        error: (error: any) => {
+        error: (error: Error) => {
           console.error('Error withdrawing offer:', error);
+          this.setError(error.message);
+          this.setLoading(false);
         }
       })
     );
@@ -649,9 +712,9 @@ export class RequestService {
   /**
    * Get request statistics
    */
-  getRequestStatistics(): Observable<any> {
-    return this.apiService.get<any>('/requests/statistics').pipe(
-      map(response => response.data)
+  getRequestStatistics(): Observable<ApiResponse<RequestStatistics>> {
+    return this.apiService.get<RequestStatistics>('/requests/statistics').pipe(
+      map(response => response)
     );
   }
 

@@ -24,6 +24,7 @@ import { CartService } from '../../core/services/cart.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { CartItem, Product, SellerAccount, Address } from '../../core/models';
 
 @Component({
   selector: 'app-cart',
@@ -81,7 +82,7 @@ import { ApiService } from '../../core/services/api.service';
                   <!-- Product Image -->
                   <div class="flex-shrink-0">
                     <img 
-                      [src]="item.product?.images[0]?.url || '/markt-text-logo.png'" 
+                      [src]="item.product?.images?.[0]?.media?.url || '/markt-text-logo.png'" 
                       [alt]="item.product?.name"
                       class="w-20 h-20 object-cover rounded-lg"
                     >
@@ -107,25 +108,14 @@ import { ApiService } from '../../core/services/api.service';
                             <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
                             {{ item.product?.seller?.shop_name }}
                           </span>
-                          <span class="flex items-center">
-                            <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
-                            {{ item.product?.seller?.location }}
-                          </span>
-                        </div>
-
-                        <!-- Product Options -->
-                        <div *ngIf="item.options && item.options.length > 0" class="mt-2">
-                          <div *ngFor="let option of item.options" class="text-sm text-gray-500">
-                            {{ option.name }}: {{ option.value }}
-                          </div>
                         </div>
                       </div>
 
                       <!-- Price -->
                       <div class="text-right">
-                        <p class="text-lg font-bold text-gray-900">{{ item.price | currency:'NGN' }}</p>
-                        <p *ngIf="item.original_price && item.original_price > item.price" class="text-sm text-gray-500 line-through">
-                          {{ item.original_price | currency:'NGN' }}
+                        <p class="text-lg font-bold text-gray-900">{{ item.product_price | currency:'NGN' }}</p>
+                        <p *ngIf="item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price" class="text-sm text-gray-500 line-through">
+                          {{ item.product?.compare_at_price | currency:'NGN' }}
                         </p>
                       </div>
                     </div>
@@ -133,7 +123,7 @@ import { ApiService } from '../../core/services/api.service';
                     <!-- Quantity Controls -->
                     <div class="mt-4 flex items-center justify-between">
                       <div class="flex items-center space-x-3">
-                        <label class="text-sm font-medium text-gray-700">Quantity:</label>
+                        <span class="text-sm font-medium text-gray-700">Quantity:</span>
                         <div class="flex items-center border border-gray-300 rounded-md">
                           <button 
                             (click)="updateQuantity(item.id, item.quantity - 1)"
@@ -278,26 +268,28 @@ import { ApiService } from '../../core/services/api.service';
             <div class="px-6 py-4 border-b border-gray-200">
               <h3 class="font-medium text-gray-900">Shipping Information</h3>
             </div>
-            <div class="p-6 space-y-4">
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faTruck" class="w-5 h-5 text-green-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-gray-900">Free Shipping</p>
-                  <p class="text-sm text-gray-500">On orders over ₦5,000</p>
+            <div class="p-6">
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
+                    <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
+                  </div>
                 </div>
-              </div>
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faClock" class="w-5 h-5 text-blue-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-gray-900">Fast Delivery</p>
-                  <p class="text-sm text-gray-500">2-5 business days</p>
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Secure packaging</p>
+                    <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
+                  </div>
                 </div>
-              </div>
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faCheck" class="w-5 h-5 text-green-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-gray-900">Easy Returns</p>
-                  <p class="text-sm text-gray-500">30-day return policy</p>
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Easy returns</p>
+                    <p class="text-sm text-gray-500">30-day return policy for most items</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -305,13 +297,13 @@ import { ApiService } from '../../core/services/api.service';
         </div>
       </div>
 
-      <!-- Recently Viewed -->
-      <div *ngIf="recentlyViewed.length > 0" class="border-t border-gray-200 pt-8">
+      <!-- Recently Viewed Section -->
+      <div class="mt-12">
         <h3 class="text-xl font-bold text-gray-900 mb-6">Recently Viewed</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div *ngFor="let product of recentlyViewed" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
             <img 
-              [src]="product.images[0]?.url || '/markt-text-logo.png'" 
+              [src]="product.images?.[0]?.media?.url || '/markt-text-logo.png'" 
               [alt]="product.name"
               class="w-full h-48 object-cover"
             >
@@ -363,20 +355,20 @@ export class CartComponent implements OnInit {
   faClock = faClock;
 
   // Data
-  cartItems: any[] = [];
+  cartItems: CartItem[] = [];
   cartItemCount = 0;
   cartSubtotal = 0;
   cartShipping = 0;
   cartDiscount = 0;
   cartTax = 0;
   cartTotal = 0;
-  recentlyViewed: any[] = [];
+  recentlyViewed: Product[] = [];
   canCheckout = true;
-  errorMessage: string = '';
+  errorMessage = '';
   loading = false;
-  selectedAddress: any = null;
-  selectedPaymentMethod: string = '';
-  orderNotes: string = '';
+  selectedAddress: Address | null = null;
+  selectedPaymentMethod = '';
+  orderNotes = '';
 
   ngOnInit(): void {
     this.loadCart();
@@ -386,115 +378,112 @@ export class CartComponent implements OnInit {
   private loadCart(): void {
     this.loading = true;
     
-    this.apiService.getCart().subscribe({
+    this.cartService.getCart().subscribe({
       next: (response) => {
-        this.cartItems = response.data?.items || [];
-        this.cartItemCount = response.data?.total_items || 0;
-        this.calculateTotals();
+        if (response.success) {
+          this.cartItems = response.data.items || [];
+          this.cartItemCount = response.data.total_items || 0;
+          this.calculateTotals();
+        }
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading cart:', error);
-        this.cartItems = [];
+        this.errorMessage = 'Error loading cart. Please try again.';
         this.loading = false;
       }
     });
   }
 
   private loadRecentlyViewed(): void {
-    // This would typically load from a recently viewed service
+    // Load recently viewed products - implement when service is available
     this.recentlyViewed = [];
   }
 
   private calculateTotals(): void {
-    this.cartSubtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    this.cartSubtotal = this.cartItems.reduce((total, item) => total + (item.product_price * item.quantity), 0);
     this.cartShipping = this.calculateShipping();
     this.cartTax = this.cartSubtotal * 0.075; // 7.5% tax
     this.cartTotal = this.cartSubtotal + this.cartShipping + this.cartTax - this.cartDiscount;
-    
-    // Check if cart can be checked out
-    this.canCheckout = this.cartItems.length > 0 && this.cartTotal > 0;
   }
 
   private calculateShipping(): number {
-    if (this.cartSubtotal >= 5000) {
-      return 0; // Free shipping
-    }
-    
     // Calculate shipping based on seller groups
     const sellerGroups = this.cartSummaryBySeller;
-    return sellerGroups.reduce((total: number, group: any) => total + group.shipping, 0);
+    return sellerGroups.reduce((total, group) => total + group.shipping, 0);
   }
 
-  get cartSummaryBySeller(): any[] {
-    const sellerMap = new Map();
+  get cartSummaryBySeller(): Array<{ seller: SellerAccount; items: CartItem[]; subtotal: number; shipping: number; itemCount: number }> {
+    const sellerMap = new Map<string, { seller: SellerAccount; items: CartItem[]; subtotal: number; shipping: number; itemCount: number }>();
     
     this.cartItems.forEach(item => {
       const sellerId = item.product?.seller?.id;
-      if (!sellerMap.has(sellerId)) {
-        sellerMap.set(sellerId, {
-          seller: item.product?.seller,
-          items: [],
-          itemCount: 0,
-          subtotal: 0,
-          shipping: 0
-        });
+      if (sellerId) {
+        const existing = sellerMap.get(sellerId);
+        
+        if (existing) {
+          existing.items.push(item);
+          existing.subtotal += item.product_price * item.quantity;
+          existing.itemCount += item.quantity;
+        } else {
+          sellerMap.set(sellerId, {
+            seller: item.product.seller,
+            items: [item],
+            subtotal: item.product_price * item.quantity,
+            shipping: this.calculateShippingForSeller({ seller: item.product.seller, items: [item], subtotal: item.product_price * item.quantity, shipping: 0 }),
+            itemCount: item.quantity
+          });
+        }
       }
-      
-      const group = sellerMap.get(sellerId);
-      group.items.push(item);
-      group.itemCount += item.quantity;
-      group.subtotal += item.price * item.quantity;
-      group.shipping = this.calculateShippingForSeller(group);
     });
     
     return Array.from(sellerMap.values());
   }
 
-  private calculateShippingForSeller(sellerGroup: any): number {
-    const subtotal = sellerGroup.subtotal;
-    if (subtotal >= 5000) {
-      return 0; // Free shipping
-    }
-    return 500; // Standard shipping cost
+  private calculateShippingForSeller(sellerGroup: { seller: SellerAccount; items: CartItem[]; subtotal: number; shipping: number }): number {
+    // Simple shipping calculation - can be enhanced based on business logic
+    return sellerGroup.subtotal > 10000 ? 0 : 1000; // Free shipping over 10k, 1k otherwise
   }
 
   updateQuantity(itemId: string, newQuantity: number): void {
-    if (newQuantity < 1 || newQuantity > 99) {
+    if (newQuantity <= 0) {
+      this.removeItem(itemId);
       return;
     }
 
-    this.apiService.updateCartItem(itemId, { quantity: newQuantity }).subscribe({
+    this.cartService.updateCartItem(itemId, newQuantity).subscribe({
       next: (response) => {
-        this.loadCart(); // Reload cart to get updated totals
+        if (response.success) {
+          this.loadCart(); // Refresh cart data
+        }
       },
       error: (error) => {
         console.error('Error updating quantity:', error);
+        this.errorMessage = 'Error updating quantity. Please try again.';
       }
     });
   }
 
   removeItem(itemId: string): void {
-    this.apiService.removeFromCart(itemId).subscribe({
+    this.cartService.removeCartItem(itemId).subscribe({
       next: (response) => {
-        this.loadCart(); // Reload cart
+        if (response.success) {
+          this.loadCart(); // Refresh cart data
+        }
       },
       error: (error) => {
         console.error('Error removing item:', error);
+        this.errorMessage = 'Error removing item. Please try again.';
       }
     });
   }
 
-  moveToWishlist(item: any): void {
-    // This would typically call a wishlist service
-    
-    
-    // Remove from cart after moving to wishlist
+  moveToWishlist(item: CartItem): void {
+    // Add to wishlist - implement when service is available
     this.removeItem(item.id);
   }
 
-  // Additional cart endpoint integrations
-  addToCart(productId: string, quantity: number = 1): void {
+  addToCart(productId: string, quantity = 1): void {
     const cartData = {
       product_id: productId,
       quantity: quantity
@@ -502,41 +491,53 @@ export class CartComponent implements OnInit {
 
     this.apiService.addToCart(cartData).subscribe({
       next: (response) => {
-        console.log('Item added to cart:', response.data);
         this.loadCart(); // Refresh cart data
       },
       error: (error) => {
+        this.errorMessage = 'Error adding item to cart. Please try again.';
         console.error('Error adding item to cart:', error);
       }
     });
   }
 
-  checkoutCart(): void {
+  proceedToCheckout(): void {
+    if (!this.selectedAddress) {
+      this.errorMessage = 'Please select a shipping address';
+      return;
+    }
+
+    if (!this.selectedPaymentMethod) {
+      this.errorMessage = 'Please select a payment method';
+      return;
+    }
+
     const checkoutData = {
-      shipping_address: this.selectedAddress,
+      shipping_address: {
+        latitude: this.selectedAddress.latitude,
+        longitude: this.selectedAddress.longitude,
+        street: this.selectedAddress.street,
+        house_number: this.selectedAddress.house_number,
+        city: this.selectedAddress.city,
+        state: this.selectedAddress.state,
+        country: this.selectedAddress.country,
+        postal_code: this.selectedAddress.postal_code
+      },
       payment_method: this.selectedPaymentMethod,
       notes: this.orderNotes
     };
 
-    this.apiService.checkoutCart(checkoutData).subscribe({
-      next: (response) => {
-        console.log('Cart checked out:', response.data);
-        // Navigate to order confirmation
-        this.router.navigate(['/app/orders', response.data.id]);
-      },
-      error: (error) => {
-        console.error('Error checking out cart:', error);
-      }
+    this.router.navigate(['/checkout'], { 
+      state: { checkoutData } 
     });
   }
 
   removeCartItem(itemId: string): void {
     this.apiService.removeCartItem(itemId).subscribe({
       next: (response) => {
-        console.log('Item removed from cart:', response.data);
         this.loadCart(); // Refresh cart data
       },
       error: (error) => {
+        this.errorMessage = 'Error removing item from cart. Please try again.';
         console.error('Error removing item from cart:', error);
       }
     });
@@ -545,53 +546,13 @@ export class CartComponent implements OnInit {
   toggleWishlist(productId: string): void {
     this.apiService.toggleWishlist(productId).subscribe({
       next: (response) => {
-        console.log('Wishlist toggled:', response.data);
+        // Wishlist updated successfully
       },
       error: (error) => {
+        this.errorMessage = 'Error updating wishlist. Please try again.';
         console.error('Error toggling wishlist:', error);
       }
     });
-  }
-
-  proceedToCheckout(): void {
-    if (!this.canCheckout) {
-      return;
-    }
-
-    this.validateCart();
-  }
-
-  clearCart(): void {
-    this.apiService.clearCart().subscribe({
-      next: (response) => {
-        this.cartItems = [];
-        this.cartItemCount = 0;
-        this.calculateTotals();
-      },
-      error: (error) => {
-        console.error('Error clearing cart:', error);
-      }
-    });
-  }
-
-  applyCoupon(couponCode: string): void {
-    this.cartService.applyCoupon(couponCode).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.cartDiscount = response.data.discount_amount;
-          this.calculateTotals();
-          
-        }
-      },
-      error: (error) => {
-        console.error('Error applying coupon:', error);
-      }
-    });
-  }
-
-  getTotalShipping(): number {
-    const sellerGroups = this.cartSummaryBySeller;
-    return sellerGroups.reduce((total: number, group: any) => total + group.shipping, 0);
   }
 
   validateCart(): void {

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order } from '../models';
+import { CheckoutData } from './api.service';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -130,7 +131,7 @@ export class CartService {
    * Apply coupon to cart
    */
   applyCoupon(couponCode: string): Observable<any> {
-    return this.apiService.applyCoupon({ coupon_code: couponCode }).pipe(
+    return this.apiService.applyCoupon({ code: couponCode }).pipe(
       tap({
         next: (response: any) => {
           if (response.success) {
@@ -148,7 +149,14 @@ export class CartService {
    * Checkout cart
    */
   checkout(checkoutData: Checkout): Observable<any> {
-    return this.apiService.checkoutCart(checkoutData).pipe(
+    // Add payment_method if not present
+    const checkoutDataWithPayment: CheckoutData = {
+      shipping_address: checkoutData.shipping_address,
+      payment_method: 'card', // Default payment method
+      customer_note: checkoutData.notes
+    };
+    
+    return this.apiService.checkoutCart(checkoutDataWithPayment).pipe(
       tap({
         next: (response: any) => {
           if (response.success) {

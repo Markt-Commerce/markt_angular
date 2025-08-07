@@ -550,7 +550,7 @@ export class ProductDetailComponent implements OnInit {
       // Load product reviews
       this.apiService.getProductReviews(productId).subscribe({
         next: (response) => {
-          this.reviews = response.data || [];
+          this.reviews = response.data?.items || [];
         },
         error: (error) => {
           console.error('Error loading product reviews:', error);
@@ -614,12 +614,12 @@ export class ProductDetailComponent implements OnInit {
 
   // Additional product endpoint integrations
   createProductReview(reviewData: any): void {
-    this.apiService.createProductReview(this.product.id, reviewData).subscribe({
-      next: (response) => {
+    this.apiService.addProductReview(this.product.id, reviewData).subscribe({
+      next: (response: any) => {
         console.log('Product review created:', response.data);
         this.loadReviews(); // Refresh reviews
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error creating product review:', error);
       }
     });
@@ -732,11 +732,8 @@ export class ProductDetailComponent implements OnInit {
 
     this.socialService.shareProduct(this.product.id).subscribe({
       next: (response) => {
-        if (response.success) {
-          // Handle sharing (copy link, open share dialog, etc.)
-          navigator.clipboard.writeText(window.location.href);
-          
-        }
+        // Handle sharing (copy link, open share dialog, etc.)
+        navigator.clipboard.writeText(response.share_url || window.location.href);
       },
       error: (error) => {
         console.error('Error sharing product:', error);

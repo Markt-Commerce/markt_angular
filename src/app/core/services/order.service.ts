@@ -200,7 +200,8 @@ export class OrderService {
    * Update order item status
    */
   updateOrderItemStatus(orderItemId: string, status: OrderItemStatus): Observable<any> {
-    return this.apiService.updateOrderItemStatus(parseInt(orderItemId), status).pipe(
+    const statusData = { status };
+    return this.apiService.updateOrderItemStatus(parseInt(orderItemId), statusData).pipe(
       tap({
         next: () => {
           const currentOrders = this.getOrderState().orders;

@@ -95,8 +95,9 @@ import { ApiService } from '../../core/services/api.service';
               <form [formGroup]="shippingForm" (ngSubmit)="onShippingSubmit()" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                     <input 
+                      id="firstName"
                       type="text" 
                       formControlName="firstName"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -107,8 +108,9 @@ import { ApiService } from '../../core/services/api.service';
                     </div>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                     <input 
+                      id="lastName"
                       type="text" 
                       formControlName="lastName"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -121,8 +123,9 @@ import { ApiService } from '../../core/services/api.service';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input 
+                    id="email"
                     type="email" 
                     formControlName="email"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -134,8 +137,9 @@ import { ApiService } from '../../core/services/api.service';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   <input 
+                    id="phone"
                     type="tel" 
                     formControlName="phone"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -147,8 +151,9 @@ import { ApiService } from '../../core/services/api.service';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <input 
+                    id="address"
                     type="text" 
                     formControlName="address"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -161,8 +166,9 @@ import { ApiService } from '../../core/services/api.service';
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input 
+                      id="city"
                       type="text" 
                       formControlName="city"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -170,8 +176,9 @@ import { ApiService } from '../../core/services/api.service';
                     >
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <label for="state" class="block text-sm font-medium text-gray-700 mb-1">State</label>
                     <select 
+                      id="state"
                       formControlName="state"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                     >
@@ -184,8 +191,9 @@ import { ApiService } from '../../core/services/api.service';
                     </select>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                    <label for="postalCode" class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
                     <input 
+                      id="postalCode"
                       type="text" 
                       formControlName="postalCode"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
@@ -601,7 +609,7 @@ export class CheckoutComponent implements OnInit {
       this.apiService.applyCoupon({ code: this.couponCode }).subscribe({
         next: (response) => {
           this.couponApplied = true;
-          this.couponDiscount = response.data.discount;
+          this.couponDiscount = response.data.discount_amount || 0;
           this.calculateTotals();
         },
         error: (error) => {

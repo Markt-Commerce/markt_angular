@@ -17,16 +17,17 @@ import { CartService } from './cart.service';
 import { map } from 'rxjs/operators';
 
 export interface ProductFilters {
-  category_ids?: number[];
+  category_ids?: string[];
   price_min?: number;
   price_max?: number;
   rating_min?: number;
-  status?: string;
-  seller_id?: number;
+  status?: 'active' | 'inactive' | 'draft';
+  seller_id?: string;
   tags?: string[];
   search?: string;
   sort_by?: 'price' | 'rating' | 'created_at' | 'name';
   sort_order?: 'asc' | 'desc';
+  [key: string]: unknown;
 }
 
 export interface ProductSearchParams extends ProductFilters {
@@ -73,7 +74,14 @@ export class MarketplaceService {
    * Update existing product
    */
   updateProduct(productId: string, productData: ProductUpdate): Observable<any> {
-    return this.apiService.updateProduct(productId, productData);
+    // Filter out undefined values to match ProductData interface
+    const filteredData: any = {};
+    Object.entries(productData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    });
+    return this.apiService.updateProduct(productId, filteredData);
   }
 
   /**
@@ -140,7 +148,7 @@ export class MarketplaceService {
    * Create product review
    */
   createProductReview(productId: string, reviewData: any): Observable<any> {
-    return this.apiService.createProductReview(productId, reviewData);
+    return this.apiService.addProductReview(productId, reviewData);
   }
 
   /**

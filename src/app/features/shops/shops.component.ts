@@ -211,7 +211,7 @@ export class ShopsComponent implements OnInit {
     this.apiService.getShops(params).subscribe({
       next: (response) => {
         this.shops = response.data?.items || [];
-        this.totalResults = response.data?.pagination?.total || 0;
+        this.totalResults = response.data?.pagination?.total_items || 0;
         this.totalPages = response.data?.pagination?.total_pages || 1;
         this.loading = false;
       },

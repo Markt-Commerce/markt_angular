@@ -558,7 +558,7 @@ export class CreateRequestComponent implements OnInit {
       const requestData = {
         title: formData.title,
         description: formData.description,
-        category: formData.category,
+        category_ids: [formData.category],
         budget_min: formData.budgetMin,
         budget_max: formData.budgetMax,
         location: formData.location,

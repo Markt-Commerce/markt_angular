@@ -14,6 +14,15 @@ interface BuyerRequest {
   budget: number;
   buyerName: string;
   category: string;
+  buyerAvatar?: string;
+  buyerId?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  buyer?: any;
+  category_ids?: string[];
+  budget_min?: number;
+  budget_max?: number;
 }
 
 interface Product {
@@ -601,7 +610,7 @@ export class CreateOfferComponent implements OnInit {
       
       this.apiService.getRequest(requestId).subscribe({
         next: (response) => {
-          this.request = response.data;
+          this.request = response.data as any;
           this.loading = false;
         },
         error: (error) => {

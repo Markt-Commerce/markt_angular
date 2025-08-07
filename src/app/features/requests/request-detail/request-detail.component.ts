@@ -734,7 +734,7 @@ export class RequestDetailComponent implements OnInit {
       
       this.apiService.getRequest(requestId).subscribe({
         next: (response) => {
-          this.request = response.data;
+          this.request = response.data as any;
           this.loading = false;
         },
         error: (error) => {
@@ -746,7 +746,7 @@ export class RequestDetailComponent implements OnInit {
       // Load offers for this request
       this.apiService.getRequestOffers(requestId).subscribe({
         next: (response) => {
-          this.offers = response.data || [];
+          this.offers = (response.data || []) as any[];
       this.filteredOffers = [...this.offers];
         },
         error: (error) => {

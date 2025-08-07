@@ -35,8 +35,9 @@ import { ApiService } from '../../../core/services/api.service';
             <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
               <!-- Email Address -->
               <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
+                <label for="email" class="flex flex-col min-w-40 flex-1">
                   <input
+                    id="email"
                     formControlName="email"
               type="email"
                     placeholder="Email Address"
@@ -51,9 +52,10 @@ import { ApiService } from '../../../core/services/api.service';
           
               <!-- Password -->
               <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
+                <label for="password" class="flex flex-col min-w-40 flex-1">
                   <div class="flex w-full flex-1 items-stretch rounded-lg">
                     <input
+              id="password"
               formControlName="password"
                       [type]="showPassword ? 'text' : 'password'"
                       placeholder="Password"
@@ -63,6 +65,12 @@ import { ApiService } from '../../../core/services/api.service';
                     <div
                       class="text-[#886a63] flex border-none bg-[#f4f1f0] items-center justify-center pr-4 rounded-r-lg border-l-0 cursor-pointer hover:text-[#181211] transition-colors duration-200"
                       (click)="togglePasswordVisibility()"
+                      (keyup.enter)="togglePasswordVisibility()"
+                      (keyup.space)="togglePasswordVisibility()"
+                      tabindex="0"
+                      role="button"
+                      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                      [attr.aria-pressed]="showPassword"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
                         <path *ngIf="!showPassword"
@@ -82,8 +90,9 @@ import { ApiService } from '../../../core/services/api.service';
           
               <!-- Account Type -->
               <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                <label class="flex flex-col min-w-40 flex-1">
+                <label for="accountType" class="flex flex-col min-w-40 flex-1">
                   <select
+                    id="accountType"
                     formControlName="accountType"
                     class="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 text-base font-normal leading-normal"
                   >
@@ -100,12 +109,13 @@ import { ApiService } from '../../../core/services/api.service';
               <div class="flex items-center gap-4 bg-white px-4 min-h-14">
                 <div class="flex size-7 items-center justify-center">
                   <input
+                    id="rememberMe"
                     type="checkbox"
                     formControlName="rememberMe"
                     class="h-5 w-5 rounded border-[#e5dddc] border-2 bg-transparent text-[#e85530] checked:bg-[#e85530] checked:border-[#e85530] focus:ring-0 focus:ring-offset-0 focus:border-[#e5dddc] focus:outline-none"
                   />
             </div>
-                <p class="text-[#181211] text-base font-normal leading-normal flex-1 truncate">Remember me</p>
+                <label for="rememberMe" class="text-[#181211] text-base font-normal leading-normal flex-1 truncate cursor-pointer">Remember me</label>
           </div>
           
               <!-- Forgot Password -->

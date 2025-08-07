@@ -474,7 +474,7 @@ export class RequestsComponent implements OnInit {
       page: this.currentPage,
       search: this.searchQuery,
       category_ids: this.categoryFilter ? [this.categoryFilter] : undefined,
-      status: this.statusFilter,
+      status: this.statusFilter as 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED' | undefined,
       budget_range: this.budgetFilter,
       sort_by: this.sortBy
     };

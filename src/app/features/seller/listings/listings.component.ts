@@ -636,9 +636,20 @@ export class ListingsComponent implements OnInit {
   bulkActivate(): void {
     if (this.selectedProducts.length > 0) {
       // Use API to bulk update product status
-      const updatePromises = this.selectedProducts.map(productId =>
-        this.apiService.updateProduct(productId, { status: 'active' }).toPromise()
-      );
+      const updatePromises = this.selectedProducts.map(productId => {
+        const product = this.products.find(p => p.id === productId);
+        if (product) {
+          return this.apiService.updateProduct(productId, {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: product.stock,
+            category_ids: product.category_ids,
+            status: 'active'
+          }).toPromise();
+        }
+        return Promise.resolve();
+      });
       
       Promise.all(updatePromises).then(() => {
         this.loadProducts(); // Reload to get updated status
@@ -652,9 +663,20 @@ export class ListingsComponent implements OnInit {
   bulkDeactivate(): void {
     if (this.selectedProducts.length > 0) {
       // Use API to bulk update product status
-      const updatePromises = this.selectedProducts.map(productId =>
-        this.apiService.updateProduct(productId, { status: 'inactive' }).toPromise()
-      );
+      const updatePromises = this.selectedProducts.map(productId => {
+        const product = this.products.find(p => p.id === productId);
+        if (product) {
+          return this.apiService.updateProduct(productId, {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: product.stock,
+            category_ids: product.category_ids,
+            status: 'inactive'
+          }).toPromise();
+        }
+        return Promise.resolve();
+      });
       
       Promise.all(updatePromises).then(() => {
         this.loadProducts(); // Reload to get updated status

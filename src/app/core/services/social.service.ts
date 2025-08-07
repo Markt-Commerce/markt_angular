@@ -5,7 +5,6 @@ import {
   Niche, 
   NicheCreate, 
   NicheUpdate, 
-  NicheMembership,
   Post,
   PostCreate,
   PostUpdate,
@@ -16,7 +15,6 @@ import {
   NichePostCreate,
   ReactionSummary,
   ReactionCreate,
-  Follow,
   Collection,
   Story,
   StoryCreate,
@@ -28,7 +26,8 @@ import {
   BookmarkResponse,
   FollowersList,
   ApiResponse,
-  NichePostApproval
+  NichePostApproval,
+  NicheMembershipSearchResult
 } from '../models';
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -48,6 +47,33 @@ export interface PostFilters {
   sort_order?: 'asc' | 'desc';
 }
 
+export interface NicheParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_ids?: string[];
+  visibility?: 'public' | 'private' | 'restricted';
+}
+
+export interface FeedParams {
+  page?: number;
+  per_page?: number;
+  type?: string;
+}
+
+export interface NicheMembersParams {
+  page?: number;
+  per_page?: number;
+  role?: 'member' | 'moderator' | 'admin';
+}
+
+export interface ModerationData {
+  action: 'warn' | 'suspend' | 'ban' | 'delete';
+  reason: string;
+  duration?: number;
+  target_user_id?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -55,7 +81,7 @@ export class SocialService {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
   
-  private feedSubject = new BehaviorSubject<any[]>([]);
+  private feedSubject = new BehaviorSubject<Post[]>([]);
   public feed$ = this.feedSubject.asObservable();
 
   private nichesSubject = new BehaviorSubject<Niche[]>([]);
@@ -68,63 +94,70 @@ export class SocialService {
   /**
    * Get all niches
    */
-  getNiches(params?: any): Observable<any> {
+  getNiches(params?: NicheParams): Observable<ApiResponse<PaginatedResponse<Niche>>> {
     return this.apiService.getNiches(params);
   }
 
   /**
    * Create new niche
    */
-  createNiche(nicheData: NicheCreate): Observable<any> {
+  createNiche(nicheData: NicheCreate): Observable<ApiResponse<Niche>> {
     return this.apiService.createNiche(nicheData);
   }
 
   /**
    * Get single niche
    */
-  getNiche(nicheId: string): Observable<any> {
+  getNiche(nicheId: string): Observable<ApiResponse<Niche>> {
     return this.apiService.getNiche(nicheId);
   }
 
   /**
    * Update niche
    */
-  updateNiche(nicheId: string, nicheData: NicheUpdate): Observable<any> {
-    return this.apiService.updateNiche(nicheId, nicheData);
+  updateNiche(nicheId: string, nicheData: NicheUpdate): Observable<ApiResponse<Niche>> {
+    // Filter out undefined values to match NicheData interface
+    const filteredData: any = {};
+    Object.entries(nicheData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    });
+    return this.apiService.updateNiche(nicheId, filteredData);
   }
 
   /**
    * Join niche
    */
-  joinNiche(nicheId: string): Observable<any> {
+  joinNiche(nicheId: string): Observable<ApiResponse<Niche>> {
     return this.apiService.joinNiche(nicheId);
   }
 
   /**
    * Leave niche
    */
-  leaveNiche(nicheId: string): Observable<any> {
+  leaveNiche(nicheId: string): Observable<ApiResponse<void>> {
     return this.apiService.leaveNiche(nicheId);
   }
 
   /**
    * Get niche members
    */
-  getNicheMembers(nicheId: string, params?: any): Observable<any> {
+  getNicheMembers(nicheId: string, params?: NicheMembersParams): Observable<ApiResponse<NicheMembershipSearchResult>> {
     return this.apiService.getNicheMembers(nicheId, params);
   }
 
   /**
    * Moderate niche
    */
-  moderateNiche(nicheId: string, moderationData: any): Observable<any> {
+  moderateNiche(nicheId: string, moderationData: ModerationData): Observable<ApiResponse<void>> {
     return this.apiService.moderateNiche(nicheId, moderationData);
   }
 
   /**
    * Get user's niches
    */
-  getMyNiches(params?: any): Observable<any> {
+  getMyNiches(params?: NicheParams): Observable<ApiResponse<PaginatedResponse<Niche>>> {
     return this.apiService.getMyNiches(params);
   }
 
@@ -146,7 +179,7 @@ export class SocialService {
   /**
    * Get feed posts
    */
-  getFeed(params?: any): Observable<PaginatedResponse<Post>> {
+  getFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
     return this.apiService.globalSearch('', { type: 'posts', ...params }).pipe(
       map(response => ({
         items: response.data?.posts || [],
@@ -155,15 +188,15 @@ export class SocialService {
     );
   }
 
-  getPersonalizedFeed(params?: any): Observable<PaginatedResponse<Post>> {
+  getPersonalizedFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
     return this.getFeed(params);
   }
 
   /**
    * Like a post
    */
-  likePost(postId: string): Observable<any> {
-    return this.apiService.post<any>(`/socials/posts/${postId}/like`).pipe(
+  likePost(postId: string): Observable<Post> {
+    return this.apiService.post<Post>(`/socials/posts/${postId}/like`).pipe(
       map(response => response.data)
     );
   }
@@ -171,8 +204,8 @@ export class SocialService {
   /**
    * Unlike a post
    */
-  unlikePost(postId: string): Observable<any> {
-    return this.apiService.delete<any>(`/socials/posts/${postId}/like`).pipe(
+  unlikePost(postId: string): Observable<Post> {
+    return this.apiService.delete<Post>(`/socials/posts/${postId}/like`).pipe(
       map(response => response.data)
     );
   }
@@ -180,8 +213,8 @@ export class SocialService {
   /**
    * Like a comment
    */
-  likeComment(commentId: string): Observable<any> {
-    return this.apiService.post<any>(`/socials/comments/${commentId}/like`).pipe(
+  likeComment(commentId: string): Observable<PostComment> {
+    return this.apiService.post<PostComment>(`/socials/comments/${commentId}/like`).pipe(
       map(response => response.data)
     );
   }
@@ -189,8 +222,8 @@ export class SocialService {
   /**
    * Unlike a comment
    */
-  unlikeComment(commentId: string): Observable<any> {
-    return this.apiService.delete<any>(`/socials/comments/${commentId}/like`).pipe(
+  unlikeComment(commentId: string): Observable<PostComment> {
+    return this.apiService.delete<PostComment>(`/socials/comments/${commentId}/like`).pipe(
       map(response => response.data)
     );
   }
@@ -198,8 +231,8 @@ export class SocialService {
   /**
    * Add bookmark
    */
-  addBookmark(postId: string): Observable<any> {
-    return this.apiService.post<any>(`/socials/posts/${postId}/bookmark`).pipe(
+  addBookmark(postId: string): Observable<BookmarkResponse> {
+    return this.apiService.post<BookmarkResponse>(`/socials/posts/${postId}/bookmark`).pipe(
       map(response => response.data)
     );
   }
@@ -207,8 +240,8 @@ export class SocialService {
   /**
    * Share post
    */
-  sharePost(postId: string): Observable<any> {
-    return this.apiService.post<any>(`/socials/posts/${postId}/share`).pipe(
+  sharePost(postId: string): Observable<Post> {
+    return this.apiService.post<Post>(`/socials/posts/${postId}/share`).pipe(
       map(response => response.data)
     );
   }
@@ -216,7 +249,7 @@ export class SocialService {
   /**
    * Share product
    */
-  shareProduct(productId: string): Observable<any> {
+  shareProduct(productId: string): Observable<{ success: boolean; share_url: string }> {
     return this.apiService.shareProduct(productId).pipe(
       map(response => response.data)
     );
@@ -225,35 +258,43 @@ export class SocialService {
   /**
    * Get trending feed
    */
-  getTrendingFeed(params?: any): Observable<any> {
-    return this.apiService.getTrendingFeed(params);
+  getTrendingFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
+    return this.apiService.getTrendingFeed(params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get following feed
    */
-  getFollowingFeed(params?: any): Observable<any> {
-    return this.apiService.getFollowingFeed(params);
+  getFollowingFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
+    return this.apiService.getFollowingFeed(params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get discovery feed
    */
-  getDiscoveryFeed(params?: any): Observable<any> {
-    return this.apiService.getDiscoveryFeed(params);
+  getDiscoveryFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
+    return this.apiService.getDiscoveryFeed(params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get niche feed
    */
-  getNicheFeed(nicheId: string, params?: any): Observable<any> {
-    return this.apiService.getNicheFeed(nicheId, params);
+  getNicheFeed(nicheId: string, params?: FeedParams): Observable<PaginatedResponse<Post>> {
+    return this.apiService.getNicheFeed(nicheId, params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Load feed by type
    */
-  loadFeed(feedType: FeedType, params?: any): Observable<any> {
+  loadFeed(feedType: FeedType, params?: FeedParams): Observable<PaginatedResponse<Post>> {
     switch (feedType.type) {
       case 'personalized':
         return this.getPersonalizedFeed(params);
@@ -279,85 +320,116 @@ export class SocialService {
   /**
    * Create new post
    */
-  createPost(postData: PostCreate): Observable<any> {
-    return this.apiService.createPost(postData);
+  createPost(postData: PostCreate): Observable<Post> {
+    return this.apiService.createPost(postData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get post details
    */
-  getPost(postId: string): Observable<any> {
-    return this.apiService.getPost(postId);
+  getPost(postId: string): Observable<Post> {
+    return this.apiService.getPost(postId).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Update post
    */
-  updatePost(postId: string, postData: PostUpdate): Observable<any> {
-    return this.apiService.updatePost(postId, postData);
+  updatePost(postId: string, postData: PostUpdate): Observable<Post> {
+    // Filter out undefined values to match PostData interface
+    const filteredData: any = {};
+    Object.entries(postData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    });
+    return this.apiService.updatePost(postId, filteredData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Delete post
    */
-  deletePost(postId: string): Observable<any> {
-    return this.apiService.deletePost(postId);
+  deletePost(postId: string): Observable<void> {
+    return this.apiService.deletePost(postId).pipe(
+      map(() => void 0)
+    );
   }
 
   /**
    * Like/unlike post
    */
-  togglePostLike(postId: string): Observable<any> {
-    return this.apiService.togglePostLike(postId);
+  togglePostLike(postId: string): Observable<Post> {
+    return this.apiService.togglePostLike(postId).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get post comments
    */
-  getPostComments(postId: string, params?: any): Observable<any> {
-    return this.apiService.getPostComments(postId, params);
+  getPostComments(postId: string, params?: FeedParams): Observable<PaginatedResponse<PostComment>> {
+    return this.apiService.getPostComments(postId, params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Add comment to post
    */
-  addComment(postId: string, commentData: CommentCreate): Observable<any> {
-    return this.apiService.addComment(postId, commentData);
+  addComment(postId: string, commentData: CommentCreate): Observable<PostComment> {
+    return this.apiService.addComment(postId, commentData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Update comment
    */
-  updateComment(commentId: string, commentData: CommentUpdate): Observable<ApiResponse<PostComment>> {
-    return this.apiService.updateComment(commentId, commentData);
+  updateComment(commentId: string, commentData: CommentUpdate): Observable<PostComment> {
+    return this.apiService.updateComment(commentId, commentData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Delete comment
    */
-  deleteComment(commentId: string): Observable<ApiResponse<void>> {
-    return this.apiService.deleteComment(commentId);
+  deleteComment(commentId: string): Observable<void> {
+    return this.apiService.deleteComment(commentId).pipe(
+      map(() => void 0)
+    );
   }
 
   /**
    * Get comment reactions
    */
-  getCommentReactions(commentId: string): Observable<any> {
-    return this.apiService.getCommentReactions(commentId);
+  getCommentReactions(commentId: string): Observable<ReactionSummary[]> {
+    return this.apiService.getCommentReactions(commentId).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Add comment reaction
    */
-  addCommentReaction(commentId: string, reactionData: ReactionCreate): Observable<any> {
-    return this.apiService.addCommentReaction(commentId, reactionData);
+  addCommentReaction(commentId: string, reactionData: ReactionCreate): Observable<ReactionSummary> {
+    return this.apiService.addCommentReaction(commentId, reactionData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Remove comment reaction
    */
-  removeCommentReaction(commentId: string, reactionType: string): Observable<any> {
-    return this.apiService.removeCommentReaction(commentId, reactionType);
+  removeCommentReaction(commentId: string, reactionType: string): Observable<void> {
+    return this.apiService.removeCommentReaction(commentId, reactionType).pipe(
+      map(() => void 0)
+    );
   }
 
   // ============================================================================
@@ -367,22 +439,28 @@ export class SocialService {
   /**
    * Create niche post
    */
-  createNichePost(nicheId: string, postData: NichePostCreate): Observable<any> {
-    return this.apiService.createNichePost(nicheId, postData);
+  createNichePost(nicheId: string, postData: NichePostCreate): Observable<NichePost> {
+    return this.apiService.createNichePost(nicheId, postData).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Get niche posts
    */
-  getNichePosts(nicheId: string, params?: any): Observable<any> {
-    return this.apiService.getNichePosts(nicheId, params);
+  getNichePosts(nicheId: string, params?: FeedParams): Observable<PaginatedResponse<NichePost>> {
+    return this.apiService.getNichePosts(nicheId, params).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Approve niche post
    */
-  approveNichePost(nichePostId: string, approvalData: NichePostApproval): Observable<ApiResponse<NichePost>> {
-    return this.apiService.approveNichePost(nichePostId, approvalData);
+  approveNichePost(nichePostId: string, approvalData: NichePostApproval): Observable<NichePost> {
+    return this.apiService.approveNichePost(nichePostId, approvalData).pipe(
+      map(response => response.data)
+    );
   }
 
   // ============================================================================
@@ -460,7 +538,14 @@ export class SocialService {
    * Update a collection
    */
   updateCollection(collectionId: string, collectionData: CollectionUpdate): Observable<Collection> {
-    return this.apiService.updateCollection(collectionId, collectionData).pipe(
+    // Filter out undefined values to match CollectionData interface
+    const filteredData: any = {};
+    Object.entries(collectionData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    });
+    return this.apiService.updateCollection(collectionId, filteredData).pipe(
       map(response => response.data)
     );
   }
@@ -499,7 +584,7 @@ export class SocialService {
   /**
    * Get user's followers
    */
-  getFollowers(userId: string, params?: any): Observable<FollowersList> {
+  getFollowers(userId: string, params?: FeedParams): Observable<FollowersList> {
     return this.apiService.getFollowers(userId, params).pipe(
       map(response => response.data)
     );
@@ -508,7 +593,7 @@ export class SocialService {
   /**
    * Get users being followed
    */
-  getFollowing(userId: string, params?: any): Observable<FollowingList> {
+  getFollowing(userId: string, params?: FeedParams): Observable<FollowingList> {
     return this.apiService.getFollowing(userId, params).pipe(
       map(response => response.data)
     );
@@ -521,7 +606,7 @@ export class SocialService {
   /**
    * Get draft posts
    */
-  getDraftPosts(params?: any): Observable<PaginatedResponse<Post>> {
+  getDraftPosts(params?: FeedParams): Observable<PaginatedResponse<Post>> {
     return this.apiService.getDraftPosts(params).pipe(
       map(response => response.data)
     );
@@ -530,7 +615,7 @@ export class SocialService {
   /**
    * Get archived posts
    */
-  getArchivedPosts(params?: any): Observable<PaginatedResponse<Post>> {
+  getArchivedPosts(params?: FeedParams): Observable<PaginatedResponse<Post>> {
     return this.apiService.getArchivedPosts(params).pipe(
       map(response => response.data)
     );
@@ -562,7 +647,12 @@ export class SocialService {
    * Check if user is following another user
    */
   isFollowing(followeeId: string): Observable<boolean> {
-    return this.getFollowing(this.authService.getCurrentUser()?.id || '/Logo.png', { followee_id: followeeId }).pipe(
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.id) {
+      return new Observable(subscriber => subscriber.next(false));
+    }
+    
+    return this.getFollowing(currentUser.id, { followee_id: followeeId } as FeedParams).pipe(
       map(response => response.items.length > 0)
     );
   }
@@ -576,8 +666,8 @@ export class SocialService {
       following: this.getFollowing(userId, { per_page: 1 })
     }).pipe(
       map(({ followers, following }) => ({
-        followers: followers.pagination?.total_items,
-        following: following.pagination?.total_items
+        followers: followers.pagination?.total_items || 0,
+        following: following.pagination?.total_items || 0
       }))
     );
   }

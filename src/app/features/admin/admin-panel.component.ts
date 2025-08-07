@@ -393,10 +393,10 @@ export class AdminPanelComponent implements OnInit {
   }
 
   // Moderation Actions
-  takeModerationAction(itemId: string, action: string): void {
-    const actionData = { 
-      item_id: itemId, 
-      action: action,
+    takeModerationAction(itemId: string, action: string): void {
+    const actionData = {
+      item_id: itemId,
+      action: action as 'warn' | 'suspend' | 'ban' | 'delete',
       reason: 'Admin action'
     };
     

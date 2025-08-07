@@ -417,7 +417,7 @@ export class MarketplaceComponent implements OnInit {
   // Search and filters
   searchQuery = '';
   sortBy = 'relevance';
-  selectedCategories: number[] = [];
+  selectedCategories: string[] = [];
   priceRange = { min: null, max: null };
   selectedRating: number | null = null;
   selectedLocations: string[] = [];

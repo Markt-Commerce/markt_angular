@@ -556,10 +556,8 @@ export class FeedComponent implements OnInit {
     if (post.is_liked) {
       this.socialService.unlikePost(post.id).subscribe({
         next: (response) => {
-          if (response.success) {
-            post.is_liked = false;
-            post.likes_count--;
-          }
+          post.is_liked = false;
+          post.likes_count--;
         },
         error: (error) => {
           console.error('Error unliking post:', error);
@@ -568,10 +566,8 @@ export class FeedComponent implements OnInit {
     } else {
       this.socialService.likePost(post.id).subscribe({
         next: (response) => {
-          if (response.success) {
-            post.is_liked = true;
-            post.likes_count++;
-          }
+          post.is_liked = true;
+          post.likes_count++;
         },
         error: (error) => {
           console.error('Error liking post:', error);
@@ -591,9 +587,7 @@ export class FeedComponent implements OnInit {
   loadComments(post: any): void {
     this.socialService.getPostComments(post.id).subscribe({
       next: (response) => {
-        if (response.success) {
-          post.comments = response.data;
-        }
+        post.comments = response.items || [];
       },
       error: (error) => {
         console.error('Error loading comments:', error);
@@ -606,11 +600,9 @@ export class FeedComponent implements OnInit {
 
     this.socialService.addComment(post.id, { content: post.newComment }).subscribe({
       next: (response) => {
-        if (response.success) {
-          post.comments.unshift(response.data);
-          post.comments_count++;
-          post.newComment = '';
-        }
+        post.comments.unshift(response);
+        post.comments_count++;
+        post.newComment = '';
       },
       error: (error) => {
         console.error('Error adding comment:', error);
@@ -622,10 +614,8 @@ export class FeedComponent implements OnInit {
     if (comment.is_liked) {
       this.socialService.unlikeComment(comment.id).subscribe({
         next: (response) => {
-          if (response.success) {
-            comment.is_liked = false;
-            comment.likes_count--;
-          }
+          comment.is_liked = false;
+          comment.likes_count--;
         },
         error: (error) => {
           console.error('Error unliking comment:', error);
@@ -634,10 +624,8 @@ export class FeedComponent implements OnInit {
     } else {
       this.socialService.likeComment(comment.id).subscribe({
         next: (response) => {
-          if (response.success) {
-            comment.is_liked = true;
-            comment.likes_count++;
-          }
+          comment.is_liked = true;
+          comment.likes_count++;
         },
         error: (error) => {
           console.error('Error liking comment:', error);
@@ -671,11 +659,8 @@ export class FeedComponent implements OnInit {
   sharePost(post: any): void {
     this.socialService.sharePost(post.id).subscribe({
       next: (response) => {
-        if (response.success) {
-          // Handle sharing (copy link, open share dialog, etc.)
-          navigator.clipboard.writeText(`${window.location.origin}/app/social/posts/${post.id}`);
-          
-        }
+        // Handle sharing (copy link, open share dialog, etc.)
+        navigator.clipboard.writeText(`${window.location.origin}/app/social/posts/${post.id}`);
       },
       error: (error) => {
         console.error('Error sharing post:', error);
@@ -695,9 +680,7 @@ export class FeedComponent implements OnInit {
     if (confirm('Are you sure you want to delete this post?')) {
       this.socialService.deletePost(post.id).subscribe({
         next: (response) => {
-          if (response.success) {
-            this.posts = this.posts.filter(p => p.id !== post.id);
-          }
+          this.posts = this.posts.filter(p => p.id !== post.id);
         },
         error: (error) => {
           console.error('Error deleting post:', error);

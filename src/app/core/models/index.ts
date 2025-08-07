@@ -176,7 +176,7 @@ export interface Product {
   view_count: number;
   created_at: string;
   updated_at: string;
-  product_metadata?: Record<string, any>;
+  product_metadata?: Record<string, unknown>;
   // Additional properties for compilation
   is_verified?: boolean;
   is_featured?: boolean;
@@ -200,10 +200,26 @@ export interface ProductCreate {
   tag_ids?: string[];
   media_ids?: string[];
   variants?: ProductVariant[];
-  product_metadata?: Record<string, any>;
+  product_metadata?: Record<string, unknown>;
 }
 
-export interface ProductUpdate extends Partial<ProductCreate> {}
+export interface ProductUpdate {
+  name?: string;
+  description?: string;
+  price?: number;
+  compare_at_price?: number;
+  cost_per_item?: number;
+  sku?: string;
+  barcode?: string;
+  stock?: number;
+  weight?: number;
+  status?: 'active' | 'inactive' | 'draft';
+  category_ids?: string[];
+  tag_ids?: string[];
+  media_ids?: string[];
+  variants?: ProductVariant[];
+  product_metadata?: Record<string, unknown>;
+}
 
 export interface ProductReview {
   id: string;
@@ -336,7 +352,7 @@ export interface BuyerRequest {
   offers: SellerOffer[];
   views: number;
   upvotes: number;
-  request_metadata?: Record<string, any>;
+  request_metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   user: User;
@@ -351,10 +367,18 @@ export interface BuyerRequestCreate {
   expires_at?: string;
   category_ids: string[];
   media_ids?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
-export interface BuyerRequestUpdate extends Partial<BuyerRequestCreate> {}
+export interface BuyerRequestUpdate {
+  title?: string;
+  description?: string;
+  budget?: number;
+  expires_at?: string;
+  category_ids?: string[];
+  media_ids?: string[];
+  metadata?: Record<string, unknown>;
+}
 
 export interface RequestImage {
   id: string;
@@ -422,7 +446,7 @@ export interface Media {
   compression_quality?: number;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
   storage_key: string;
-  exif_data?: Record<string, any>;
+  exif_data?: Record<string, unknown>;
   variants: MediaVariant[];
   created_at: string;
   updated_at: string;
@@ -535,7 +559,7 @@ export interface Niche {
   allow_seller_posts: boolean;
   require_approval: boolean;
   rules: string[];
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   status: 'active' | 'inactive' | 'moderated';
   created_at: string;
   updated_at: string;
@@ -552,10 +576,22 @@ export interface NicheCreate {
   allow_seller_posts?: boolean;
   require_approval?: boolean;
   rules?: string[];
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
-export interface NicheUpdate extends Partial<NicheCreate> {}
+export interface NicheUpdate {
+  name?: string;
+  description?: string;
+  category_ids?: string[];
+  tags?: string[];
+  visibility?: 'public' | 'private' | 'restricted';
+  max_members?: number;
+  allow_buyer_posts?: boolean;
+  allow_seller_posts?: boolean;
+  require_approval?: boolean;
+  rules?: string[];
+  settings?: Record<string, unknown>;
+}
 
 export interface NicheMembership {
   id: string;
@@ -805,7 +841,7 @@ export interface ChatMessage {
   sender_id: string;
   content: string;
   message_type: 'text' | 'image' | 'file' | 'system';
-  message_data?: Record<string, any>;
+  message_data?: Record<string, unknown>;
   is_read: boolean;
   read_at?: string;
   created_at: string;
@@ -822,7 +858,7 @@ export interface ChatMessageList {
 export interface SendMessage {
   content: string;
   message_type: 'text' | 'image' | 'file' | 'system';
-  message_data?: Record<string, any>;
+  message_data?: Record<string, unknown>;
 }
 
 export interface ChatMessageReactionSummary {
@@ -846,7 +882,7 @@ export interface Payment {
   method: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
   transaction_id?: string;
-  gateway_response?: Record<string, any>;
+  gateway_response?: Record<string, unknown>;
   paid_at?: string;
   created_at: string;
   updated_at: string;
@@ -857,7 +893,7 @@ export interface PaymentCreate {
   amount: number;
   currency?: string;
   method?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaymentList {
@@ -877,7 +913,7 @@ export interface Notification {
   reference_type?: string;
   reference_id?: string;
   is_read: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   // Additional properties for compilation
   duration?: number;
@@ -970,14 +1006,14 @@ export interface SellerDashboard {
   total_customers: number;
   recent_orders: Order[];
   top_products: Product[];
-  sales_chart: Array<{ date: string; sales: number }>;
+  sales_chart: { date: string; sales: number }[];
 }
 
 export interface SellerSales {
   total_sales: number;
   total_orders: number;
   average_order_value: number;
-  sales_by_period: Array<{ period: string; sales: number; orders: number }>;
+  sales_by_period: { period: string; sales: number; orders: number }[];
 }
 
 export interface SellerProducts {
@@ -992,7 +1028,7 @@ export interface SellerCustomers {
   total_customers: number;
   new_customers: number;
   repeat_customers: number;
-  top_customers: Array<{ customer: User; total_spent: number; order_count: number }>;
+  top_customers: { customer: User; total_spent: number; order_count: number }[];
 }
 
 export interface PlatformAnalytics {
@@ -1000,7 +1036,7 @@ export interface PlatformAnalytics {
   total_orders: number;
   total_revenue: number;
   active_sellers: number;
-  growth_metrics: Array<{ metric: string; value: number; change: number }>;
+  growth_metrics: { metric: string; value: number; change: number }[];
 }
 
 // Admin Models
@@ -1027,13 +1063,13 @@ export interface AdminReport {
 }
 
 export interface ModerationQueue {
-  items: Array<{
+  items: {
     id: string;
     type: string;
-    content: any;
+    content: Record<string, unknown>;
     reported_count: number;
     created_at: string;
-  }>;
+  }[];
   pagination: Pagination;
 }
 
