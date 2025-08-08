@@ -31,6 +31,7 @@ import {
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
   selector: 'app-orders',
@@ -39,19 +40,42 @@ import { ApiService } from '../../core/services/api.service';
     CommonModule,
     RouterLink,
     FormsModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    ButtonComponent
   ],
   template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">My Orders</h1>
+          <h1 class="text-2xl font-bold text-gray-900">{{ viewMode==='seller' ? 'Seller Orders' : 'My Orders' }}</h1>
           <p class="mt-1 text-sm text-gray-500">
             Track your orders and view order history
           </p>
         </div>
         <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+          <div class="inline-flex rounded-md border border-gray-200 overflow-hidden">
+            <button
+              (click)="setViewMode('buyer')"
+              class="px-3 py-2 text-sm font-medium focus:outline-none"
+              [class.bg-white]="viewMode==='buyer'"
+              [class.text-gray-900]="viewMode==='buyer'"
+              [class.bg-gray-50]="viewMode!=='buyer'"
+              [class.text-gray-600]="viewMode!=='buyer'"
+            >
+              My Orders
+            </button>
+            <button
+              (click)="setViewMode('seller')"
+              class="px-3 py-2 text-sm font-medium border-l border-gray-200 focus:outline-none"
+              [class.bg-white]="viewMode==='seller'"
+              [class.text-gray-900]="viewMode==='seller'"
+              [class.bg-gray-50]="viewMode!=='seller'"
+              [class.text-gray-600]="viewMode!=='seller'"
+            >
+              Seller Orders
+            </button>
+          </div>
           <button
             (click)="refreshOrders()"
             class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
@@ -64,7 +88,7 @@ import { ApiService } from '../../core/services/api.service';
 
       <!-- Order Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="card p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-blue-100 text-blue-600">
               <fa-icon [icon]="faBox" class="w-6 h-6"></fa-icon>
@@ -76,7 +100,7 @@ import { ApiService } from '../../core/services/api.service';
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="card p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
               <fa-icon [icon]="faClock" class="w-6 h-6"></fa-icon>
@@ -88,7 +112,7 @@ import { ApiService } from '../../core/services/api.service';
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="card p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-green-100 text-green-600">
               <fa-icon [icon]="faCheckCircle" class="w-6 h-6"></fa-icon>
@@ -100,7 +124,7 @@ import { ApiService } from '../../core/services/api.service';
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="card p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-red-100 text-red-600">
               <fa-icon [icon]="faTimes" class="w-6 h-6"></fa-icon>
@@ -114,7 +138,7 @@ import { ApiService } from '../../core/services/api.service';
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-lg shadow p-4">
+      <div class="card p-4">
         <div class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
           <!-- Search -->
           <div class="flex-1">
@@ -169,25 +193,46 @@ import { ApiService } from '../../core/services/api.service';
       <!-- Orders List -->
       <div class="space-y-4">
         <!-- Loading State -->
-        <div *ngIf="isLoading" class="flex items-center justify-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
+        <div *ngIf="isLoading" class="grid grid-cols-1 gap-4 md:gap-6">
+          <div class="card p-0 overflow-hidden" *ngFor="let s of [1,2,3]">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <div class="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
+              <div class="mt-2 h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+              <div class="flex items-center space-x-4" *ngFor="let i of [1,2]">
+                <div class="w-16 h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                <div class="flex-1">
+                  <div class="h-4 w-56 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="mt-2 h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="text-right">
+                  <div class="h-4 w-20 bg-gray-200 rounded animate-pulse ml-auto"></div>
+                  <div class="mt-2 h-3 w-16 bg-gray-200 rounded animate-pulse ml-auto"></div>
+                </div>
+              </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div class="h-8 w-28 bg-gray-200 rounded animate-pulse ml-auto"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
         <div *ngIf="!isLoading && orders.length === 0" class="text-center py-12">
           <fa-icon [icon]="faBox" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
-          <h2 class="text-xl font-medium text-gray-900 mb-2">No orders found</h2>
-          <p class="text-gray-500 mb-6">You haven't placed any orders yet.</p>
-          <button
-            routerLink="/app/marketplace"
-            class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
-          >
-            Start Shopping
-          </button>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">{{ viewMode==='seller' ? 'No seller orders yet' : 'No orders found' }}</h2>
+          <p class="text-gray-500 mb-6">
+            {{ viewMode==='seller' ? 'You have not received any orders.' : 'You have not placed any orders yet.' }}
+          </p>
+          <div class="flex items-center justify-center gap-3">
+            <app-button *ngIf="viewMode==='buyer'" routerLink="/app/marketplace" variant="primary" size="md">Start Shopping</app-button>
+            <app-button *ngIf="viewMode==='seller'" routerLink="/app/seller/listings" variant="primary" size="md">View Listings</app-button>
+          </div>
         </div>
 
         <!-- Orders -->
-        <div *ngFor="let order of orders" class="bg-white rounded-lg shadow overflow-hidden">
+        <div *ngFor="let order of orders" class="card overflow-hidden p-0">
           <!-- Order Header -->
           <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
@@ -211,6 +256,13 @@ import { ApiService } from '../../core/services/api.service';
                     title="View Details"
                   >
                     <fa-icon [icon]="faEye" class="w-4 h-4"></fa-icon>
+                  </button>
+                  <button
+                    (click)="trackOrder(order.id)"
+                    class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                    title="Track Order"
+                  >
+                    <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4"></fa-icon>
                   </button>
                   <button
                     (click)="downloadInvoice(order)"
@@ -248,8 +300,8 @@ import { ApiService } from '../../core/services/api.service';
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'NGN' }}</p>
-                  <p class="text-sm text-gray-500">{{ item.price | currency:'NGN' }} each</p>
+                  <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:getCurrency(order) }}</p>
+                  <p class="text-sm text-gray-500">{{ item.price | currency:getCurrency(order) }} each</p>
                 </div>
               </div>
             </div>
@@ -259,9 +311,9 @@ import { ApiService } from '../../core/services/api.service';
           <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-4">
-                <div class="text-sm text-gray-500">
-                  <span class="font-medium">Total:</span> {{ order.total | currency:'NGN' }}
-                </div>
+                                  <div class="text-sm text-gray-500">
+                    <span class="font-medium">Total:</span> {{ order.total | currency:getCurrency(order) }}
+                  </div>
                 <div class="text-sm text-gray-500">
                   <span class="font-medium">Items:</span> {{ order.items.length }}
                 </div>
@@ -281,12 +333,7 @@ import { ApiService } from '../../core/services/api.service';
                 >
                   Cancel Order
                 </button>
-                <button
-                  [routerLink]="['/app/orders', order.id]"
-                  class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors text-sm font-medium"
-                >
-                  View Details
-                </button>
+                <app-button [routerLink]="['/app/orders', order.id]" variant="primary" size="sm">View Details</app-button>
               </div>
             </div>
           </div>
@@ -367,6 +414,9 @@ export class OrdersComponent implements OnInit {
   orders: any[] = [];
   isLoading = false;
 
+  // View mode: buyer vs seller
+  viewMode: 'buyer' | 'seller' = 'buyer';
+
   // Filters and pagination
   searchQuery = '';
   statusFilter = '';
@@ -390,37 +440,73 @@ export class OrdersComponent implements OnInit {
 
   private loadOrders(): void {
     this.isLoading = true;
-    
-    const params = {
+    const params: any = {
       status: this.statusFilter,
       page: this.currentPage,
-      limit: 10 // Assuming a default limit for pagination
+      per_page: 10,
+      limit: 10
     };
 
-    this.apiService.getMyOrders(params).subscribe({
+    const source$ = this.viewMode === 'seller'
+      ? this.apiService.getSellerOrders(params)
+      : this.apiService.getMyOrders(params);
+
+    source$.subscribe({
       next: (response) => {
-        this.orders = response.data?.items || [];
-        this.totalResults = response.data?.pagination?.total_items || 0;
-        this.totalPages = response.data?.pagination?.total_pages || 1;
+        const res: any = response as any;
+        const data: any = res?.data ?? res ?? {};
+        const itemsCandidate: any = data?.items ?? data?.results ?? data?.orders ?? data;
+        this.orders = Array.isArray(itemsCandidate) ? itemsCandidate : (itemsCandidate?.items ?? []);
+
+        const pagination = data?.pagination ?? {};
+        this.totalResults = pagination?.total_items ?? data?.total ?? data?.count ?? this.orders.length ?? 0;
+        this.totalPages = pagination?.total_pages ?? (
+          this.totalResults && params.per_page ? Math.max(1, Math.ceil(this.totalResults / params.per_page)) : 1
+        );
+
+        if (this.viewMode === 'buyer') {
+          this.computeBuyerStats();
+        }
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading orders:', error);
         this.orders = [];
+        if (this.viewMode === 'buyer') {
+          this.computeBuyerStats();
+        }
         this.isLoading = false;
       }
     });
   }
 
+  private computeBuyerStats(): void {
+    const total = this.orders.length;
+    const pending = this.orders.filter(o => o.status === 'pending').length;
+    const completed = this.orders.filter(o => o.status === 'delivered').length;
+    const cancelled = this.orders.filter(o => o.status === 'cancelled').length;
+    this.orderStats = { total, pending, completed, cancelled };
+  }
+
   private loadOrderStatistics(): void {
-    this.orderService.getOrderStatistics().subscribe({
-      next: (stats: any) => {
-        this.orderStats = stats;
-      },
-      error: (error) => {
-        console.error('Error loading order statistics:', error);
-      }
-    });
+    if (this.viewMode === 'seller') {
+      this.apiService.getSellerOrderStats().subscribe({
+        next: (response) => {
+          const d: any = (response as any)?.data || {};
+          this.orderStats = {
+            total: d.total ?? this.orderStats.total,
+            pending: d.pending ?? this.orderStats.pending,
+            completed: d.completed ?? this.orderStats.completed,
+            cancelled: d.cancelled ?? this.orderStats.cancelled
+          };
+        },
+        error: (error) => {
+          console.error('Error loading seller order statistics:', error);
+        }
+      });
+    } else {
+      this.computeBuyerStats();
+    }
   }
 
   onSearchInput(): void {
@@ -436,6 +522,19 @@ export class OrdersComponent implements OnInit {
   onSortChange(): void {
     this.currentPage = 1;
     this.loadOrders();
+  }
+
+  onViewModeChange(): void {
+    this.currentPage = 1;
+    this.loadOrders();
+    this.loadOrderStatistics();
+  }
+
+  setViewMode(mode: 'buyer' | 'seller'): void {
+    if (this.viewMode !== mode) {
+      this.viewMode = mode;
+      this.onViewModeChange();
+    }
   }
 
   refreshOrders(): void {
@@ -499,6 +598,10 @@ export class OrdersComponent implements OnInit {
       'cancelled': 'bg-red-100 text-red-800'
     };
     return classMap[status] || 'bg-gray-100 text-gray-800';
+  }
+
+  getCurrency(order: any): string {
+    return order?.currency || order?.items?.[0]?.currency || 'NGN';
   }
 
   canReviewOrder(order: any): boolean {

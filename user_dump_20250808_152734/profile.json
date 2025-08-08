@@ -1,0 +1,69 @@
+{
+  "address": null,
+  "buyer_account": null,
+  "created_at": "2025-08-05T04:28:03.358513",
+  "current_role": "seller",
+  "email": "adebowalemorakinyo@gmail.com",
+  "email_verified": true,
+  "id": "USR_Q19TMC9B",
+  "is_buyer": false,
+  "is_seller": true,
+  "phone_number": null,
+  "profile_picture": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+  "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+  "seller_account": {
+    "categories": [
+      {
+        "description": "Electronic devices and accessories",
+        "id": 1,
+        "image_url": null,
+        "is_active": true,
+        "name": "Electronics",
+        "parent_id": null,
+        "slug": "electronics"
+      },
+      {
+        "description": "Computers, laptops, and accessories",
+        "id": 22,
+        "image_url": null,
+        "is_active": true,
+        "name": "Laptops & Computers",
+        "parent_id": 1,
+        "slug": "laptops-computers"
+      },
+      {
+        "description": "Speakers, headphones, and video equipment",
+        "id": 23,
+        "image_url": null,
+        "is_active": true,
+        "name": "Audio & Video",
+        "parent_id": 1,
+        "slug": "audio-video"
+      },
+      {
+        "description": "Gaming consoles, games, and accessories",
+        "id": 24,
+        "image_url": null,
+        "is_active": true,
+        "name": "Gaming",
+        "parent_id": 1,
+        "slug": "gaming"
+      }
+    ],
+    "description": "Your one-stop shop for all things tech. We offer the latest smartphones, laptops, and accessories with competitive prices and excellent customer service.",
+    "id": 1,
+    "is_active": true,
+    "policies": {
+      "returns": "30-day return policy",
+      "shipping": "Free shipping on orders over ₦50,000",
+      "warranty": "1-year manufacturer warranty"
+    },
+    "shop_name": "Tech Haven Store",
+    "shop_slug": null,
+    "total_raters": 0,
+    "total_rating": 0,
+    "verification_status": "unverified"
+  },
+  "updated_at": "2025-08-06T01:21:23.095626",
+  "username": "test_seller"
+}

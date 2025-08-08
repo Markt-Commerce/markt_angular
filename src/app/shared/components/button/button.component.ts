@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info';
+export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'ghost' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ButtonType = 'button' | 'submit' | 'reset';
 
@@ -17,6 +17,7 @@ export type ButtonType = 'button' | 'submit' | 'reset';
       (click)="onClick($event)"
       [attr.aria-label]="ariaLabel"
       [attr.aria-describedby]="ariaDescribedby"
+      [attr.aria-busy]="loading"
     >
       <span *ngIf="loading" class="loading-spinner"></span>
       <ng-content></ng-content>
@@ -71,21 +72,23 @@ export type ButtonType = 'button' | 'submit' | 'reset';
       font-size: var(--font-size-lg);
     }
 
-    /* Color variants */
-    .btn-primary {
-      background: var(--primary-color);
-      color: var(--text-inverse);
-    }
+         /* Color variants */
+     .btn-primary {
+       background: var(--primary-color);
+       color: var(--text-inverse);
+       box-shadow: var(--shadow-sm);
+     }
 
     .btn-primary:hover:not(:disabled) {
       background: var(--primary-hover);
     }
 
-    .btn-secondary {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-primary);
-    }
+         .btn-secondary {
+       background: var(--bg-secondary);
+       color: var(--text-primary);
+       border: 1px solid var(--border-primary);
+       box-shadow: var(--shadow-sm);
+     }
 
     .btn-secondary:hover:not(:disabled) {
       background: var(--bg-tertiary);
@@ -124,9 +127,30 @@ export type ButtonType = 'button' | 'submit' | 'reset';
       color: var(--text-inverse);
     }
 
-    .btn-info:hover:not(:disabled) {
-      background: #2563eb;
-    }
+         .btn-info:hover:not(:disabled) {
+       background: #2563eb;
+     }
+
+     .btn-ghost {
+       background: transparent;
+       color: var(--text-primary);
+       border: 1px solid var(--border-primary);
+     }
+
+     .btn-ghost:hover:not(:disabled) {
+       background: var(--bg-secondary);
+       border-color: var(--primary-color);
+     }
+
+     .btn-link {
+       background: transparent;
+       color: var(--primary-color);
+       padding: 0;
+     }
+
+     .btn-link:hover:not(:disabled) {
+       text-decoration: underline;
+     }
 
     /* Loading state */
     .loading-spinner {

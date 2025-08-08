@@ -20,6 +20,12 @@ interface UserProfile {
   total_listings: number;
   is_verified: boolean;
   is_seller: boolean;
+  // Store details
+  shop_name?: string;
+  verification_status?: string;
+  shop_description?: string;
+  shop_categories?: string[];
+  policies?: { returns?: string; shipping?: string; warranty?: string };
 }
 
 interface Review {
@@ -43,237 +49,165 @@ interface Listing {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, RouterLink],
   template: `
-    <div class="profile-container">
-      <!-- Profile Header -->
-      <div class="profile-header">
-        <div class="profile-cover">
-          <div class="profile-avatar">
-            <img 
-              *ngIf="profile?.avatar_url" 
-              [src]="profile?.avatar_url" 
-              [alt]="profile?.full_name"
-              class="avatar-img"
-            >
-            <div *ngIf="!profile?.avatar_url" class="avatar-placeholder">
+    <div class="relative flex min-h-screen flex-col bg-white overflow-x-hidden font-sans">
+      <div class="absolute inset-0 bg-gradient-to-br from-markt-light/30 via-white to-markt-accent/10"></div>
+      <div class="relative w-full mx-auto px-6 lg:px-10 py-8 lg:py-12">
+        <!-- Header Card -->
+        <div class="rounded-3xl overflow-hidden shadow-xl border border-markt-border/30 mb-8">
+          <div class="bg-gradient-to-r from-markt-primary to-markt-secondary p-8 lg:p-10 text-white flex flex-col lg:flex-row items-center gap-6">
+            <div class="relative">
+              <img *ngIf="profile?.avatar_url" [src]="profile?.avatar_url" [alt]="profile?.full_name" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white object-cover" />
+              <div *ngIf="!profile?.avatar_url" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white bg-white/20 flex items-center justify-center text-4xl font-bold">
               {{ profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U' }}
+              </div>
+              <div *ngIf="profile?.is_verified" class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
             </div>
-            <div class="verification-badge" *ngIf="profile?.is_verified">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22,4 12,14.01 9,11.01"></polyline>
-              </svg>
+            <div class="flex-1 text-center lg:text-left">
+              <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">{{ profile?.full_name || profile?.username }}</h1>
+              <p class="opacity-90">@{{ profile?.username }}</p>
+              <p class="opacity-80 mt-1">Member since {{ profile?.join_date | date:'MMMM yyyy' }}</p>
+              <p *ngIf="profile?.shop_name" class="opacity-90 mt-2 text-sm">Shop: <span class="font-semibold">{{ profile?.shop_name }}</span></p>
             </div>
-          </div>
-          
-          <div class="profile-info">
-            <h1 class="profile-name">{{ profile?.full_name || profile?.username }}</h1>
-            <p class="profile-username">&#64;{{ profile?.username }}</p>
-            <p class="profile-location" *ngIf="profile?.location">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-              {{ profile?.location }}
-            </p>
-            <p class="profile-bio" *ngIf="profile?.bio">{{ profile?.bio }}</p>
-            <p class="profile-join-date">Member since {{ profile?.join_date | date:'MMMM yyyy' }}</p>
-          </div>
-
-          <div class="profile-actions">
-            <app-button 
-              variant="primary" 
-              size="md"
-              [routerLink]="['/profile/edit']"
-            >
+            <div class="flex gap-3">
+              <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white text-markt-primary font-semibold shadow-lg hover:shadow-xl transition-all" routerLink="/app/profile/edit" aria-label="Edit profile">
               Edit Profile
-            </app-button>
-            <app-button 
-              variant="secondary" 
-              size="md"
-              [routerLink]="['/messages']"
-            >
+              </a>
+              <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white/20 text-white font-semibold border-2 border-white/40 hover:bg-white/30 transition-all" routerLink="/app/chat" aria-label="Send message">
               Send Message
-            </app-button>
-          </div>
-        </div>
+              </a>
       </div>
-
-      <!-- Profile Stats -->
-      <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-value">{{ profile?.rating || 0 }}</div>
-          <div class="stat-label">Rating</div>
-          <div class="stat-stars">
-            <svg *ngFor="let star of getStars(profile?.rating || 0)" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-            </svg>
           </div>
+          <!-- Stats Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 lg:p-8 bg-white">
+            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+              <div class="text-2xl font-black text-markt-dark">{{ profile?.rating || 0 }}</div>
+              <div class="text-markt-muted">Rating</div>
         </div>
-        
-        <div class="stat-card">
-          <div class="stat-value">{{ profile?.total_reviews || 0 }}</div>
-          <div class="stat-label">Reviews</div>
+            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+              <div class="text-2xl font-black text-markt-dark">{{ profile?.total_reviews || 0 }}</div>
+              <div class="text-markt-muted">Reviews</div>
         </div>
-        
-        <div class="stat-card">
-          <div class="stat-value">{{ profile?.total_orders || 0 }}</div>
-          <div class="stat-label">Orders</div>
-        </div>
-        
-        <div class="stat-card" *ngIf="profile?.is_seller">
-          <div class="stat-value">{{ profile?.total_listings || 0 }}</div>
-          <div class="stat-label">Listings</div>
-        </div>
-      </div>
-
-      <!-- Profile Content -->
-      <div class="profile-content">
-        <div class="content-tabs">
-          <button 
-            class="tab-btn" 
-            [class.active]="activeTab === 'about'"
-            (click)="setActiveTab('about')"
-          >
-            About
-          </button>
-          <button 
-            class="tab-btn" 
-            [class.active]="activeTab === 'reviews'"
-            (click)="setActiveTab('reviews')"
-          >
-            Reviews ({{ profile?.total_reviews || 0 }})
-          </button>
-          <button 
-            class="tab-btn" 
-            [class.active]="activeTab === 'listings'"
-            (click)="setActiveTab('listings')"
-            *ngIf="profile?.is_seller"
-          >
-            Listings ({{ profile?.total_listings || 0 }})
-          </button>
-        </div>
-
-        <!-- About Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'about'">
-          <div class="about-section">
-            <h3>Contact Information</h3>
-            <div class="contact-info">
-              <div class="info-item">
-                <strong>Email:</strong>
-                <span>{{ profile?.email }}</span>
-              </div>
-              <div class="info-item" *ngIf="profile?.phone">
-                <strong>Phone:</strong>
-                <span>{{ profile?.phone }}</span>
-              </div>
-              <div class="info-item" *ngIf="profile?.location">
-                <strong>Location:</strong>
-                <span>{{ profile?.location }}</span>
-              </div>
+            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+              <div class="text-2xl font-black text-markt-dark">{{ profile?.total_orders || 0 }}</div>
+              <div class="text-markt-muted">Orders</div>
             </div>
-
-            <h3>Account Information</h3>
-            <div class="account-info">
-              <div class="info-item">
-                <strong>Username:</strong>
-                <span>&#64;{{ profile?.username }}</span>
-              </div>
-              <div class="info-item">
-                <strong>Member Since:</strong>
-                <span>{{ profile?.join_date | date:'longDate' }}</span>
-              </div>
-              <div class="info-item">
-                <strong>Account Type:</strong>
-                <span>{{ profile?.is_seller ? 'Seller' : 'Buyer' }}</span>
-              </div>
-              <div class="info-item">
-                <strong>Verification:</strong>
-                <span [class]="profile?.is_verified ? 'verified' : 'unverified'">
-                  {{ profile?.is_verified ? 'Verified' : 'Not Verified' }}
-                </span>
-              </div>
+            <div *ngIf="profile?.is_seller" class="rounded-2xl border border-markt-border/40 p-5 text-center">
+              <div class="text-2xl font-black text-markt-dark">{{ listings.length }}</div>
+              <div class="text-markt-muted">Listings</div>
             </div>
           </div>
         </div>
 
-        <!-- Reviews Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'reviews'">
-          <div class="reviews-section">
-            <div class="reviews-header">
-              <h3>User Reviews</h3>
-              <div class="average-rating">
-                <span class="rating-value">{{ profile?.rating || 0 }}</span>
-                <div class="rating-stars">
-                  <svg *ngFor="let star of getStars(profile?.rating || 0)" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                  </svg>
+        <!-- Tabs + Content Cards -->
+        <div class="bg-white rounded-3xl shadow-xl border border-markt-border/30">
+          <div class="flex border-b border-markt-border/30 overflow-x-auto">
+            <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='about'" [class.border-markt-primary]="activeTab==='about'" (click)="setActiveTab('about')">About</button>
+            <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='reviews'" [class.border-markt-primary]="activeTab==='reviews'" (click)="setActiveTab('reviews')">Reviews ({{ profile?.total_reviews || 0 }})</button>
+            <button *ngIf="profile?.is_seller" class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='listings'" [class.border-markt-primary]="activeTab==='listings'" (click)="setActiveTab('listings')">Listings ({{ listings.length }})</button>
+          </div>
+
+          <!-- About -->
+          <div *ngIf="activeTab==='about'" class="p-6 lg:p-8 grid gap-8">
+            <div>
+              <h3 class="text-lg font-bold text-markt-dark mb-4">Contact Information</h3>
+              <div class="grid gap-3">
+                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Email:</span>
+                  <span class="text-markt-muted">{{ profile?.email }}</span>
                 </div>
-                <span class="total-reviews">({{ profile?.total_reviews || 0 }} reviews)</span>
+                <div *ngIf="profile?.phone" class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Phone:</span>
+                  <span class="text-markt-muted">{{ profile?.phone }}</span>
+                </div>
               </div>
             </div>
 
-            <div class="reviews-list" *ngIf="reviews.length > 0; else noReviews">
-              <div class="review-item" *ngFor="let review of reviews">
-                <div class="review-header">
-                  <div class="reviewer-info">
-                    <img [src]="review.reviewer_avatar || '/markt-text-logo.png'" [alt]="review.reviewer_name" class="reviewer-avatar">
                     <div>
-                      <div class="reviewer-name">{{ review.reviewer_name }}</div>
-                      <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
+              <h3 class="text-lg font-bold text-markt-dark mb-4">Account Information</h3>
+              <div class="grid gap-3">
+                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Username:</span>
+                  <span class="text-markt-muted">@{{ profile?.username }}</span>
                     </div>
+                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Member Since:</span>
+                  <span class="text-markt-muted">{{ profile?.join_date | date:'longDate' }}</span>
                   </div>
-                  <div class="review-rating">
-                    <svg *ngFor="let star of getStars(review.rating)" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                    </svg>
+                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Account Type:</span>
+                  <span class="text-markt-muted">{{ profile?.is_seller ? 'Seller' : 'Buyer' }}</span>
+                  </div>
+                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Verification:</span>
+                  <span class="text-emerald-600 font-semibold" *ngIf="profile?.is_verified; else unv">Verified</span>
+                  <ng-template #unv><span class="text-gray-500">Not Verified</span></ng-template>
+                </div>
+                </div>
+              </div>
+
+              <!-- Store Details (Seller) -->
+              <div *ngIf="profile?.is_seller" class="grid gap-3">
+                <h3 class="text-lg font-bold text-markt-dark mb-2">Store Details</h3>
+                <div *ngIf="profile?.verification_status" class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                  <span class="font-medium text-markt-dark">Verification Status:</span>
+                  <span class="text-markt-muted capitalize">{{ profile?.verification_status }}</span>
+                </div>
+                <div *ngIf="profile?.shop_description" class="rounded-xl bg-markt-light/40 px-4 py-3">
+                  <div class="font-medium text-markt-dark mb-1">About Store:</div>
+                  <p class="text-markt-muted">{{ profile?.shop_description }}</p>
+                </div>
+                <div *ngIf="profile?.shop_categories?.length" class="rounded-xl bg-markt-light/40 px-4 py-3">
+                  <div class="font-medium text-markt-dark mb-2">Categories:</div>
+                  <div class="flex flex-wrap gap-2">
+                    <span *ngFor="let c of profile?.shop_categories" class="inline-flex items-center px-3 py-1 rounded-full border border-markt-border/50 text-sm text-markt-dark bg-white">{{ c }}</span>
                   </div>
                 </div>
-                <div class="review-content">
-                  <p>{{ review.comment }}</p>
+                <div *ngIf="profile?.policies" class="rounded-xl bg-markt-light/40 px-4 py-3">
+                  <div class="font-medium text-markt-dark mb-2">Policies</div>
+                  <div class="grid gap-2 text-sm text-markt-muted">
+                    <div *ngIf="profile?.policies?.returns"><span class="font-semibold text-markt-dark">Returns:</span> {{ profile?.policies?.returns }}</div>
+                    <div *ngIf="profile?.policies?.shipping"><span class="font-semibold text-markt-dark">Shipping:</span> {{ profile?.policies?.shipping }}</div>
+                    <div *ngIf="profile?.policies?.warranty"><span class="font-semibold text-markt-dark">Warranty:</span> {{ profile?.policies?.warranty }}</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <ng-template #noReviews>
-              <div class="empty-state">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                </svg>
-                <h3>No reviews yet</h3>
-                <p>This user hasn't received any reviews yet.</p>
+          <!-- Reviews -->
+          <div *ngIf="activeTab==='reviews'" class="p-6 lg:p-8">
+            <h3 class="text-lg font-bold text-markt-dark mb-4">User Reviews</h3>
+            <div *ngIf="reviews.length>0; else noReviews" class="grid gap-4">
+              <div *ngFor="let review of reviews" class="rounded-2xl border border-markt-border/30 p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="font-semibold text-markt-dark">{{ review.reviewer_name }}</div>
+                  <div class="text-markt-muted text-sm">{{ review.created_at | date:'mediumDate' }}</div>
+                </div>
+                <p class="text-markt-dark">{{ review.comment }}</p>
               </div>
+            </div>
+            <ng-template #noReviews>
+              <div class="text-center text-markt-muted py-10">No reviews yet</div>
             </ng-template>
-          </div>
         </div>
 
-        <!-- Listings Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'listings' && profile?.is_seller">
-          <div class="listings-section">
-            <h3>User Listings</h3>
-            <div class="listings-grid" *ngIf="listings.length > 0; else noListings">
-              <div class="listing-card" *ngFor="let listing of listings" [routerLink]="['/marketplace/product', listing.id]">
-                <div class="listing-image">
-                  <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title">
+          <!-- Listings -->
+                     <div *ngIf="activeTab==='listings' && profile?.is_seller" class="p-6 lg:p-8">
+            <h3 class="text-lg font-bold text-markt-dark mb-4">User Listings</h3>
+            <div *ngIf="listings.length>0; else noListings" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <a *ngFor="let listing of listings" [routerLink]="['/app/marketplace/product', listing.id]" class="rounded-2xl border border-markt-border/30 overflow-hidden hover:shadow-xl transition-all">
+                <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title" class="h-48 w-full object-cover" />
+                <div class="p-4">
+                  <h4 class="font-semibold text-markt-dark">{{ listing.title }}</h4>
+                  <p class="text-markt-muted">{{ listing.price | currency:listing.currency:'symbol':'1.0-0' }}</p>
                 </div>
-                <div class="listing-info">
-                  <h4>{{ listing.title }}</h4>
-                  <p class="listing-price">{{ listing.price | currency:listing.currency:'symbol':'1.0-0' }}</p>
-                  <p class="listing-location">{{ listing.location }}</p>
-                </div>
-              </div>
+              </a>
             </div>
-
             <ng-template #noListings>
-              <div class="empty-state">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9,22 9,12 15,12 15,22"></polyline>
-                </svg>
-                <h3>No listings yet</h3>
-                <p>This user hasn't created any listings yet.</p>
-              </div>
+              <div class="text-center text-markt-muted py-10">No listings yet</div>
             </ng-template>
           </div>
         </div>
@@ -281,431 +215,7 @@ interface Listing {
     </div>
   `,
   styles: [`
-    .profile-container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    /* Profile Header */
-    .profile-header {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      margin-bottom: 2rem;
-    }
-
-    .profile-cover {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 3rem 2rem;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-    }
-
-    .profile-avatar {
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .avatar-img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      border: 4px solid white;
-      object-fit: cover;
-    }
-
-    .avatar-placeholder {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      border: 4px solid white;
-      background: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
-      font-weight: 600;
-      color: #6b7280;
-    }
-
-    .verification-badge {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      background: #10b981;
-      color: white;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid white;
-    }
-
-    .profile-info {
-      flex: 1;
-    }
-
-    .profile-name {
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .profile-username {
-      font-size: 1.125rem;
-      opacity: 0.9;
-      margin: 0 0 1rem 0;
-    }
-
-    .profile-location {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0 0 1rem 0;
-      opacity: 0.9;
-    }
-
-    .profile-bio {
-      margin: 0 0 1rem 0;
-      line-height: 1.6;
-      opacity: 0.9;
-    }
-
-    .profile-join-date {
-      font-size: 0.875rem;
-      opacity: 0.8;
-      margin: 0;
-    }
-
-    .profile-actions {
-      display: flex;
-      gap: 1rem;
-      flex-shrink: 0;
-    }
-
-    /* Profile Stats */
-    .profile-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-stars {
-      display: flex;
-      justify-content: center;
-      gap: 0.25rem;
-      color: #f59e0b;
-    }
-
-    /* Profile Content */
-    .profile-content {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    .content-tabs {
-      display: flex;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .tab-btn {
-      padding: 1rem 2rem;
-      border: none;
-      background: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
-    }
-
-    .tab-btn:hover {
-      color: #374151;
-      background: #f9fafb;
-    }
-
-    .tab-btn.active {
-      color: #3b82f6;
-      border-bottom-color: #3b82f6;
-    }
-
-    .tab-content {
-      padding: 2rem;
-    }
-
-    /* About Section */
-    .about-section h3 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 1rem 0;
-    }
-
-    .about-section h3:not(:first-child) {
-      margin-top: 2rem;
-    }
-
-    .contact-info,
-    .account-info {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem;
-      background: #f9fafb;
-      border-radius: 8px;
-    }
-
-    .info-item strong {
-      color: #374151;
-    }
-
-    .verified {
-      color: #10b981;
-      font-weight: 600;
-    }
-
-    .unverified {
-      color: #6b7280;
-    }
-
-    /* Reviews Section */
-    .reviews-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .average-rating {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .rating-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1f2937;
-    }
-
-    .rating-stars {
-      display: flex;
-      gap: 0.25rem;
-      color: #f59e0b;
-    }
-
-    .total-reviews {
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-
-    .reviews-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .review-item {
-      padding: 1.5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-    }
-
-    .review-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-    }
-
-    .reviewer-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .reviewer-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .reviewer-name {
-      font-weight: 600;
-      color: #1f2937;
-    }
-
-    .review-date {
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-
-    .review-rating {
-      display: flex;
-      gap: 0.25rem;
-      color: #f59e0b;
-    }
-
-    .review-content p {
-      color: #374151;
-      line-height: 1.6;
-      margin: 0;
-    }
-
-    /* Listings Section */
-    .listings-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .listing-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .listing-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .listing-image {
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .listing-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .listing-info {
-      padding: 1rem;
-    }
-
-    .listing-info h4 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 0.5rem 0;
-      line-height: 1.4;
-    }
-
-    .listing-price {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .listing-location {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    /* Empty State */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      text-align: center;
-      color: #6b7280;
-    }
-
-    .empty-state svg {
-      margin-bottom: 1rem;
-      color: #d1d5db;
-    }
-
-    .empty-state h3 {
-      margin: 0 0 0.5rem 0;
-      color: #374151;
-    }
-
-    .empty-state p {
-      margin: 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .profile-cover {
-        flex-direction: column;
-        text-align: center;
-        gap: 1.5rem;
-      }
-
-      .profile-actions {
-        justify-content: center;
-      }
-
-      .profile-stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .content-tabs {
-        overflow-x: auto;
-      }
-
-      .tab-btn {
-        white-space: nowrap;
-      }
-
-      .reviews-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-      }
-
-      .listings-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    :host { display:block; }
   `]
 })
 export class ProfileComponent implements OnInit {
@@ -728,7 +238,33 @@ export class ProfileComponent implements OnInit {
     
     this.apiService.getProfile().subscribe({
       next: (response) => {
-        this.profile = response.data as any;
+        const res: any = response as any;
+        const u: any = (res && res.data != null) ? res.data : res || {};
+        const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+        const location = u.address ? [u.address.city, u.address.state, u.address.country].filter(Boolean).join(', ') : '';
+        const seller = u.seller_account || {};
+        this.profile = {
+          id: u.id,
+          username: u.username,
+          full_name: fullName || u.username || '',
+          email: u.email || '',
+          phone: u.phone_number || '',
+          avatar_url: u.profile_picture_url || '',
+          bio: u.bio || '',
+          location,
+          join_date: u.created_at || '',
+          rating: seller?.average_rating || 0,
+          total_reviews: seller?.total_raters || 0,
+          total_orders: u.buyer_account?.total_orders || 0,
+          total_listings: seller?.total_products || 0,
+          is_verified: !!u.email_verified,
+          is_seller: !!u.is_seller,
+          shop_name: seller?.shop_name || '',
+          verification_status: seller?.verification_status || '',
+          shop_description: seller?.description || '',
+          shop_categories: Array.isArray(seller?.categories) ? seller.categories.map((c: any) => c?.name).filter(Boolean) : [],
+          policies: seller?.policies || {}
+        } as UserProfile;
         this.loading = false;
       },
       error: (error) => {
@@ -754,7 +290,23 @@ export class ProfileComponent implements OnInit {
   loadListings(): void {
     this.apiService.getMyProducts().subscribe({
       next: (response) => {
-        this.listings = (response.data?.items || []) as any;
+        const items: any[] = response?.data?.items || [];
+        this.listings = items.map((p: any) => {
+          const firstImage = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
+          const imageUrl = firstImage?.media?.thumbnail_url || firstImage?.media?.url || firstImage?.media?.original_url || firstImage?.url || '';
+          return {
+            id: p.id,
+            title: p.name || p.title || 'Listing',
+            price: p.price ?? 0,
+            currency: p.currency || 'NGN',
+            location: p.product_metadata?.location || '',
+            images: imageUrl ? [imageUrl] : []
+          } as Listing;
+        });
+        // If profile exists, ensure the listings count reflects loaded data
+        if (this.profile?.is_seller) {
+          this.profile = { ...(this.profile as UserProfile), total_listings: this.listings.length };
+        }
       },
       error: (error) => {
         console.error('Error loading listings:', error);

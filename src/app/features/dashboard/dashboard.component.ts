@@ -19,7 +19,8 @@ import {
   faStar,
   faHeart,
   faShare,
-  faEllipsisH
+  faEllipsisH,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/services/auth.service';
 import { OrderService } from '../../core/services/order.service';
@@ -76,7 +77,7 @@ import { ApiService } from '../../core/services/api.service';
               [routerLink]="isSeller ? '/app/seller/listings' : '/app/cart'"
               class="text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
-              {{ isSeller ? 'Manage Products' : 'View Cart' }} →
+              {{ isSeller ? 'Manage Products' : 'View Cart' }} <fa-icon [icon]="faArrowRight"></fa-icon>
             </a>
           </div>
         </div>
@@ -97,7 +98,7 @@ import { ApiService } from '../../core/services/api.service';
               [routerLink]="isSeller ? '/app/seller/analytics' : '/app/orders'"
               class="text-sm text-green-600 hover:text-green-800 font-medium"
             >
-              {{ isSeller ? 'View Analytics' : 'View Orders' }} →
+              {{ isSeller ? 'View Analytics' : 'View Orders' }} <fa-icon [icon]="faArrowRight"></fa-icon>
             </a>
           </div>
         </div>
@@ -118,7 +119,7 @@ import { ApiService } from '../../core/services/api.service';
               routerLink="/app/notifications"
               class="text-sm text-yellow-600 hover:text-yellow-800 font-medium"
             >
-              View All →
+              View All <fa-icon [icon]="faArrowRight"></fa-icon>
             </a>
           </div>
         </div>
@@ -139,7 +140,7 @@ import { ApiService } from '../../core/services/api.service';
               routerLink="/app/chat"
               class="text-sm text-purple-600 hover:text-purple-800 font-medium"
             >
-              View Messages →
+              View Messages <fa-icon [icon]="faArrowRight"></fa-icon>
             </a>
           </div>
         </div>
@@ -211,7 +212,7 @@ import { ApiService } from '../../core/services/api.service';
                 routerLink="/app/marketplace"
                 class="mt-2 inline-block text-markt-primary hover:text-markt-secondary font-medium"
               >
-                Start shopping →
+                Start shopping <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
             <div *ngFor="let order of recentOrders.slice(0, 5)" class="flex items-center py-3 border-b border-gray-100 last:border-b-0">
@@ -238,7 +239,7 @@ import { ApiService } from '../../core/services/api.service';
                 routerLink="/app/orders"
                 class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
               >
-                View all orders →
+                View all orders <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
           </div>
@@ -273,7 +274,7 @@ import { ApiService } from '../../core/services/api.service';
                 routerLink="/app/notifications"
                 class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
               >
-                View all notifications →
+                View all notifications <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
           </div>
@@ -424,6 +425,7 @@ export class DashboardComponent implements OnInit {
   faCamera = faTimesCircle;
   faTimesCircle = faTimesCircle;
   faUser = faUser;
+  faArrowRight = faArrowRight;
 
   // Data
   user: any = null;

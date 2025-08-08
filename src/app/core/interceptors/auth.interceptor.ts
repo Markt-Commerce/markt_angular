@@ -25,22 +25,18 @@ export function authInterceptor(request: HttpRequest<unknown>, next: HttpHandler
   if (!AUTH_ENDPOINTS[request.url]) {
     const token = authService.getToken();
     const isAuthenticated = authService.isAuthenticated();
-    
-    console.log('🔍 Interceptor: Request to:', request.url);
-    console.log('🔍 Interceptor: Token exists:', !!token);
-    console.log('🔍 Interceptor: Is authenticated:', isAuthenticated);
-    
-    if (isAuthenticated) {
-      // Session-based auth (cookies). No Authorization header.
-      // Cookies are included automatically via withCredentials in ApiService.
-      console.log('🔍 Interceptor: Using session auth (cookies). No Authorization header added.');
+
+    if (token) {
+      // Attach Bearer token if available
+      request = request.clone({
+        setHeaders: { Authorization: `Bearer ${token}` }
+      });
     }
   }
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        // Token expired or invalid
         authService.logout();
         router.navigate(['/auth/login']);
       }

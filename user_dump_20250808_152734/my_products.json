@@ -1,0 +1,681 @@
+{
+  "items": [
+    {
+      "average_rating": 0.0,
+      "barcode": "1234567890127",
+      "categories": [
+        {
+          "description": "Electronic devices and accessories",
+          "id": 1,
+          "image_url": null,
+          "is_active": true,
+          "name": "Electronics",
+          "parent_id": null,
+          "slug": "electronics"
+        },
+        {
+          "description": "Mobile phones and accessories",
+          "id": 21,
+          "image_url": null,
+          "is_active": true,
+          "name": "Smartphones",
+          "parent_id": 1,
+          "slug": "smartphones"
+        }
+      ],
+      "compare_at_price": 350000.0,
+      "cost_per_item": 280000.0,
+      "created_at": "2025-08-05T08:51:06.517462",
+      "description": "Stay connected and healthy with the Apple Watch Series 9. Features include heart rate monitoring, ECG, fall detection, and seamless integration with your iPhone. Perfect for fitness tracking and staying connected.",
+      "id": "PRD_L0F02OR6",
+      "images": [
+        {
+          "alt_text": "Product image 1",
+          "id": 5,
+          "is_featured": true,
+          "media": {
+            "alt_text": null,
+            "background_removed": false,
+            "caption": null,
+            "compression_quality": 85,
+            "created_at": "2025-08-05T08:48:19.881409",
+            "desktop_url": null,
+            "duration": null,
+            "exif_data": null,
+            "file_size": 67203,
+            "height": 738,
+            "id": 6,
+            "is_public": true,
+            "media_type": "image",
+            "mime_type": "image/jpeg",
+            "mobile_url": null,
+            "original_filename": "apple-watch.jpg",
+            "original_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/apple-watch_20250805_084819.jpg",
+            "processing_status": "completed",
+            "social_post_url": null,
+            "social_square_url": null,
+            "social_story_url": null,
+            "storage_key": "images/user_USR_Q19TMC9B/apple-watch_20250805_084819.jpg",
+            "tablet_url": null,
+            "thumbnail_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/apple-watch_20250805_084820.jpg",
+            "updated_at": "2025-08-05T08:48:20.186551",
+            "user_id": "USR_Q19TMC9B",
+            "variants": [
+              {
+                "file_size": 2397,
+                "format": "JPEG",
+                "height": 84,
+                "id": 14,
+                "processing_time": null,
+                "quality": 80,
+                "storage_key": "images/user_USR_Q19TMC9B/thumbnail/apple-watch_20250805_084820.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/apple-watch_20250805_084820.jpg",
+                "variant_type": "thumbnail",
+                "width": 150
+              },
+              {
+                "file_size": 7402,
+                "format": "JPEG",
+                "height": 169,
+                "id": 15,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/small/apple-watch_20250805_084820.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/small/apple-watch_20250805_084820.jpg",
+                "variant_type": "small",
+                "width": 300
+              },
+              {
+                "file_size": 21400,
+                "format": "JPEG",
+                "height": 338,
+                "id": 16,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/medium/apple-watch_20250805_084820.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/medium/apple-watch_20250805_084820.jpg",
+                "variant_type": "medium",
+                "width": 600
+              }
+            ],
+            "width": 1312
+          },
+          "media_id": 6,
+          "product_id": "PRD_L0F02OR6",
+          "sort_order": 0
+        }
+      ],
+      "name": "Apple Watch Series 9 - 45mm - GPS - Aluminum Case",
+      "price": 320000.0,
+      "product_metadata": {
+        "brand": "Apple",
+        "case": "Aluminum",
+        "color": "Midnight",
+        "connectivity": "GPS",
+        "features": [
+          "Heart rate monitoring",
+          "ECG",
+          "Fall detection",
+          "Water resistant"
+        ],
+        "model": "Apple Watch Series 9",
+        "size": "45mm",
+        "warranty": "1 year"
+      },
+      "review_count": 0,
+      "seller": {
+        "id": 1,
+        "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+        "shop_name": "Tech Haven Store",
+        "shop_slug": null,
+        "verification_status": "SellerVerificationStatus.UNVERIFIED"
+      },
+      "seller_id": 1,
+      "sku": "AWS9-45-GPS-AL",
+      "status": "active",
+      "stock": 18,
+      "updated_at": "2025-08-05T11:19:02.590382",
+      "variants": [],
+      "view_count": 0,
+      "weight": 0.038
+    },
+    {
+      "average_rating": 0.0,
+      "barcode": "1234567890126",
+      "categories": [
+        {
+          "description": "Electronic devices and accessories",
+          "id": 1,
+          "image_url": null,
+          "is_active": true,
+          "name": "Electronics",
+          "parent_id": null,
+          "slug": "electronics"
+        },
+        {
+          "description": "Computers, laptops, and accessories",
+          "id": 22,
+          "image_url": null,
+          "is_active": true,
+          "name": "Laptops & Computers",
+          "parent_id": 1,
+          "slug": "laptops-computers"
+        }
+      ],
+      "compare_at_price": 480000.0,
+      "cost_per_item": 400000.0,
+      "created_at": "2025-08-05T08:50:58.911069",
+      "description": "The iPad Air is powerful, colorful, and wonderful. With the M1 chip, it's more capable than ever. Perfect for drawing, note-taking, and creative work with Apple Pencil support.",
+      "id": "PRD_U7Y8KRUM",
+      "images": [
+        {
+          "alt_text": "Product image 1",
+          "id": 4,
+          "is_featured": true,
+          "media": {
+            "alt_text": null,
+            "background_removed": false,
+            "caption": null,
+            "compression_quality": 85,
+            "created_at": "2025-08-05T08:48:07.284225",
+            "desktop_url": null,
+            "duration": null,
+            "exif_data": null,
+            "file_size": 51723,
+            "height": 632,
+            "id": 5,
+            "is_public": true,
+            "media_type": "image",
+            "mime_type": "image/jpeg",
+            "mobile_url": null,
+            "original_filename": "IpadAir.jpg",
+            "original_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/IpadAir_20250805_084807.jpg",
+            "processing_status": "completed",
+            "social_post_url": null,
+            "social_square_url": null,
+            "social_story_url": null,
+            "storage_key": "images/user_USR_Q19TMC9B/IpadAir_20250805_084807.jpg",
+            "tablet_url": null,
+            "thumbnail_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/IpadAir_20250805_084807.jpg",
+            "updated_at": "2025-08-05T08:48:07.556050",
+            "user_id": "USR_Q19TMC9B",
+            "variants": [
+              {
+                "file_size": 5298,
+                "format": "JPEG",
+                "height": 150,
+                "id": 11,
+                "processing_time": null,
+                "quality": 80,
+                "storage_key": "images/user_USR_Q19TMC9B/thumbnail/IpadAir_20250805_084807.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/IpadAir_20250805_084807.jpg",
+                "variant_type": "thumbnail",
+                "width": 112
+              },
+              {
+                "file_size": 20985,
+                "format": "JPEG",
+                "height": 300,
+                "id": 12,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/small/IpadAir_20250805_084807.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/small/IpadAir_20250805_084807.jpg",
+                "variant_type": "small",
+                "width": 225
+              },
+              {
+                "file_size": 67507,
+                "format": "JPEG",
+                "height": 600,
+                "id": 13,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/medium/IpadAir_20250805_084807.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/medium/IpadAir_20250805_084807.jpg",
+                "variant_type": "medium",
+                "width": 450
+              }
+            ],
+            "width": 474
+          },
+          "media_id": 5,
+          "product_id": "PRD_U7Y8KRUM",
+          "sort_order": 0
+        }
+      ],
+      "name": "iPad Air (5th Generation) - 10.9-inch - 64GB - Wi-Fi",
+      "price": 450000.0,
+      "product_metadata": {
+        "brand": "Apple",
+        "color": "Space Gray",
+        "connectivity": "Wi-Fi",
+        "features": [
+          "M1 chip",
+          "Apple Pencil support",
+          "Magic Keyboard compatible",
+          "Touch ID"
+        ],
+        "model": "iPad Air 5th Gen",
+        "screen_size": "10.9-inch",
+        "storage": "64GB",
+        "warranty": "1 year"
+      },
+      "review_count": 0,
+      "seller": {
+        "id": 1,
+        "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+        "shop_name": "Tech Haven Store",
+        "shop_slug": null,
+        "verification_status": "SellerVerificationStatus.UNVERIFIED"
+      },
+      "seller_id": 1,
+      "sku": "IPAD-AIR-5-64-WIFI",
+      "status": "active",
+      "stock": 12,
+      "updated_at": "2025-08-05T11:16:40.699746",
+      "variants": [],
+      "view_count": 0,
+      "weight": 0.461
+    },
+    {
+      "average_rating": 0.0,
+      "barcode": "1234567890125",
+      "categories": [
+        {
+          "description": "Electronic devices and accessories",
+          "id": 1,
+          "image_url": null,
+          "is_active": true,
+          "name": "Electronics",
+          "parent_id": null,
+          "slug": "electronics"
+        },
+        {
+          "description": "Speakers, headphones, and video equipment",
+          "id": 23,
+          "image_url": null,
+          "is_active": true,
+          "name": "Audio & Video",
+          "parent_id": 1,
+          "slug": "audio-video"
+        }
+      ],
+      "compare_at_price": 200000.0,
+      "cost_per_item": 150000.0,
+      "created_at": "2025-08-05T08:50:52.200257",
+      "description": "Experience immersive sound with Active Noise Cancellation and Adaptive Transparency. The sweat and water resistant AirPods Pro deliver up to 6 hours of listening time with Active Noise Cancellation enabled.",
+      "id": "PRD_SG3NWPQW",
+      "images": [
+        {
+          "alt_text": "Product image 1",
+          "id": 3,
+          "is_featured": true,
+          "media": {
+            "alt_text": null,
+            "background_removed": false,
+            "caption": null,
+            "compression_quality": 85,
+            "created_at": "2025-08-05T08:47:48.434537",
+            "desktop_url": null,
+            "duration": null,
+            "exif_data": null,
+            "file_size": 151956,
+            "height": 720,
+            "id": 4,
+            "is_public": true,
+            "media_type": "image",
+            "mime_type": "image/jpeg",
+            "mobile_url": null,
+            "original_filename": "Apple-AirPods-2nd-Gen.jpg",
+            "original_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+            "processing_status": "completed",
+            "social_post_url": null,
+            "social_square_url": null,
+            "social_story_url": null,
+            "storage_key": "images/user_USR_Q19TMC9B/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+            "tablet_url": null,
+            "thumbnail_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+            "updated_at": "2025-08-05T08:47:48.738075",
+            "user_id": "USR_Q19TMC9B",
+            "variants": [
+              {
+                "file_size": 4450,
+                "format": "JPEG",
+                "height": 84,
+                "id": 8,
+                "processing_time": null,
+                "quality": 80,
+                "storage_key": "images/user_USR_Q19TMC9B/thumbnail/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "variant_type": "thumbnail",
+                "width": 150
+              },
+              {
+                "file_size": 18593,
+                "format": "JPEG",
+                "height": 169,
+                "id": 9,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/small/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/small/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "variant_type": "small",
+                "width": 300
+              },
+              {
+                "file_size": 70129,
+                "format": "JPEG",
+                "height": 338,
+                "id": 10,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/medium/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/medium/Apple-AirPods-2nd-Gen_20250805_084748.jpg",
+                "variant_type": "medium",
+                "width": 600
+              }
+            ],
+            "width": 1280
+          },
+          "media_id": 4,
+          "product_id": "PRD_SG3NWPQW",
+          "sort_order": 0
+        }
+      ],
+      "name": "AirPods Pro (2nd Generation) - Active Noise Cancellation",
+      "price": 180000.0,
+      "product_metadata": {
+        "brand": "Apple",
+        "color": "White",
+        "features": [
+          "Active Noise Cancellation",
+          "Adaptive Transparency",
+          "Spatial Audio",
+          "Sweat resistant"
+        ],
+        "model": "AirPods Pro 2nd Gen",
+        "type": "Wireless Earbuds",
+        "warranty": "1 year"
+      },
+      "review_count": 0,
+      "seller": {
+        "id": 1,
+        "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+        "shop_name": "Tech Haven Store",
+        "shop_slug": null,
+        "verification_status": "SellerVerificationStatus.UNVERIFIED"
+      },
+      "seller_id": 1,
+      "sku": "APP-2ND-GEN",
+      "status": "active",
+      "stock": 25,
+      "updated_at": "2025-08-05T11:13:30.501371",
+      "variants": [],
+      "view_count": 0,
+      "weight": 0.05
+    },
+    {
+      "average_rating": 0.0,
+      "barcode": "1234567890124",
+      "categories": [],
+      "compare_at_price": 920000.0,
+      "cost_per_item": 750000.0,
+      "created_at": "2025-08-05T08:50:44.264101",
+      "description": "The most portable MacBook Air ever is now supercharged by the M2 chip. With up to 18 hours of battery life, this lightweight laptop is perfect for work, creativity, and entertainment on the go.",
+      "id": "PRD_OI31YA9X",
+      "images": [
+        {
+          "alt_text": "Product image 1",
+          "id": 2,
+          "is_featured": true,
+          "media": {
+            "alt_text": null,
+            "background_removed": false,
+            "caption": null,
+            "compression_quality": 85,
+            "created_at": "2025-08-05T08:47:03.399231",
+            "desktop_url": null,
+            "duration": null,
+            "exif_data": null,
+            "file_size": 1269358,
+            "height": 2564,
+            "id": 3,
+            "is_public": true,
+            "media_type": "image",
+            "mime_type": "image/jpeg",
+            "mobile_url": null,
+            "original_filename": "macbook-air-m2.jpg",
+            "original_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/macbook-air-m2_20250805_084703.jpg",
+            "processing_status": "completed",
+            "social_post_url": null,
+            "social_square_url": null,
+            "social_story_url": null,
+            "storage_key": "images/user_USR_Q19TMC9B/macbook-air-m2_20250805_084703.jpg",
+            "tablet_url": null,
+            "thumbnail_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/macbook-air-m2_20250805_084703.jpg",
+            "updated_at": "2025-08-05T08:47:03.993004",
+            "user_id": "USR_Q19TMC9B",
+            "variants": [
+              {
+                "file_size": 2851,
+                "format": "JPEG",
+                "height": 112,
+                "id": 5,
+                "processing_time": null,
+                "quality": 80,
+                "storage_key": "images/user_USR_Q19TMC9B/thumbnail/macbook-air-m2_20250805_084703.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/macbook-air-m2_20250805_084703.jpg",
+                "variant_type": "thumbnail",
+                "width": 150
+              },
+              {
+                "file_size": 9690,
+                "format": "JPEG",
+                "height": 224,
+                "id": 6,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/small/macbook-air-m2_20250805_084703.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/small/macbook-air-m2_20250805_084703.jpg",
+                "variant_type": "small",
+                "width": 300
+              },
+              {
+                "file_size": 30953,
+                "format": "JPEG",
+                "height": 449,
+                "id": 7,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/medium/macbook-air-m2_20250805_084703.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/medium/macbook-air-m2_20250805_084703.jpg",
+                "variant_type": "medium",
+                "width": 600
+              }
+            ],
+            "width": 3429
+          },
+          "media_id": 3,
+          "product_id": "PRD_OI31YA9X",
+          "sort_order": 0
+        }
+      ],
+      "name": "MacBook Air M2 - 13-inch - 8GB RAM - 256GB SSD",
+      "price": 850000.0,
+      "product_metadata": {
+        "brand": "Apple",
+        "color": "Space Gray",
+        "features": [
+          "M2 chip",
+          "Retina display",
+          "18-hour battery",
+          "Fanless design"
+        ],
+        "model": "MacBook Air M2",
+        "ram": "8GB",
+        "screen_size": "13-inch",
+        "storage": "256GB SSD",
+        "warranty": "1 year"
+      },
+      "review_count": 0,
+      "seller": {
+        "id": 1,
+        "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+        "shop_name": "Tech Haven Store",
+        "shop_slug": null,
+        "verification_status": "SellerVerificationStatus.UNVERIFIED"
+      },
+      "seller_id": 1,
+      "sku": "MBA-M2-13-8-256",
+      "status": "active",
+      "stock": 8,
+      "updated_at": "2025-08-05T08:50:44.264103",
+      "variants": [],
+      "view_count": 0,
+      "weight": 1.24
+    },
+    {
+      "average_rating": 0.0,
+      "barcode": "1234567890123",
+      "categories": [
+        {
+          "description": "Electronic devices and accessories",
+          "id": 1,
+          "image_url": null,
+          "is_active": true,
+          "name": "Electronics",
+          "parent_id": null,
+          "slug": "electronics"
+        },
+        {
+          "description": "Mobile phones and accessories",
+          "id": 21,
+          "image_url": null,
+          "is_active": true,
+          "name": "Smartphones",
+          "parent_id": 1,
+          "slug": "smartphones"
+        }
+      ],
+      "compare_at_price": 1350000.0,
+      "cost_per_item": 1100000.0,
+      "created_at": "2025-08-05T08:50:02.933795",
+      "description": "Experience the future of mobile technology with the iPhone 15 Pro. Featuring the A17 Pro chip, titanium design, and advanced camera system with 48MP main camera. Perfect for photography enthusiasts and power users.",
+      "id": "PRD_BD6M5W3P",
+      "images": [
+        {
+          "alt_text": "Product image 1",
+          "id": 1,
+          "is_featured": true,
+          "media": {
+            "alt_text": null,
+            "background_removed": false,
+            "caption": null,
+            "compression_quality": 85,
+            "created_at": "2025-08-05T08:44:36.377627",
+            "desktop_url": null,
+            "duration": null,
+            "exif_data": null,
+            "file_size": 133819,
+            "height": 810,
+            "id": 2,
+            "is_public": true,
+            "media_type": "image",
+            "mime_type": "image/jpeg",
+            "mobile_url": null,
+            "original_filename": "Apple-iPhone-15-Pro-lineup-hero.jpg",
+            "original_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+            "processing_status": "completed",
+            "social_post_url": null,
+            "social_square_url": null,
+            "social_story_url": null,
+            "storage_key": "images/user_USR_Q19TMC9B/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+            "tablet_url": null,
+            "thumbnail_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+            "updated_at": "2025-08-05T08:44:36.814777",
+            "user_id": "USR_Q19TMC9B",
+            "variants": [
+              {
+                "file_size": 2178,
+                "format": "JPEG",
+                "height": 84,
+                "id": 2,
+                "processing_time": null,
+                "quality": 80,
+                "storage_key": "images/user_USR_Q19TMC9B/thumbnail/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "variant_type": "thumbnail",
+                "width": 150
+              },
+              {
+                "file_size": 6451,
+                "format": "JPEG",
+                "height": 169,
+                "id": 3,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/small/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/small/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "variant_type": "small",
+                "width": 300
+              },
+              {
+                "file_size": 21553,
+                "format": "JPEG",
+                "height": 338,
+                "id": 4,
+                "processing_time": null,
+                "quality": 85,
+                "storage_key": "images/user_USR_Q19TMC9B/medium/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/medium/Apple-iPhone-15-Pro-lineup-hero_20250805_084436.jpg",
+                "variant_type": "medium",
+                "width": 600
+              }
+            ],
+            "width": 1440
+          },
+          "media_id": 2,
+          "product_id": "PRD_BD6M5W3P",
+          "sort_order": 0
+        }
+      ],
+      "name": "iPhone 15 Pro - 256GB - Natural Titanium",
+      "price": 1250000.0,
+      "product_metadata": {
+        "brand": "Apple",
+        "color": "Natural Titanium",
+        "features": [
+          "A17 Pro chip",
+          "48MP camera",
+          "Titanium design",
+          "USB-C"
+        ],
+        "model": "iPhone 15 Pro",
+        "storage": "256GB",
+        "warranty": "1 year"
+      },
+      "review_count": 0,
+      "seller": {
+        "id": 1,
+        "profile_picture_url": "https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/thumbnail/photo-1529665253569-6d01c0eaf7b6_20250806_012123.jpg",
+        "shop_name": "Tech Haven Store",
+        "shop_slug": null,
+        "verification_status": "SellerVerificationStatus.UNVERIFIED"
+      },
+      "seller_id": 1,
+      "sku": "IPH15PRO-256-NT",
+      "status": "active",
+      "stock": 15,
+      "updated_at": "2025-08-05T10:48:42.492178",
+      "variants": [],
+      "view_count": 0,
+      "weight": 0.187
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 1
+  }
+}

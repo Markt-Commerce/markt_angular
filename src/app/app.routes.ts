@@ -198,6 +198,14 @@ export const routes: Routes = [
           {
             path: 'privacy',
             loadComponent: () => import('./features/settings/privacy/privacy.component').then(m => m.PrivacyComponent)
+          },
+          {
+            path: 'shipping',
+            loadComponent: () => import('./features/settings/shipping/shipping.component').then(m => m.ShippingComponent)
+          },
+          {
+            path: 'preferences',
+            loadComponent: () => import('./features/settings/preferences/preferences.component').then(m => m.PreferencesComponent)
           }
         ]
       },

@@ -5,13 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faStar, faPlus, faBox } from '@fortawesome/free-solid-svg-icons';
 
 import { Product } from '../../../core/models';
 
 @Component({
   selector: 'app-listings',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="listings-container">
       <div class="listings-header">
@@ -24,7 +26,8 @@ import { Product } from '../../../core/models';
           size="lg"
           [routerLink]="['/app/seller/listings/create']"
         >
-          ➕ Add New Product
+          <fa-icon [icon]="faPlus" class="mr-2"></fa-icon>
+          Add New Product
         </app-button>
       </div>
 
@@ -96,7 +99,7 @@ import { Product } from '../../../core/models';
           </div>
 
           <div class="product-image">
-            <img [src]="product.images[0].media.url || '/Logo.png'" [alt]="product.name">
+                         <img [src]="(product.images?.[0]?.media?.thumbnail_url || product.images?.[0]?.media?.desktop_url || product.images?.[0]?.media?.mobile_url || product.images?.[0]?.media?.original_url) || '/markt-text-logo.png'" [alt]="product.name">
             <div class="product-status" [class]="product.status">
               {{ product.status }}
             </div>
@@ -106,20 +109,21 @@ import { Product } from '../../../core/models';
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-description">{{ product.description }}</p>
             <div class="product-meta">
-              <span class="product-category">{{ product.category }}</span>
+              <span class="product-category">{{ product.category?.name || getPrimaryCategoryName(product) }}</span>
               <span class="product-stock" [class]="getStockClass(product.stock)">
                 Stock: {{ product.stock }}
               </span>
             </div>
             <div class="product-stats">
               <span class="product-sales">{{ product.view_count || 0 }} views</span>
-              <span class="product-rating">⭐ {{ product.average_rating.toFixed(1) || '0.0' }}</span>
+              <span class="product-rating"><fa-icon [icon]="faStar"></fa-icon> {{ product.average_rating.toFixed(1) || '0.0' }}</span>
             </div>
           </div>
 
-          <div class="product-price">
-            <span class="price">₦{{ product.price.toLocaleString() }}</span>
-          </div>
+                     <div class="product-price">
+              <span class="price">{{ product.price | currency:(product.currency || 'NGN'):'symbol':'1.0-0' }}</span>
+              <span *ngIf="product.compare_at_price" class="ml-2 line-through text-gray-400 text-sm">{{ product.compare_at_price | currency:(product.currency || 'NGN'):'symbol':'1.0-0' }}</span>
+            </div>
 
           <div class="product-actions">
             <app-button 
@@ -195,7 +199,7 @@ import { Product } from '../../../core/models';
   styles: [`
     .listings-container {
       padding: 2rem;
-      max-width: 1200px;
+      max-width: 100%;
       margin: 0 auto;
     }
 
@@ -516,6 +520,8 @@ export class ListingsComponent implements OnInit {
   totalPages = 1;
   itemsPerPage = 10;
   loading = false;
+    faStar = faStar;
+  faPlus = faPlus;
 
   ngOnInit(): void {
     this.loadProducts();
@@ -617,6 +623,17 @@ export class ListingsComponent implements OnInit {
     if (stock <= 5) return 'low';
     if (stock <= 15) return 'medium';
     return 'high';
+  }
+
+  getPrimaryCategoryName(product: Product): string {
+    if (product?.category?.name) return product.category.name;
+    // Try from product_metadata or first categories item if present
+    const metaCategory = (product?.product_metadata as any)?.category_name;
+    if (metaCategory) return String(metaCategory);
+    const firstCategory = Array.isArray((product as any).categories) && (product as any).categories.length > 0
+      ? (product as any).categories[0]
+      : null;
+    return firstCategory?.name || 'Uncategorized';
   }
 
   deleteProduct(productId: string): void {

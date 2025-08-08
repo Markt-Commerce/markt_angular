@@ -88,19 +88,45 @@ import { map } from 'rxjs/operators';
               <span>Community</span>
             </a>
             
-            <a routerLink="/app/offers" routerLinkActive="active" class="nav-link">
+            <a routerLink="/app/requests" routerLinkActive="active" class="nav-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                <line x1="7" y1="8" x2="17" y2="8"></line>
+                <line x1="7" y1="12" x2="17" y2="12"></line>
+                <line x1="7" y1="16" x2="13" y2="16"></line>
+              </svg>
+              <span>Requests</span>
+            </a>
+            
+            <a routerLink="/app/chat" routerLinkActive="active" class="nav-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1-4A4 4 0 0 1 4 15V7a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4z"></path>
+              </svg>
+              <span>Messages</span>
+            </a>
+            
+                         <a routerLink="/app/offers" routerLinkActive="active" class="nav-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
               </svg>
               <span>Offers</span>
+            </a>
+            <a routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                <line x1="7" y1="8" x2="17" y2="8"></line>
+                <line x1="7" y1="12" x2="17" y2="12"></line>
+                <line x1="7" y1="16" x2="13" y2="16"></line>
+              </svg>
+              <span>Listings</span>
             </a>
           </nav>
 
           <!-- User Actions -->
           <div class="user-actions">
             <!-- Cart -->
-            <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) ?? 0 > 0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) ?? 0 > 0" aria-label="Cart">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-hidden="true">
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -109,8 +135,8 @@ import { map } from 'rxjs/operators';
             </a>
 
             <!-- Notifications -->
-            <a routerLink="/app/notifications" class="action-link">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <a routerLink="/app/notifications" class="action-link" aria-label="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-hidden="true">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
@@ -138,7 +164,7 @@ import { map } from 'rxjs/operators';
                   </svg>
                   Profile
                 </a>
-                <a routerLink="/app/orders" class="dropdown-item">
+                                 <a routerLink="/app/orders" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14,2 14,8 20,8"></polyline>
@@ -147,6 +173,15 @@ import { map } from 'rxjs/operators';
                     <polyline points="10,9 9,9 8,9"></polyline>
                   </svg>
                   Orders
+                </a>
+                <a routerLink="/app/seller/listings" class="dropdown-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                    <line x1="7" y1="8" x2="17" y2="8"></line>
+                    <line x1="7" y1="12" x2="17" y2="12"></line>
+                    <line x1="7" y1="16" x2="13" y2="16"></line>
+                  </svg>
+                  Listings
                 </a>
                 <a routerLink="/app/settings" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -254,36 +289,7 @@ import { map } from 'rxjs/operators';
         <router-outlet></router-outlet>
       </main>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <div class="footer-content">
-          <div class="footer-section">
-            <h4>Markt</h4>
-            <p>Your trusted marketplace for buying and selling.</p>
-          </div>
-          <div class="footer-section">
-            <h4>Quick Links</h4>
-            <a routerLink="/app/marketplace">Marketplace</a>
-            <a routerLink="/app/community">Community</a>
-            <a routerLink="/app/offers">Offers</a>
-          </div>
-          <div class="footer-section">
-            <h4>Support</h4>
-            <a routerLink="/help">Help Center</a>
-            <a routerLink="/contact">Contact Us</a>
-            <a routerLink="/about">About</a>
-          </div>
-          <div class="footer-section">
-            <h4>Legal</h4>
-            <a routerLink="/terms">Terms of Service</a>
-            <a routerLink="/privacy">Privacy Policy</a>
-            <a routerLink="/cookies">Cookie Policy</a>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <p>&copy; 2025 Markt. All rights reserved.</p>
-        </div>
-      </footer>
+
     </div>
   `,
   styles: [`
@@ -304,17 +310,18 @@ import { map } from 'rxjs/operators';
     }
 
     .header-content {
-      max-width: 1200px;
+      max-width: 100%;
       margin: 0 auto;
-      padding: 0 1rem;
+      padding: 0 2rem;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 2rem;
       height: 72px;
     }
 
     .logo {
-      flex-shrink: 0;
+      flex: 0 0 auto;
     }
 
     .logo-link {
@@ -345,8 +352,9 @@ import { map } from 'rxjs/operators';
 
     /* Search */
     .search-container {
-      flex: 1;
-      max-width: 500px;
+      flex: 1 1 auto;
+      max-width: 720px;
+      min-width: 240px;
     }
 
     .search-bar {
@@ -407,6 +415,7 @@ import { map } from 'rxjs/operators';
     .nav {
       display: flex;
       gap: 0.5rem;
+      flex: 0 0 auto;
     }
 
     .nav-link {
@@ -452,6 +461,8 @@ import { map } from 'rxjs/operators';
       display: flex;
       align-items: center;
       gap: 1rem;
+      margin-left: auto;
+      flex: 0 0 auto;
     }
 
     .action-link {
@@ -690,47 +701,7 @@ import { map } from 'rxjs/operators';
       min-height: calc(100vh - 64px - 200px);
     }
 
-    /* Footer */
-    .footer {
-      background: #1f2937;
-      color: white;
-      margin-top: auto;
-    }
 
-    .footer-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 3rem 1rem 2rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-    }
-
-    .footer-section h4 {
-      margin: 0 0 1rem 0;
-      color: #f9fafb;
-      font-size: 1rem;
-    }
-
-    .footer-section a {
-      display: block;
-      color: #d1d5db;
-      text-decoration: none;
-      margin-bottom: 0.5rem;
-      transition: color 0.2s;
-    }
-
-    .footer-section a:hover {
-      color: white;
-    }
-
-    .footer-bottom {
-      border-top: 1px solid #374151;
-      padding: 1rem;
-      text-align: center;
-      color: #9ca3af;
-      font-size: 0.875rem;
-    }
 
     /* Responsive */
     @media (max-width: 768px) {

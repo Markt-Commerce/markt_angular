@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faChartLine, faTriangleExclamation, faXmark, faStar } from '@fortawesome/free-solid-svg-icons';
 
 interface AnalyticsData {
   revenue: {
@@ -56,7 +58,11 @@ interface ChartData {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [
+    CommonModule,
+    ButtonComponent,
+    FontAwesomeModule
+  ],
   template: `
     <div class="analytics-container">
       <div class="analytics-header">
@@ -139,7 +145,7 @@ interface ChartData {
             <h3>Shop Rating</h3>
             <span class="metric-change positive">+0.2</span>
           </div>
-          <p class="metric-value">{{ analytics.performance.rating.toFixed(1) }} ⭐</p>
+          <p class="metric-value">{{ analytics.performance.rating.toFixed(1) }} <fa-icon [icon]="faStar"></fa-icon></p>
           <div class="metric-breakdown">
             <span>Reviews: {{ analytics.performance.reviews }}</span>
             <span>Response Time: {{ analytics.performance.responseTime }}h</span>
@@ -152,7 +158,7 @@ interface ChartData {
         <div class="chart-container">
           <h2>Revenue Trends</h2>
           <div class="chart-placeholder">
-            <p>📈 Revenue chart will be displayed here</p>
+            <p><fa-icon [icon]="faChartLine"></fa-icon> Revenue chart will be displayed here</p>
             <p>Daily, weekly, and monthly revenue trends</p>
           </div>
         </div>
@@ -206,7 +212,7 @@ interface ChartData {
           </div>
 
           <div class="inventory-card">
-            <div class="inventory-icon warning">⚠️</div>
+            <div class="inventory-icon warning"><fa-icon [icon]="faTriangleExclamation"></fa-icon></div>
             <div class="inventory-content">
               <h3>Low Stock</h3>
               <p>{{ analytics.products.lowStock }}</p>
@@ -214,7 +220,7 @@ interface ChartData {
           </div>
 
           <div class="inventory-card">
-            <div class="inventory-icon danger">❌</div>
+            <div class="inventory-icon danger"><fa-icon [icon]="faXmark"></fa-icon></div>
             <div class="inventory-content">
               <h3>Out of Stock</h3>
               <p>{{ analytics.products.outOfStock }}</p>
@@ -261,7 +267,7 @@ interface ChartData {
             📊 Export Analytics Report
           </app-button>
           <app-button variant="secondary" size="md">
-            📈 Export Revenue Data
+            <fa-icon [icon]="faChartLine"></fa-icon> Export Revenue Data
           </app-button>
           <app-button variant="secondary" size="md">
             <i class="fas fa-clipboard-list"></i> Export Order History
@@ -648,6 +654,11 @@ export class AnalyticsComponent implements OnInit {
   salesData: any = null;
   productPerformance: any[] = [];
   customerInsights: any = null;
+
+  faChartLine = faChartLine;
+  faTriangleExclamation = faTriangleExclamation;
+  faXmark = faXmark;
+  faStar = faStar;
 
   analytics: AnalyticsData = {
     revenue: {

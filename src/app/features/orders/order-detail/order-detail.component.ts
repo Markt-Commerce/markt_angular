@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface OrderItem {
   id: string;
@@ -53,7 +55,7 @@ interface Order {
 @Component({
   selector: 'app-order-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, RouterLink, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="order-detail-container">
       <div class="order-detail-header">
@@ -94,7 +96,7 @@ interface Order {
                 </div>
               </div>
               <div class="timeline-item" [class]="getTimelineStatus('processing')">
-                <div class="timeline-icon">⚙️</div>
+                <div class="timeline-icon"><fa-icon [icon]="faGear"></fa-icon></div>
                 <div class="timeline-content">
                   <h4>Processing</h4>
                   <p *ngIf="order.status !== 'pending'">{{ formatDate(order.date) }}</p>
@@ -301,7 +303,7 @@ interface Order {
 
       <!-- Error State -->
       <div *ngIf="!loading && !order" class="error-state">
-        <div class="error-icon">❌</div>
+        <div class="error-icon"><fa-icon [icon]="faXmark"></fa-icon></div>
         <h3>Order Not Found</h3>
         <p>The order you're looking for doesn't exist or has been removed.</p>
         <app-button 
@@ -793,6 +795,10 @@ export class OrderDetailComponent implements OnInit {
 
   loading = true;
   order: Order | null = null;
+
+  faGear = faGear;
+  faTriangleExclamation = faTriangleExclamation;
+  faXmark = faXmark;
 
   ngOnInit(): void {
     this.loadOrder();

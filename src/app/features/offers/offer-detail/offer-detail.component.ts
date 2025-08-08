@@ -5,6 +5,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 
 interface Offer {
   id: string;
@@ -62,7 +64,7 @@ interface Request {
 @Component({
   selector: 'app-offer-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonComponent, InputComponent, FontAwesomeModule],
   template: `
     <div class="offer-detail-container">
       <div class="offer-header">
@@ -105,7 +107,7 @@ interface Request {
                   <h3>{{ offer!.seller.name }}</h3>
                   <div class="seller-meta">
                     <span class="seller-username">&#64;{{ offer!.seller.username }}</span>
-                    <span class="seller-rating">⭐ {{ offer!.seller.rating }} ({{ offer!.seller.review_count }} reviews)</span>
+                    <span class="seller-rating"><fa-icon [icon]="faStar"></fa-icon> {{ offer!.seller.rating }} ({{ offer!.seller.review_count }} reviews)</span>
                     <span *ngIf="offer!.seller.is_verified" class="verified-badge">✓ Verified</span>
                   </div>
                 </div>
@@ -868,6 +870,7 @@ export class OfferDetailComponent implements OnInit {
   submittingCounter = false;
 
   counterOfferForm!: FormGroup;
+  faStar = faStar;
 
   ngOnInit(): void {
     this.initForm();

@@ -64,7 +64,7 @@ import { ApiService } from '../../../core/services/api.service';
           <!-- Main Image -->
           <div class="relative">
             <img 
-              [src]="selectedImage?.url || product.images[0]?.url || '/markt-text-logo.png'" 
+              [src]="(selectedImage?.media?.desktop_url || selectedImage?.media?.mobile_url || selectedImage?.media?.original_url || product.images?.[0]?.media?.desktop_url || product.images?.[0]?.media?.mobile_url || product.images?.[0]?.media?.original_url) || '/markt-text-logo.png'" 
               [alt]="product.name"
               class="w-full h-96 object-cover rounded-lg shadow-lg"
             >
@@ -95,8 +95,8 @@ import { ApiService } from '../../../core/services/api.service';
               [class.border-markt-primary]="selectedImage?.id === image.id"
               [class.border-gray-200]="selectedImage?.id !== image.id"
             >
-              <img 
-                [src]="image.url" 
+                             <img 
+                [src]="(image?.media?.thumbnail_url || image?.media?.desktop_url || image?.media?.mobile_url || image?.media?.original_url)"
                 [alt]="product.name"
                 class="w-full h-full object-cover"
               >
@@ -119,9 +119,9 @@ import { ApiService } from '../../../core/services/api.service';
               <span class="text-gray-500">{{ product.sold_count }} sold</span>
             </div>
             <div class="text-3xl font-bold text-gray-900 mb-4">
-              {{ product.price | currency:'NGN' }}
-              <span *ngIf="product.original_price && product.original_price > product.price" class="text-lg text-gray-500 line-through ml-2">
-                {{ product.original_price | currency:'NGN' }}
+              {{ product.price | currency:(product.currency || 'NGN') }}
+              <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-lg text-gray-500 line-through ml-2">
+                {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
               </span>
             </div>
           </div>
@@ -424,10 +424,36 @@ import { ApiService } from '../../../core/services/api.service';
           </div>
 
           <!-- Specifications Tab -->
-          <div *ngIf="activeTab === 'specifications'" class="space-y-4">
-            <div *ngFor="let spec of product.specifications" class="flex justify-between py-3 border-b border-gray-200">
-              <span class="font-medium text-gray-900">{{ spec.key }}</span>
-              <span class="text-gray-600">{{ spec.value }}</span>
+                     <div *ngIf="activeTab === 'specifications'" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.sku">
+                <span class="font-medium text-gray-900">SKU</span>
+                <span class="text-gray-600">{{ product.sku }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.barcode">
+                <span class="font-medium text-gray-900">Barcode</span>
+                <span class="text-gray-600">{{ product.barcode }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.weight">
+                <span class="font-medium text-gray-900">Weight</span>
+                <span class="text-gray-600">{{ product.weight }} kg</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.brand">
+                <span class="font-medium text-gray-900">Brand</span>
+                <span class="text-gray-600">{{ product.product_metadata.brand }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.model">
+                <span class="font-medium text-gray-900">Model</span>
+                <span class="text-gray-600">{{ product.product_metadata.model }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.color">
+                <span class="font-medium text-gray-900">Color</span>
+                <span class="text-gray-600">{{ product.product_metadata.color }}</span>
+              </div>
+              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.warranty">
+                <span class="font-medium text-gray-900">Warranty</span>
+                <span class="text-gray-600">{{ product.product_metadata.warranty }}</span>
+              </div>
             </div>
           </div>
         </div>

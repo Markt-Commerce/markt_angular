@@ -5,6 +5,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
 import { ApiService } from '../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faCommentDots } from '@fortawesome/free-solid-svg-icons';
 
 interface CommunityPost {
   id: string;
@@ -43,7 +45,7 @@ interface CommunityDiscussion {
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ButtonComponent, InputComponent, FontAwesomeModule],
   template: `
     <div class="community-container">
       <div class="community-header">
@@ -194,7 +196,7 @@ interface CommunityDiscussion {
                 </button>
                 
                 <button class="action-button" (click)="showComments(post)">
-                  <span class="action-icon">💬</span>
+                  <span class="action-icon"><fa-icon [icon]="faCommentDots"></fa-icon></span>
                   <span>{{ post.comments }}</span>
                 </button>
                 
@@ -837,6 +839,8 @@ export class CommunityComponent implements OnInit {
   submitting = false;
 
   createPostForm!: FormGroup;
+
+  faCommentDots = faCommentDots;
 
   categories = [
     { id: 'all', name: 'All Posts', icon: 'fas fa-mobile-alt', count: 1250 },

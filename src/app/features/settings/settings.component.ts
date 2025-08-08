@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ApiService } from '../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faUser, faBell, faLock, faCreditCard, faBox, faGear, faArrowRight, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
 interface SettingsSection {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: IconDefinition;
   route: string;
   badge?: string;
 }
@@ -16,7 +18,7 @@ interface SettingsSection {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, RouterLink, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="settings-container">
       <div class="settings-header">
@@ -29,7 +31,7 @@ interface SettingsSection {
       <div class="settings-grid">
         <div *ngFor="let section of settingsSections" class="settings-card" [routerLink]="section.route">
           <div class="card-icon">
-            {{ section.icon }}
+            <fa-icon [icon]="section.icon"></fa-icon>
           </div>
           <div class="card-content">
             <div class="card-header">
@@ -39,7 +41,7 @@ interface SettingsSection {
             <p>{{ section.description }}</p>
           </div>
           <div class="card-arrow">
-            →
+            <fa-icon [icon]="faArrowRight"></fa-icon>
           </div>
         </div>
       </div>
@@ -111,7 +113,7 @@ interface SettingsSection {
     }
 
     .card-icon {
-      font-size: 2rem;
+      font-size: 1.25rem;
       width: 3rem;
       height: 3rem;
       display: flex;
@@ -208,7 +210,8 @@ interface SettingsSection {
 })
 export class SettingsComponent implements OnInit {
   private apiService = inject(ApiService);
-  
+  faArrowRight = faArrowRight;
+
   loading = false;
   userProfile: any = null;
 
@@ -217,14 +220,14 @@ export class SettingsComponent implements OnInit {
       id: 'account',
       title: 'Account Settings',
       description: 'Manage your personal information, password, and account preferences.',
-      icon: '👤',
+      icon: faUser,
       route: '/app/settings/account'
     },
     {
       id: 'notifications',
       title: 'Notifications',
       description: 'Control how and when you receive notifications about orders, messages, and updates.',
-      icon: '🔔',
+      icon: faBell,
       route: '/app/settings/notifications',
       badge: 'New'
     },
@@ -232,34 +235,33 @@ export class SettingsComponent implements OnInit {
       id: 'privacy',
       title: 'Privacy & Security',
       description: 'Manage your privacy settings, data sharing preferences, and security options.',
-      icon: '🔒',
+      icon: faLock,
       route: '/app/settings/privacy'
     },
     {
       id: 'payment',
       title: 'Payment Methods',
       description: 'Add, edit, or remove your payment methods and billing information.',
-      icon: '💳',
+      icon: faCreditCard,
       route: '/app/settings/payment'
     },
     {
       id: 'shipping',
       title: 'Shipping Addresses',
       description: 'Manage your shipping addresses for faster checkout and delivery.',
-              icon: 'fas fa-box',
+      icon: faBox,
       route: '/app/settings/shipping'
     },
     {
       id: 'preferences',
       title: 'Preferences',
       description: 'Customize your marketplace experience, language, and display options.',
-      icon: '⚙️',
+      icon: faGear,
       route: '/app/settings/preferences'
     }
   ];
 
   contactSupport(): void {
-    // Mock support contact - replace with actual implementation
     window.open('mailto:support@marktcommerce.com', '_blank');
   }
 
@@ -269,8 +271,7 @@ export class SettingsComponent implements OnInit {
 
   private loadSettingsData(): void {
     this.loading = true;
-    
-    // Load user profile for settings overview
+
     this.apiService.getProfile().subscribe({
       next: (response) => {
         this.userProfile = response.data;

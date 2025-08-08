@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faStar, faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 interface DashboardStats {
   totalSales: number;
@@ -26,7 +28,7 @@ interface RecentOrder {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent],
+  imports: [CommonModule, RouterLink, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="dashboard-container">
       <div class="dashboard-header">
@@ -64,7 +66,7 @@ interface RecentOrder {
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">⭐</div>
+          <div class="stat-icon"><fa-icon [icon]="faStar"></fa-icon></div>
           <div class="stat-content">
             <h3>Average Rating</h3>
             <p class="stat-value">{{ stats.averageRating.toFixed(1) }}</p>
@@ -167,7 +169,7 @@ interface RecentOrder {
       <div class="performance-chart">
         <h2>Sales Performance</h2>
         <div class="chart-placeholder">
-          <p>📈 Sales chart will be displayed here</p>
+          <p><fa-icon [icon]="faChartLine"></fa-icon> Sales chart will be displayed here</p>
           <p>Monthly revenue trends and analytics</p>
         </div>
       </div>
@@ -501,6 +503,9 @@ export class DashboardComponent implements OnInit {
       items: 2
     }
   ];
+
+  faStar = faStar;
+  faChartLine = faChartLine;
 
   ngOnInit(): void {
     this.loadDashboardData();

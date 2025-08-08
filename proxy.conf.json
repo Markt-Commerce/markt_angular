@@ -9,6 +9,7 @@
     "changeOrigin": true,
     "ws": true,
     "logLevel": "debug",
+    "cookieDomainRewrite": "localhost",
     "pathRewrite": {
       "^/api/v1": "/api/v1"
     }

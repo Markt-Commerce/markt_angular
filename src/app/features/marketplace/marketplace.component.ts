@@ -28,11 +28,12 @@ import { CartService } from '../../core/services/cart.service';
 import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule,  FormsModule, FontAwesomeModule],
+  imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -230,61 +231,88 @@ import { ApiService } from '../../core/services/api.service';
           <!-- Products -->
           <div 
             *ngIf="!isLoading && products.length > 0"
-            [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'"
+                         [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 'space-y-4'"
           >
             <div 
               *ngFor="let product of products"
-              [ngClass]="viewMode === 'grid' ? 'bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow' : 'bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow'"
+              [ngClass]="viewMode === 'grid' ? 'group bg-white rounded-3xl border border-markt-border/30 overflow-hidden shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all h-full flex flex-col' : 'group bg-white rounded-3xl border border-markt-border/30 p-4 shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all'"
             >
               <!-- Grid View -->
               <div *ngIf="viewMode === 'grid'" class="relative">
-                <img 
-                  [src]="product.images[0]?.url || '/markt-text-logo.png'" 
+                                 <img 
+                  [src]="getProductImageUrl(product)"
                   [alt]="product.name"
-                  class="w-full h-48 object-cover"
+                  class="w-full aspect-[4/3] object-cover"
                 >
+                <!-- Badges -->
+                <div class="absolute top-2 left-2 flex gap-2">
+                  <span *ngIf="(product.compare_at_price ?? 0) > (product.price ?? 0)" class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+                    -{{ getDiscountPercent(product) }}%
+                  </span>
+                  <span *ngIf="product.stock === 0" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Out of stock</span>
+                </div>
                 <div class="absolute top-2 right-2">
                   <button 
                     (click)="toggleWishlist(product)"
                     class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                     [class.text-red-500]="isInWishlist(product)"
                     [class.text-gray-400]="!isInWishlist(product)"
+                    aria-label="Toggle wishlist"
                   >
                     <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
                   </button>
                 </div>
-                <div class="p-4">
-                  <h3 class="text-lg font-medium text-gray-900 mb-2">{{ product.name }}</h3>
-                  <p class="text-sm text-gray-500 mb-2">{{ product.description }}</p>
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-xl font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
-                    <div class="flex items-center">
+                                                   <div class="p-5 flex-1 flex flex-col">
+                   <h3 class="text-base font-semibold text-markt-dark mb-1 line-clamp-2 group-hover:text-markt-primary transition-colors">{{ product.name }}</h3>
+                   <p class="text-sm text-markt-muted mb-3 line-clamp-2">{{ product.description }}</p>
+                   <div class="mt-auto pt-2">
+                     <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xl font-extrabold text-markt-dark">{{ product.price | currency:(product.currency || 'NGN') }}</span>
+                      <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-sm text-gray-400 line-through">{{ product.compare_at_price | currency:(product.currency || 'NGN') }}</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600">
                       <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                      <span class="ml-1 text-sm text-gray-600">{{ product.rating }}</span>
+                      <span class="ml-1">{{ product.rating || 0 | number:'1.1-1' }}</span>
                     </div>
                   </div>
-                  <button 
-                    (click)="addToCart(product)"
-                    class="w-full bg-markt-primary text-white py-2 px-4 rounded-md hover:bg-markt-secondary transition-colors"
-                  >
-                    <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
-                    Add to Cart
-                  </button>
+                  <div class="flex items-center justify-between mb-3" *ngIf="product.seller as s">
+                    <div class="flex items-center gap-2 text-sm">
+                      <img [src]="s.profile_picture_url || '/markt-text-logo.png'" [alt]="s.shop_name" class="w-6 h-6 rounded-full object-cover">
+                      <span class="text-gray-700 truncate max-w-[10rem]">{{ s.shop_name }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500">{{ s.location }}</div>
+                  </div>
+                                      <div class="flex gap-2">
+                      <a [routerLink]="['/app/marketplace/product', product.id]" class="flex-1 inline-flex items-center justify-center h-10 rounded-xl border border-markt-border/40 px-3 text-sm font-semibold text-markt-dark hover:bg-markt-light/50 transition-colors" aria-label="View details">
+                        View
+                      </a>
+                      <button 
+                        *ngIf="authService.getCurrentRole() !== 'seller' && product.stock > 0"
+                        (click)="addToCart(product)"
+                        class="flex-1 inline-flex items-center justify-center h-10 rounded-xl bg-markt-primary text-white px-3 text-sm font-semibold hover:bg-markt-secondary transition-colors shadow-sm hover:shadow-md"
+                        aria-label="Add to cart"
+                      >
+                        <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
+                        Add
+                      </button>
+                    </div>
+                   </div>
                 </div>
               </div>
 
               <!-- List View -->
               <div *ngIf="viewMode === 'list'" class="flex space-x-4">
                 <img 
-                  [src]="product.images[0]?.url || '/markt-text-logo.png'" 
+                  [src]="getProductImageUrl(product)" 
                   [alt]="product.name"
-                  class="w-24 h-24 object-cover rounded-lg"
+                  class="w-28 h-28 object-cover rounded-lg"
                 >
                 <div class="flex-1">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
-                      <h3 class="text-lg font-medium text-gray-900 mb-1">{{ product.name }}</h3>
-                      <p class="text-sm text-gray-500 mb-2">{{ product.description }}</p>
+                      <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ product.name }}</h3>
+                      <p class="text-sm text-gray-500 mb-2 line-clamp-2">{{ product.description }}</p>
                       <div class="flex items-center space-x-4 text-sm text-gray-500">
                         <span class="flex items-center">
                           <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
@@ -301,16 +329,22 @@ import { ApiService } from '../../core/services/api.service';
                       </div>
                     </div>
                     <div class="text-right">
-                      <div class="text-xl font-bold text-gray-900 mb-2">{{ product.price | currency:'NGN' }}</div>
-                      <div class="flex items-center space-x-2">
+                      <div class="text-xl font-extrabold text-gray-900">
+                        {{ product.price | currency:(product.currency || 'NGN') }}
+                      </div>
+                      <div *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-sm text-gray-400 line-through">
+                        {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
+                      </div>
+                      <div class="flex items-center space-x-2 mt-2">
                         <button 
                           (click)="toggleWishlist(product)"
                           class="p-2 text-gray-400 hover:text-red-500 transition-colors"
                           [class.text-red-500]="isInWishlist(product)"
-                        >
+                          >
                           <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
                         </button>
-                        <button 
+                         <button 
+                          *ngIf="authService.getCurrentRole() !== 'seller'"
                           (click)="addToCart(product)"
                           class="bg-markt-primary text-white py-2 px-4 rounded-md hover:bg-markt-secondary transition-colors"
                         >
@@ -386,6 +420,7 @@ export class MarketplaceComponent implements OnInit {
   private appStateService = inject(AppStateService);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  authService = inject(AuthService);
 
   // Icons
   faSearch = faSearch;
@@ -440,12 +475,16 @@ export class MarketplaceComponent implements OnInit {
   private loadMarketplaceData(): void {
     this.isLoading = true;
     
-    // Load marketplace products
-    this.apiService.getMarketplaceProducts().subscribe({
+    // Load marketplace products (generic /products/ to avoid 404)
+    this.apiService.getProducts({ page: this.currentPage, per_page: 20 }).subscribe({
       next: (response) => {
-        this.products = response.data?.items || [];
-        this.totalResults = response.data?.pagination?.total_items || 0;
-        this.totalPages = response.data?.pagination?.total_pages || 1;
+        const res: any = response as any;
+        const data: any = res?.data ?? res ?? {};
+        const items: any = data?.items ?? data?.results ?? [];
+        this.products = Array.isArray(items) ? items : [];
+        const pagination: any = data?.pagination ?? data?.meta ?? {};
+        this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
+        this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
         this.isLoading = false;
       },
       error: (error) => {
@@ -458,7 +497,7 @@ export class MarketplaceComponent implements OnInit {
     // Load categories
     this.apiService.getCategories().subscribe({
       next: (response) => {
-        this.categories = response.data || [];
+        this.categories = (response as any)?.data ?? response ?? [];
       },
       error: (error) => {
         console.error('Error loading categories:', error);
@@ -519,9 +558,13 @@ export class MarketplaceComponent implements OnInit {
 
     this.marketplaceService.getProducts(params).subscribe({
       next: (response) => {
-        this.products = response.items || [];
-        this.totalResults = response.pagination?.total || 0;
-        this.totalPages = response.pagination?.total_pages || 1;
+        const res: any = response as any;
+        const data: any = res?.data ?? res ?? {};
+        const items: any = data?.items ?? data?.results ?? [];
+        this.products = Array.isArray(items) ? items : [];
+        const pagination: any = data?.pagination ?? data?.meta ?? {};
+        this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
+        this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
         this.isLoading = false;
       },
       error: (error) => {
@@ -606,6 +649,19 @@ export class MarketplaceComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  getProductImageUrl(product: any): string {
+    const img = product?.images?.[0];
+    const m = img?.media || {};
+    return m.thumbnail_url || m.desktop_url || m.mobile_url || m.original_url || '/markt-text-logo.png';
+  }
+
+  getDiscountPercent(product: any): number {
+    const price = Number(product?.price ?? 0);
+    const compare = Number(product?.compare_at_price ?? 0);
+    if (!compare || compare <= price) return 0;
+    return Math.round(((compare - price) / compare) * 100);
   }
 
   // Additional marketplace endpoint integrations

@@ -4,6 +4,8 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faCommentDots, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface BuyerRequest {
   id: string;
@@ -42,7 +44,7 @@ interface Offer {
 @Component({
   selector: 'app-request-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="request-detail-container">
       <!-- Header -->
@@ -89,7 +91,7 @@ interface Offer {
           
           <div class="request-stats">
             <span class="stat-item">
-              <span class="stat-icon">👁️</span>
+              <span class="stat-icon"><fa-icon [icon]="faCommentDots"></fa-icon></span>
               {{ request.viewsCount }} views
             </span>
             <span class="stat-item">
@@ -255,7 +257,7 @@ interface Offer {
           </div>
 
           <div class="no-offers" *ngIf="filteredOffers.length === 0">
-            <div class="no-offers-icon">💬</div>
+            <div class="no-offers-icon"><fa-icon [icon]="faCommentDots"></fa-icon></div>
             <h3>No offers yet</h3>
             <p *ngIf="!request.isOwner">Be the first to make an offer!</p>
             <p *ngIf="request.isOwner">No offers have been made yet. Check back later!</p>
@@ -273,7 +275,7 @@ interface Offer {
 
       <!-- Error State -->
       <div *ngIf="!loading && !request" class="error-state">
-        <div class="error-icon">❌</div>
+        <div class="error-icon"><fa-icon [icon]="faXmark"></fa-icon></div>
         <h3>Request Not Found</h3>
         <p>The request you're looking for doesn't exist or has been removed.</p>
         <app-button 
@@ -721,6 +723,10 @@ export class RequestDetailComponent implements OnInit {
   offers: Offer[] = [];
   filteredOffers: Offer[] = [];
   offerFilter = '';
+
+  faCommentDots = faCommentDots;
+  faTriangleExclamation = faTriangleExclamation;
+  faXmark = faXmark;
 
   ngOnInit(): void {
     this.loadRequest();

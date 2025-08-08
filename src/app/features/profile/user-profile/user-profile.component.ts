@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 
 interface UserProfile {
   id: string;
@@ -44,7 +46,7 @@ interface Review {
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [CommonModule, ButtonComponent, FontAwesomeModule],
   template: `
     <div class="user-profile-container">
       <div class="profile-header">
@@ -174,7 +176,7 @@ interface Review {
           <!-- Reviews Tab -->
           <div *ngIf="activeTab === 'reviews'" class="reviews-tab">
             <div *ngIf="reviews.length === 0" class="empty-state">
-              <div class="empty-icon">⭐</div>
+              <div class="empty-icon"><fa-icon [icon]="faStar"></fa-icon></div>
               <h3>No reviews yet</h3>
               <p>This user hasn't received any reviews yet.</p>
             </div>
@@ -617,6 +619,7 @@ export class UserProfileComponent implements OnInit {
   activeTab = 'products';
   isFollowing = false;
   loading = true;
+  faStar = faStar;
 
   ngOnInit(): void {
     this.loadUserProfile();
