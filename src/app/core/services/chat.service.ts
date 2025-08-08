@@ -10,6 +10,7 @@ import {
   ChatMessageReactionSummary,
   ChatMessageReactionCreate
 } from '../models';
+import { RealtimeService } from './realtime.service';
 
 export interface ChatState {
   rooms: ChatRoom[];
@@ -25,6 +26,7 @@ export interface ChatState {
 })
 export class ChatService {
   private apiService = inject(ApiService);
+  private realtime = inject(RealtimeService);
   
   private chatStateSubject = new BehaviorSubject<ChatState>({
     rooms: [],
@@ -37,13 +39,44 @@ export class ChatService {
 
   public chatState$ = this.chatStateSubject.asObservable();
   
-  // WebSocket connection for real-time messaging
-  private ws: WebSocket | null = null;
   private messageSubject = new Subject<ChatMessage>();
   public newMessage$ = this.messageSubject.asObservable();
 
+  private typingSubject = new Subject<{ roomId: string; userId?: string; isTyping: boolean }>();
+  public typing$ = this.typingSubject.asObservable();
+
   constructor() {
-    this.initializeWebSocket();
+    this.initializeSockets();
+  }
+
+  // ============================================================================
+  // SOCKET.IO SETUP
+  // ============================================================================
+  private initializeSockets(): void {
+    this.realtime.connect('/chat');
+    // Observe all chat events
+    this.realtime.chat$.subscribe(({ event, data }) => {
+      switch (event) {
+        case 'connected':
+          this.updateChatState({ isConnected: true });
+          break;
+        case 'disconnect':
+          this.updateChatState({ isConnected: false });
+          break;
+        case 'message':
+          this.handleNewMessage(data as ChatMessage);
+          break;
+        case 'typing_update':
+          this.handleTypingIndicator(data);
+          break;
+        case 'read_receipt':
+          this.handleReadReceipt(data);
+          break;
+        case 'room_update':
+          this.handleRoomUpdate(data);
+          break;
+      }
+    });
   }
 
   // ============================================================================
@@ -75,6 +108,8 @@ export class ChatService {
             rooms: [response.data, ...currentRooms],
             currentRoom: response.data
           });
+          // Join the created room via socket
+          this.joinRoom(response.data.id);
         }
       })
     );
@@ -103,8 +138,32 @@ export class ChatService {
     
     if (room) {
       this.updateChatState({ currentRoom: room });
+      this.joinRoom(roomId);
       this.loadMessages(roomId);
     }
+  }
+
+  /**
+   * Join a room (Socket.IO)
+   */
+  joinRoom(roomId: string): void {
+    this.realtime.emitTo('/chat', 'join_room', { room_id: roomId });
+  }
+
+  /**
+   * Leave a room (Socket.IO)
+   */
+  leaveRoom(roomId: string): void {
+    this.realtime.emitTo('/chat', 'leave_room', { room_id: roomId });
+  }
+
+  /** Start/stop typing indicators */
+  startTyping(roomId: string): void {
+    this.realtime.emitTo('/chat', 'typing_start', { room_id: roomId });
+  }
+
+  stopTyping(roomId: string): void {
+    this.realtime.emitTo('/chat', 'typing_stop', { room_id: roomId });
   }
 
   /**
@@ -150,9 +209,12 @@ export class ChatService {
           this.updateChatState({ 
             messages: [...currentMessages, newMessage]
           });
-          
-          // Send via WebSocket for real-time delivery
-          this.sendWebSocketMessage(newMessage);
+          // Emit via Socket.IO for real-time delivery
+          this.realtime.emitTo('/chat', 'message', {
+            room_id: roomId,
+            message: messageData.content,
+            ...messageData.message_data
+          });
         }
       })
     );
@@ -174,7 +236,7 @@ export class ChatService {
    */
   sendImageMessage(roomId: string, imageUrl: string, caption?: string): Observable<any> {
     const messageData: SendMessage = {
-      content: caption || '/Logo.png',
+      content: caption || '',
       message_type: 'image',
       message_data: { image_url: imageUrl }
     };
@@ -194,16 +256,15 @@ export class ChatService {
   }
 
   /**
-   * Mark messages as read
+   * Mark messages as read (room-level per backend spec)
    */
-  markMessagesAsRead(roomId: string, messageIds: string[]): Observable<any> {
-    return this.apiService.markMessagesAsRead(roomId, messageIds).pipe(
+  markMessagesAsRead(roomId: string): Observable<any> {
+    return this.apiService.markMessagesAsRead(roomId).pipe(
       tap(response => {
         if (response.success) {
-          // Update messages in state
           const currentMessages = this.getChatState().messages;
           const updatedMessages = currentMessages.map(msg => 
-            messageIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+            msg.room_id === roomId ? { ...msg, is_read: true } : msg
           );
           this.updateChatState({ messages: updatedMessages });
         }
@@ -215,14 +276,10 @@ export class ChatService {
   // CHAT ROOM MANAGEMENT
   // ============================================================================
 
-  /**
-   * Pin a chat room
-   */
   pinChat(roomId: string): Observable<any> {
     return this.apiService.pinChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.pinned = true;
@@ -232,14 +289,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Unpin a chat room
-   */
   unpinChatRoom(roomId: string): Observable<any> {
     return this.apiService.pinChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.pinned = false;
@@ -249,14 +302,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Mute a chat room
-   */
   muteChat(roomId: string): Observable<any> {
     return this.apiService.muteChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.muted = true;
@@ -266,14 +315,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Unmute a chat room
-   */
   unmuteChatRoom(roomId: string): Observable<any> {
     return this.apiService.muteChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.muted = false;
@@ -283,14 +328,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Archive a chat room
-   */
   archiveChat(roomId: string): Observable<any> {
     return this.apiService.archiveChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.archived = true;
@@ -300,14 +341,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Unarchive a chat room
-   */
   unarchiveChatRoom(roomId: string): Observable<any> {
     return this.apiService.archiveChatRoom(roomId).pipe(
       map(response => response.data),
       tap(() => {
-        // Update local state
         const room = this.getChatState().rooms.find(r => r.id === roomId);
         if (room) {
           room.archived = false;
@@ -317,14 +354,10 @@ export class ChatService {
     );
   }
 
-  /**
-   * Delete a chat room
-   */
   deleteChat(roomId: string): Observable<void> {
     return this.apiService.deleteChatRoom(roomId).pipe(
       map(() => void 0),
       tap(() => {
-        // Remove from local state
         const updatedRooms = this.getChatState().rooms.filter(r => r.id !== roomId);
         this.updateChatState({ rooms: updatedRooms });
       })
@@ -335,27 +368,18 @@ export class ChatService {
   // MESSAGE REACTIONS
   // ============================================================================
 
-  /**
-   * Get message reactions
-   */
   getMessageReactions(messageId: string): Observable<ChatMessageReactionSummary[]> {
     return this.apiService.getMessageReactions(messageId).pipe(
       map(response => response.data || [])
     );
   }
 
-  /**
-   * Add reaction to a message
-   */
   addMessageReaction(messageId: string, reactionType: string): Observable<ChatMessageReactionSummary> {
     return this.apiService.addMessageReaction(messageId, { reaction_type: reactionType }).pipe(
       map(response => response.data)
     );
   }
 
-  /**
-   * Remove reaction from a message
-   */
   removeMessageReaction(messageId: string, reactionType: string): Observable<void> {
     return this.apiService.removeMessageReaction(messageId, reactionType).pipe(
       map(() => void 0)
@@ -363,126 +387,30 @@ export class ChatService {
   }
 
   // ============================================================================
-  // WEBSOCKET OPERATIONS
+  // SOCKET EVENT HANDLERS
   // ============================================================================
-
-  /**
-   * Initialize WebSocket connection
-   */
-  private initializeWebSocket(): void {
-    const wsUrl = 'wss://test.api.marktcommerce.com/ws/chat';
-    
-    try {
-      this.ws = new WebSocket(wsUrl);
-      
-      this.ws.onopen = () => {
-        
-        this.updateChatState({ isConnected: true });
-        this.authenticateWebSocket();
-      };
-      
-      this.ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        this.handleWebSocketMessage(data);
-      };
-      
-      this.ws.onclose = () => {
-        
-        this.updateChatState({ isConnected: false });
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => this.initializeWebSocket(), 5000);
-      };
-      
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        this.updateChatState({ isConnected: false });
-      };
-    } catch (error) {
-      console.error('Failed to initialize WebSocket:', error);
-    }
-  }
-
-  /**
-   * Authenticate WebSocket connection
-   */
-  private authenticateWebSocket(): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const authMessage = {
-        type: 'auth',
-        token: this.getAuthToken()
-      };
-      this.ws.send(JSON.stringify(authMessage));
-    }
-  }
-
-  /**
-   * Send message via WebSocket
-   */
-  private sendWebSocketMessage(message: ChatMessage): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const wsMessage = {
-        type: 'message',
-        data: message
-      };
-      this.ws.send(JSON.stringify(wsMessage));
-    }
-  }
-
-  /**
-   * Handle incoming WebSocket messages
-   */
-  private handleWebSocketMessage(data: any): void {
-    switch (data.type) {
-      case 'message':
-        this.handleNewMessage(data.data);
-        break;
-      case 'typing':
-        this.handleTypingIndicator(data.data);
-        break;
-      case 'read_receipt':
-        this.handleReadReceipt(data.data);
-        break;
-      case 'room_update':
-        this.handleRoomUpdate(data.data);
-        break;
-      default:
-        
-    }
-  }
-
-  /**
-   * Handle new message from WebSocket
-   */
   private handleNewMessage(message: ChatMessage): void {
     const currentState = this.getChatState();
-    
-    // Add message to current room if it matches
     if (currentState.currentRoom && message.room_id === currentState.currentRoom.id) {
       const updatedMessages = [...currentState.messages, message];
       this.updateChatState({ messages: updatedMessages });
     }
-    
-    // Update unread count
     const updatedUnreadCount = currentState.unreadCount + 1;
     this.updateChatState({ unreadCount: updatedUnreadCount });
-    
-    // Emit new message event
     this.messageSubject.next(message);
   }
 
-  /**
-   * Handle typing indicator
-   */
   private handleTypingIndicator(data: any): void {
-    // Implement typing indicator logic
-    
+    if (!data) return;
+    const payload = {
+      roomId: String((data as any).room_id || ''),
+      userId: (data as any).user_id as string | undefined,
+      isTyping: !!(data as any).is_typing
+    };
+    this.typingSubject.next(payload);
   }
 
-  /**
-   * Handle read receipt
-   */
   private handleReadReceipt(data: any): void {
-    // Update message read status
     const currentMessages = this.getChatState().messages;
     const updatedMessages = currentMessages.map(msg => 
       msg.id === data.message_id ? { ...msg, is_read: true, read_at: data.read_at } : msg
@@ -490,11 +418,7 @@ export class ChatService {
     this.updateChatState({ messages: updatedMessages });
   }
 
-  /**
-   * Handle room update
-   */
   private handleRoomUpdate(data: any): void {
-    // Update room information
     const currentRooms = this.getChatState().rooms;
     const updatedRooms = currentRooms.map(room => 
       room.id === data.room_id ? { ...room, ...data.updates } : room
@@ -505,110 +429,44 @@ export class ChatService {
   // ============================================================================
   // CHAT UTILITIES
   // ============================================================================
-
-  /**
-   * Get current chat state
-   */
   getChatState(): ChatState {
     return this.chatStateSubject.value;
   }
 
-  /**
-   * Get rooms observable
-   */
   getRooms$(): Observable<ChatRoom[]> {
-    return this.chatState$.pipe(
-      map(state => state.rooms)
-    );
+    return this.chatState$.pipe(map(state => state.rooms));
   }
 
-  /**
-   * Get current room observable
-   */
   getCurrentRoom$(): Observable<ChatRoom | null> {
-    return this.chatState$.pipe(
-      map(state => state.currentRoom)
-    );
+    return this.chatState$.pipe(map(state => state.currentRoom));
   }
 
-  /**
-   * Get messages observable
-   */
   getMessages$(): Observable<ChatMessage[]> {
-    return this.chatState$.pipe(
-      map(state => state.messages)
-    );
+    return this.chatState$.pipe(map(state => state.messages));
   }
 
-  /**
-   * Get unread count observable
-   */
   getUnreadCount$(): Observable<number> {
     return this.chatState$.pipe(
       map(state => state.rooms.reduce((total, room) => total + room.unread_count_buyer + room.unread_count_seller, 0))
     );
   }
 
-  /**
-   * Get connection status observable
-   */
   getConnectionStatus$(): Observable<boolean> {
-    return this.chatState$.pipe(
-      map(state => state.isConnected)
-    );
+    return this.chatState$.pipe(map(state => state.isConnected));
   }
 
-  /**
-   * Update chat state
-   */
   private updateChatState(partial: Partial<ChatState>): void {
     const currentState = this.getChatState();
     const newState = { ...currentState, ...partial };
     this.chatStateSubject.next(newState);
   }
 
-  /**
-   * Get authentication token
-   */
-  private getAuthToken(): string {
-    // This should get the token from your auth service
-    return localStorage.getItem('markt_token') || '/Logo.png';
-  }
-
-  /**
-   * Format message timestamp
-   */
-  formatMessageTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) {
-      return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) {
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  }
-
-  /**
-   * Check if message is from current user
-   */
   isMessageFromCurrentUser(message: ChatMessage): boolean {
-    // This should compare with current user ID from auth service
     const currentUserId = this.getCurrentUserId();
     return message.sender_id === currentUserId;
   }
 
-  /**
-   * Get current user ID
-   */
   private getCurrentUserId(): string {
-    // This should get from auth service
     const userData = localStorage.getItem('markt_user');
     if (userData) {
       const user = JSON.parse(userData);
@@ -617,17 +475,11 @@ export class ChatService {
     return '';
   }
 
-  /**
-   * Get room by ID
-   */
   getRoomById(roomId: string): ChatRoom | null {
     const rooms = this.getChatState().rooms;
     return rooms.find(room => room.id === roomId) || null;
   }
 
-  /**
-   * Get room with user
-   */
   getRoomWithUser(userId: string): ChatRoom | null {
     const rooms = this.getChatState().rooms;
     return rooms.find(room => 
@@ -635,32 +487,16 @@ export class ChatService {
     ) || null;
   }
 
-  /**
-   * Get unread count for room
-   */
   getUnreadCountForRoom(roomId: string): number {
     const room = this.getRoomById(roomId);
     if (!room) return 0;
-    
-    // This should get the unread count for the current user
     const currentUserId = this.getCurrentUserId();
-    if (currentUserId === room.buyer_id) {
-      return room.unread_count_buyer;
-    } else if (currentUserId === room.seller_id) {
-      return room.unread_count_seller;
-    }
-    
+    if (currentUserId === room.buyer_id) return room.unread_count_buyer;
+    if (currentUserId === room.seller_id) return room.unread_count_seller;
     return 0;
   }
 
-  /**
-   * Mark room as read
-   */
   markRoomAsRead(roomId: string): void {
-    const room = this.getRoomById(roomId);
-    if (!room) return;
-    
-    // Update room unread count
     const currentRooms = this.getChatState().rooms;
     const updatedRooms = currentRooms.map(r => {
       if (r.id === roomId) {
@@ -673,142 +509,11 @@ export class ChatService {
       }
       return r;
     });
-    
     this.updateChatState({ rooms: updatedRooms });
   }
 
-  /**
-   * Disconnect WebSocket
-   */
-  disconnect(): void {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-  }
-
-  /**
-   * Cleanup on service destruction
-   */
+  // Cleanup
   ngOnDestroy(): void {
-    this.disconnect();
-  }
-
-  // ============================================================================
-  // UTILITY METHODS
-  // ============================================================================
-
-  /**
-   * Get emoji for reaction type
-   */
-  getReactionEmoji(reactionType: string): string {
-    const emojiMap: Record<string, string> = {
-      'THUMBS_UP': '👍',
-      'HEART': '❤️',
-      'LAUGH': '😂',
-      'SAD': '😢',
-      'ANGRY': '😠',
-      'WOW': '😮',
-      'CELEBRATE': '🎉'
-    };
-    return emojiMap[reactionType] || '👍';
-  }
-
-  /**
-   * Get reaction type from emoji
-   */
-  getReactionTypeFromEmoji(emoji: string): string {
-    const emojiMap: Record<string, string> = {
-      '👍': 'THUMBS_UP',
-      '❤️': 'HEART',
-      '😂': 'LAUGH',
-      '😢': 'SAD',
-      '😠': 'ANGRY',
-      '😮': 'WOW',
-      '🎉': 'CELEBRATE'
-    };
-    return emojiMap[emoji] || 'THUMBS_UP';
-  }
-
-  /**
-   * Check if user has reacted to a message
-   */
-  hasUserReacted(messageReactions: ChatMessageReactionSummary[], userId: string): boolean {
-    return messageReactions.some(reaction => 
-      reaction.has_reacted && reaction.user_id === userId
-    );
-  }
-
-  /**
-   * Get user's reaction to a message
-   */
-  getUserReaction(messageReactions: ChatMessageReactionSummary[], userId: string): ChatMessageReactionSummary | null {
-    return messageReactions.find(reaction => 
-      reaction.has_reacted && reaction.user_id === userId
-    ) || null;
-  }
-
-  /**
-   * Format message timestamp for display
-   */
-  formatMessageTime(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      return diffInMinutes < 1 ? 'Just now' : `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else if (diffInHours < 168) { // 7 days
-      return `${Math.floor(diffInHours / 24)}d ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  }
-
-  /**
-   * Get chat room by ID
-   */
-  getChatRoomById(roomId: string): ChatRoom | null {
-    return this.getChatState().rooms.find(room => room.id === roomId) || null;
-  }
-
-  /**
-   * Update chat room in local state
-   */
-  updateChatRoomInState(updatedRoom: ChatRoom): void {
-    const rooms = this.getChatState().rooms.map(room => 
-      room.id === updatedRoom.id ? updatedRoom : room
-    );
-    this.updateChatState({ rooms: rooms });
-  }
-
-  /**
-   * Sort chat rooms by priority (pinned first, then by last message time)
-   */
-  sortChatRooms(rooms: ChatRoom[]): ChatRoom[] {
-    return rooms.sort((a, b) => {
-      // Pinned rooms first
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      
-      // Then by last message time (newest first)
-      const aTime = new Date(a.last_message_at || '/Logo.png').getTime();
-      const bTime = new Date(b.last_message_at || '/Logo.png').getTime();
-      return bTime - aTime;
-    });
-  }
-
-  /**
-   * Sort chat rooms by last message time
-   */
-  sortChatRoomsByLastMessage(chatRooms: ChatRoom[]): ChatRoom[] {
-    return chatRooms.sort((a, b) => {
-      const aTime = new Date(a.last_message_at || '/Logo.png').getTime();
-      const bTime = new Date(b.last_message_at || '/Logo.png').getTime();
-      return bTime - aTime;
-    });
+    this.realtime.disconnect('/chat');
   }
 } 

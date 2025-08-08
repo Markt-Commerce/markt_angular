@@ -30,18 +30,10 @@ export function authInterceptor(request: HttpRequest<unknown>, next: HttpHandler
     console.log('🔍 Interceptor: Token exists:', !!token);
     console.log('🔍 Interceptor: Is authenticated:', isAuthenticated);
     
-    if (token) {
-      request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      console.log('🔍 Interceptor: Added Bearer token');
-    } else if (isAuthenticated) {
-      // If authenticated but no token, this API likely uses session-based auth
-      // The session cookies should be automatically included by the browser
-      console.log('🔍 Interceptor: Authenticated but no token - using session auth (cookies)');
-      // For session-based auth, we don't need to add headers - cookies are sent automatically
+    if (isAuthenticated) {
+      // Session-based auth (cookies). No Authorization header.
+      // Cookies are included automatically via withCredentials in ApiService.
+      console.log('🔍 Interceptor: Using session auth (cookies). No Authorization header added.');
     }
   }
 

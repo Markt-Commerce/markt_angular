@@ -525,7 +525,7 @@ export class MediaService {
   validateFile(file: File): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/avi', 'video/mov'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime'];
     
     if (file.size > maxSize) {
       errors.push('File size must be less than 10MB');

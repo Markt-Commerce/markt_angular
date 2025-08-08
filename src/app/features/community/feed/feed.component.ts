@@ -248,7 +248,9 @@ export class FeedComponent implements OnInit {
     
     this.apiService.getCommunityFeed().subscribe({
       next: (response) => {
-        this.posts = response.data || [];
+        const items = response.data?.items || response.data || [];
+        this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
+        this.hasMorePosts = response.data?.pagination?.has_next || false;
         this.loading = false;
       },
       error: (error) => {
@@ -259,23 +261,13 @@ export class FeedComponent implements OnInit {
     });
   }
 
-  loadStories(): void {
-    this.socialService.getStories().subscribe({
-      next: (response) => {
-        // this.stories = response || []; // stories interface not defined in original file
-      },
-      error: (error) => {
-        console.error('Error loading stories:', error);
-      }
-    });
-  }
-
   loadMorePosts(): void {
     this.currentPage++;
-    this.socialService.getFeed({ page: this.currentPage }).subscribe({
+    this.apiService.getCommunityFeed().subscribe({
       next: (response) => {
-        this.posts = [...this.posts, ...(response.items || []).map(post => this.mapPostToFeedPost(post))];
-        this.hasMorePosts = response.pagination?.has_next || false;
+        const items = response.data?.items || response.data || [];
+        this.posts = [...this.posts, ...items.map((p: any) => this.mapPostToFeedPost(p))];
+        this.hasMorePosts = response.data?.pagination?.has_next || false;
       },
       error: (error) => {
         console.error('Error loading more posts:', error);
@@ -287,23 +279,23 @@ export class FeedComponent implements OnInit {
     return {
       id: post.id,
       user: {
-        id: post.seller?.id || post.user?.id || '',
-        name: post.seller?.shop_name || post.user?.username || 'Unknown User',
-        avatar: post.seller?.profile_picture_url || post.user?.profile_picture_url,
-        isVerified: post.seller?.verification_status === 'verified' || false,
+        id: post.user?.id || post.seller?.id || '',
+        name: post.user?.username || post.seller?.shop_name || 'Unknown User',
+        avatar: post.user?.profile_picture_url || post.seller?.profile_picture_url,
+        isVerified: (post.seller?.verification_status === 'verified') || false,
         isSeller: !!post.seller
       },
       content: post.caption || post.content || '',
-      images: post.social_media?.map((sm: any) => sm.media?.url) || [],
+      images: (post.social_media || post.media || []).map((m: any) => m?.media?.url || m?.url).filter(Boolean),
       location: post.location || '',
       timestamp: new Date(post.created_at),
-      likes: post.like_count || 0,
-      comments: post.comment_count || 0,
-      isLiked: false, // This would need to be set based on user's like status
-      type: 'text', // Default type, could be determined from post data
-      productInfo: post.products?.[0] ? {
-        price: post.products[0].price,
-        category: post.products[0].category?.name || 'Product'
+      likes: post.like_count || post.likes_count || 0,
+      comments: post.comment_count || post.comments_count || 0,
+      isLiked: !!post.is_liked,
+      type: post.product ? 'product' : 'text',
+      productInfo: post.product ? {
+        price: post.product.price,
+        category: post.product.category?.name || 'Product'
       } : undefined
     };
   }
@@ -332,12 +324,12 @@ export class FeedComponent implements OnInit {
   }
 
   likePost(postId: string): void {
-    this.apiService.likeCommunityPost(postId).subscribe({
-      next: (response) => {
+    this.socialService.likePost(postId).subscribe({
+      next: () => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
-          post.isLiked = !post.isLiked;
-          post.likes += post.isLiked ? 1 : -1;
+          post.isLiked = true;
+          post.likes += 1;
         }
       },
       error: (error) => {
@@ -347,8 +339,8 @@ export class FeedComponent implements OnInit {
   }
 
   commentOnPost(postId: string, comment: string): void {
-    this.apiService.commentOnCommunityPost(postId, { content: comment }).subscribe({
-      next: (response) => {
+    this.socialService.addComment(postId, { content: comment }).subscribe({
+      next: () => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
           post.comments += 1;

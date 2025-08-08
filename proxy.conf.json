@@ -1,13 +1,15 @@
 [
   {
     "context": [
-      "/api/v1/**"
+      "/api/v1/**",
+      "/socket.io"
     ],
     "target": "https://test.api.marktcommerce.com",
     "secure": true,
     "changeOrigin": true,
+    "ws": true,
     "logLevel": "debug",
-        "pathRewrite": {
+    "pathRewrite": {
       "^/api/v1": "/api/v1"
     }
   }

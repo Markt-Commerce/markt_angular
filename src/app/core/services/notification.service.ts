@@ -10,6 +10,7 @@ import {
   MarkAsReadResponse 
 } from '../models';
 import { map } from 'rxjs/operators';
+import { RealtimeService } from './realtime.service';
 
 export interface NotificationState {
   notifications: Notification[];
@@ -23,6 +24,7 @@ export interface NotificationState {
 })
 export class NotificationService {
   private apiService = inject(ApiService);
+  private realtime = inject(RealtimeService);
   
   private notificationStateSubject = new BehaviorSubject<NotificationState>({
     notifications: [],
@@ -39,6 +41,7 @@ export class NotificationService {
   constructor() {
     this.initializeNotifications();
     this.startAutoRefresh();
+    this.setupRealtime();
   }
 
   // ============================================================================
@@ -450,5 +453,37 @@ export class NotificationService {
   private findNotificationById(notificationId: string): Notification | null {
     const notifications = this.getNotificationState().notifications;
     return notifications.find(n => n.id === notificationId) || null;
+  }
+
+  private setupRealtime(): void {
+    this.realtime.connect('/notification');
+    this.realtime.notification$.subscribe(({ event, data }) => {
+      switch (event) {
+        case 'connected':
+          // Optionally fetch latest unread count on connect
+          this.getUnreadCount().subscribe();
+          break;
+        case 'notification':
+        case 'new_notification':
+          if (data) {
+            this.addNotification(data as Notification);
+          }
+          break;
+        case 'unread_count':
+          if (data && typeof (data as any).count === 'number') {
+            this.updateUnreadCount((data as any).count);
+          }
+          break;
+        case 'mark_read':
+          // Backend might push mark_read acknowledgements
+          if (data && Array.isArray((data as any).notification_ids)) {
+            const ids = (data as any).notification_ids as string[];
+            this.updateNotificationsAsRead(ids);
+          }
+          break;
+        default:
+          break;
+      }
+    });
   }
 } 

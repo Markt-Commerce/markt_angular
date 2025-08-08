@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { ChatService } from '../../../core/services/chat.service';
 
 interface ChatMessage {
   id: string;
@@ -571,8 +571,8 @@ interface ChatParticipant {
 export class ChatDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
-
+  private chatService = inject(ChatService);
+  
   participant: ChatParticipant | null = null;
   messages: ChatMessage[] = [];
   messageGroups: { date: string; messages: ChatMessage[] }[] = [];
@@ -581,47 +581,43 @@ export class ChatDetailComponent implements OnInit {
   showInfo = false;
   loading = false;
   roomId: string = '';
-
+  
   ngOnInit(): void {
-    this.loadChat();
-  }
-
-  private loadChat(): void {
     const conversationId = this.route.snapshot.paramMap.get('id');
-    
     if (conversationId) {
+      this.roomId = conversationId;
       this.loading = true;
-      
-      // Load chat room details
-      this.apiService.getChatRoom(conversationId).subscribe({
-        next: (response) => {
-          // ChatRoom doesn't have participants, we need to get participant info differently
-          // For now, we'll set a placeholder participant
+      this.chatService.getChatRooms().subscribe({
+        next: () => {
+          this.chatService.selectRoom(this.roomId);
+          // Placeholder participant until a dedicated participant endpoint exists
           this.participant = {
-            id: response.data.buyer_id || response.data.seller_id,
+            id: '',
             name: 'Chat Participant',
             avatar: '/assets/default-avatar.png',
             isOnline: false
           };
           this.loading = false;
         },
-        error: (error) => {
-          console.error('Error loading chat room:', error);
-          this.loading = false;
+        error: () => { this.loading = false; }
+      });
+      
+      this.chatService.getMessages$().subscribe(msgs => {
+        this.messages = msgs as any;
+        this.groupMessages();
+      });
+
+      // Subscribe to typing events for this room
+      this.chatService.typing$.subscribe(evt => {
+        if (evt.roomId === this.roomId) {
+          this.isTyping = evt.isTyping;
         }
       });
 
-      // Load chat messages
-      this.apiService.getChatMessages(conversationId).subscribe({
-        next: (response) => {
-          this.messages = response.data || [];
-          this.groupMessages();
-        },
-        error: (error) => {
-          console.error('Error loading chat messages:', error);
-          this.messages = [];
-        }
-      });
+      // Load initial messages
+      this.chatService.loadMessages(this.roomId);
+      // Mark as read for this room
+      this.chatService.markMessagesAsRead(this.roomId).subscribe();
     }
   }
 
@@ -644,39 +640,24 @@ export class ChatDetailComponent implements OnInit {
 
   sendMessage(event?: Event): void {
     if (event && event instanceof KeyboardEvent && event.shiftKey) {
-      return; // Allow new line with Shift+Enter
+      return;
     }
+    if (event) event.preventDefault();
+    if (!this.newMessage.trim() || !this.roomId) return;
     
-    if (event) {
-      event.preventDefault();
-    }
-
-    if (!this.newMessage.trim()) return;
-
-    if (this.route.snapshot.paramMap.get('id')) {
-      const conversationId = this.route.snapshot.paramMap.get('id')!;
-      const messageData = {
-        content: this.newMessage,
-        type: 'text'
-      };
-
-      this.apiService.sendMessage(conversationId, messageData).subscribe({
-        next: (response) => {
-          this.messages.push(response.data);
-          this.newMessage = '';
-          this.groupMessages();
-          this.scrollToBottom();
-        },
-        error: (error) => {
-          console.error('Error sending message:', error);
-        }
-      });
-    }
+    this.chatService.sendTextMessage(this.roomId, this.newMessage).subscribe({
+      next: () => {
+        this.newMessage = '';
+        this.chatService.stopTyping(this.roomId);
+        this.scrollToBottom();
+      },
+      error: (error) => { console.error('Error sending message:', error); }
+    });
   }
 
   onTyping(): void {
-    // TODO: Send typing indicator to server
-    
+    if (!this.roomId) return;
+    this.chatService.startTyping(this.roomId);
   }
 
   attachFile(): void {
@@ -742,27 +723,15 @@ export class ChatDetailComponent implements OnInit {
     setTimeout(() => {
       const container = document.querySelector('.messages-container');
       if (container) {
-        container.scrollTop = container.scrollHeight;
+        (container as HTMLElement).scrollTop = (container as HTMLElement).scrollHeight;
       }
     }, 100);
   }
 
-  // Additional chat endpoint integrations
-  createChatRoom(roomData: any): void {
-    this.apiService.createChatRoom(roomData).subscribe({
-      next: (response) => {
-        console.log('Chat room created:', response.data);
-      },
-      error: (error) => {
-        console.error('Error creating chat room:', error);
-      }
-    });
-  }
-
+  // Chat room actions using ChatService
   deleteChatRoom(roomId: string): void {
-    this.apiService.deleteChatRoom(roomId).subscribe({
-      next: (response) => {
-        console.log('Chat room deleted:', response.data);
+    this.chatService.deleteChat(roomId).subscribe({
+      next: () => {
         this.router.navigate(['/app/chat']);
       },
       error: (error) => {
@@ -771,55 +740,9 @@ export class ChatDetailComponent implements OnInit {
     });
   }
 
-  getChatRooms(): void {
-    this.apiService.getChatRooms().subscribe({
-      next: (response) => {
-        console.log('Chat rooms loaded:', response.data);
-      },
-      error: (error) => {
-        console.error('Error loading chat rooms:', error);
-      }
-    });
-  }
-
-  getCommentReactions(commentId: string): void {
-    this.apiService.getCommentReactions(commentId).subscribe({
-      next: (response) => {
-        console.log('Comment reactions loaded:', response.data);
-      },
-      error: (error) => {
-        console.error('Error loading comment reactions:', error);
-      }
-    });
-  }
-
-  getMessageReactions(messageId: string): void {
-    this.apiService.getMessageReactions(messageId).subscribe({
-      next: (response) => {
-        console.log('Message reactions loaded:', response.data);
-      },
-      error: (error) => {
-        console.error('Error loading message reactions:', error);
-      }
-    });
-  }
-
-  markMessagesAsRead(messageIds: string[]): void {
-    this.apiService.markMessagesAsRead(this.roomId, messageIds).subscribe({
-      next: (response) => {
-        console.log('Messages marked as read:', response.data);
-      },
-      error: (error) => {
-        console.error('Error marking messages as read:', error);
-      }
-    });
-  }
-
   muteChatRoom(roomId: string): void {
-    this.apiService.muteChatRoom(roomId).subscribe({
-      next: (response) => {
-        console.log('Chat room muted:', response.data);
-      },
+    this.chatService.muteChat(roomId).subscribe({
+      next: () => {},
       error: (error) => {
         console.error('Error muting chat room:', error);
       }
@@ -827,34 +750,10 @@ export class ChatDetailComponent implements OnInit {
   }
 
   pinChatRoom(roomId: string): void {
-    this.apiService.pinChatRoom(roomId).subscribe({
-      next: (response) => {
-        console.log('Chat room pinned:', response.data);
-      },
+    this.chatService.pinChat(roomId).subscribe({
+      next: () => {},
       error: (error) => {
         console.error('Error pinning chat room:', error);
-      }
-    });
-  }
-
-  removeCommentReaction(commentId: string, reactionType: string): void {
-    this.apiService.removeCommentReaction(commentId, reactionType).subscribe({
-      next: (response) => {
-        console.log('Comment reaction removed:', response.data);
-      },
-      error: (error) => {
-        console.error('Error removing comment reaction:', error);
-      }
-    });
-  }
-
-  removeMessageReaction(messageId: string, reactionType: string): void {
-    this.apiService.removeMessageReaction(messageId, reactionType).subscribe({
-      next: (response) => {
-        console.log('Message reaction removed:', response.data);
-      },
-      error: (error) => {
-        console.error('Error removing message reaction:', error);
       }
     });
   }

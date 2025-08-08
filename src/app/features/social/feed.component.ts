@@ -480,6 +480,13 @@ export class FeedComponent implements OnInit {
     this.loadUserData();
     this.loadFeed();
     this.loadStories();
+
+    // Subscribe to realtime feed updates
+    this.socialService.feed$.subscribe(posts => {
+      if (Array.isArray(posts) && posts.length) {
+        this.posts = posts;
+      }
+    });
   }
 
   private loadUserData(): void {
@@ -491,10 +498,13 @@ export class FeedComponent implements OnInit {
   private loadFeed(): void {
     this.isLoading = true;
     
-    this.apiService.getSocialFeed().subscribe({
+    this.apiService.getPersonalizedFeed({ page: 1, per_page: 20 }).subscribe({
       next: (response) => {
-        this.posts = response.data || [];
+        const initialPosts = response.data?.items || response.data || [];
+        this.posts = initialPosts;
         this.hasMorePosts = response.data?.pagination?.has_next || false;
+        // Seed SocialService with initial posts so realtime merges correctly
+        this.socialService.setInitialFeed(this.posts);
         this.isLoading = false;
       },
       error: (error) => {
@@ -522,6 +532,7 @@ export class FeedComponent implements OnInit {
       next: (response) => {
         this.posts = [...this.posts, ...(response.items || [])];
         this.hasMorePosts = response.pagination?.has_next || false;
+        this.socialService.setInitialFeed(this.posts);
       },
       error: (error) => {
         console.error('Error loading more posts:', error);
@@ -541,6 +552,7 @@ export class FeedComponent implements OnInit {
         this.socialService.createPost(postData).subscribe({
           next: (response) => {
             this.posts.unshift(response);
+            this.socialService.setInitialFeed(this.posts);
             this.newPostContent = '';
             this.showCreatePost = false;
           },

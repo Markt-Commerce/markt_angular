@@ -24,7 +24,6 @@ import {
 import { ChatService } from '../../../core/services/chat.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChatRoom, ChatMessage } from '../../../core/models';
-import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-chat-list',
@@ -144,10 +143,10 @@ import { ApiService } from '../../../core/services/api.service';
                 </p>
                 <div class="flex items-center space-x-2">
                   <span 
-                    *ngIf="chat.unread_count > 0"
+                    *ngIf="unreadCountGetter(chat) > 0"
                     class="inline-flex items-center justify-center w-5 h-5 bg-markt-primary text-white text-xs rounded-full"
                   >
-                    {{ chat.unread_count > 99 ? '99+' : chat.unread_count }}
+                    {{ unreadCountGetter(chat) > 99 ? '99+' : unreadCountGetter(chat) }}
                   </span>
                   <button 
                     (click)="showChatMenu(chat, $event)"
@@ -235,7 +234,6 @@ export class ChatListComponent implements OnInit {
   private chatService = inject(ChatService);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
 
   // Icons
   faComments = faComments;
@@ -282,6 +280,30 @@ export class ChatListComponent implements OnInit {
   ngOnInit(): void {
     this.loadUserData();
     this.loadChatList();
+
+    // Live update chat list on new messages
+    this.chatService.newMessage$.subscribe(message => {
+      const room = this.chatRooms.find(r => r.id === message.room_id);
+      if (room) {
+        room.last_message = {
+          id: message.id,
+          content: message.content,
+          message_type: message.message_type,
+          sender_id: message.sender_id,
+          created_at: message.created_at
+        };
+        // Increment unread count for current user
+        if (this.user) {
+          if (this.user.id === room.buyer_id) {
+            room.unread_count_buyer = (room.unread_count_buyer || 0) + 1;
+          } else if (this.user.id === room.seller_id) {
+            room.unread_count_seller = (room.unread_count_seller || 0) + 1;
+          }
+        }
+        // Move room to top
+        this.chatRooms = [room, ...this.chatRooms.filter(r => r.id !== room.id)];
+      }
+    });
   }
 
   private loadUserData(): void {
@@ -293,10 +315,10 @@ export class ChatListComponent implements OnInit {
   private loadChatList(): void {
     this.isLoading = true;
     
-    this.apiService.getChatList().subscribe({
+    this.chatService.getChatRooms().subscribe({
       next: (response) => {
         if (response.success) {
-          this.chatRooms = response.data || [];
+          this.chatRooms = (response.data?.rooms) || [];
         }
         this.isLoading = false;
       },
@@ -328,25 +350,21 @@ export class ChatListComponent implements OnInit {
     this.router.navigate(['/app/chat/new']);
   }
 
+  // Helpers adapted to Ife's response shape
   getChatAvatar(chat: any): string {
-    if (chat.type === 'product' && chat.product) {
-      return chat.product.images[0]?.url || '""';
+    const other = chat.other_user;
+    if (other) {
+      return other.profile_picture || other.profile_picture_url || '""';
     }
-    
-    const otherUser = this.getOtherUser(chat);
-    return otherUser?.profile_picture_url || '""';
+    return '""';
   }
 
   getChatName(chat: any): string {
-    if (chat.type === 'product' && chat.product) {
-      return chat.product.name;
+    const other = chat.other_user;
+    if (other) {
+      return other.username || 'Unknown User';
     }
-    
-    const otherUser = this.getOtherUser(chat);
-    if (otherUser?.current_role === 'seller' && otherUser?.seller_account) {
-      return otherUser.seller_account.shop_name;
-    }
-    return otherUser?.username || 'Unknown User';
+    return 'Unknown User';
   }
 
   getOtherUser(chat: any): any {
@@ -355,29 +373,22 @@ export class ChatListComponent implements OnInit {
     return chat.participants.find((participant: any) => participant.id !== this.user.id);
   }
 
-  getChatOnlineStatus(chat: any): boolean {
-    const otherUser = this.getOtherUser(chat);
-    return otherUser?.is_online || false;
+  getChatOnlineStatus(_chat: any): boolean {
+    return false; // backend may provide presence later
   }
 
   getLastMessagePreview(chat: any): string {
-    if (!chat.last_message) {
-      return 'No messages yet';
-    }
-    
-    const message = chat.last_message;
-    
-    switch (message.type) {
+    const lm = chat.last_message;
+    if (!lm) return 'No messages yet';
+    switch (lm.message_type) {
       case 'text':
-        return message.content;
+        return lm.content;
       case 'image':
         return '📷 Image';
       case 'video':
         return '🎥 Video';
       case 'file':
         return '📎 File';
-      case 'product':
-        return '🛍️ Product';
       default:
         return 'Message';
     }
@@ -385,26 +396,22 @@ export class ChatListComponent implements OnInit {
 
   formatTimestamp(timestamp: string): string {
     if (!timestamp) return '';
-    
     const date = new Date(timestamp);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'Just now';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}m`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h`;
-    } else if (diffInSeconds < 604800) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}d`;
-    } else {
-      return date.toLocaleDateString();
-    }
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString();
   }
+
+  // Unread badge helper for either role
+  get unreadCountGetter() { return (chat: any) => {
+    if (this.user?.id === chat?.buyer_id) return chat.unread_count_buyer || 0;
+    if (this.user?.id === chat?.seller_id) return chat.unread_count_seller || 0;
+    return 0;
+  }}
 
   showChatMenu(chat: any, event: MouseEvent): void {
     event.stopPropagation();

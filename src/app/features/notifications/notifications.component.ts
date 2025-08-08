@@ -2,10 +2,10 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { ApiService } from '../../core/services/api.service';
+import { NotificationService } from '../../core/services/notification.service';
 
-interface Notification {
-  id: number;
+interface UINotification {
+  id: string;
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
@@ -424,14 +424,14 @@ interface Notification {
   `]
 })
 export class NotificationsComponent implements OnInit {
-  private apiService = inject(ApiService);
+  private notificationService = inject(NotificationService);
 
-  notifications: Notification[] = [];
+  notifications: UINotification[] = [];
   activeFilter = 'all';
   hasUnreadNotifications = false;
   loading = false;
 
-  get filteredNotifications(): Notification[] {
+  get filteredNotifications(): UINotification[] {
     switch (this.activeFilter) {
       case 'unread':
         return this.notifications.filter(n => !n.read);
@@ -449,24 +449,14 @@ export class NotificationsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadNotifications();
-  }
+    // initial load
+    this.notificationService.getNotifications().subscribe();
+    this.notificationService.getUnreadCount().subscribe();
 
-  loadNotifications(): void {
-    this.loading = true;
-    
-    this.apiService.getNotifications().subscribe({
-      next: (response) => {
-        this.notifications = response.data || [];
-        this.hasUnreadNotifications = this.unreadCount > 0;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading notifications:', error);
-        this.notifications = [];
-        this.hasUnreadNotifications = false;
-        this.loading = false;
-      }
+    // subscribe to realtime/state
+    this.notificationService.getNotifications$().subscribe(list => {
+      this.notifications = (list || []).map(n => this.mapNotification(n));
+      this.hasUnreadNotifications = this.unreadCount > 0;
     });
   }
 
@@ -474,51 +464,48 @@ export class NotificationsComponent implements OnInit {
     this.activeFilter = filter;
   }
 
-  toggleRead(notification: Notification): void {
-    // For now, just update locally since the API doesn't have mark as read
+  toggleRead(notification: UINotification): void {
+    // Mark single notification as read via service if we had ids; simulate local for now
     notification.read = !notification.read;
     this.hasUnreadNotifications = this.unreadCount > 0;
   }
 
   markAllAsRead(): void {
-    // For now, just update locally since the API doesn't have mark all as read
-    this.notifications.forEach(n => n.read = true);
-    this.hasUnreadNotifications = false;
+    const unreadIds = this.notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.notifications = this.notifications.map(n => ({ ...n, read: true }));
+        this.hasUnreadNotifications = false;
+      },
+      error: () => {
+        // fallback to local update
+        this.notifications = this.notifications.map(n => ({ ...n, read: true }));
+        this.hasUnreadNotifications = false;
+      }
+    });
   }
 
-  deleteNotification(id: number): void {
-    // For now, just remove locally since the API doesn't have delete notification
+  deleteNotification(id: string): void {
+    // No backend delete; remove locally
     this.notifications = this.notifications.filter(n => n.id !== id);
     this.hasUnreadNotifications = this.unreadCount > 0;
   }
 
   clearAllNotifications(): void {
-    // For now, just clear locally since the API doesn't have clear all notifications
     this.notifications = [];
     this.hasUnreadNotifications = false;
   }
 
-  // Additional notification endpoint integrations
-  getUnreadCount(): void {
-    this.apiService.getUnreadCount().subscribe({
-      next: (response) => {
-        console.log('Unread count loaded:', response.data);
-      },
-      error: (error) => {
-        console.error('Error loading unread count:', error);
-      }
-    });
-  }
-
-  markAsRead(notificationIds: number[]): void {
-    this.apiService.markAsRead(notificationIds).subscribe({
-      next: (response) => {
-        console.log('Notifications marked as read:', response.data);
-        this.loadNotifications(); // Refresh notifications
-      },
-      error: (error) => {
-        console.error('Error marking notifications as read:', error);
-      }
-    });
+  private mapNotification(n: any): UINotification {
+    return {
+      id: String(n.id),
+      type: (n.type as any) || 'info',
+      title: n.title || 'Notification',
+      message: n.message || '',
+      timestamp: n.created_at || new Date().toISOString(),
+      read: !!n.is_read,
+      action_url: this.notificationService.getNotificationActionUrl(n)
+    };
   }
 } 

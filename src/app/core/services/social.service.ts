@@ -32,6 +32,7 @@ import {
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { forkJoin } from 'rxjs';
+import { RealtimeService } from './realtime.service';
 
 export interface FeedType {
   type: 'personalized' | 'trending' | 'following' | 'discover' | 'niche';
@@ -80,12 +81,22 @@ export interface ModerationData {
 export class SocialService {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
+  private realtime = inject(RealtimeService);
   
   private feedSubject = new BehaviorSubject<Post[]>([]);
   public feed$ = this.feedSubject.asObservable();
 
   private nichesSubject = new BehaviorSubject<Niche[]>([]);
   public niches$ = this.nichesSubject.asObservable();
+
+  constructor() {
+    this.setupRealtime();
+  }
+  
+  /** Seed initial feed so realtime updates can merge into it */
+  public setInitialFeed(posts: Post[]): void {
+    this.feedSubject.next(posts || []);
+  }
 
   // ============================================================================
   // NICHE OPERATIONS
@@ -858,5 +869,37 @@ export class SocialService {
   isPostTrending(post: Post): boolean {
     const engagementRate = this.getPostEngagementRate(post);
     return engagementRate > 5; // 5% engagement rate threshold
+  }
+
+  private setupRealtime(): void {
+    this.realtime.connect('/social');
+    this.realtime.social$.subscribe(({ event, data }) => {
+      switch (event) {
+        case 'post_created':
+          if (data) {
+            const current = this.feedSubject.value;
+            this.feedSubject.next([data as Post, ...current]);
+          }
+          break;
+        case 'post_liked':
+          if (data?.post_id) {
+            const updated = this.feedSubject.value.map(p => 
+              p.id === (data as any).post_id ? { ...p, like_count: (p.like_count || 0) + 1 } : p
+            );
+            this.feedSubject.next(updated);
+          }
+          break;
+        case 'comment_added':
+          if (data?.post_id) {
+            const updated = this.feedSubject.value.map(p => 
+              p.id === (data as any).post_id ? { ...p, comment_count: (p.comment_count || 0) + 1 } : p
+            );
+            this.feedSubject.next(updated);
+          }
+          break;
+        default:
+          break;
+      }
+    });
   }
 } 

@@ -1047,19 +1047,19 @@ export class ApiService {
   // ============================================================================
 
   pinChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chat/rooms/${roomId}/pin`);
+    return this.post<any>(`/chats/rooms/${roomId}/pin`);
   }
 
   muteChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chat/rooms/${roomId}/mute`);
+    return this.post<any>(`/chats/rooms/${roomId}/mute`);
   }
 
   archiveChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chat/rooms/${roomId}/archive`);
+    return this.post<any>(`/chats/rooms/${roomId}/archive`);
   }
 
   deleteChatRoom(roomId: string): Observable<ApiResponse<void>> {
-    return this.delete<void>(`/chat/rooms/${roomId}`);
+    return this.delete<void>(`/chats/rooms/${roomId}`);
   }
 
   // ============================================================================
@@ -1404,8 +1404,8 @@ export class ApiService {
     return this.post<any>(`/socials/niches/posts/${nichePostId}/approve`, approvalData);
   }
 
-  markMessagesAsRead(roomId: string, messageIds: string[]): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chats/rooms/${roomId}/messages/read`, { message_ids: messageIds });
+  markMessagesAsRead(roomId: string): Observable<ApiResponse<any>> {
+    return this.post<any>(`/chats/rooms/${roomId}/read`);
   }
 
   // ============================================================================

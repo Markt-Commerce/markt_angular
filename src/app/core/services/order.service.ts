@@ -11,6 +11,7 @@ import {
   OrderItemStatus
 } from '../models';
 import { tap, map } from 'rxjs/operators';
+import { RealtimeService } from './realtime.service';
 
 export interface OrderState {
   orders: Order[];
@@ -34,6 +35,7 @@ export interface OrderFilters {
 })
 export class OrderService {
   private apiService = inject(ApiService);
+  private realtime = inject(RealtimeService);
   
   private orderStateSubject = new BehaviorSubject<OrderState>({
     orders: [],
@@ -45,7 +47,9 @@ export class OrderService {
 
   public orderState$ = this.orderStateSubject.asObservable();
 
-  constructor() {}
+  constructor() {
+    this.setupRealtime();
+  }
 
   // ============================================================================
   // ORDER OPERATIONS (BUYER)
@@ -671,5 +675,26 @@ export class OrderService {
       if (item) return item;
     }
     return null;
+  }
+
+  private setupRealtime(): void {
+    this.realtime.connect('/orders');
+    this.realtime.orders$.subscribe(({ event, data }) => {
+      switch (event) {
+        case 'order_status_updated':
+          if (data?.order_id && data?.status) {
+            this.updateOrderStatus(String((data as any).order_id), (data as any).status as OrderStatus);
+          }
+          break;
+        case 'payment_confirmed':
+          if (data?.order_id) {
+            // Refresh specific order or stats as needed
+            this.getOrder(String((data as any).order_id)).subscribe();
+          }
+          break;
+        default:
+          break;
+      }
+    });
   }
 } 
