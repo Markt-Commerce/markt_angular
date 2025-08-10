@@ -177,6 +177,17 @@ import { ApiService } from '../../core/services/api.service';
             <i class="fas fa-check-circle"></i>
             <p>Welcome to Markt! Your account is ready to go.</p>
           </div>
+
+          <!-- Hybrid roles banner -->
+          <div class="hybrid-banner">
+            <h3>One account. Two roles.</h3>
+            <p>You can add the other role anytime. Start now:</p>
+            <div class="banner-actions">
+              <button class="outline" (click)="goCreate('buyer')">Create Buyer</button>
+              <button class="primary" (click)="goCreate('seller')">Create Seller</button>
+            </div>
+          </div>
+
           <button (click)="completeOnboarding()" [disabled]="submitting">
             {{ submitting ? 'Completing...' : 'Get Started' }}
           </button>
@@ -319,6 +330,19 @@ import { ApiService } from '../../core/services/api.service';
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .hybrid-banner {
+      border: 1px solid #e5dddc;
+      background: #f9f7f6;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .hybrid-banner h3 { margin: 0 0 6px 0; }
+    .hybrid-banner p { margin: 0 0 12px 0; color: #6b5c56; }
+    .banner-actions { display: flex; gap: 10px; justify-content: center; }
+    .banner-actions .outline { background: white; color: #181211; border: 1px solid #e5dddc; border-radius: 8px; padding: 8px 12px; }
+    .banner-actions .primary { background: #e85530; color: white; border: none; border-radius: 8px; padding: 8px 12px; }
   `]
 })
 export class OnboardingComponent implements OnInit {
@@ -428,5 +452,10 @@ export class OnboardingComponent implements OnInit {
         }
       });
     }
+  }
+
+  goCreate(type: 'buyer' | 'seller'): void {
+    const query = type === 'buyer' ? { createBuyer: '1' } : { createSeller: '1' };
+    this.router.navigate(['/app/profile'], { queryParams: query });
   }
 } 

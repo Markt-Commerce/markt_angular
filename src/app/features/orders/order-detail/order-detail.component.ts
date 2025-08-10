@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { TitleMetaService } from '../../../core/services/title-meta.service';
 
 interface OrderItem {
   id: string;
@@ -792,6 +793,7 @@ export class OrderDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private apiService = inject(ApiService);
+  private titleMeta = inject(TitleMetaService);
 
   loading = true;
   order: Order | null = null;
@@ -852,6 +854,8 @@ export class OrderDetailComponent implements OnInit {
               status: item.status
             })) || []
           };
+          this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
+          this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
           this.loading = false;
         },
         error: (error) => {

@@ -1,0 +1,174 @@
+Markt Frontend – Update Log
+
+2025-08-10
+- Summary: Introduced hybrid Buyer/Seller role UX, added role switching UI, clarified copy, and extracted meeting transcript.
+- Details:
+  - Transcript:
+    - Extracted meeting text from 'Transcribed audio file.docx' → docs/transcripts/ife_meeting_transcript.txt (note: truncated by tool)
+  - Profile (roles UI and toggle):
+    - Added Buyer/Seller badges, current role display, and a toggle button that calls AuthService.switchRole(); refreshes profile after switch
+    - Injected AuthService; track currentRole in component state
+    - Added is_buyer to local UserProfile mapping (from API response)
+    - File: src/app/features/profile/profile.component.ts
+  - Header (role pill + switch):
+    - Shows current role pill and a Switch button when user has both roles; wired to AuthService.switchRole()
+    - File: src/app/shared/components/header/header.component.ts
+  - Login (account type optional):
+    - Made accountType optional; only sends account_type if selected
+    - File: src/app/features/auth/login/login.component.ts
+  - Landing & Register (copy clarity for hybrid roles):
+    - Landing: added a one-line explainer under hero copy
+    - Register: added a short note that you can add the other role anytime and switch
+    - Files:
+      - src/app/features/landing/landing.component.ts
+      - src/app/features/auth/register/register.component.ts
+  - Build:
+    - Ran npm run build successfully (no mocks; all API calls via ApiService) 
+  - Header role pill visibility:
+    - Header (`src/app/shared/components/header/header.component.ts`): Show current role pill whenever authenticated; keep Switch button conditional on both roles
+    - App top bar (`src/app/shared/components/app-layout/app-layout.component.ts`): Added current role pill and Switch button (if both roles) 
+- In-app header (MainLayout):
+  - Added current role pill and Switch button in `src/app/layout/main-layout/main-layout.component.ts` (visible in dashboard header) 
+2025-08-10 (later)
+- Hybrid roles (Profile): Added inline CTAs and forms to create missing Buyer/Seller accounts; validation + inline errors; loads seller categories; auto-opens via onboarding query params; refreshes profile on success
+  - Files: src/app/features/profile/profile.component.ts
+- Headers/navigation: Role pill visible when authenticated; Switch shows if both roles; hide `Listings` nav unless current role is seller; dropdown reflects seller-only
+  - Files: src/app/shared/components/header/header.component.ts, src/app/shared/components/app-layout/app-layout.component.ts, src/app/layout/main-layout/main-layout.component.ts
+- Onboarding: Added final-step banner with one-click “Create Buyer/Seller” actions that open Profile forms
+  - File: src/app/features/onboarding/onboarding.component.ts
+- Create Listing UX: Status (draft/active), require at least one image, inline backend error; payload aligned to API (category_ids[], media_ids, product_metadata)
+  - File: src/app/features/seller/listings/create-listing/create-listing.component.ts
+- Notes: Public profile view and guard/menu audit pending; build/test run pending user go-ahead 
+2025-08-10 (batch: policy/messaging/profile)
+- Marketplace: Added seller policy chips (shipping/returns) and “Message seller” link on list view cards
+  - File: src/app/features/marketplace/marketplace.component.ts
+- Product Detail: Added Buyer Protection section and surfaced seller shipping/return policies; added “Message seller” link
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts
+- Public Profile: Wired Follow/Unfollow to backend; kept Send Message deep link
+  - File: src/app/features/profile/user-profile/user-profile.component.ts
+- Nav: Hid seller-only Listings when current role is not seller
+  - File: src/app/layout/main-layout/main-layout.component.ts 
+2025-08-10 (batch: offers/chat/notifications)
+- Offers list: Wire withdraw to backend with optimistic UI
+  - File: src/app/features/offers/offers.component.ts
+- Offer Detail: On accept, add offer product to cart then deep-link to checkout; kept reject flow
+  - File: src/app/features/offers/offer-detail/offer-detail.component.ts
+- Request Detail: Accept/Reject/Withdraw wired to backend; accept adds product to cart and deep-links to checkout
+  - File: src/app/features/requests/request-detail/request-detail.component.ts
+- Chat Detail: Show “Add to cart” button when a message includes product_id; if only offer_id, provide “View offer”; deep-link to checkout after add
+  - File: src/app/features/chat/chat-detail/chat-detail.component.ts
+- Notifications: Ensure action URLs deep-link to correct contexts (orders/offers/requests/products/chat)
+  - File: src/app/features/notifications/notifications.component.ts
+- Build: Successful (bundle slightly over budget; warnings only) 
+2025-08-10 (batch: requests→offers→checkout polish)
+- Request Detail: Optimistic accept/reject/withdraw per offer with disabled/loading state; on accept add product to cart and deep-link to checkout
+  - File: src/app/features/requests/request-detail/request-detail.component.ts
+- Offers: Added loading skeletons and per-offer withdrawing state
+  - File: src/app/features/offers/offers.component.ts
+- Requests: Added list skeletons
+  - File: src/app/features/requests/requests.component.ts
+- Checkout: Show small banner when arriving from accepted offer (?source=offer&offerId=...)
+  - File: src/app/features/checkout/checkout.component.ts
+- Fix: Removed stray duplicate component with diff markers that caused build errors
+  - File removed: src/app/features/request-detail/request-detail.component.ts
+- Build: success 
+2025-08-10 (batch: product detail related products)
+- Product Detail: Removed failing similar-products API call (404); rely on category-based related products already loaded to keep section stable. Silenced errors and simplified logic.
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts 
+2025-08-10 (batch: product detail navigation & chat deeplink)
+- Product Detail: Fixed "View Shop" to public profile route and enriched "Message seller" with product context.
+  - Changes:
+    - View Shop → `/app/profile/user/:id`
+    - Message seller → `/app/chat?user=<sellerId>&product=<productId>`
+  - Files:
+    - src/app/features/marketplace/product-detail/product-detail.component.ts
+- Chat: Auto-handles deep links to open/create a room when `user` (and optional `product`) query params are present; corrected new-chat navigation.
+  - Files:
+    - src/app/features/chat/chat-list/chat-list.component.ts
+2025-08-10 (batch: product detail actions routing)
+- Product Detail: Add to Cart now navigates to `/app/cart?source=product&productId=...`; Buy Now navigates to `/app/checkout?source=buynow&productId=...` after successful add.
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts 
+2025-08-10 (batch: marketplace image quality)
+- Marketplace: Switched card/list images to prefer high-res URLs (desktop/mobile/original) over thumbnails; added `loading="lazy"` and `decoding="async"` for performance.
+  - File: src/app/features/marketplace/marketplace.component.ts
+2025-08-10 (batch: marketplace responsive images)
+- Marketplace: Added responsive `srcset` and `sizes` for product images (grid and list) to serve sharper images per viewport.
+  - File: src/app/features/marketplace/marketplace.component.ts 
+2025-08-10 (batch: product detail responsive images)
+- Product Detail: Added responsive `srcset`/`sizes` to thumbnails and related products images; enabled lazy loading.
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts 
+2025-08-10 (batch: product detail links & actions)
+- Product Detail: Ensured links/actions route and call backend correctly
+  - Add to Cart → `/app/cart?source=product&productId=...`
+  - Buy Now → `/app/checkout?source=buynow&productId=...`
+  - View Shop → `/app/profile/user/:id`
+  - Message seller → `/app/chat?user=<sellerId>&product=<productId>`
+  - Wishlist toggles via ApiService.toggleWishlist
+  - Share uses ApiService.shareProduct and copies share_url to clipboard
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts
+2025-08-10 (batch: marketplace seller filter)
+- Product Detail: Changed View Shop to open marketplace filtered by seller (`/app/marketplace?seller=<id>`), to align with seller listings view.
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts
+- Marketplace: Loads public marketplace feed; respects optional `?seller=` to show specific seller’s products.
+  - File: src/app/features/marketplace/marketplace.component.ts
+2025-08-10 (batch: query params/toString fix)
+- Fixed "can't access property 'toString'" by sanitizing HTTP param building and guard param objects
+  - Skip null/undefined array items in `buildHttpParams` and avoid passing undefined filter values
+  - Guard related-products params for missing category_id
+  - Files:
+    - src/app/core/services/api.service.ts
+    - src/app/features/marketplace/marketplace.component.ts
+    - src/app/features/marketplace/product-detail/product-detail.component.ts
+2025-08-10 (batch: breadcrumbs system)
+- Added global breadcrumb system with shared component and service; wired into `main-layout` and annotated routes.
+  - Components/Services:
+    - src/app/shared/components/breadcrumbs/breadcrumbs.component.ts
+    - src/app/core/services/breadcrumbs.service.ts
+  - Integration:
+    - Placed `<app-breadcrumbs>` under header in `src/app/layout/main-layout/main-layout.component.ts`
+    - Added route `data` for breadcrumbs across app in `src/app/app.routes.ts` (static + dynamic product/user)
+2025-08-10 (batch: breadcrumbs resolvers + a11y)
+- Extended dynamic resolvers (product, user, order, request, chat, post) with simple caching
+- Added aria-current to last crumb and tooltips for truncated labels
+- Annotated routes for order/request/post dynamic breadcrumb types
+  - Files:
+    - src/app/core/services/breadcrumbs.service.ts
+    - src/app/app.routes.ts
+    - src/app/shared/components/breadcrumbs/breadcrumbs.component.ts
+2025-08-10 (batch: cross-cutting services v1)
+- Feature flags: central remote/local toggles; visible beta banner under header
+  - Files: src/app/core/services/feature-flags.service.ts, src/app/layout/main-layout/main-layout.component.ts
+- Access control: capability checks by role for UI/guards
+  - File: src/app/core/services/access-control.service.ts
+- Title/meta: shared setter for document title and OG/meta
+  - File: src/app/core/services/title-meta.service.ts
+- Error handling: map API errors to friendly toasts via AppStateService
+  - File: src/app/core/services/error-handling.service.ts
+- Media optimization: centralized image src/srcset helpers
+  - File: src/app/core/services/media-optimization.service.ts
+- Deep links: build/route to product/chat/checkout consistently
+  - File: src/app/core/services/deeplink-routing.service.ts
+2025-08-10 (batch: apply services across UI)
+- Product Detail: Set document title/meta via TitleMetaService; role-gated buttons via AccessControlService
+  - File: src/app/features/marketplace/product-detail/product-detail.component.ts
+- Marketplace: Centralized image src/srcset via MediaOptimizationService; role-gated add-to-cart via AccessControlService
+  - File: src/app/features/marketplace/marketplace.component.ts
+- Main Layout: Seller nav now uses AccessControlService; beta banner flag visible
+  - File: src/app/layout/main-layout/main-layout.component.ts
+- Profile (public): Product images get lazy loading (prep for media service later)
+  - File: src/app/features/profile/user-profile/user-profile.component.ts 
+
+2025-08-10 (batch: role gating + title/meta + media tweaks)
+- Cart: Added buyer-mode gate banner with Switch-to-Buyer, disabled checkout when not buyer, optimized cart and recently viewed images via MediaOptimizationService, and fixed product link path. Routes to `/app/checkout`.
+  - File: src/app/features/cart/cart.component.ts
+- Checkout: Added buyer-mode gate banner and disabled inputs/actions when not buyer. Subscribes to auth changes.
+  - File: src/app/features/checkout/checkout.component.ts
+- Orders detail: Sets page title and meta via TitleMetaService (e.g., "Order #ABC123 · Markt").
+  - File: src/app/features/orders/order-detail/order-detail.component.ts
+- Public Profile: Sets page title/meta to @username and bio description.
+  - File: src/app/features/profile/user-profile/user-profile.component.ts
+- Build: success with minor template warnings; one template close-tag issue corrected in user-profile. 
+- Role checks audit: Replaced direct `current_role` checks in `app-layout` and `requests` with `AccessControlService` (`access.role`, `access.canSeeSellerNav()`).
+  - Files: src/app/shared/components/app-layout/app-layout.component.ts, src/app/features/requests/requests.component.ts
+- RoleGate: Added reusable `RoleGateComponent` for gating buyer/seller sections with a switch action.
+  - File: src/app/shared/components/role-gate/role-gate.component.ts 

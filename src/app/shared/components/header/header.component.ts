@@ -17,12 +17,20 @@ import { map } from 'rxjs/operators';
           <img src="/markt-text-logo.png" alt="Markt" class="h-full w-auto object-contain drop-shadow-lg">
         </div>
       </div>
-      <div class="flex flex-1 justify-end gap-8 lg:gap-10">
-        <div class="hidden md:flex items-center gap-10">
+      <div class="flex flex-1 justify-end gap-4 lg:gap-6 items-center">
+        <div class="hidden md:flex items-center gap-10 mr-2">
           <a class="text-markt-dark text-base font-semibold leading-normal hover:text-markt-primary transition-colors duration-200 hover:scale-105 transform" [routerLink]="['/app/marketplace']">Explore</a>
           <a class="text-markt-dark text-base font-semibold leading-normal hover:text-markt-primary transition-colors duration-200 hover:scale-105 transform" [routerLink]="['/app/seller']">Sell</a>
           <a class="text-markt-dark text-base font-semibold leading-normal hover:text-markt-primary transition-colors duration-200 hover:scale-105 transform" href="#help">Help</a>
         </div>
+        
+        <!-- Current role pill always visible when authenticated; Switch only if both roles -->
+        <ng-container *ngIf="isAuthenticated$ | async">
+          <div class="flex items-center gap-2 mr-2">
+            <span class="inline-flex items-center px-2 py-1 rounded-full bg-markt-light text-markt-dark text-xs border border-markt-border">{{ currentRole | titlecase }}</span>
+            <button class="text-sm text-markt-primary hover:underline" *ngIf="hasBothRoles" (click)="toggleRole()">Switch</button>
+          </div>
+        </ng-container>
         
         <!-- Guest User Actions -->
         <div *ngIf="!(isAuthenticated$ | async)" class="flex gap-4">
@@ -71,6 +79,19 @@ export class HeaderComponent {
         return state.isAuthenticated;
       })
     );
+  }
+
+  get currentRole(): 'buyer' | 'seller' | null {
+    return this.authService.getCurrentRole();
+  }
+
+  get hasBothRoles(): boolean {
+    const user = this.authService.getCurrentUser();
+    return !!(user?.is_buyer && user?.is_seller);
+  }
+
+  toggleRole(): void {
+    this.authService.switchRole().subscribe();
   }
 
   logout(): void {

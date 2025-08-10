@@ -202,6 +202,7 @@ interface ProductVariant {
                 <button type="button" class="remove-image" (click)="removeImage(media.id)">×</button>
               </div>
             </div>
+            <div class="error-message" *ngIf="imageError">{{ imageError }}</div>
           </div>
         </div>
 
@@ -338,6 +339,7 @@ interface ProductVariant {
             Create Product
           </app-button>
         </div>
+        <div class="error-message" *ngIf="backendError">{{ backendError }}</div>
       </form>
     </div>
   `,
@@ -586,6 +588,8 @@ export class CreateListingComponent implements OnInit {
   uploadedMedia: any[] = [];
   variants: ProductVariant[] = [];
   mediaStats: any;
+  backendError = '';
+  imageError = '';
 
   categories: Category[] = [
     { id: '1', name: 'Electronics', slug: 'electronics' },
@@ -612,6 +616,7 @@ export class CreateListingComponent implements OnInit {
       weight: ['', [Validators.min(0)]],
       category: ['', [Validators.required]],
       tags: [''],
+      status: ['draft', [Validators.required]],
       freeShipping: [false],
       shippingCost: ['', [Validators.min(0)]],
       returnPolicy: [false],
@@ -721,6 +726,7 @@ export class CreateListingComponent implements OnInit {
   private uploadFiles(files: File[]): void {
     this.loading = true; // Changed from uploading to loading
     this.uploadedMedia = []; // Clear previous uploads
+    this.imageError = '';
 
     const uploadPromises = files.map(file => {
       return this.apiService.uploadMedia(file).toPromise();
@@ -729,10 +735,14 @@ export class CreateListingComponent implements OnInit {
     Promise.all(uploadPromises).then(responses => {
       this.uploadedMedia = responses.filter(response => response).map(response => response!.data);
       this.loading = false;
+      if (this.uploadedMedia.length === 0) {
+        this.imageError = 'Please upload at least one image.';
+      }
     }).catch(error => {
       console.error('Upload error:', error);
       this.loading = false;
       this.uploadedMedia = []; // Clear uploaded media on error
+      this.imageError = 'Image upload failed. Please try again.';
     });
   }
 
@@ -810,13 +820,36 @@ export class CreateListingComponent implements OnInit {
 
   onSubmit(): void {
     if (this.productForm.valid) {
+      this.backendError = '';
+      this.imageError = this.uploadedMedia.length === 0 ? 'Please upload at least one image.' : '';
+      if (this.imageError) {
+        // Prevent submit if no images
+        Object.values(this.productForm.controls).forEach(c => c.markAsTouched());
+        return;
+      }
+
       this.loading = true;
       
-      // Prepare product data with media IDs
-      const productData = {
-        ...this.productForm.value,
-        media_ids: this.uploadedMedia.map(media => media.id),
-        category_id: this.productForm.value.category
+      // Prepare product data with proper API shape
+      const form = this.productForm.value;
+      const productData: any = {
+        name: form.name,
+        description: form.description,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        weight: form.weight ? Number(form.weight) : undefined,
+        status: form.status,
+        category_ids: form.category ? [String(form.category)] : [],
+        media_ids: this.uploadedMedia.map(m => String(m.id)),
+        product_metadata: {
+          sku: form.sku || undefined,
+          tags: form.tags ? String(form.tags).split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
+          shipping: {
+            free: !!form.freeShipping,
+            cost: form.freeShipping ? 0 : Number(form.shippingCost || 0)
+          },
+          returns: form.returnPolicy ? { days: Number(form.returnDays || 30) } : undefined
+        }
       };
 
       this.apiService.createProduct(productData).subscribe({
@@ -826,9 +859,12 @@ export class CreateListingComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating product:', error);
+          this.backendError = error?.message || 'Failed to create product. Please review your inputs.';
           this.loading = false;
         }
       });
+    } else {
+      Object.values(this.productForm.controls).forEach(c => c.markAsTouched());
     }
   }
 

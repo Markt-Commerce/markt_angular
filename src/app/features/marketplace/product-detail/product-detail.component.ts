@@ -30,29 +30,33 @@ import { CartService } from '../../../core/services/cart.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/social.service';
 import { ApiService } from '../../../core/services/api.service';
+import { finalize } from 'rxjs/operators';
+import { AccessControlService } from '../../../core/services/access-control.service';
+import { TitleMetaService } from '../../../core/services/title-meta.service';
+import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
   template: `
-    <div class="space-y-6" *ngIf="product">
+    <div class="container mx-auto px-4 lg:px-8 space-y-8 animate-fade-in-up" *ngIf="product">
       <!-- Breadcrumb -->
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-4">
           <li>
-            <a routerLink="/app/marketplace" class="text-gray-400 hover:text-gray-500">
+            <a routerLink="/app/marketplace" class="text-markt-muted hover:text-markt-primary">
               Marketplace
             </a>
           </li>
           <li>
             <div class="flex items-center">
-              <fa-icon [icon]="faArrowLeft" class="w-4 h-4 text-gray-400"></fa-icon>
-              <span class="ml-4 text-gray-500">{{ product.category?.name }}</span>
+              <fa-icon [icon]="faArrowLeft" class="w-4 h-4 text-markt-muted"></fa-icon>
+              <span class="ml-4 text-markt-muted">{{ product.category?.name }}</span>
             </div>
           </li>
           <li>
-            <span class="text-gray-900">{{ product.name }}</span>
+            <span class="text-markt-dark">{{ product.name }}</span>
           </li>
         </ol>
       </nav>
@@ -66,7 +70,7 @@ import { ApiService } from '../../../core/services/api.service';
             <img 
               [src]="(selectedImage?.media?.desktop_url || selectedImage?.media?.mobile_url || selectedImage?.media?.original_url || product.images?.[0]?.media?.desktop_url || product.images?.[0]?.media?.mobile_url || product.images?.[0]?.media?.original_url) || '/markt-text-logo.png'" 
               [alt]="product.name"
-              class="w-full h-96 object-cover rounded-lg shadow-lg"
+              class="w-full h-96 object-cover rounded-2xl shadow-xl border border-markt-border/30"
             >
             <div class="absolute top-4 right-4 flex space-x-2">
               <button 
@@ -87,7 +91,7 @@ import { ApiService } from '../../../core/services/api.service';
           </div>
 
           <!-- Thumbnail Images -->
-          <div *ngIf="product.images.length > 1" class="flex space-x-2 overflow-x-auto">
+          <div *ngIf="product.images?.length > 1" class="flex space-x-2 overflow-x-auto">
             <button 
               *ngFor="let image of product.images"
               (click)="selectImage(image)"
@@ -95,10 +99,14 @@ import { ApiService } from '../../../core/services/api.service';
               [class.border-markt-primary]="selectedImage?.id === image.id"
               [class.border-gray-200]="selectedImage?.id !== image.id"
             >
-                             <img 
-                [src]="(image?.media?.thumbnail_url || image?.media?.desktop_url || image?.media?.mobile_url || image?.media?.original_url)"
+              <img 
+                [src]="media.getPrimaryUrl(image)"
+                [attr.srcset]="media.getSrcSet(image)"
+                [attr.sizes]="media.listThumbSizes()"
                 [alt]="product.name"
                 class="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               >
             </button>
           </div>
@@ -108,17 +116,23 @@ import { ApiService } from '../../../core/services/api.service';
         <div class="space-y-6">
           <!-- Product Header -->
           <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
-            <div class="flex items-center space-x-4 mb-4">
+            <h1 class="text-4xl font-black text-markt-dark mb-2">{{ product.name }}</h1>
+            <div class="flex items-center space-x-4 mb-2">
               <div class="flex items-center">
                 <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
-                <span class="ml-1 text-lg font-semibold text-gray-900">{{ product.rating }}</span>
-                <span class="ml-1 text-gray-500">({{ product.review_count }} reviews)</span>
+                <span class="ml-1 text-lg font-semibold text-markt-dark">{{ product.rating }}</span>
+                <span class="ml-1 text-markt-muted">({{ product.review_count }} reviews)</span>
               </div>
-              <span class="text-gray-500">•</span>
-              <span class="text-gray-500">{{ product.sold_count }} sold</span>
+              <span class="text-markt-muted">•</span>
+              <span class="text-markt-muted">{{ product.sold_count }} sold</span>
             </div>
-            <div class="text-3xl font-bold text-gray-900 mb-4">
+            <!-- Trust chips -->
+            <div class="flex flex-wrap gap-2 mb-4 text-xs">
+              <span *ngIf="product.seller?.is_verified" class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700">Verified seller</span>
+              <span *ngIf="product.seller?.policies?.returns" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-700">Returns: {{ product.seller?.policies?.returns }}</span>
+              <span *ngIf="product.seller?.policies?.shipping" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-700">Shipping: {{ product.seller?.policies?.shipping }}</span>
+            </div>
+            <div class="text-3xl font-black text-markt-dark mb-4">
               {{ product.price | currency:(product.currency || 'NGN') }}
               <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-lg text-gray-500 line-through ml-2">
                 {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
@@ -128,24 +142,24 @@ import { ApiService } from '../../../core/services/api.service';
 
           <!-- Product Description -->
           <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
-            <p class="text-gray-600 leading-relaxed">{{ product.description }}</p>
+            <h3 class="text-lg font-bold text-markt-dark mb-2">Description</h3>
+            <p class="text-markt-muted leading-relaxed">{{ product.description }}</p>
           </div>
 
           <!-- Product Details -->
           <div *ngIf="product.details" class="space-y-3">
-            <h3 class="text-lg font-medium text-gray-900">Details</h3>
+            <h3 class="text-lg font-bold text-markt-dark">Details</h3>
             <div class="grid grid-cols-2 gap-4">
               <div *ngFor="let detail of product.details" class="flex justify-between">
-                <span class="text-gray-500">{{ detail.key }}:</span>
-                <span class="text-gray-900">{{ detail.value }}</span>
+                <span class="text-markt-muted">{{ detail.key }}:</span>
+                <span class="text-markt-dark">{{ detail.value }}</span>
               </div>
             </div>
           </div>
 
           <!-- Quantity Selector -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+            <label class="block text-sm font-medium text-markt-dark mb-2">Quantity</label>
             <div class="flex items-center space-x-3">
               <button 
                 (click)="decreaseQuantity()"
@@ -171,26 +185,26 @@ import { ApiService } from '../../../core/services/api.service';
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex space-x-4">
+          <!-- Action Buttons (hidden for sellers) -->
+          <div class="flex space-x-4" *ngIf="accessControl.canCheckout()">
             <button 
               (click)="addToCart()"
-              class="flex-1 bg-markt-primary text-white py-3 px-6 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+              class="flex-1 bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-3 px-6 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all font-bold"
             >
               <fa-icon [icon]="faShoppingCart" class="w-5 h-5 mr-2"></fa-icon>
               Add to Cart
             </button>
             <button 
               (click)="buyNow()"
-              class="flex-1 bg-gray-900 text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors font-medium"
+              class="flex-1 bg-white text-markt-primary py-3 px-6 rounded-xl border-2 border-markt-border hover:border-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all font-bold"
             >
               Buy Now
             </button>
           </div>
 
           <!-- Seller Info -->
-          <div class="border-t border-gray-200 pt-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Seller Information</h3>
+          <div class="bg-white rounded-2xl p-6 border border-markt-border/30 shadow-sm">
+            <h3 class="text-lg font-bold text-markt-dark mb-4">Seller Information</h3>
             <div class="flex items-center space-x-4">
               <img 
                 [src]="product.seller?.profile_picture_url || '/markt-text-logo.png'" 
@@ -198,8 +212,8 @@ import { ApiService } from '../../../core/services/api.service';
                 class="w-12 h-12 rounded-full object-cover"
               >
               <div class="flex-1">
-                <h4 class="font-medium text-gray-900">{{ product.seller?.shop_name }}</h4>
-                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <h4 class="font-semibold text-markt-dark">{{ product.seller?.shop_name }}</h4>
+                <div class="flex items-center space-x-4 text-sm text-markt-muted">
                   <span class="flex items-center">
                     <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
                     {{ product.seller?.location }}
@@ -211,44 +225,61 @@ import { ApiService } from '../../../core/services/api.service';
                 </div>
               </div>
               <button 
-                routerLink="/app/profile/{{ product.seller?.id }}"
+                [routerLink]="['/app/marketplace']"
+                [queryParams]="{ seller: product.seller?.id }"
                 class="text-markt-primary hover:text-markt-secondary font-medium"
               >
                 View Shop
               </button>
+              <a *ngIf="product.seller?.id" [routerLink]="['/app/chat']" [queryParams]="{ user: product.seller.id, product: product.id }" class="text-markt-primary underline">Message seller</a>
             </div>
           </div>
 
           <!-- Shipping & Returns -->
-          <div class="border-t border-gray-200 pt-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Shipping & Returns</h3>
+          <div class="bg-white rounded-2xl p-6 border border-markt-border/30 shadow-sm">
+            <h3 class="text-lg font-bold text-markt-dark mb-4">Shipping & Returns</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faTruck" class="w-5 h-5 text-green-600"></fa-icon>
+                <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-green-600"></fa-icon>
                 <div>
-                  <p class="font-medium text-gray-900">Free Shipping</p>
-                  <p class="text-sm text-gray-500">On orders over ₦5,000</p>
+                  <p class="font-medium text-markt-dark">Buyer Protection</p>
+                  <p class="text-sm text-markt-muted">Refunds for items not received or not as described</p>
                 </div>
               </div>
               <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-blue-600"></fa-icon>
+                <fa-icon [icon]="faTruck" class="w-5 h-5 text-green-600"></fa-icon>
                 <div>
-                  <p class="font-medium text-gray-900">Secure Payment</p>
-                  <p class="text-sm text-gray-500">100% secure checkout</p>
+                  <p class="font-medium text-markt-dark">Free Shipping</p>
+                  <p class="text-sm text-markt-muted">On orders over ₦5,000</p>
                 </div>
               </div>
               <div class="flex items-center space-x-3">
                 <fa-icon [icon]="faCheck" class="w-5 h-5 text-green-600"></fa-icon>
                 <div>
-                  <p class="font-medium text-gray-900">Easy Returns</p>
-                  <p class="text-sm text-gray-500">30-day return policy</p>
+                  <p class="font-medium text-markt-dark">Easy Returns</p>
+                  <p class="text-sm text-markt-muted">30-day return policy</p>
                 </div>
               </div>
+            </div>
+            <div class="mt-4 text-sm text-markt-muted">
+              <div *ngIf="product.seller?.policies?.shipping">Shipping policy: {{ product.seller?.policies?.shipping }}</div>
+              <div *ngIf="product.seller?.policies?.returns">Return policy: {{ product.seller?.policies?.returns }}</div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- As seen in posts -->
+      <div *ngIf="product.posts?.length" class="border-t border-gray-200 pt-8">
+        <h3 class="text-2xl font-bold text-markt-dark mb-4">As seen in posts</h3>
+        <div class="flex gap-3 overflow-x-auto">
+          <a *ngFor="let p of product.posts" [routerLink]="['/app/community/feed']" class="flex-shrink-0 w-40 h-28 bg-gradient-to-br from-markt-light/50 to-white rounded-lg relative overflow-hidden">
+            <img *ngIf="p.media?.[0]?.thumbnail_url" [src]="p.media[0].thumbnail_url" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/10"></div>
+          </a>
+        </div>
+      </div>
+ 
       <!-- Product Tabs -->
       <div class="border-t border-gray-200 pt-8">
         <div class="border-b border-gray-200">
@@ -296,22 +327,22 @@ import { ApiService } from '../../../core/services/api.service';
           <!-- Reviews Tab -->
           <div *ngIf="activeTab === 'reviews'" class="space-y-6">
             <!-- Review Summary -->
-            <div class="bg-gray-50 rounded-lg p-6">
+            <div class="bg-gradient-to-br from-markt-light/50 to-white rounded-2xl p-6 border border-markt-border/30">
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="text-lg font-medium text-gray-900">Customer Reviews</h3>
+                  <h3 class="text-lg font-bold text-markt-dark">Customer Reviews</h3>
                   <div class="flex items-center mt-2">
                     <div class="flex items-center">
                       <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
-                      <span class="ml-1 text-lg font-semibold text-gray-900">{{ product.rating }}</span>
+                      <span class="ml-1 text-lg font-semibold text-markt-dark">{{ product.rating }}</span>
                     </div>
-                    <span class="ml-2 text-gray-500">out of 5</span>
+                    <span class="ml-2 text-markt-muted">out of 5</span>
                   </div>
-                  <p class="text-sm text-gray-500 mt-1">{{ product.review_count }} reviews</p>
+                  <p class="text-sm text-markt-muted mt-1">{{ product.review_count }} reviews</p>
                 </div>
                 <button 
                   (click)="showReviewForm = true"
-                  class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
+                  class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all"
                 >
                   Write a Review
                 </button>
@@ -319,11 +350,11 @@ import { ApiService } from '../../../core/services/api.service';
             </div>
 
             <!-- Review Form -->
-            <div *ngIf="showReviewForm" class="bg-white border border-gray-200 rounded-lg p-6">
-              <h4 class="text-lg font-medium text-gray-900 mb-4">Write a Review</h4>
+            <div *ngIf="showReviewForm" class="bg-white border border-markt-border/30 rounded-2xl p-6 shadow-sm">
+              <h4 class="text-lg font-bold text-markt-dark mb-4">Write a Review</h4>
               <form (ngSubmit)="submitReview()" class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                  <label class="block text-sm font-medium text-markt-dark mb-2">Rating</label>
                   <div class="flex items-center space-x-2">
                     <button 
                       *ngFor="let star of [1,2,3,4,5]"
@@ -338,7 +369,7 @@ import { ApiService } from '../../../core/services/api.service';
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                  <label class="block text-sm font-medium text-markt-dark mb-2">Title</label>
                   <input 
                     type="text" 
                     [(ngModel)]="reviewTitle"
@@ -348,7 +379,7 @@ import { ApiService } from '../../../core/services/api.service';
                   >
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                  <label class="block text-sm font-medium text-markt-dark mb-2">Review</label>
                   <textarea 
                     [(ngModel)]="reviewContent"
                     name="content"
@@ -360,14 +391,14 @@ import { ApiService } from '../../../core/services/api.service';
                 <div class="flex space-x-3">
                   <button 
                     type="submit"
-                    class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
+                    class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all"
                   >
                     Submit Review
                   </button>
                   <button 
                     type="button"
                     (click)="showReviewForm = false"
-                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
+                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors"
                   >
                     Cancel
                   </button>
@@ -377,7 +408,7 @@ import { ApiService } from '../../../core/services/api.service';
 
             <!-- Reviews List -->
             <div class="space-y-6">
-              <div *ngFor="let review of reviews" class="bg-white border border-gray-200 rounded-lg p-6">
+              <div *ngFor="let review of reviews" class="bg-gradient-to-br from-markt-light/50 to-white border border-markt-border/30 rounded-2xl p-6">
                 <div class="flex items-start justify-between">
                   <div class="flex items-center space-x-3">
                     <img 
@@ -386,7 +417,7 @@ import { ApiService } from '../../../core/services/api.service';
                       class="w-10 h-10 rounded-full object-cover"
                     >
                     <div>
-                      <p class="font-medium text-gray-900">{{ review.user?.username }}</p>
+                      <p class="font-medium text-markt-dark">{{ review.user?.username }}</p>
                       <div class="flex items-center">
                         <div class="flex items-center">
                           <fa-icon 
@@ -397,7 +428,7 @@ import { ApiService } from '../../../core/services/api.service';
                             [class.text-gray-300]="star > review.rating"
                           ></fa-icon>
                         </div>
-                        <span class="ml-2 text-sm text-gray-500">{{ review.created_at | date }}</span>
+                        <span class="ml-2 text-sm text-markt-muted">{{ review.created_at | date }}</span>
                       </div>
                     </div>
                   </div>
@@ -406,8 +437,8 @@ import { ApiService } from '../../../core/services/api.service';
                   </button>
                 </div>
                 <div class="mt-4">
-                  <h4 class="font-medium text-gray-900 mb-2">{{ review.title }}</h4>
-                  <p class="text-gray-600">{{ review.content }}</p>
+                  <h4 class="font-medium text-markt-dark mb-2">{{ review.title }}</h4>
+                  <p class="text-markt-muted">{{ review.content }}</p>
                 </div>
                 <div class="mt-4 flex items-center space-x-4 text-sm text-gray-500">
                   <button class="flex items-center space-x-1 hover:text-gray-700">
@@ -427,32 +458,32 @@ import { ApiService } from '../../../core/services/api.service';
                      <div *ngIf="activeTab === 'specifications'" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.sku">
-                <span class="font-medium text-gray-900">SKU</span>
-                <span class="text-gray-600">{{ product.sku }}</span>
+                <span class="font-medium text-markt-dark">SKU</span>
+                <span class="text-markt-muted">{{ product.sku }}</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.barcode">
-                <span class="font-medium text-gray-900">Barcode</span>
-                <span class="text-gray-600">{{ product.barcode }}</span>
+                <span class="font-medium text-markt-dark">Barcode</span>
+                <span class="text-markt-muted">{{ product.barcode }}</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.weight">
-                <span class="font-medium text-gray-900">Weight</span>
-                <span class="text-gray-600">{{ product.weight }} kg</span>
+                <span class="font-medium text-markt-dark">Weight</span>
+                <span class="text-markt-muted">{{ product.weight }} kg</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.brand">
-                <span class="font-medium text-gray-900">Brand</span>
-                <span class="text-gray-600">{{ product.product_metadata.brand }}</span>
+                <span class="font-medium text-markt-dark">Brand</span>
+                <span class="text-markt-muted">{{ product.product_metadata.brand }}</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.model">
-                <span class="font-medium text-gray-900">Model</span>
-                <span class="text-gray-600">{{ product.product_metadata.model }}</span>
+                <span class="font-medium text-markt-dark">Model</span>
+                <span class="text-markt-muted">{{ product.product_metadata.model }}</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.color">
-                <span class="font-medium text-gray-900">Color</span>
-                <span class="text-gray-600">{{ product.product_metadata.color }}</span>
+                <span class="font-medium text-markt-dark">Color</span>
+                <span class="text-markt-muted">{{ product.product_metadata.color }}</span>
               </div>
               <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.warranty">
-                <span class="font-medium text-gray-900">Warranty</span>
-                <span class="text-gray-600">{{ product.product_metadata.warranty }}</span>
+                <span class="font-medium text-markt-dark">Warranty</span>
+                <span class="text-markt-muted">{{ product.product_metadata.warranty }}</span>
               </div>
             </div>
           </div>
@@ -461,18 +492,22 @@ import { ApiService } from '../../../core/services/api.service';
 
       <!-- Related Products -->
       <div class="border-t border-gray-200 pt-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h3>
+        <h3 class="text-2xl font-bold text-markt-dark mb-6">Related Products</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div *ngFor="let relatedProduct of relatedProducts" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+          <div *ngFor="let relatedProduct of relatedProducts" class="bg-white rounded-2xl border border-markt-border/30 shadow-sm overflow-hidden hover:shadow-xl transition-shadow">
             <img 
-              [src]="relatedProduct.images[0]?.url || '/markt-text-logo.png'" 
+              [src]="media.getPrimaryUrl(relatedProduct?.images?.[0])" 
+              [attr.srcset]="media.getSrcSet(relatedProduct?.images?.[0])"
+              [attr.sizes]="media.gridSizes()"
               [alt]="relatedProduct.name"
               class="w-full h-48 object-cover"
+              loading="lazy"
+              decoding="async"
             >
             <div class="p-4">
-              <h4 class="font-medium text-gray-900 mb-2">{{ relatedProduct.name }}</h4>
+              <h4 class="font-medium text-markt-dark mb-2">{{ relatedProduct.name }}</h4>
               <div class="flex items-center justify-between">
-                <span class="text-lg font-bold text-gray-900">{{ relatedProduct.price | currency:'NGN' }}</span>
+                <span class="text-lg font-bold text-markt-dark">{{ relatedProduct.price | currency:'NGN' }}</span>
                 <div class="flex items-center">
                   <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
                   <span class="ml-1 text-sm text-gray-600">{{ relatedProduct.rating }}</span>
@@ -488,11 +523,25 @@ import { ApiService } from '../../../core/services/api.service';
     <div *ngIf="!product && isLoading" class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
     </div>
+
+    <!-- Not Found -->
+    <div *ngIf="!product && !isLoading" class="text-center py-16 text-gray-600">
+      <p>Product not found.</p>
+    </div>
   `,
   styles: [`
     :host {
       display: block;
+      min-height: 100vh;
+      background-image: linear-gradient(135deg, rgba(244, 241, 240, 0.6) 0%, rgba(255,255,255, 0.9) 50%, rgba(224, 117, 117, 0.08) 100%);
+      background-attachment: fixed;
     }
+
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up { animation: fade-in-up 0.5s ease-out both; }
   `]
 })
 export class ProductDetailComponent implements OnInit {
@@ -500,9 +549,13 @@ export class ProductDetailComponent implements OnInit {
   private router = inject(Router);
   private marketplaceService = inject(MarketplaceService);
   private cartService = inject(CartService);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private socialService = inject(SocialService);
   private apiService = inject(ApiService);
+  public accessControl = inject(AccessControlService);
+  private titleMeta = inject(TitleMetaService);
+  public media = inject(MediaOptimizationService);
+  
 
   // Icons
   faHeart = faHeart;
@@ -556,22 +609,27 @@ export class ProductDetailComponent implements OnInit {
     if (productId) {
       this.isLoading = true;
       
-      this.apiService.getProduct(productId).subscribe({
-        next: (response) => {
-          this.product = response.data;
-          this.selectedImage = this.product.images[0];
-          this.loadRelatedProducts();
-          this.loadReviews();
-          this.checkWishlistStatus();
-          this.trackProductView();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error loading product:', error);
-          this.isLoading = false;
-          this.router.navigate(['/app/marketplace']);
-        }
-      });
+      this.apiService.getProduct(productId)
+        .pipe(finalize(() => { this.isLoading = false; }))
+        .subscribe({
+          next: (response) => {
+            const r: any = response as any;
+            const data: any = r?.data?.item || r?.data?.product || r?.data || r?.item || r?.product || r || null;
+            if (!data || !(data.id || data.product_id || data.slug)) {
+              this.product = null;
+              return;
+            }
+            this.product = data;
+            this.selectedImage = this.product?.images?.[0] || null;
+            this.titleMeta.setTitle([this.product.name, 'Markt']);
+            this.titleMeta.setMeta(this.product.description);
+            this.loadRelatedProducts();
+            this.loadReviews();
+            this.checkWishlistStatus();
+            this.trackProductView();
+          },
+          error: () => { this.product = null; }
+        });
 
       // Load product reviews
       this.apiService.getProductReviews(productId).subscribe({
@@ -583,17 +641,8 @@ export class ProductDetailComponent implements OnInit {
           this.reviews = [];
         }
       });
-
-      // Load similar products
-      this.apiService.getSimilarProducts(productId).subscribe({
-        next: (response) => {
-          this.relatedProducts = response.data || [];
-        },
-        error: (error) => {
-          console.error('Error loading similar products:', error);
-          this.relatedProducts = [];
-        }
-      });
+ 
+      // Similar products endpoint not available; relying on loadRelatedProducts() (category-based)
     }
   }
 
@@ -601,8 +650,8 @@ export class ProductDetailComponent implements OnInit {
     if (!this.product) return;
 
     const params = {
-      category_ids: [this.product.category_id],
-      exclude_id: this.product.id,
+      category_ids: this.product.category_id ? [this.product.category_id] : [],
+      exclude_id: this.product.id || undefined,
       limit: 4
     };
 
@@ -698,6 +747,7 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
+  // Image helpers centralized in MediaOptimizationService
   selectImage(image: any): void {
     this.selectedImage = image;
   }
@@ -720,8 +770,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(this.product.id, this.quantity).subscribe({
       next: (response) => {
         if (response.success) {
-          
-          // Show success message
+          this.router.navigate(['/app/cart'], { queryParams: { source: 'product', productId: this.product.id } });
         }
       },
       error: (error) => {
@@ -736,7 +785,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(this.product.id, this.quantity).subscribe({
       next: (response) => {
         if (response.success) {
-          this.router.navigate(['/app/checkout']);
+          this.router.navigate(['/app/checkout'], { queryParams: { source: 'buynow', productId: this.product.id } });
         }
       },
       error: (error) => {
@@ -748,18 +797,24 @@ export class ProductDetailComponent implements OnInit {
   toggleWishlist(): void {
     if (!this.product) return;
 
-    // This would typically call a wishlist service
-    this.isInWishlist = !this.isInWishlist;
-    
+    this.apiService.toggleWishlist(this.product.id).subscribe({
+      next: (response) => {
+        // Optimistically toggle on success
+        this.isInWishlist = !this.isInWishlist;
+      },
+      error: (error) => {
+        console.error('Error toggling wishlist:', error);
+      }
+    });
   }
 
   shareProduct(): void {
     if (!this.product) return;
 
-    this.socialService.shareProduct(this.product.id).subscribe({
+    this.apiService.shareProduct(this.product.id).subscribe({
       next: (response) => {
-        // Handle sharing (copy link, open share dialog, etc.)
-        navigator.clipboard.writeText(response.share_url || window.location.href);
+        const shareUrl = (response as any)?.share_url || (response as any)?.data?.share_url || window.location.href;
+        navigator.clipboard.writeText(shareUrl);
       },
       error: (error) => {
         console.error('Error sharing product:', error);

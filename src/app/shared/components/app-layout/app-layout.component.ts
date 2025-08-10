@@ -38,6 +38,7 @@ import { AppStateService } from '../../../core/services/app-state.service';
 import { CartService } from '../../../core/services/cart.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ChatService } from '../../../core/services/chat.service';
+import { AccessControlService } from '../../../core/services/access-control.service';
 
 @Component({
   selector: 'app-layout',
@@ -81,7 +82,7 @@ import { ChatService } from '../../../core/services/chat.service';
                 {{ getUserDisplayName() }}
               </p>
               <p class="text-xs text-gray-500 capitalize">
-                {{ user?.current_role || 'User' }}
+                {{ access.role || 'user' }}
               </p>
             </div>
           </div>
@@ -311,6 +312,12 @@ import { ChatService } from '../../../core/services/chat.service';
 
             <!-- Right side -->
             <div class="flex items-center space-x-4">
+              <!-- Role pill + switch -->
+              <div *ngIf="user" class="flex items-center space-x-2 mr-2">
+                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs border border-gray-300 capitalize">{{ access.role || 'user' }}</span>
+                <button *ngIf="user?.is_buyer && user?.is_seller" (click)="toggleRole()" class="text-sm text-markt-primary hover:underline">Switch</button>
+              </div>
+
               <!-- Quick Actions -->
               <div class="flex items-center space-x-2">
                 <button 
@@ -461,6 +468,7 @@ export class AppLayoutComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private chatService = inject(ChatService);
   private router = inject(Router);
+  public access = inject(AccessControlService);
 
   // Icons
   faHome = faHome;
@@ -551,17 +559,17 @@ export class AppLayoutComponent implements OnInit {
 
   getUserDisplayName(): string {
     if (!this.user) return 'User';
-    
-    if (this.user.current_role === 'buyer' && this.user.buyer_account) {
+    if (this.access.role === 'buyer' && this.user.buyer_account) {
       return this.user.buyer_account.buyername;
-    } else if (this.user.current_role === 'seller' && this.user.seller_account) {
+    }
+    if (this.access.role === 'seller' && this.user.seller_account) {
       return this.user.seller_account.shop_name;
     }
     return this.user.username;
   }
 
   get isSeller(): boolean {
-    return this.user?.current_role === 'seller';
+    return this.access.role === 'seller';
   }
 
   logout(): void {
@@ -574,5 +582,9 @@ export class AppLayoutComponent implements OnInit {
         this.router.navigate(['/landing']);
       }
     });
+  }
+
+  toggleRole(): void {
+    this.authService.switchRole().subscribe();
   }
 } 

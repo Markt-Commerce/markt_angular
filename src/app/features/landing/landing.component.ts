@@ -50,10 +50,13 @@ import { map } from 'rxjs/operators';
                       class="text-white text-4xl lg:text-6xl xl:text-7xl font-black leading-tight tracking-[-0.033em] animate-fade-in-up"
                     >
                       Where Social Meets Shopping
-          </h1>
+                    </h1>
                     <h2 class="text-white/90 text-lg lg:text-xl font-normal leading-relaxed max-w-3xl mx-auto animate-fade-in-up delay-200">
                       Markt is a social-first e-commerce platform that combines the best of social media with online shopping. Discover unique products, connect with sellers, and build your community.
                     </h2>
+                    <p class="text-white/90 text-base lg:text-lg max-w-3xl mx-auto animate-fade-in-up delay-300">
+                      One account. Two roles. Start as a buyer or a seller and add the other anytime — switch roles with a tap.
+                    </p>
                   </div>
                   <!-- Guest User Actions -->
                   <div *ngIf="!(isAuthenticated$ | async)" class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">

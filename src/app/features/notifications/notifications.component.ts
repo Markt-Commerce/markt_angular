@@ -498,6 +498,20 @@ export class NotificationsComponent implements OnInit {
   }
 
   private mapNotification(n: any): UINotification {
+    let actionUrl = '';
+    // Prefer service mapping; else derive common patterns
+    const mapped = this.notificationService.getNotificationActionUrl(n);
+    if (mapped) {
+      actionUrl = mapped;
+    } else if (n.context?.type && n.context?.id) {
+      const t = String(n.context.type);
+      const id = String(n.context.id);
+      if (t === 'order') actionUrl = `/app/orders/${id}`;
+      else if (t === 'offer') actionUrl = `/app/offers/${id}`;
+      else if (t === 'request') actionUrl = `/app/requests/${id}`;
+      else if (t === 'product') actionUrl = `/app/marketplace/product/${id}`;
+      else if (t === 'chat') actionUrl = `/app/chat/${id}`;
+    }
     return {
       id: String(n.id),
       type: (n.type as any) || 'info',
@@ -505,7 +519,7 @@ export class NotificationsComponent implements OnInit {
       message: n.message || '',
       timestamp: n.created_at || new Date().toISOString(),
       read: !!n.is_read,
-      action_url: this.notificationService.getNotificationActionUrl(n)
+      action_url: actionUrl
     };
   }
 } 

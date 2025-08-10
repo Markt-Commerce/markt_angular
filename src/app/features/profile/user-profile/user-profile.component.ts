@@ -5,6 +5,8 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { TitleMetaService } from '../../../core/services/title-meta.service';
+import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 
 interface UserProfile {
   id: string;
@@ -66,17 +68,19 @@ interface Review {
         <div class="profile-info">
           <div class="profile-main">
             <h1 class="profile-name">{{ profile?.full_name }}</h1>
-            <p class="profile-username">&#64;{{ profile?.username }}</p>
+            <p class="profile-username">@{{ profile?.username }}</p>
             <p *ngIf="profile?.bio" class="profile-bio">{{ profile?.bio }}</p>
             
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs" *ngIf="profile?.is_seller">Seller</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">Buyer</span>
+              <span *ngIf="profile?.is_verified" class="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">Verified</span>
+            </div>
+
             <div class="profile-meta">
               <div *ngIf="profile?.location" class="meta-item">
                 <i class="fas fa-map-marker-alt text-gray-500"></i>
                 <span>{{ profile?.location }}</span>
-              </div>
-              <div *ngIf="profile?.website" class="meta-item">
-                <i class="fas fa-globe text-gray-500"></i>
-                <a [href]="profile?.website" target="_blank" class="meta-link">{{ profile?.website }}</a>
               </div>
               <div class="meta-item">
                 <i class="fas fa-calendar text-gray-500"></i>
@@ -86,21 +90,8 @@ interface Review {
           </div>
           
           <div class="profile-actions">
-            <app-button
-              variant="primary"
-              size="md"
-              (click)="sendMessage()"
-            >
-              Send Message
-            </app-button>
-            <app-button
-              variant="secondary"
-              size="md"
-              [outline]="true"
-              (click)="followUser()"
-            >
-              {{ isFollowing ? 'Unfollow' : 'Follow' }}
-            </app-button>
+            <app-button variant="primary" size="md" (click)="sendMessage()">{{ profile?.is_seller ? 'Message seller' : 'Message' }}</app-button>
+            <app-button variant="secondary" size="md" [outline]="true" (click)="toggleFollow()">{{ isFollowing ? 'Unfollow' : 'Follow' }}</app-button>
           </div>
         </div>
       </div>
@@ -150,31 +141,25 @@ interface Review {
           </button>
         </div>
 
-        <div class="tab-content">
-          <!-- Products Tab -->
-          <div *ngIf="activeTab === 'products'" class="products-tab">
-            <div *ngIf="products.length === 0" class="empty-state">
-              <i class="fas fa-box text-gray-400 text-4xl"></i>
-              <h3>No products yet</h3>
-              <p>This user hasn't listed any products yet.</p>
-            </div>
-
-            <div *ngIf="products.length > 0" class="products-grid">
-              <div *ngFor="let product of products" class="product-card" (click)="viewProduct(product.id)">
-                <div class="product-image">
-                  <img [src]="product.image_url || '/assets/default-product.png'" [alt]="product.name">
-                </div>
-                <div class="product-info">
-                  <h3 class="product-name">{{ product.name }}</h3>
-                  <p class="product-price">{{ product.price | currency }}</p>
-                  <p class="product-condition">{{ product.condition | titlecase }}</p>
-                </div>
-              </div>
+        <div *ngIf="activeTab === 'products'" class="products-grid">
+          <div *ngFor="let product of products" class="product-card">
+            <img 
+              [src]="media.getPrimaryUrl(product) || product.image_url || '/markt-text-logo.png'" 
+              [srcset]="media.getSrcSet(product)"
+              [sizes]="media.gridSizes()"
+              loading="lazy"
+              decoding="async"
+              [alt]="product.name"
+            >
+            <div class="product-info">
+              <h3>{{ product.name }}</h3>
+              <p class="price">{{ product.price | currency:'NGN' }}</p>
+              <button class="view-button" (click)="viewProduct(product.id)">View Product</button>
             </div>
           </div>
+        </div>
 
-          <!-- Reviews Tab -->
-          <div *ngIf="activeTab === 'reviews'" class="reviews-tab">
+        <div *ngIf="activeTab === 'reviews'" class="reviews-list">
             <div *ngIf="reviews.length === 0" class="empty-state">
               <div class="empty-icon"><fa-icon [icon]="faStar"></fa-icon></div>
               <h3>No reviews yet</h3>
@@ -225,7 +210,6 @@ interface Review {
           </div>
         </div>
       </div>
-    </div>
   `,
   styles: [`
     .user-profile-container {
@@ -612,6 +596,8 @@ export class UserProfileComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private titleMeta = inject(TitleMetaService);
+  public media = inject(MediaOptimizationService);
 
   profile?: UserProfile;
   products: Product[] = [];
@@ -634,6 +620,9 @@ export class UserProfileComponent implements OnInit {
       this.apiService.getUserProfile(userId).subscribe({
         next: (response) => {
           this.profile = response.data as any;
+          const titleHandle = this.profile?.username ? `@${this.profile.username}` : (this.profile?.full_name || 'User');
+          this.titleMeta.setTitle([titleHandle, 'Markt']);
+          this.titleMeta.setMeta(this.profile?.bio || undefined);
           this.loading = false;
         },
         error: (error) => {
@@ -678,9 +667,20 @@ export class UserProfileComponent implements OnInit {
     this.router.navigate(['/app/chat'], { queryParams: { user: this.profile?.id } });
   }
 
-  followUser(): void {
-    this.isFollowing = !this.isFollowing;
-    // Mock API call to follow/unfollow user
+  toggleFollow(): void {
+    if (!this.profile?.id) return;
+    const userId = this.profile.id;
+    if (this.isFollowing) {
+      this.apiService.unfollowUser(userId).subscribe({
+        next: () => { this.isFollowing = false; },
+        error: () => { /* keep old state on error */ }
+      });
+    } else {
+      this.apiService.followUser(userId).subscribe({
+        next: () => { this.isFollowing = true; },
+        error: () => { /* keep old state on error */ }
+      });
+    }
   }
 
   viewProduct(productId: string): void {

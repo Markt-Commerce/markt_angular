@@ -30,6 +30,8 @@ import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { ApiService } from '../../core/services/api.service';
+import { ActivatedRoute } from '@angular/router';
+import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
   selector: 'app-checkout',
@@ -37,6 +39,16 @@ import { ApiService } from '../../core/services/api.service';
   imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, FontAwesomeModule],
   template: `
     <div class="space-y-6">
+      <div *ngIf="offerContext.offerId" class="rounded-md border border-green-200 bg-green-50 text-green-800 px-4 py-2 text-sm">
+        Offer accepted. Item added to your cart. You can complete checkout below.
+      </div>
+      <!-- Buyer mode gate -->
+      <div *ngIf="!canCheckout" class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
+        <div>
+          Cart and checkout are available in Buyer mode. Switch to continue.
+        </div>
+        <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
+      </div>
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -85,7 +97,7 @@ import { ApiService } from '../../core/services/api.service';
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Checkout Form -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-6" [class.opacity-60]="!canCheckout">
           <!-- Shipping Information -->
           <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -102,6 +114,7 @@ import { ApiService } from '../../core/services/api.service';
                       formControlName="firstName"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                       placeholder="Enter first name"
+                      [disabled]="!canCheckout"
                     >
                     <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-500 text-sm mt-1">
                       First name is required
@@ -115,6 +128,7 @@ import { ApiService } from '../../core/services/api.service';
                       formControlName="lastName"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                       placeholder="Enter last name"
+                      [disabled]="!canCheckout"
                     >
                     <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-500 text-sm mt-1">
                       Last name is required
@@ -130,6 +144,7 @@ import { ApiService } from '../../core/services/api.service';
                     formControlName="email"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                     placeholder="Enter email address"
+                    [disabled]="!canCheckout"
                   >
                   <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
                     Valid email is required
@@ -144,6 +159,7 @@ import { ApiService } from '../../core/services/api.service';
                     formControlName="phone"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                     placeholder="Enter phone number"
+                    [disabled]="!canCheckout"
                   >
                   <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-500 text-sm mt-1">
                     Phone number is required
@@ -158,6 +174,7 @@ import { ApiService } from '../../core/services/api.service';
                     formControlName="address"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                     placeholder="Enter street address"
+                    [disabled]="!canCheckout"
                   >
                   <div *ngIf="shippingForm.get('address')?.invalid && shippingForm.get('address')?.touched" class="text-red-500 text-sm mt-1">
                     Address is required
@@ -173,6 +190,7 @@ import { ApiService } from '../../core/services/api.service';
                       formControlName="city"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                       placeholder="Enter city"
+                      [disabled]="!canCheckout"
                     >
                   </div>
                   <div>
@@ -181,6 +199,7 @@ import { ApiService } from '../../core/services/api.service';
                       id="state"
                       formControlName="state"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
+                      [disabled]="!canCheckout"
                     >
                       <option value="">Select state</option>
                       <option value="Lagos">Lagos</option>
@@ -198,6 +217,7 @@ import { ApiService } from '../../core/services/api.service';
                       formControlName="postalCode"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                       placeholder="Enter postal code"
+                      [disabled]="!canCheckout"
                     >
                   </div>
                 </div>
@@ -209,13 +229,14 @@ import { ApiService } from '../../core/services/api.service';
                     rows="3"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                     placeholder="Any special instructions for delivery"
+                    [disabled]="!canCheckout"
                   ></textarea>
                 </div>
 
                 <div class="flex justify-end">
                   <button 
                     type="submit"
-                    [disabled]="shippingForm.invalid || isProcessing"
+                    [disabled]="shippingForm.invalid || isProcessing || !canCheckout"
                     class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Continue to Payment
@@ -246,6 +267,7 @@ import { ApiService } from '../../core/services/api.service';
                         [value]="method.id"
                         formControlName="paymentMethod"
                         class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
+                        [disabled]="!canCheckout"
                       >
                       <div class="ml-3 flex items-center">
                         <fa-icon [icon]="method.icon" class="w-5 h-5 text-gray-600 mr-2"></fa-icon>
@@ -266,6 +288,7 @@ import { ApiService } from '../../core/services/api.service';
                         class="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                         placeholder="1234 5678 9012 3456"
                         maxlength="19"
+                        [disabled]="!canCheckout"
                       >
                       <fa-icon [icon]="faCreditCard" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></fa-icon>
                     </div>
@@ -280,6 +303,7 @@ import { ApiService } from '../../core/services/api.service';
                         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                         placeholder="MM/YY"
                         maxlength="5"
+                        [disabled]="!canCheckout"
                       >
                     </div>
                     <div>
@@ -291,6 +315,7 @@ import { ApiService } from '../../core/services/api.service';
                           class="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                           placeholder="123"
                           maxlength="4"
+                          [disabled]="!canCheckout"
                         >
                         <button 
                           type="button"
@@ -310,6 +335,7 @@ import { ApiService } from '../../core/services/api.service';
                       formControlName="cardholderName"
                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
                       placeholder="Enter cardholder name"
+                      [disabled]="!canCheckout"
                     >
                   </div>
                 </div>
@@ -324,7 +350,7 @@ import { ApiService } from '../../core/services/api.service';
                   </button>
                   <button 
                     type="submit"
-                    [disabled]="paymentForm.invalid || isProcessing"
+                    [disabled]="paymentForm.invalid || isProcessing || !canCheckout"
                     class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Review Order
@@ -394,7 +420,7 @@ import { ApiService } from '../../core/services/api.service';
                 </button>
                 <button 
                   (click)="placeOrder()"
-                  [disabled]="isProcessing"
+                  [disabled]="isProcessing || !canCheckout"
                   class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span *ngIf="!isProcessing">Place Order</span>
@@ -474,6 +500,8 @@ export class CheckoutComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private route = inject(ActivatedRoute);
+  public access = inject(AccessControlService);
 
   // Icons
   faArrowLeft = faArrowLeft;
@@ -515,6 +543,7 @@ export class CheckoutComponent implements OnInit {
   loading = false;
   cart: any = null;
   cartSummary: any = null;
+  offerContext: { offerId?: string } = {};
   addresses: any[] = [];
   couponCode = '';
   couponApplied = false;
@@ -532,6 +561,7 @@ export class CheckoutComponent implements OnInit {
   subtotal = 0;
   shipping = 0;
   tax = 0;
+  canCheckout = true;
 
   // Payment methods
   paymentMethods = [
@@ -563,6 +593,15 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const qp = this.route.snapshot.queryParamMap;
+    const offerId = qp.get('offerId') || undefined;
+    if (qp.get('source') === 'offer' && offerId) {
+      this.offerContext.offerId = offerId;
+    }
+    this.canCheckout = this.access.canCheckout();
+    this.authService.authState$.subscribe(() => {
+      this.canCheckout = this.access.canCheckout();
+    });
     this.loadCheckoutData();
   }
 
@@ -750,6 +789,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   placeOrder(): void {
+    if (!this.canCheckout) return;
     if (!this.shippingForm.valid || !this.paymentForm.valid) {
       return;
     }
@@ -883,6 +923,15 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error('Error loading payments:', error);
       }
+    });
+  }
+
+  switchToBuyer(): void {
+    this.authService.switchRole().subscribe({
+      next: () => {
+        this.canCheckout = this.access.canCheckout();
+      },
+      error: () => {}
     });
   }
 } 

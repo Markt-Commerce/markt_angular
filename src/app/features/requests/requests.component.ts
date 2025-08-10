@@ -28,12 +28,14 @@ import {
   faStore,
   faFileText,
   faCalendar,
-  faArrowRight
+  faArrowRight,
+  faComments
 } from '@fortawesome/free-solid-svg-icons';
 import { RequestService } from '../../core/services/request.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { ApiService } from '../../core/services/api.service';
+import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
   selector: 'app-requests',
@@ -197,9 +199,33 @@ import { ApiService } from '../../core/services/api.service';
 
       <!-- Requests List -->
       <div class="space-y-4">
-        <!-- Loading State -->
-        <div *ngIf="isLoading" class="flex items-center justify-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
+        <!-- Loading Skeleton -->
+        <div *ngIf="isLoading" class="space-y-4">
+          <div *ngFor="let s of [0,1,2,3]" class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                  <div>
+                    <div class="h-4 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div class="h-3 w-24 bg-gray-100 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div class="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div class="px-6 py-4">
+              <div class="h-4 w-64 bg-gray-200 rounded animate-pulse mb-3"></div>
+              <div class="h-3 w-full bg-gray-100 rounded animate-pulse mb-2"></div>
+              <div class="h-3 w-5/6 bg-gray-100 rounded animate-pulse"></div>
+            </div>
+            <div class="px-6 py-3 border-t border-gray-200">
+              <div class="flex items-center justify-between">
+                <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                <div class="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -400,8 +426,9 @@ export class RequestsComponent implements OnInit {
   private requestService = inject(RequestService);
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
-  private router = inject(Router);
   private apiService = inject(ApiService);
+  private router = inject(Router);
+  public access = inject(AccessControlService);
 
   // Icons
   faSearch = faSearch;
@@ -410,7 +437,7 @@ export class RequestsComponent implements OnInit {
   faPlus = faPlus;
   faEye = faEye;
   faHeart = faHeart;
-  faMessageCircle = faTimesCircle;
+  faTimesCircle = faTimesCircle;
   faUser = faUser;
   faMapMarkerAlt = faMapMarkerAlt;
   faClock = faClock;
@@ -429,6 +456,7 @@ export class RequestsComponent implements OnInit {
   faFileText = faFileText;
   faCalendar = faCalendar;
   faArrowRight = faArrowRight;
+  faMessageCircle = faComments;
 
   // Data
   requests: any[] = [];
@@ -681,7 +709,7 @@ export class RequestsComponent implements OnInit {
   }
 
   get isSeller(): boolean {
-    return this.user?.current_role === 'seller';
+    return this.access.role === 'seller';
   }
 
   formatTimestamp(timestamp: string): string {

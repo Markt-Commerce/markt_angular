@@ -4,6 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ChatService } from '../../../core/services/chat.service';
+import { CartService } from '../../../core/services/cart.service';
 
 interface ChatMessage {
   id: string;
@@ -68,6 +69,14 @@ interface ChatParticipant {
           >
             ℹ️ Info
           </app-button>
+          <app-button 
+            *ngIf="pendingProductId"
+            variant="primary" 
+            size="sm"
+            (clicked)="addPendingProductToCart()"
+          >
+            Add to cart → Checkout
+          </app-button>
         </div>
       </div>
 
@@ -113,6 +122,26 @@ interface ChatParticipant {
                     </app-button>
                   </div>
                   
+                  <div class="message-cta" *ngIf="message.message_data?.['product_id'] || message.message_data?.['offer_id']">
+                    <app-button 
+                      *ngIf="message.message_data?.['product_id']"
+                      variant="primary" 
+                      size="sm"
+                      (clicked)="addMessageProductToCart(message)"
+                    >
+                      Add to cart
+                    </app-button>
+                    <app-button 
+                      *ngIf="!message.message_data?.['product_id'] && message.message_data?.['offer_id']"
+                      variant="secondary" 
+                      size="sm"
+                      [outline]="true"
+                      (clicked)="viewOfferFromMessage(message)"
+                    >
+                      View offer
+                    </app-button>
+                  </div>
+
                   <div class="message-meta">
                     <span class="message-time">{{ formatTime(message.created_at) }}</span>
                     <span class="message-status" *ngIf="message.sender_id === 'currentUser'">
@@ -572,6 +601,7 @@ export class ChatDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private chatService = inject(ChatService);
+  private cartService = inject(CartService);
   
   participant: ChatParticipant | null = null;
   messages: ChatMessage[] = [];
@@ -581,7 +611,8 @@ export class ChatDetailComponent implements OnInit {
   showInfo = false;
   loading = false;
   roomId: string = '';
-  
+  pendingProductId: string | null = null;
+
   ngOnInit(): void {
     const conversationId = this.route.snapshot.paramMap.get('id');
     if (conversationId) {
@@ -756,5 +787,32 @@ export class ChatDetailComponent implements OnInit {
         console.error('Error pinning chat room:', error);
       }
     });
+  }
+
+  addMessageProductToCart(message: ChatMessage): void {
+    const productId = message.message_data?.['product_id'];
+    if (productId) {
+      this.cartService.addToCart(String(productId), 1).subscribe({
+        next: () => this.router.navigate(['/app/checkout']),
+        error: (_err: any) => this.router.navigate(['/app/checkout'])
+      });
+    }
+  }
+
+  viewOfferFromMessage(message: ChatMessage): void {
+    const offerId = message.message_data?.['offer_id'];
+    if (offerId) {
+      this.router.navigate(['/app/offers', offerId]);
+    }
+  }
+
+  addPendingProductToCart(): void {
+    if (this.pendingProductId) {
+      const pid = this.pendingProductId;
+      this.cartService.addToCart(String(pid), 1).subscribe({
+        next: () => { this.pendingProductId = null; this.router.navigate(['/app/checkout']); },
+        error: (_err: any) => { this.pendingProductId = null; this.router.navigate(['/app/checkout']); }
+      });
+    }
   }
 } 

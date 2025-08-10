@@ -1306,7 +1306,9 @@ export class ApiService {
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
           value.forEach(item => {
-            httpParams = httpParams.append(key, item.toString());
+            if (item !== null && item !== undefined) {
+              httpParams = httpParams.append(key, item.toString());
+            }
           });
         } else {
           httpParams = httpParams.set(key, value.toString());

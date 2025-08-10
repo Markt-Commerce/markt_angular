@@ -17,6 +17,7 @@ interface Offer {
   created_at: string;
   expires_at: string;
   message: string;
+  _processing?: boolean;
 }
 
 @Component({
@@ -90,7 +91,38 @@ interface Offer {
         </div>
       </div>
 
-      <div class="offers-list">
+      <!-- Loading Skeleton -->
+      <div *ngIf="loading" class="offers-list">
+        <div *ngFor="let s of [0,1,2]" class="offer-card">
+          <div class="offer-header">
+            <div class="offer-info">
+              <div class="h-5 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div class="h-3 w-24 bg-gray-100 rounded animate-pulse"></div>
+            </div>
+            <div class="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div class="offer-details">
+            <div class="detail-row">
+              <span class="detail-label">Product:</span>
+              <span class="h-3 w-40 bg-gray-100 rounded animate-pulse"></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Price:</span>
+              <span class="h-3 w-24 bg-gray-100 rounded animate-pulse"></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Created:</span>
+              <span class="h-3 w-28 bg-gray-100 rounded animate-pulse"></span>
+            </div>
+          </div>
+          <div class="offer-actions">
+            <div class="h-8 w-28 bg-gray-200 rounded animate-pulse"></div>
+            <div class="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="offers-list" *ngIf="!loading">
         <div *ngIf="filteredOffers.length === 0" class="empty-state">
           <i class="fas fa-box text-gray-400 text-4xl"></i>
           <h3>No offers found</h3>
@@ -153,9 +185,10 @@ interface Offer {
               variant="danger"
               size="sm"
               [outline]="true"
+              [disabled]="!!offer._processing"
               (click)="withdrawOffer(offer.id)"
             >
-              Withdraw
+              {{ offer._processing ? 'Withdrawing...' : 'Withdraw' }}
             </app-button>
             <app-button
               variant="secondary"
@@ -169,7 +202,7 @@ interface Offer {
         </div>
       </div>
 
-      <div class="pagination" *ngIf="filteredOffers.length > 0">
+      <div class="pagination" *ngIf="filteredOffers.length > 0 && !loading">
         <app-button
           variant="secondary"
           size="sm"
@@ -555,12 +588,23 @@ export class OffersComponent implements OnInit {
 
   withdrawOffer(offerId: string): void {
     if (confirm('Are you sure you want to withdraw this offer?')) {
-      // TODO: Replace with actual API call
-      const offer = this.offers.find(o => o.id === offerId);
-      if (offer) {
-        offer.status = 'withdrawn';
-        this.filterOffers();
-      }
+      const local = this.offers.find(o => o.id === offerId);
+      if (local) local._processing = true;
+      this.apiService.withdrawOffer(offerId).subscribe({
+        next: () => {
+          const offer = this.offers.find(o => o.id === offerId);
+          if (offer) {
+            offer.status = 'withdrawn';
+            offer._processing = false;
+          }
+          this.filterOffers();
+        },
+        error: () => {
+          const offer = this.offers.find(o => o.id === offerId);
+          if (offer) offer._processing = false;
+          // no-op; keep UI unchanged on failure
+        }
+      });
     }
   }
 

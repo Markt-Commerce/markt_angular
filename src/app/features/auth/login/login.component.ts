@@ -96,8 +96,9 @@ import { ApiService } from '../../../core/services/api.service';
                     formControlName="accountType"
                     class="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 text-base font-normal leading-normal"
                   >
-                    <option value="buyer">Buyer Account</option>
-                    <option value="seller">Seller Account</option>
+                    <option value="">Active Role (optional)</option>
+                    <option value="buyer">Buyer</option>
+                    <option value="seller">Seller</option>
                   </select>
                   <div *ngIf="getErrorMessage('accountType')" class="text-red-500 text-sm mt-1">
                     {{ getErrorMessage('accountType') }}
@@ -262,7 +263,7 @@ export class LoginComponent implements OnInit {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      accountType: ['buyer', [Validators.required]],
+      accountType: ['buyer'],
       rememberMe: [false]
     });
   }
@@ -272,11 +273,13 @@ export class LoginComponent implements OnInit {
       this.loading = true;
       this.errorMessage = '';
 
-      const credentials = {
+      const credentials: any = {
         email: this.loginForm.value.email,
-        password: this.loginForm.value.password,
-        account_type: this.loginForm.value.accountType
+        password: this.loginForm.value.password
       };
+      if (this.loginForm.value.accountType) {
+        credentials.account_type = this.loginForm.value.accountType;
+      }
 
       console.log('Attempting login with credentials:', credentials);
 

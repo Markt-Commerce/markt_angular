@@ -25,6 +25,8 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { CartItem, Product, SellerAccount, Address } from '../../core/models';
+import { AccessControlService } from '../../core/services/access-control.service';
+import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 
 @Component({
   selector: 'app-cart',
@@ -32,6 +34,14 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
   imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
   template: `
     <div class="space-y-6">
+      <!-- Buyer mode gate -->
+      <div *ngIf="!canCheckout" class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
+        <div>
+          Cart and checkout are available in Buyer mode. Switch to continue.
+        </div>
+        <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
+      </div>
+      
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -82,7 +92,11 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
                   <!-- Product Image -->
                   <div class="flex-shrink-0">
                     <img 
-                      [src]="item.product?.images?.[0]?.media?.url || '/markt-text-logo.png'" 
+                      [src]="media.getPrimaryUrl(item.product?.images?.[0])" 
+                      [srcset]="media.getSrcSet(item.product?.images?.[0])"
+                      [sizes]="media.listThumbSizes()"
+                      loading="lazy"
+                      decoding="async"
                       [alt]="item.product?.name"
                       class="w-20 h-20 object-cover rounded-lg"
                     >
@@ -94,7 +108,7 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
                       <div class="flex-1">
                         <h3 class="text-lg font-medium text-gray-900 mb-1">
                           <a 
-                            [routerLink]="['/app/marketplace/products', item.product?.id]"
+                            [routerLink]="['/app/marketplace/product', item.product?.id]"
                             class="hover:text-markt-primary transition-colors"
                           >
                             {{ item.product?.name }}
@@ -262,35 +276,35 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Shipping Info -->
-          <div class="mt-6 bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="font-medium text-gray-900">Shipping Information</h3>
+      <!-- Shipping Info -->
+      <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="font-medium text-gray-900">Shipping Information</h3>
+        </div>
+        <div class="p-6">
+          <div class="space-y-4">
+            <div class="flex items-center space-x-3">
+              <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
+              <div>
+                <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
+                <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
+              </div>
             </div>
-            <div class="p-6">
-              <div class="space-y-4">
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
-                    <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Secure packaging</p>
-                    <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Easy returns</p>
-                    <p class="text-sm text-gray-500">30-day return policy for most items</p>
-                  </div>
-                </div>
+            <div class="flex items-center space-x-3">
+              <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
+              <div>
+                <p class="font-medium text-gray-900">Secure packaging</p>
+                <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3">
+              <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
+              <div>
+                <p class="font-medium text-gray-900">Easy returns</p>
+                <p class="text-sm text-gray-500">30-day return policy for most items</p>
               </div>
             </div>
           </div>
@@ -303,7 +317,11 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div *ngFor="let product of recentlyViewed" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
             <img 
-              [src]="product.images?.[0]?.media?.url || '/markt-text-logo.png'" 
+              [src]="media.getPrimaryUrl(product.images?.[0])" 
+              [srcset]="media.getSrcSet(product.images?.[0])"
+              [sizes]="media.gridSizes()"
+              loading="lazy"
+              decoding="async"
               [alt]="product.name"
               class="w-full h-48 object-cover"
             >
@@ -336,6 +354,8 @@ export class CartComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  public access = inject(AccessControlService);
+  public media = inject(MediaOptimizationService);
 
   // Icons
   faTrash = faTrash;
@@ -371,6 +391,11 @@ export class CartComponent implements OnInit {
   orderNotes = '';
 
   ngOnInit(): void {
+    this.canCheckout = this.access.canCheckout();
+    this.authService.authState$.subscribe(() => {
+      this.canCheckout = this.access.canCheckout();
+    });
+
     this.loadCart();
     this.loadRecentlyViewed();
   }
@@ -501,6 +526,9 @@ export class CartComponent implements OnInit {
   }
 
   proceedToCheckout(): void {
+    if (!this.canCheckout) {
+      return;
+    }
     if (!this.selectedAddress) {
       this.errorMessage = 'Please select a shipping address';
       return;
@@ -526,7 +554,7 @@ export class CartComponent implements OnInit {
       notes: this.orderNotes
     };
 
-    this.router.navigate(['/checkout'], { 
+    this.router.navigate(['/app/checkout'], { 
       state: { checkoutData } 
     });
   }
@@ -558,9 +586,19 @@ export class CartComponent implements OnInit {
   validateCart(): void {
     const validation = this.cartService.validateCartForCheckout();
     if (validation.isValid) {
-      this.router.navigate(['/checkout']);
+      this.router.navigate(['/app/checkout']);
     } else {
       this.errorMessage = validation.errors.join(', ');
     }
+  }
+
+  switchToBuyer(): void {
+    this.authService.switchRole().subscribe({
+      next: () => {
+        this.canCheckout = this.access.canCheckout();
+        this.loadCart();
+      },
+      error: () => {}
+    });
   }
 } 

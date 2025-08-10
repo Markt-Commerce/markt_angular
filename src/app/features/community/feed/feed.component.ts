@@ -9,6 +9,7 @@ import { SocialService } from '../../../core/services/social.service';
 import { Observable } from 'rxjs';
 import { User } from '../../../core/models/auth.model';
 import { ApiService } from '../../../core/services/api.service';
+import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 
 interface FeedPost {
   id: string;
@@ -157,7 +158,7 @@ interface FeedPost {
                    }">
                 <div *ngFor="let image of post.images.slice(0, 4); let i = index" 
                      class="relative aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                  <img [src]="image" [alt]="'Post image'" class="w-full h-full object-cover">
+                  <img [src]="image" loading="lazy" decoding="async" [alt]="'Post image'" class="w-full h-full object-cover">
                   <div *ngIf="post.images.length > 4 && i === 3" 
                        class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-bold">
                     +{{ post.images.length - 4 }}
@@ -215,6 +216,7 @@ export class FeedComponent implements OnInit {
   private authService = inject(AuthService);
   private socialService = inject(SocialService);
   private apiService = inject(ApiService);
+  media = inject(MediaOptimizationService);
 
   // Icons
   faHeart = faHeart;

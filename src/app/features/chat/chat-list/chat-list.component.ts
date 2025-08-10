@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -234,6 +234,7 @@ export class ChatListComponent implements OnInit {
   private chatService = inject(ChatService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   // Icons
   faComments = faComments;
@@ -256,7 +257,9 @@ export class ChatListComponent implements OnInit {
   // Data
   chatRooms: any[] = [];
   user: any = null;
+  currentRole: 'buyer' | 'seller' | null = null;
   isLoading = false;
+  private deeplinkHandled = false;
   
   // UI State
   showSearch = false;
@@ -304,11 +307,37 @@ export class ChatListComponent implements OnInit {
         this.chatRooms = [room, ...this.chatRooms.filter(r => r.id !== room.id)];
       }
     });
+
+    // Handle deep-links like /app/chat?user=<sellerId>&product=<productId>
+    this.route.queryParamMap.subscribe(params => {
+      if (this.deeplinkHandled) return;
+      const otherUserId = params.get('user');
+      const productId = params.get('product') || undefined;
+      if (!otherUserId || !this.user) return;
+      // Determine buyer/seller roles for room creation
+      const buyerId = this.currentRole === 'buyer' ? this.user.id : this.user?.buyer_account?.id || this.user?.id;
+      const sellerId = otherUserId;
+      if (!buyerId || !sellerId) return;
+      this.deeplinkHandled = true;
+      this.chatService.getOrCreateRoom(String(buyerId), String(sellerId), productId).subscribe({
+        next: (response) => {
+          const roomId = response?.data?.id || response?.id;
+          if (roomId) {
+            this.router.navigate(['/app/chat', roomId]);
+          }
+        },
+        error: () => {
+          // Fallback to chat list
+          this.router.navigate(['/app/chat']);
+        }
+      });
+    });
   }
 
   private loadUserData(): void {
     this.authService.authState$.subscribe(authState => {
       this.user = authState.user;
+      this.currentRole = (authState as any)?.current_role || (authState.user?.current_role as any) || null;
     });
   }
 
@@ -347,7 +376,7 @@ export class ChatListComponent implements OnInit {
   }
 
   startNewChat(): void {
-    this.router.navigate(['/app/chat/new']);
+    this.router.navigate(['/app/chat']);
   }
 
   // Helpers adapted to Ife's response shape

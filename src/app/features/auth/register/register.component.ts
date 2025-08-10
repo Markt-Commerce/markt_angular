@@ -22,6 +22,9 @@ import { ApiService } from '../../../core/services/api.service';
           <p class="mt-2 text-sm text-gray-600">
             Become part of a vibrant community of buyers and sellers.
           </p>
+          <p class="mt-1 text-xs text-gray-600">
+            Choose a starting role below. You can add the other role anytime and switch with a tap.
+          </p>
         </div>
 
         <!-- Registration Form -->

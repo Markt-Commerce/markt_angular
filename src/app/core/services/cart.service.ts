@@ -4,18 +4,34 @@ import { ApiService } from './api.service';
 import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order } from '../models';
 import { CheckoutData } from './api.service';
 import { map } from 'rxjs/operators';
+import { AuthService } from './auth.service';
+import { throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   
   private cartSubject = new BehaviorSubject<Cart | null>(null);
   public cart$ = this.cartSubject.asObservable();
 
   constructor() {
-    this.loadCart();
+    // Only auto-load cart for buyers
+    const role = this.authService.getCurrentRole?.() as string | undefined;
+    if (role === 'buyer') {
+      this.loadCart();
+    }
+    // React to role changes
+    this.authService.authState$?.subscribe(state => {
+      const currentRole = state?.user?.current_role;
+      if (currentRole === 'buyer') {
+        this.loadCart();
+      } else {
+        this.cartSubject.next(null);
+      }
+    });
   }
 
   // ============================================================================
@@ -26,6 +42,11 @@ export class CartService {
    * Get current cart
    */
   getCart(): Observable<any> {
+    const role = this.authService.getCurrentRole?.();
+    if (role !== 'buyer') {
+      this.cartSubject.next(null);
+      return new BehaviorSubject<any>({ success: false, data: null }).asObservable();
+    }
     return this.apiService.getCart().pipe(
       tap({
         next: (response: any) => {
@@ -51,6 +72,10 @@ export class CartService {
    * Add item to cart with quantity
    */
   addToCart(productId: string, quantity: number = 1): Observable<any> {
+    const role = this.authService.getCurrentRole?.();
+    if (role !== 'buyer') {
+      return throwError(() => new Error('Only buyers can access this endpoint'));
+    }
     const cartData = {
       product_id: productId,
       quantity: quantity

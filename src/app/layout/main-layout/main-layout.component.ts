@@ -8,11 +8,14 @@ import { AppStateService } from '../../core/services/app-state.service';
 import { CartService } from '../../core/services/cart.service';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { map } from 'rxjs/operators';
+import { BreadcrumbsComponent } from '../../shared/components/breadcrumbs/breadcrumbs.component';
+import { FeatureFlagService } from '../../core/services/feature-flags.service';
+import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, FormsModule, ButtonComponent, BreadcrumbsComponent],
   template: `
     <div class="app-container" [class.sidebar-collapsed]="sidebarCollapsed$ | async">
       <!-- Header -->
@@ -111,7 +114,7 @@ import { map } from 'rxjs/operators';
               </svg>
               <span>Offers</span>
             </a>
-            <a routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
+            <a *ngIf="access.canSeeSellerNav()" routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
                 <line x1="7" y1="8" x2="17" y2="8"></line>
@@ -124,6 +127,12 @@ import { map } from 'rxjs/operators';
 
           <!-- User Actions -->
           <div class="user-actions">
+            <!-- Role pill + switch -->
+            <ng-container *ngIf="currentUser$ | async as user">
+              <span class="role-pill">{{ (user.current_role || 'user') | titlecase }}</span>
+              <button class="role-switch" *ngIf="user.is_buyer && user.is_seller" (click)="switchRole()">Switch</button>
+            </ng-container>
+
             <!-- Cart -->
             <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) ?? 0 > 0" aria-label="Cart">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-hidden="true">
@@ -175,6 +184,7 @@ import { map } from 'rxjs/operators';
                   Orders
                 </a>
                 <a routerLink="/app/seller/listings" class="dropdown-item">
+                  <span *ngIf="access.canSeeSellerNav(); else noSellerLink">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
                     <line x1="7" y1="8" x2="17" y2="8"></line>
@@ -182,6 +192,10 @@ import { map } from 'rxjs/operators';
                     <line x1="7" y1="16" x2="13" y2="16"></line>
                   </svg>
                   Listings
+                  </span>
+                  <ng-template #noSellerLink>
+                    <span class="text-gray-400">Listings (seller only)</span>
+                  </ng-template>
                 </a>
                 <a routerLink="/app/settings" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -219,6 +233,14 @@ import { map } from 'rxjs/operators';
           </div>
         </div>
       </header>
+
+      <!-- Breadcrumbs -->
+      <app-breadcrumbs></app-breadcrumbs>
+
+      <!-- Beta banner (feature-flagged) -->
+      <div *ngIf="flags.isEnabled('beta_banner')" class="mx-auto max-w-6xl px-4 lg:px-8 py-2 text-center text-sm bg-gradient-to-r from-markt-primary/10 to-markt-accent/10 text-markt-dark border border-markt-border/40 rounded-xl mt-2">
+        You’re using the new navigation. Share feedback anytime!
+      </div>
 
       <!-- Mobile Menu -->
       <div class="mobile-menu" [class.open]="mobileMenuOpen">
@@ -504,6 +526,29 @@ import { map } from 'rxjs/operators';
       box-shadow: 0 2px 4px rgba(232, 85, 48, 0.3);
     }
 
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      background: #f4f1f0;
+      color: #181211;
+      font-size: 0.75rem;
+      border: 1px solid #e5dddc;
+      text-transform: capitalize;
+    }
+
+    .role-switch {
+      margin-left: 0.25rem;
+      font-size: 0.8rem;
+      color: #e85530;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .role-switch:hover { text-decoration: underline; }
+
     /* User Menu */
     .user-menu {
       position: relative;
@@ -740,6 +785,8 @@ import { map } from 'rxjs/operators';
   `]
 })
 export class MainLayoutComponent implements OnInit {
+  flags = inject(FeatureFlagService);
+  access = inject(AccessControlService);
   private authService = inject(AuthService);
   private appStateService = inject(AppStateService);
   private cartService = inject(CartService);
@@ -830,5 +877,9 @@ export class MainLayoutComponent implements OnInit {
         });
       }
     });
+  }
+
+  switchRole(): void {
+    this.authService.switchRole().subscribe();
   }
 } 

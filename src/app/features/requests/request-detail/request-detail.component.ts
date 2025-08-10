@@ -4,6 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { CartService } from '../../../core/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faCommentDots, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -39,6 +40,7 @@ interface Offer {
   message: string;
   createdAt: string;
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  _processing?: boolean;
 }
 
 @Component({
@@ -229,15 +231,17 @@ interface Offer {
                 <app-button 
                   variant="success" 
                   size="sm"
-                  (clicked)="acceptOffer(offer.id)"
+                  (clicked)="acceptOffer(offer)"
+                  [loading]="!!offer._processing"
                 >
-                  Accept Offer
+                  {{ offer._processing ? 'Accepting...' : 'Accept Offer' }}
                 </app-button>
                 <app-button 
                   variant="danger" 
                   size="sm"
                   [outline]="true"
-                  (clicked)="rejectOffer(offer.id)"
+                  (clicked)="rejectOffer(offer)"
+                  [disabled]="!!offer._processing"
                 >
                   Reject Offer
                 </app-button>
@@ -248,9 +252,10 @@ interface Offer {
                   variant="secondary" 
                   size="sm"
                   [outline]="true"
-                  (clicked)="withdrawOffer(offer.id)"
+                  (clicked)="withdrawOffer(offer)"
+                  [disabled]="!!offer._processing"
                 >
-                  Withdraw Offer
+                  {{ offer._processing ? 'Withdrawing...' : 'Withdraw Offer' }}
                 </app-button>
               </div>
             </div>
@@ -717,6 +722,7 @@ export class RequestDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private cartService = inject(CartService);
 
   loading = true;
   request: BuyerRequest | null = null;
@@ -821,39 +827,54 @@ export class RequestDetailComponent implements OnInit {
     }
   }
 
-  acceptOffer(offerId: string): void {
+  acceptOffer(offer: Offer): void {
     if (confirm('Are you sure you want to accept this offer?')) {
-      // TODO: Accept offer via API
-      
-      const offer = this.offers.find(o => o.id === offerId);
-      if (offer) {
-        offer.status = 'accepted';
-        this.filterOffers();
-      }
+      offer._processing = true;
+      this.apiService.acceptOffer(offer.id).subscribe({
+        next: (response) => {
+          offer.status = 'accepted';
+          offer._processing = false;
+          this.filterOffers();
+          const productId = (response as any)?.data?.product_id;
+          if (productId) {
+            this.cartService.addToCart(String(productId), 1).subscribe({
+              next: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: offer.id } }),
+              error: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: offer.id } })
+            });
+          } else {
+            this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: offer.id } });
+          }
+        },
+        error: () => { offer._processing = false; }
+      });
     }
   }
 
-  rejectOffer(offerId: string): void {
+  rejectOffer(offer: Offer): void {
     if (confirm('Are you sure you want to reject this offer?')) {
-      // TODO: Reject offer via API
-      
-      const offer = this.offers.find(o => o.id === offerId);
-      if (offer) {
-        offer.status = 'rejected';
-        this.filterOffers();
-      }
+      offer._processing = true;
+      this.apiService.rejectOffer(offer.id).subscribe({
+        next: () => {
+          offer.status = 'rejected';
+          offer._processing = false;
+          this.filterOffers();
+        },
+        error: () => { offer._processing = false; }
+      });
     }
   }
 
-  withdrawOffer(offerId: string): void {
+  withdrawOffer(offer: Offer): void {
     if (confirm('Are you sure you want to withdraw this offer?')) {
-      // TODO: Withdraw offer via API
-      
-      const offer = this.offers.find(o => o.id === offerId);
-      if (offer) {
-        offer.status = 'withdrawn';
-        this.filterOffers();
-      }
+      offer._processing = true;
+      this.apiService.withdrawOffer(offer.id).subscribe({
+        next: () => {
+          offer.status = 'withdrawn';
+          offer._processing = false;
+          this.filterOffers();
+        },
+        error: () => { offer._processing = false; }
+      });
     }
   }
 

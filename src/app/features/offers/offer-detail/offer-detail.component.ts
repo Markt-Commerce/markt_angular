@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ApiService } from '../../../core/services/api.service';
+import { CartService } from '../../../core/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 
@@ -860,6 +861,7 @@ export class OfferDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private cartService = inject(CartService);
 
   offer?: Offer;
   request?: Request;
@@ -971,8 +973,15 @@ export class OfferDetailComponent implements OnInit {
           next: (response) => {
             this.accepting = false;
             this.offer!.status = 'accepted';
-            // Optionally navigate back to requests
-            this.router.navigate(['/app/requests', this.request?.id]);
+            const productId = (response?.data?.product_id) || (this.offer as any)?.productId || (this.offer as any)?.product_id;
+            if (productId) {
+              this.cartService.addToCart(String(productId), 1).subscribe({
+                next: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } }),
+                error: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } })
+              });
+            } else {
+              this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } });
+            }
           },
           error: (error) => {
             console.error('Error accepting offer:', error);
