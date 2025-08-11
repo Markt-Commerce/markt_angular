@@ -621,8 +621,8 @@ export class RegisterComponent implements OnInit {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             
-            // Navigate to onboarding or dashboard
-            this.router.navigate(['/app/onboarding']);
+            // Navigate to onboarding
+            this.router.navigate(['/onboarding']);
           } else {
             this.errorMessage = response.message || 'Registration failed';
           }

@@ -63,15 +63,7 @@ import { AccessControlService } from '../../core/services/access-control.service
             </a>
             
             <!-- Smart Dashboard Link (adapts based on user role) -->
-            <a routerLink="/app/dashboard" routerLinkActive="active" class="nav-link">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-              <span>Dashboard</span>
-            </a>
+            <!-- Dashboard link moved to user dropdown to reduce header clutter -->
             
             <a routerLink="/app/community/feed" routerLinkActive="active" class="nav-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -166,6 +158,15 @@ import { AccessControlService } from '../../core/services/access-control.service
                   <strong>{{ user.username }}</strong>
                   <small>{{ user.email }}</small>
                 </div>
+                <a routerLink="/app/dashboard" class="dropdown-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                  Dashboard
+                </a>
                 <a routerLink="/app/profile" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -311,7 +312,46 @@ import { AccessControlService } from '../../core/services/access-control.service
         <router-outlet></router-outlet>
       </main>
 
-
+      <!-- Bottom-left Quick Actions (Speed Dial) -->
+      <div class="quick-actions">
+        <input id="qa-toggle" type="checkbox" class="qa-toggle"/>
+        <label for="qa-toggle" class="qa-fab" title="Quick actions">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+        </label>
+        <div class="qa-menu">
+          <a routerLink="/app/community/feed" class="qa-item" title="Feed">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 21V14h2v7h4v-7h2v7h4v-7h2v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"></path>
+            </svg>
+          </a>
+          <a routerLink="/app/marketplace" class="qa-item" title="Marketplace">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+          </a>
+          <a routerLink="/app/chat" class="qa-item" title="Messages">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1-4A4 4 0 0 1 4 15V7a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4z"></path>
+            </svg>
+          </a>
+          <a routerLink="/app/requests/create" class="qa-item" title="New Request">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+          </a>
+          <a *ngIf="access.canSeeSellerNav()" routerLink="/app/seller/listings/create" class="qa-item" title="New Listing">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -746,7 +786,58 @@ import { AccessControlService } from '../../core/services/access-control.service
       min-height: calc(100vh - 64px - 200px);
     }
 
-
+    /* Quick Actions */
+    .quick-actions {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1100;
+    }
+    .qa-toggle { display: none; }
+    .qa-fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e85530 0%, #d14520 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(232, 85, 48, 0.35);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .qa-fab:hover { transform: translateY(-2px); }
+    .qa-menu {
+      position: absolute;
+      bottom: 70px;
+      left: 0;
+      display: flex;
+      gap: 10px;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+    .qa-item {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #181211;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      text-decoration: none;
+    }
+    .qa-item:hover { background: #e85530; }
+    .qa-toggle:checked ~ .qa-menu {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
 
     /* Responsive */
     @media (max-width: 768px) {

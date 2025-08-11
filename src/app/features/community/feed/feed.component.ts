@@ -248,28 +248,46 @@ export class FeedComponent implements OnInit {
   private loadFeed(): void {
     this.loading = true;
     
-    this.apiService.getCommunityFeed().subscribe({
+    // Use SocialService personalized feed if available; fallback to community feed
+    this.socialService.getPersonalizedFeed({ page: this.currentPage, per_page: 10 }).subscribe({
       next: (response) => {
-        const items = response.data?.items || response.data || [];
+        const items = response.items || [];
         this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
-        this.hasMorePosts = response.data?.pagination?.has_next || false;
+        const page = response.pagination?.page || 1;
+        const perPage = response.pagination?.per_page || 10;
+        const totalItems = response.pagination?.total_items || 0;
+        this.hasMorePosts = page * perPage < totalItems;
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading community feed:', error);
-        this.posts = [];
-        this.loading = false;
+        // Fallback to community feed
+        this.apiService.getCommunityFeed().subscribe({
+          next: (fallback) => {
+            const items = fallback.data?.items || fallback.data || [];
+            this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
+            this.hasMorePosts = fallback.data?.pagination?.has_next || false;
+            this.loading = false;
+          },
+          error: () => {
+            this.posts = [];
+            this.loading = false;
+          }
+        });
       }
     });
   }
 
   loadMorePosts(): void {
     this.currentPage++;
-    this.apiService.getCommunityFeed().subscribe({
+    this.socialService.getPersonalizedFeed({ page: this.currentPage, per_page: 10 }).subscribe({
       next: (response) => {
-        const items = response.data?.items || response.data || [];
+        const items = response.items || [];
         this.posts = [...this.posts, ...items.map((p: any) => this.mapPostToFeedPost(p))];
-        this.hasMorePosts = response.data?.pagination?.has_next || false;
+        const page = response.pagination?.page || this.currentPage;
+        const perPage = response.pagination?.per_page || 10;
+        const totalItems = response.pagination?.total_items || 0;
+        this.hasMorePosts = page * perPage < totalItems;
       },
       error: (error) => {
         console.error('Error loading more posts:', error);
@@ -304,29 +322,27 @@ export class FeedComponent implements OnInit {
 
   createPost(): void {
     if (this.newPostContent.trim()) {
-      this.currentUser$.subscribe(user => {
-        const postData = {
-          caption: this.newPostContent,
-          media: this.selectedMedia,
-          tags: []
-        };
+      const postData = {
+        caption: this.newPostContent,
+        media_ids: [],
+        tags: []
+      } as any;
 
-        this.socialService.createPost(postData).subscribe({
-          next: (response) => {
-            this.posts.unshift(this.mapPostToFeedPost(response));
-            this.newPostContent = '';
-            this.showCreatePost = false;
-          },
-          error: (error) => {
-            console.error('Error creating post:', error);
-          }
-        });
+      this.socialService.createPost(postData).subscribe({
+        next: (response) => {
+          this.posts.unshift(this.mapPostToFeedPost(response));
+          this.newPostContent = '';
+          this.showCreatePost = false;
+        },
+        error: (error) => {
+          console.error('Error creating post:', error);
+        }
       });
     }
   }
 
   likePost(postId: string): void {
-    this.socialService.likePost(postId).subscribe({
+    this.apiService.likePost(postId).subscribe({
       next: () => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
@@ -341,7 +357,7 @@ export class FeedComponent implements OnInit {
   }
 
   commentOnPost(postId: string, comment: string): void {
-    this.socialService.addComment(postId, { content: comment }).subscribe({
+    this.apiService.addComment(postId, { content: comment }).subscribe({
       next: () => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
