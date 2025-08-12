@@ -172,3 +172,29 @@ Markt Frontend – Update Log
   - Files: src/app/shared/components/app-layout/app-layout.component.ts, src/app/features/requests/requests.component.ts
 - RoleGate: Added reusable `RoleGateComponent` for gating buyer/seller sections with a switch action.
   - File: src/app/shared/components/role-gate/role-gate.component.ts 
+
+
+
+
+
+
+
+
+
+  
+2025-08-11
+- Onboarding & Registration:
+  - Updated registration success redirect to '/onboarding'.
+  - Trimmed registration to essential fields only; buyer/seller details deferred to onboarding.
+  - File: src/app/features/auth/register/register.component.ts
+- Header/Nav cleanup & Quick Actions:
+  - Removed Dashboard from top nav; added to user dropdown.
+  - Added bottom-left Quick Actions (speed-dial) for Feed, Marketplace, Messages, New Request, and New Listing (seller only).
+  - File: src/app/layout/main-layout/main-layout.component.ts
+- Feed integration:
+  - Feed now loads via SocialService.getPersonalizedFeed with proper pagination.
+  - Like and comment wired through ApiService; added graceful fallback to community feed endpoint.
+  - Files:
+    - src/app/features/community/feed/feed.component.ts
+    - src/app/core/services/social.service.ts (used)
+    - src/app/core/services/api.service.ts (used) [2025-08-12] build: green; marketplace image optimization, feed wiring, onboarding redirect present. Next: fix optional chaining warnings, review bundle budget.
