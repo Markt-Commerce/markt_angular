@@ -198,3 +198,4 @@ Markt Frontend – Update Log
     - src/app/features/community/feed/feed.component.ts
     - src/app/core/services/social.service.ts (used)
     - src/app/core/services/api.service.ts (used) [2025-08-12] build: green; marketplace image optimization, feed wiring, onboarding redirect present. Next: fix optional chaining warnings, review bundle budget.
+[2025-08-12T18:49:59+01:00] build: green; verified marketplace/main-layout/feed/register/onboarding; quick-actions present; next: clean optional chaining warnings, review budgets.
