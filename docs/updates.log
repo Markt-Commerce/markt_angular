@@ -199,3 +199,11 @@ Markt Frontend – Update Log
     - src/app/core/services/social.service.ts (used)
     - src/app/core/services/api.service.ts (used) [2025-08-12] build: green; marketplace image optimization, feed wiring, onboarding redirect present. Next: fix optional chaining warnings, review bundle budget.
 [2025-08-12T18:49:59+01:00] build: green; verified marketplace/main-layout/feed/register/onboarding; quick-actions present; next: clean optional chaining warnings, review budgets.
+[2025-08-12T18:50:37+01:00] plan: onboarding + feed next actions
+- onboarding: steps = Basic info → Account type (buyer/seller/both) → Profile picture → Interests → Completion with role-creation CTAs; persist per step; redirect to /app.
+- data moves: collect seller shop details and buyer shipping address during onboarding; keep registration minimal (nested data optional/minimal).
+- feed next: add comments UI, share/bookmark, infinite scroll (IntersectionObserver); wire to ApiService; compute hasMore via total_items/page/per_page; optimistic like/comment updates.
+[2025-08-12T18:51:06+01:00] plan: onboarding + feed next actions
+- onboarding: steps = Basic info -> Account type (buyer/seller/both) -> Profile picture -> Interests -> Completion with role-creation CTAs; persist each step; redirect to /app.
+- data moves: collect seller shop details and buyer shipping address in onboarding; keep registration minimal (nested data optional/minimal).
+- feed next: comments UI, share/bookmark, infinite scroll (IntersectionObserver); wire via ApiService; hasMore via total_items/page/per_page; optimistic like/comment.
