@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { 
@@ -380,7 +380,11 @@ export class ApiService {
   
   // Configure HTTP options to include credentials (cookies)
   private readonly httpOptions = {
-    withCredentials: true
+    withCredentials: true,
+    headers: new HttpHeaders({
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    })
   };
 
   // ============================================================================
@@ -425,8 +429,26 @@ export class ApiService {
     return this.patch<User>('/users/profile/seller', sellerData);
   }
 
-  switchRole(): Observable<ApiResponse<{ user: User; message: string }>> {
-    return this.post<{ user: User; message: string }>('/users/switch-role');
+  switchRole(targetRole?: 'buyer' | 'seller'): Observable<ApiResponse<{ user: User; message: string }>> {
+    const body = targetRole ? { role: targetRole } : {} as any;
+    return this.post<{ user: User; message: string }>('/users/switch-role', Object.keys(body).length ? body : undefined).pipe(
+      catchError((error: HttpErrorResponse) => {
+        // Some backends may require a different method; try PATCH then GET with params
+        if (error.status === 405 || error.status === 404) {
+          const patchBody = targetRole ? { role: targetRole } : {} as any;
+          return this.patch<{ user: User; message: string }>('/users/switch-role', patchBody).pipe(
+            catchError((patchErr: HttpErrorResponse) => {
+              if (patchErr.status === 405 || patchErr.status === 404) {
+                const params = targetRole ? { role: targetRole } : undefined;
+                return this.get<{ user: User; message: string }>('/users/switch-role', params);
+              }
+              return throwError(() => patchErr);
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
   }
 
   // Password & Email Management
@@ -1307,7 +1329,7 @@ export class ApiService {
         if (Array.isArray(value)) {
           value.forEach(item => {
             if (item !== null && item !== undefined) {
-              httpParams = httpParams.append(key, item.toString());
+            httpParams = httpParams.append(key, item.toString());
             }
           });
         } else {
@@ -1345,13 +1367,23 @@ export class ApiService {
     } else if (error.status === 422) {
       errorMessage = 'Validation error. Please check your input.';
     } else if (error.status === 500) {
+      if (error?.url?.includes('/users/register')) {
+        errorMessage = 'Internal server error during registration. Please try a different username/email or try again shortly.';
+      } else if (error?.url?.includes('/users/login')) {
+        errorMessage = 'Internal server error during login. Please try again shortly.';
+      } else {
       errorMessage = 'Server error. Please try again later.';
+      }
     } else if (error.status === 0) {
       errorMessage = 'Network error. Please check your internet connection.';
     }
     
     console.error('API Error:', error);
-    return throwError(() => new Error(errorMessage));
+    const enriched = new Error(errorMessage) as any;
+    enriched.status = error?.status;
+    enriched.body = error?.error;
+    enriched.url = error?.url;
+    return throwError(() => enriched);
   }
 
   // ============================================================================

@@ -207,3 +207,54 @@ Markt Frontend – Update Log
 - onboarding: steps = Basic info -> Account type (buyer/seller/both) -> Profile picture -> Interests -> Completion with role-creation CTAs; persist each step; redirect to /app.
 - data moves: collect seller shop details and buyer shipping address in onboarding; keep registration minimal (nested data optional/minimal).
 - feed next: comments UI, share/bookmark, infinite scroll (IntersectionObserver); wire via ApiService; hasMore via total_items/page/per_page; optimistic like/comment.
+
+[2025-08-15T00:00:00Z] header: made responsive and adaptable
+- Added mobile menu toggle/button and collapsible mobile panel in `src/app/shared/components/header/header.component.ts`
+- Hid desktop actions and role-pill on small screens; added mobile equivalents
+- Ensured header is `relative` to anchor the absolute mobile panel; aria attributes for a11y
+- Build planned next
+
+[2025-08-15T00:10:00Z] main-layout header: added hamburger + overlay
+- Added ARIA-enhanced hamburger toggle with open/close icon state in `src/app/layout/main-layout/main-layout.component.ts`
+- Inserted backdrop overlay and tied to `mobileMenuOpen`; clicking backdrop closes menu
+- Kept existing mobile drawer; improved a11y with `aria-controls` and `aria-expanded`
+
+[2025-08-15T00:18:00Z] main-layout header: widen responsive breakpoint
+- Hamburger/nav collapse now triggers at ≤1280px; reduced spacing and icon sizes accordingly
+
+[2025-08-15T00:25:00Z] main-layout header: UX/a11y refinements
+- Avatar now a button with aria attributes; menu has id/controls; backdrop closes on click
+- Corrected logout notifications and redirect to `/landing`
+- Tightened avatar/action sizes; nav collapses at ≤1024px for cleaner tablet/laptop UX
+
+[2025-08-15T00:33:00Z] main-layout header: compact-on-scroll
+- Header enters compact mode when scrolling down (smaller logo/actions)
+- Lays groundwork for global search overlay and segmented role switch in user menu
+
+[2025-08-15T00:41:00Z] main-layout header: ecommerce-grade patterns
+- Compact header on scroll; search icon launches overlay (also via '/')
+- User menu includes Buyer/Seller segmented switch; fixed logout UX
+- A11y: aria-expanded/controls on interactive items; Escape closes menus/overlay
+
+[2025-08-15T01:07:00Z] role system: auto-switch + route enforcement
+- Interceptor sends X-Markt-Role header; AccessControlService exposes role$
+- RoleGuard auto-switches when a protected route requires buyer/seller (cart, checkout, orders, seller/*)
+- App routes annotated with requiredRole; guard redirects with suggestion if role not available
+
+[2025-08-15T01:24:00Z] role intent + a11y + template cleanup
+- Added `RoleIntentService` for switch-and-continue flows
+- Search overlay returns focus to trigger; added focus trap and skip link
+- Cleaned optional chaining warnings in cart template
+
+[2025-08-15T01:32:00Z] role intent wiring + keyboard a11y
+- Checkout now uses RoleIntentService to switch-and-continue in `cart.component.ts`
+- Seller listings create/edit wired to RoleIntentService
+- User menu gets ArrowDown/Enter focus and Escape close behavior
+
+[2025-08-15T01:40:00Z] finalize: role UX + a11y + nav + lint
+- RoleGuard auto-switch + `RoleIntentService` switch-and-continue (cart checkout, seller listings create/edit)
+- Immediate role switch resilience: timeout fallback + UI unblocks; `roleSwitched$` emitted
+- A11y: focus trap + focus return (search overlay, mobile drawer), skip link, keyboard (ArrowDown/Enter/Escape) for user menu
+- Nav icons: replaced inline SVGs with `app-icon` to trim bundle parse/size; restored mobile drawer styles
+- Lint: added `no-console` rule; silenced console logs in production in `src/main.ts`
+- Templates: cleaned unnecessary optional chaining in cart

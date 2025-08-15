@@ -592,18 +592,18 @@ export class OffersComponent implements OnInit {
       if (local) local._processing = true;
       this.apiService.withdrawOffer(offerId).subscribe({
         next: () => {
-          const offer = this.offers.find(o => o.id === offerId);
-          if (offer) {
-            offer.status = 'withdrawn';
+      const offer = this.offers.find(o => o.id === offerId);
+      if (offer) {
+        offer.status = 'withdrawn';
             offer._processing = false;
           }
-          this.filterOffers();
+        this.filterOffers();
         },
         error: () => {
           const offer = this.offers.find(o => o.id === offerId);
           if (offer) offer._processing = false;
           // no-op; keep UI unchanged on failure
-        }
+      }
       });
     }
   }

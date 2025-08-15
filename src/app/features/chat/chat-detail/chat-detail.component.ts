@@ -141,7 +141,7 @@ interface ChatParticipant {
                       View offer
                     </app-button>
                   </div>
-
+                  
                   <div class="message-meta">
                     <span class="message-time">{{ formatTime(message.created_at) }}</span>
                     <span class="message-status" *ngIf="message.sender_id === 'currentUser'">
@@ -612,7 +612,7 @@ export class ChatDetailComponent implements OnInit {
   loading = false;
   roomId: string = '';
   pendingProductId: string | null = null;
-
+  
   ngOnInit(): void {
     const conversationId = this.route.snapshot.paramMap.get('id');
     if (conversationId) {

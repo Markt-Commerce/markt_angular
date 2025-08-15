@@ -34,7 +34,7 @@ import { ApiService } from '../../../core/services/api.service';
         </div>
 
         <!-- Search Results -->
-        <div *ngIf="!(loading$ | async)">
+        <div *ngIf="(loading$ | async) === false">
           <!-- Results Summary -->
           <div class="mb-6 text-sm text-gray-600" *ngIf="totalResults > 0">
             {{ totalResults }} product{{ totalResults !== 1 ? 's' : '' }} found

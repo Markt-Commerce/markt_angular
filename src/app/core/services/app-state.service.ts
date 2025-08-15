@@ -564,6 +564,19 @@ export class AppStateService {
   }
 
   /**
+   * Suggest role switch intent (for UI prompts)
+   */
+  suggestRoleSwitch(target: 'buyer' | 'seller', redirectUrl?: string): void {
+    this.showNotification({
+      type: 'info',
+      message: `You need to switch to ${target} to continue.`,
+      duration: 4000
+    });
+    // UI layers can read this via activeOverlay or route query params
+    this.openOverlay(`switch-to-${target}${redirectUrl ? `:${redirectUrl}` : ''}`);
+  }
+
+  /**
    * Sidebar collapsed state
    */
   get sidebarCollapsed$(): Observable<boolean> {

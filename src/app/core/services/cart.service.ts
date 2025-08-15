@@ -27,7 +27,7 @@ export class CartService {
     this.authService.authState$?.subscribe(state => {
       const currentRole = state?.user?.current_role;
       if (currentRole === 'buyer') {
-        this.loadCart();
+    this.loadCart();
       } else {
         this.cartSubject.next(null);
       }

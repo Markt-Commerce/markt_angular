@@ -279,7 +279,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                     </div>
                     <div class="flex items-center text-sm text-gray-600">
                       <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                      <span class="ml-1">{{ product.rating || 0 | number:'1.1-1' }}</span>
+                      <span class="ml-1">{{ (product.rating || 0) | number:'1.1-1' }}</span>
                     </div>
                   </div>
                   <div class="flex items-center justify-between mb-3" *ngIf="product.seller as s">
@@ -330,7 +330,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                         <span class="flex items-center">
                           <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
                           <span class="flex items-center gap-1">
-                            {{ product.seller?.shop_name }}
+                          {{ product.seller?.shop_name }}
                             <span *ngIf="product.seller?.is_verified" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
                           </span>
                         </span>
@@ -546,8 +546,8 @@ export class MarketplaceComponent implements OnInit {
           },
           error: (fallbackErr) => {
             console.error('Error loading products (fallback):', fallbackErr);
-            this.products = [];
-            this.isLoading = false;
+        this.products = [];
+        this.isLoading = false;
           }
         });
       }

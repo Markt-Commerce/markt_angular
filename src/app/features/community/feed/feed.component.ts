@@ -270,8 +270,8 @@ export class FeedComponent implements OnInit {
             this.loading = false;
           },
           error: () => {
-            this.posts = [];
-            this.loading = false;
+        this.posts = [];
+        this.loading = false;
           }
         });
       }
@@ -322,21 +322,21 @@ export class FeedComponent implements OnInit {
 
   createPost(): void {
     if (this.newPostContent.trim()) {
-      const postData = {
-        caption: this.newPostContent,
+        const postData = {
+          caption: this.newPostContent,
         media_ids: [],
-        tags: []
+          tags: []
       } as any;
 
-      this.socialService.createPost(postData).subscribe({
-        next: (response) => {
-          this.posts.unshift(this.mapPostToFeedPost(response));
-          this.newPostContent = '';
-          this.showCreatePost = false;
-        },
-        error: (error) => {
-          console.error('Error creating post:', error);
-        }
+        this.socialService.createPost(postData).subscribe({
+          next: (response) => {
+            this.posts.unshift(this.mapPostToFeedPost(response));
+            this.newPostContent = '';
+            this.showCreatePost = false;
+          },
+          error: (error) => {
+            console.error('Error creating post:', error);
+          }
       });
     }
   }

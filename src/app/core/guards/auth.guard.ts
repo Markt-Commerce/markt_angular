@@ -1,181 +1,55 @@
 import { Injectable, inject } from '@angular/core';
-import { CanActivate, CanActivateChild, CanDeactivate, CanMatch, Router, UrlTree } from '@angular/router';
-import { Observable, map, take } from 'rxjs';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
+import { AccessControlService } from '../services/access-control.service';
+import { AppStateService } from '../services/app-state.service';
 
-export interface CanComponentDeactivate {
-  canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
-}
+export const AuthGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthGuard implements CanActivate, CanActivateChild, CanMatch {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  /**
-   * Check if user can activate a route
-   */
-  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => {
-        if (user) {
+  if (authService.isAuthenticated()) {
           return true;
-        } else {
-          // Redirect to login page with return URL
-          return this.router.createUrlTree(['/auth/login'], {
-            queryParams: { returnUrl: this.router.url }
-          });
-        }
-      })
-    );
   }
 
-  /**
-   * Check if user can activate child routes
-   */
-  canActivateChild(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.canActivate();
+  router.navigate(['/auth/login']);
+  return false;
+};
+
+// RoleGuard: require buyer or seller role. If mismatched but the user has the required role,
+// switch automatically and then allow navigation.
+export const RoleGuard: CanActivateFn = (route, state) => {
+  const access = inject(AccessControlService);
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const appState = inject(AppStateService);
+  const required = (route.data?.['requiredRole'] as 'buyer' | 'seller' | 'either') || 'either';
+
+  if (required === 'either') return true;
+  if (access.role === required) return true;
+
+  const user = auth.getCurrentUser?.();
+  const hasBuyer = !!user?.is_buyer;
+  const hasSeller = !!user?.is_seller;
+  const canSwitch = (required === 'buyer' && hasBuyer) || (required === 'seller' && hasSeller);
+
+  if (!canSwitch) {
+    return router.createUrlTree(['/app/dashboard'], { queryParams: { suggestRole: required, redirect: state.url } });
   }
 
-  /**
-   * Check if user can match a route (for lazy loading)
-   */
-  canMatch(): Observable<boolean> | Promise<boolean> | boolean {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => !!user)
-    );
-  }
-}
+  appState.showNotification({ type: 'info', message: `Switching to ${required} to continue...` });
+  return auth.switchRole(required).pipe(
+    map(() => true as boolean | UrlTree),
+    catchError(() => of(router.createUrlTree(['/app/dashboard'], { queryParams: { suggestRole: required } })))
+  );
+};
 
-@Injectable({
-  providedIn: 'root'
-})
-export class EmailVerificationGuard implements CanActivate {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  /**
-   * Check if user has verified their email
-   */
-  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => {
-        if (user && user.email_verified) {
-          return true;
-        } else if (user && !user.email_verified) {
-          // Redirect to email verification page
-          return this.router.createUrlTree(['/auth/verify-email'], {
-            queryParams: { email: user.email }
-          });
-        } else {
-          // No user, redirect to login
-          return this.router.createUrlTree(['/auth/login']);
-        }
-      })
-    );
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class GuestGuard implements CanActivate {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  /**
-   * Check if user can access guest-only routes (login, register, etc.)
-   */
-  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => {
-        if (!user) {
-          return true;
-        } else {
-          // Redirect authenticated users to app
-          return this.router.createUrlTree(['/app']);
-        }
-      })
-    );
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class SellerGuard implements CanActivate {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  /**
-   * Check if user is a verified seller
-   */
-  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => {
-        if (user && user.is_seller && user.email_verified) {
-          return true;
-        } else if (user && !user.email_verified) {
-          // Redirect to email verification if not verified
-          return this.router.createUrlTree(['/auth/verify-email'], {
-            queryParams: { email: user.email }
-          });
-        } else {
-          // Redirect non-sellers to app home
-          return this.router.createUrlTree(['/app']);
-        }
-      })
-    );
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class BuyerGuard implements CanActivate {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  /**
-   * Check if user is a verified buyer
-   */
-  canActivate(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    return this.authService.currentUser$.pipe(
-      take(1),
-      map(user => {
-        if (user && user.is_buyer && user.email_verified) {
-          return true;
-        } else if (user && !user.email_verified) {
-          // Redirect to email verification if not verified
-          return this.router.createUrlTree(['/auth/verify-email'], {
-            queryParams: { email: user.email }
-          });
-        } else {
-          // Redirect non-buyers to app home
-          return this.router.createUrlTree(['/app']);
-        }
-      })
-    );
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class DeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
-  /**
-   * Check if component can be deactivated
-   */
-  canDeactivate(
-    component: CanComponentDeactivate
-  ): Observable<boolean> | Promise<boolean> | boolean {
-    return component.canDeactivate ? component.canDeactivate() : true;
-  }
-} 
+export const GuestGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  if (!authService.isAuthenticated()) return true;
+  router.navigate(['/app']);
+  return false;
+}; 

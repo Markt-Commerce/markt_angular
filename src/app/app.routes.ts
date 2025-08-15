@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { AuthGuard, GuestGuard } from './core/guards/auth.guard';
+import { AuthGuard, GuestGuard, RoleGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -82,12 +82,14 @@ export const routes: Routes = [
       {
         path: 'cart',
         loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent),
-        data: { breadcrumb: 'Cart' }
+        canActivate: [RoleGuard],
+        data: { breadcrumb: 'Cart', requiredRole: 'buyer' }
       },
       {
         path: 'checkout',
         loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
-        data: { breadcrumb: 'Checkout' }
+        canActivate: [RoleGuard],
+        data: { breadcrumb: 'Checkout', requiredRole: 'buyer' }
       },
       {
         path: 'community',
@@ -133,7 +135,8 @@ export const routes: Routes = [
       },
       {
         path: 'orders',
-        data: { breadcrumb: 'Orders' },
+        canActivate: [RoleGuard],
+        data: { breadcrumb: 'Orders', requiredRole: 'buyer' },
         children: [
           {
             path: '',
@@ -180,7 +183,8 @@ export const routes: Routes = [
           {
             path: 'create',
             loadComponent: () => import('./features/requests/create-request/create-request.component').then(m => m.CreateRequestComponent),
-            data: { breadcrumb: 'Create Request' }
+            canActivate: [RoleGuard],
+            data: { breadcrumb: 'Create Request', requiredRole: 'buyer' }
           },
           {
             path: ':id',
@@ -253,7 +257,8 @@ export const routes: Routes = [
       },
       {
         path: 'seller',
-        data: { breadcrumb: 'Seller' },
+        canActivate: [RoleGuard],
+        data: { breadcrumb: 'Seller', requiredRole: 'seller' },
         children: [
           {
             path: 'dashboard',

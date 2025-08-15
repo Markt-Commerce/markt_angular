@@ -76,7 +76,7 @@ interface Review {
               <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">Buyer</span>
               <span *ngIf="profile?.is_verified" class="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">Verified</span>
             </div>
-
+            
             <div class="profile-meta">
               <div *ngIf="profile?.location" class="meta-item">
                 <i class="fas fa-map-marker-alt text-gray-500"></i>
@@ -106,7 +106,7 @@ interface Review {
           <div class="stat-label">Sales</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number">{{ profile?.rating || 0 | number:'1.1-1' }}</div>
+          <div class="stat-number">{{ (profile?.rating || 0) | number:'1.1-1' }}</div>
           <div class="stat-label">Rating</div>
         </div>
         <div class="stat-card">
@@ -151,13 +151,13 @@ interface Review {
               decoding="async"
               [alt]="product.name"
             >
-            <div class="product-info">
+                <div class="product-info">
               <h3>{{ product.name }}</h3>
               <p class="price">{{ product.price | currency:'NGN' }}</p>
               <button class="view-button" (click)="viewProduct(product.id)">View Product</button>
+              </div>
             </div>
           </div>
-        </div>
 
         <div *ngIf="activeTab === 'reviews'" class="reviews-list">
             <div *ngIf="reviews.length === 0" class="empty-state">
@@ -186,31 +186,31 @@ interface Review {
           <div *ngIf="activeTab === 'about' && profile?.is_seller" class="about-tab">
             <div class="about-section">
               <h3>About the Seller</h3>
-              <p *ngIf="profile?.bio">{{ profile!.bio }}</p>
+              <p *ngIf="profile?.bio">{{ profile?.bio }}</p>
               <p *ngIf="!profile?.bio">This seller hasn't added a bio yet.</p>
             </div>
 
             <div class="social-links" *ngIf="hasSocialLinks()">
               <h3>Social Links</h3>
               <div class="social-grid">
-                <a *ngIf="profile?.twitter" [href]="'https://twitter.com/' + profile!.twitter!.replace('@', '')" target="_blank" class="social-link twitter">
+                <a *ngIf="profile?.twitter" [href]="'https://twitter.com/' + (profile?.twitter?.replace('@', '') || '')" target="_blank" class="social-link twitter">
                   <span class="social-icon">🐦</span>
                   <span>Twitter</span>
                 </a>
-                <a *ngIf="profile?.instagram" [href]="'https://instagram.com/' + profile!.instagram!.replace('@', '')" target="_blank" class="social-link instagram">
+                <a *ngIf="profile?.instagram" [href]="'https://instagram.com/' + (profile?.instagram?.replace('@', '') || '')" target="_blank" class="social-link instagram">
                   <span class="social-icon">📷</span>
                   <span>Instagram</span>
                 </a>
-                <a *ngIf="profile?.linkedin" [href]="profile!.linkedin" target="_blank" class="social-link linkedin">
+                <a *ngIf="profile?.linkedin" [href]="profile?.linkedin || ''" target="_blank" class="social-link linkedin">
                   <span class="social-icon">💼</span>
                   <span>LinkedIn</span>
                 </a>
               </div>
             </div>
-          </div>
+                    </div>
         </div>
       </div>
-  `,
+   `,
   styles: [`
     .user-profile-container {
       max-width: 1200px;

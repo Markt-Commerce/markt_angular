@@ -30,6 +30,8 @@ module.exports = tseslint.config(
           style: "kebab-case",
         },
       ],
+      // Disallow console except warn/error
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
   {

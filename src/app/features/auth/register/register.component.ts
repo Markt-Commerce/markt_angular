@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractContro
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterRequest } from '../../../core/models/auth.model';
 import { ApiService } from '../../../core/services/api.service';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-register',
@@ -44,6 +45,9 @@ import { ApiService } from '../../../core/services/api.service';
             <div *ngIf="getErrorMessage('username')" class="mt-1 text-sm text-red-600">
               {{ getErrorMessage('username') }}
             </div>
+            <div *ngIf="usernameChecking" class="mt-1 text-xs text-gray-500">Checking username...</div>
+            <div *ngIf="!usernameChecking && usernameAvailable === false" class="mt-1 text-sm text-red-600">Username is already taken</div>
+            <div *ngIf="!usernameChecking && usernameAvailable && registerForm.get('username')?.dirty" class="mt-1 text-sm text-green-600">Username is available</div>
           </div>
 
           <!-- Email -->
@@ -130,194 +134,9 @@ import { ApiService } from '../../../core/services/api.service';
             </select>
           </div>
 
-          <!-- Seller Fields (shown only for seller accounts) -->
-          <div *ngIf="isSellerAccount" class="space-y-4 border-t pt-4">
-            <h3 class="text-lg font-medium text-gray-900">Shop Information</h3>
-            
-            <!-- Shop Name -->
-            <div>
-              <label for="shop_name" class="block text-sm font-medium text-gray-700">Shop Name</label>
-              <input
-                id="shop_name"
-                formControlName="shop_name"
-                type="text"
-                required
-                placeholder="Enter your shop name"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                [class.border-red-500]="getErrorMessage('shop_name')"
-              />
-              <div *ngIf="getErrorMessage('shop_name')" class="mt-1 text-sm text-red-600">
-                {{ getErrorMessage('shop_name') }}
-              </div>
-            </div>
-
-            <!-- Shop Description -->
-            <div>
-              <label for="shop_description" class="block text-sm font-medium text-gray-700">Shop Description</label>
-              <textarea
-                id="shop_description"
-                formControlName="shop_description"
-                rows="3"
-                placeholder="Describe your shop and what you sell"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                [class.border-red-500]="getErrorMessage('shop_description')"
-              ></textarea>
-              <div *ngIf="getErrorMessage('shop_description')" class="mt-1 text-sm text-red-600">
-                {{ getErrorMessage('shop_description') }}
-              </div>
-            </div>
-
-            <!-- Shop Categories -->
-            <div>
-              <label for="shop_categories" class="block text-sm font-medium text-gray-700">Shop Categories</label>
-              <select
-                id="shop_categories"
-                formControlName="shop_categories"
-                multiple
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-              >
-                <option value="1">Electronics</option>
-                <option value="2">Fashion</option>
-                <option value="3">Home & Garden</option>
-                <option value="4">Sports</option>
-                <option value="5">Books</option>
-                <option value="6">Beauty</option>
-                <option value="7">Food & Beverages</option>
-                <option value="8">Automotive</option>
-              </select>
-              <div *ngIf="getErrorMessage('shop_categories')" class="mt-1 text-sm text-red-600">
-                {{ getErrorMessage('shop_categories') }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Buyer Fields (shown only for buyer accounts) -->
-          <div *ngIf="!isSellerAccount" class="space-y-4 border-t pt-4">
-            <h3 class="text-lg font-medium text-gray-900">Buyer Information</h3>
-            
-            <!-- Buyer Name -->
-            <div>
-              <label for="buyer_name" class="block text-sm font-medium text-gray-700">Full Name</label>
-              <input
-                id="buyer_name"
-                formControlName="buyer_name"
-                type="text"
-                required
-                placeholder="Enter your full name"
-                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                [class.border-red-500]="getErrorMessage('buyer_name')"
-              />
-              <div *ngIf="getErrorMessage('buyer_name')" class="mt-1 text-sm text-red-600">
-                {{ getErrorMessage('buyer_name') }}
-              </div>
-            </div>
-
-            <!-- Shipping Address -->
-            <div class="space-y-3">
-              <h4 class="text-md font-medium text-gray-800">Shipping Address</h4>
-              
-              <!-- Street -->
-              <div>
-                <label for="street" class="block text-sm font-medium text-gray-700">Street Address</label>
-                <input
-                  id="street"
-                  formControlName="street"
-                  type="text"
-                  required
-                  placeholder="Enter street address"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('street')"
-                />
-                <div *ngIf="getErrorMessage('street')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('street') }}
-                </div>
-              </div>
-
-              <!-- House Number -->
-              <div>
-                <label for="house_number" class="block text-sm font-medium text-gray-700">House/Apartment Number</label>
-                <input
-                  id="house_number"
-                  formControlName="house_number"
-                  type="text"
-                  required
-                  placeholder="Enter house/apartment number"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('house_number')"
-                />
-                <div *ngIf="getErrorMessage('house_number')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('house_number') }}
-                </div>
-              </div>
-
-              <!-- City -->
-              <div>
-                <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                <input
-                  id="city"
-                  formControlName="city"
-                  type="text"
-                  required
-                  placeholder="Enter city"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('city')"
-                />
-                <div *ngIf="getErrorMessage('city')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('city') }}
-                </div>
-              </div>
-
-              <!-- State -->
-              <div>
-                <label for="state" class="block text-sm font-medium text-gray-700">State/Province</label>
-                <input
-                  id="state"
-                  formControlName="state"
-                  type="text"
-                  required
-                  placeholder="Enter state/province"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('state')"
-                />
-                <div *ngIf="getErrorMessage('state')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('state') }}
-                </div>
-              </div>
-
-              <!-- Country -->
-              <div>
-                <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
-                <input
-                  id="country"
-                  formControlName="country"
-                  type="text"
-                  required
-                  placeholder="Enter country"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('country')"
-                />
-                <div *ngIf="getErrorMessage('country')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('country') }}
-                </div>
-              </div>
-
-              <!-- Postal Code -->
-              <div>
-                <label for="postal_code" class="block text-sm font-medium text-gray-700">Postal Code</label>
-                <input
-                  id="postal_code"
-                  formControlName="postal_code"
-                  type="text"
-                  required
-                  placeholder="Enter postal code"
-                  class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
-                  [class.border-red-500]="getErrorMessage('postal_code')"
-                />
-                <div *ngIf="getErrorMessage('postal_code')" class="mt-1 text-sm text-red-600">
-                  {{ getErrorMessage('postal_code') }}
-                </div>
-              </div>
-            </div>
+          <!-- Onboarding Notice -->
+          <div class="rounded-md bg-markt-light/40 border border-markt-border/60 p-3 text-sm text-markt-dark">
+            After sign up, you'll complete your shop or shipping details during onboarding.
           </div>
 
           <!-- Terms -->
@@ -347,7 +166,7 @@ import { ApiService } from '../../../core/services/api.service';
           <!-- Submit Button -->
           <button
             type="submit"
-            [disabled]="registerForm.invalid || loading"
+            [disabled]="registerForm.invalid || loading || usernameAvailable === false"
             class="w-full flex justify-center rounded-md border border-transparent bg-[#E94C2A] py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-[#d63924] focus:outline-none focus:ring-2 focus:ring-[#E94C2A] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span *ngIf="!loading">Create Account</span>
@@ -470,6 +289,7 @@ export class RegisterComponent implements OnInit {
   loading = false;
   errorMessage = '';
   usernameChecking = false;
+  usernameAvailable: boolean | null = null;
 
   get isSellerAccount(): boolean {
     return this.registerForm?.get('account_type')?.value === 'seller';
@@ -477,6 +297,29 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    // Live username availability check
+    this.registerForm.get('username')?.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe((value: string) => {
+        this.usernameAvailable = null;
+        if (!value || value.trim().length < 3) {
+          this.usernameChecking = false;
+          return;
+        }
+        this.usernameChecking = true;
+        this.apiService.checkUsername(value.trim()).subscribe({
+          next: (res) => {
+            // Some APIs return {success,data:{available:true}} or {available:true}
+            const available = (res as any)?.data?.available ?? (res as any)?.available;
+            this.usernameAvailable = available !== false;
+            this.usernameChecking = false;
+          },
+          error: () => {
+            // If check fails, don't block registration; just stop spinner
+            this.usernameChecking = false;
+          }
+        });
+      });
   }
 
   private initForm(): void {
@@ -495,12 +338,12 @@ export class RegisterComponent implements OnInit {
       ]],
       account_type: ['buyer', Validators.required],
       
-      // Seller fields
+      // Seller fields (kept in form for compatibility, collected in onboarding)
       shop_name: [''],
       shop_description: [''],
       shop_categories: [[]],
       
-      // Buyer fields
+      // Buyer fields (kept in form for compatibility, collected in onboarding)
       buyer_name: [''],
       street: [''],
       house_number: [''],
@@ -511,49 +354,6 @@ export class RegisterComponent implements OnInit {
       
       terms: [false, Validators.requiredTrue]
     }, { validators: this.passwordMatchValidator });
-
-    // Add conditional validators based on account type
-    this.registerForm.get('account_type')?.valueChanges.subscribe(accountType => {
-      if (accountType === 'seller') {
-        this.registerForm.get('shop_name')?.setValidators([Validators.required]);
-        this.registerForm.get('shop_description')?.setValidators([Validators.required]);
-        this.registerForm.get('shop_categories')?.setValidators([Validators.required]);
-        
-        // Clear buyer validators
-        this.registerForm.get('buyer_name')?.clearValidators();
-        this.registerForm.get('street')?.clearValidators();
-        this.registerForm.get('house_number')?.clearValidators();
-        this.registerForm.get('city')?.clearValidators();
-        this.registerForm.get('state')?.clearValidators();
-        this.registerForm.get('country')?.clearValidators();
-        this.registerForm.get('postal_code')?.clearValidators();
-      } else {
-        this.registerForm.get('buyer_name')?.setValidators([Validators.required]);
-        this.registerForm.get('street')?.setValidators([Validators.required]);
-        this.registerForm.get('house_number')?.setValidators([Validators.required]);
-        this.registerForm.get('city')?.setValidators([Validators.required]);
-        this.registerForm.get('state')?.setValidators([Validators.required]);
-        this.registerForm.get('country')?.setValidators([Validators.required]);
-        this.registerForm.get('postal_code')?.setValidators([Validators.required]);
-        
-        // Clear seller validators
-        this.registerForm.get('shop_name')?.clearValidators();
-        this.registerForm.get('shop_description')?.clearValidators();
-        this.registerForm.get('shop_categories')?.clearValidators();
-      }
-      
-      // Update validation
-      this.registerForm.get('shop_name')?.updateValueAndValidity();
-      this.registerForm.get('shop_description')?.updateValueAndValidity();
-      this.registerForm.get('shop_categories')?.updateValueAndValidity();
-      this.registerForm.get('buyer_name')?.updateValueAndValidity();
-      this.registerForm.get('street')?.updateValueAndValidity();
-      this.registerForm.get('house_number')?.updateValueAndValidity();
-      this.registerForm.get('city')?.updateValueAndValidity();
-      this.registerForm.get('state')?.updateValueAndValidity();
-      this.registerForm.get('country')?.updateValueAndValidity();
-      this.registerForm.get('postal_code')?.updateValueAndValidity();
-    });
   }
 
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -568,6 +368,10 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.usernameAvailable === false) {
+      this.errorMessage = 'Username already exists. Please choose another.';
+      return;
+    }
     if (this.registerForm.valid && !this.loading) {
       this.loading = true;
       this.errorMessage = '';
@@ -583,54 +387,81 @@ export class RegisterComponent implements OnInit {
         account_type: formData.account_type
       };
 
-      // Add seller data if seller account
-      if (formData.account_type === 'seller') {
-        registerData.seller_data = {
-          shop_name: formData.shop_name,
-          description: formData.shop_description,
-          category_ids: formData.shop_categories.map((id: string) => parseInt(id)),
-          policies: {
-            return_policy: 'Standard return policy',
-            shipping_policy: 'Standard shipping policy',
-            payment_policy: 'Standard payment policy'
-          }
-        };
-      }
-
-      // Add buyer data if buyer account
+      // Provide minimal nested data to satisfy backend if required
       if (formData.account_type === 'buyer') {
         registerData.buyer_data = {
-          buyername: formData.buyer_name,
+          buyername: formData.username,
           shipping_address: {
-            street: formData.street,
-            house_number: formData.house_number,
-            city: formData.city,
-            state: formData.state,
-            country: formData.country,
-            postal_code: formData.postal_code,
-            latitude: 0, // Default value, can be updated later
-            longitude: 0 // Default value, can be updated later
+            street: '',
+            house_number: '',
+            city: '',
+            state: '',
+            country: '',
+            postal_code: '',
+            latitude: 0,
+            longitude: 0
           }
+        };
+      } else if (formData.account_type === 'seller') {
+        registerData.seller_data = {
+          shop_name: `${formData.username}'s Shop`,
+          description: '',
+          category_ids: [],
+          policies: {}
         };
       }
 
       this.apiService.register(registerData).subscribe({
         next: (response) => {
+          console.log('Register response:', response);
           if (response.success) {
-            // Store user data and token
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            const token = (response as any).data?.token || (response as any).token;
+            const user = (response as any).data?.user || (response as any).user;
+            if (token && user) {
+              // Store user data and token using the same keys AuthService expects
+              localStorage.setItem('markt_token', token);
+              localStorage.setItem('markt_user', JSON.stringify(user));
             
-            // Navigate to onboarding
-            this.router.navigate(['/onboarding']);
+              // Hydrate auth state, then navigate (AuthGuard requires isAuthenticated)
+              this.authService.getProfile().subscribe({
+                next: () => this.router.navigate(['/onboarding']),
+                error: () => this.router.navigate(['/onboarding']) // fallback: still try
+              });
+            } else {
+              // Likely email verification required before session is active
+              this.router.navigate(['/auth/verify-email'], { queryParams: { email: formData.email } });
+            }
           } else {
-            this.errorMessage = response.message || 'Registration failed';
+            const msg = (response as any)?.message || (response as any)?.data?.message;
+            const errs = (response as any)?.errors || (response as any)?.data?.errors;
+            if (errs && typeof errs === 'object') {
+              const details = Object.entries(errs)
+                .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : Array.isArray(v) ? v.join(', ') : JSON.stringify(v)}`)
+                .join(' | ');
+              this.errorMessage = `${msg || 'Registration failed'} — ${details}`;
+            } else {
+              this.errorMessage = msg || 'Registration failed';
+            }
           }
           this.loading = false;
         },
         error: (error) => {
           console.error('Registration error:', error);
-          this.errorMessage = error.message || 'Registration failed. Please try again.';
+          const serverMsg = (error as any)?.body?.message;
+          const serverErrors = (error as any)?.body?.errors;
+          if ((error as any)?.status === 409) {
+            this.errorMessage = serverMsg || 'Username or email already exists. Please try a different one.';
+            this.loading = false;
+            return;
+          }
+          if (serverErrors && typeof serverErrors === 'object') {
+            const details = Object.entries(serverErrors)
+              .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : Array.isArray(v) ? v.join(', ') : JSON.stringify(v)}`)
+              .join(' | ');
+            this.errorMessage = `${serverMsg || 'Validation error'} — ${details}`;
+          } else {
+            this.errorMessage = serverMsg || error.message || 'Registration failed. Please try again.';
+          }
           this.loading = false;
         }
       });

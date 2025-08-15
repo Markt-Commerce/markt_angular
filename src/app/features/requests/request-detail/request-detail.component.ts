@@ -832,9 +832,9 @@ export class RequestDetailComponent implements OnInit {
       offer._processing = true;
       this.apiService.acceptOffer(offer.id).subscribe({
         next: (response) => {
-          offer.status = 'accepted';
+        offer.status = 'accepted';
           offer._processing = false;
-          this.filterOffers();
+        this.filterOffers();
           const productId = (response as any)?.data?.product_id;
           if (productId) {
             this.cartService.addToCart(String(productId), 1).subscribe({
@@ -855,9 +855,9 @@ export class RequestDetailComponent implements OnInit {
       offer._processing = true;
       this.apiService.rejectOffer(offer.id).subscribe({
         next: () => {
-          offer.status = 'rejected';
+        offer.status = 'rejected';
           offer._processing = false;
-          this.filterOffers();
+        this.filterOffers();
         },
         error: () => { offer._processing = false; }
       });
@@ -869,9 +869,9 @@ export class RequestDetailComponent implements OnInit {
       offer._processing = true;
       this.apiService.withdrawOffer(offer.id).subscribe({
         next: () => {
-          offer.status = 'withdrawn';
+        offer.status = 'withdrawn';
           offer._processing = false;
-          this.filterOffers();
+        this.filterOffers();
         },
         error: () => { offer._processing = false; }
       });

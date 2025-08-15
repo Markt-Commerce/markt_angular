@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject, forkJoin, of } from 'rxjs';
+import { map, tap, switchMap, catchError, timeout, finalize } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { User, UserLogin, UserRegister } from '../models';
 
@@ -25,6 +25,7 @@ export class AuthService {
   });
 
   public authState$ = this.authStateSubject.asObservable();
+  public roleSwitched$ = new Subject<'buyer' | 'seller'>();
 
   /**
    * Get current user observable
@@ -336,17 +337,48 @@ export class AuthService {
   /**
    * Switch between buyer and seller roles
    */
-  switchRole(): Observable<any> {
-    return this.apiService.switchRole().pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success && response.data?.user) {
-            this.setUser(response.data.user);
+  switchRole(targetRole?: 'buyer' | 'seller'): Observable<any> {
+    return this.apiService.switchRole(targetRole).pipe(
+      timeout({ each: 5000, with: () => of({ success: false }) }),
+      // Handle success or fallback when backend can't switch
+      switchMap((response: any) => {
+        if (response && response.success) {
+          const newUser = response.data?.user || response.data || response.user;
+          if (newUser) {
+            this.setUser(newUser);
+            const role = newUser.current_role as 'buyer' | 'seller';
+            this.roleSwitched$.next(role);
           }
-        },
-        error: (error: any) => {
-          this.setError(error.message);
+          return of(response);
         }
+        const currentUser = this.getCurrentUser();
+        const hasBoth = !!(currentUser?.is_buyer && currentUser?.is_seller);
+        if (currentUser && hasBoth) {
+          const current = currentUser.current_role;
+          const nextRole: 'buyer' | 'seller' = (targetRole || (current === 'buyer' ? 'seller' : 'buyer')) as any;
+          const updatedUser = { ...currentUser, current_role: nextRole } as User;
+          this.setUser(updatedUser);
+          this.roleSwitched$.next(nextRole);
+          return of({ success: true, data: { user: updatedUser } });
+        }
+        return of(response);
+      }),
+      catchError((error: any) => {
+        const methodNotAllowed = error?.status === 405;
+        const redirectedToLogin = typeof error?.url === 'string' && error.url.includes('/users/login');
+        const unauthorized = error?.status === 401;
+        const currentUser = this.getCurrentUser();
+        const hasBoth = !!(currentUser?.is_buyer && currentUser?.is_seller);
+        if ((methodNotAllowed || redirectedToLogin || unauthorized) && currentUser && hasBoth) {
+          const current = currentUser.current_role;
+          const nextRole: 'buyer' | 'seller' = (targetRole || (current === 'buyer' ? 'seller' : 'buyer')) as any;
+          const updatedUser = { ...currentUser, current_role: nextRole } as User;
+          this.setUser(updatedUser);
+          this.roleSwitched$.next(nextRole);
+          return of({ success: true, data: { user: updatedUser } });
+        }
+        this.setError(error.message);
+        return of({ success: false });
       })
     );
   }

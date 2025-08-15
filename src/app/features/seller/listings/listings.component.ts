@@ -9,6 +9,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar, faPlus, faBox } from '@fortawesome/free-solid-svg-icons';
 
 import { Product } from '../../../core/models';
+import { RoleIntentService } from '../../../core/services/role-intent.service';
 
 @Component({
   selector: 'app-listings',
@@ -508,6 +509,7 @@ import { Product } from '../../../core/models';
 export class ListingsComponent implements OnInit {
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private roleIntent = inject(RoleIntentService);
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -730,5 +732,13 @@ export class ListingsComponent implements OnInit {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
     }
+  }
+
+  goToCreate(): void {
+    this.roleIntent.switchAndNavigate('seller', '/app/seller/listings/create');
+  }
+
+  goToEdit(id: string): void {
+    this.roleIntent.switchAndNavigate('seller', `/app/seller/listings/edit/${id}`);
   }
 } 

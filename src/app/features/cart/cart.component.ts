@@ -27,6 +27,7 @@ import { ApiService } from '../../core/services/api.service';
 import { CartItem, Product, SellerAccount, Address } from '../../core/models';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
+import { RoleIntentService } from '../../core/services/role-intent.service';
 
 @Component({
   selector: 'app-cart',
@@ -92,12 +93,12 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                   <!-- Product Image -->
                   <div class="flex-shrink-0">
                     <img 
-                      [src]="media.getPrimaryUrl(item.product?.images?.[0])" 
-                      [srcset]="media.getSrcSet(item.product?.images?.[0])"
+                      [src]="media.getPrimaryUrl(item.product.images?.[0])" 
+                      [srcset]="media.getSrcSet(item.product.images?.[0])"
                       [sizes]="media.listThumbSizes()"
                       loading="lazy"
                       decoding="async"
-                      [alt]="item.product?.name"
+                      [alt]="item.product.name"
                       class="w-20 h-20 object-cover rounded-lg"
                     >
                   </div>
@@ -108,19 +109,19 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                       <div class="flex-1">
                         <h3 class="text-lg font-medium text-gray-900 mb-1">
                           <a 
-                            [routerLink]="['/app/marketplace/product', item.product?.id]"
+                            [routerLink]="['/app/marketplace/product', item.product.id]"
                             class="hover:text-markt-primary transition-colors"
                           >
-                            {{ item.product?.name }}
+                            {{ item.product.name }}
                           </a>
                         </h3>
-                        <p class="text-sm text-gray-500 mb-2">{{ item.product?.description }}</p>
+                        <p class="text-sm text-gray-500 mb-2">{{ item.product.description }}</p>
                         
                         <!-- Seller Info -->
                         <div class="flex items-center space-x-4 text-sm text-gray-500">
                           <span class="flex items-center">
                             <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
-                            {{ item.product?.seller?.shop_name }}
+                            {{ item.product.seller?.shop_name }}
                           </span>
                         </div>
                       </div>
@@ -129,7 +130,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                       <div class="text-right">
                         <p class="text-lg font-bold text-gray-900">{{ item.product_price | currency:'NGN' }}</p>
                         <p *ngIf="item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price" class="text-sm text-gray-500 line-through">
-                          {{ item.product?.compare_at_price | currency:'NGN' }}
+                          {{ item.product.compare_at_price | currency:'NGN' }}
                         </p>
                       </div>
                     </div>
@@ -187,12 +188,12 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <img 
-                    [src]="sellerGroup.seller?.profile_picture_url || '/markt-text-logo.png'" 
-                    [alt]="sellerGroup.seller?.shop_name"
+                    [src]="sellerGroup.seller.profile_picture_url || '/markt-text-logo.png'" 
+                    [alt]="sellerGroup.seller.shop_name"
                     class="w-8 h-8 rounded-full object-cover"
                   >
                   <div>
-                    <h3 class="font-medium text-gray-900">{{ sellerGroup.seller?.shop_name }}</h3>
+                    <h3 class="font-medium text-gray-900">{{ sellerGroup.seller.shop_name }}</h3>
                     <p class="text-sm text-gray-500">{{ sellerGroup.itemCount }} items</p>
                   </div>
                 </div>
@@ -274,37 +275,37 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                   <span class="text-xs text-gray-500">Digital Wallets</span>
                 </div>
               </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Shipping Info -->
-      <div class="mt-6 bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="font-medium text-gray-900">Shipping Information</h3>
-        </div>
-        <div class="p-6">
-          <div class="space-y-4">
-            <div class="flex items-center space-x-3">
-              <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
-              <div>
-                <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
-                <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
-              </div>
+          <!-- Shipping Info -->
+          <div class="mt-6 bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="font-medium text-gray-900">Shipping Information</h3>
             </div>
-            <div class="flex items-center space-x-3">
-              <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
-              <div>
-                <p class="font-medium text-gray-900">Secure packaging</p>
-                <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
-              </div>
-            </div>
-            <div class="flex items-center space-x-3">
-              <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
-              <div>
-                <p class="font-medium text-gray-900">Easy returns</p>
-                <p class="text-sm text-gray-500">30-day return policy for most items</p>
+            <div class="p-6">
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
+                    <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Secure packaging</p>
+                    <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
+                  <div>
+                    <p class="font-medium text-gray-900">Easy returns</p>
+                    <p class="text-sm text-gray-500">30-day return policy for most items</p>
               </div>
             </div>
           </div>
@@ -356,6 +357,7 @@ export class CartComponent implements OnInit {
   private apiService = inject(ApiService);
   public access = inject(AccessControlService);
   public media = inject(MediaOptimizationService);
+  private roleIntent = inject(RoleIntentService);
 
   // Icons
   faTrash = faTrash;
@@ -526,36 +528,28 @@ export class CartComponent implements OnInit {
   }
 
   proceedToCheckout(): void {
-    if (!this.canCheckout) {
-      return;
-    }
-    if (!this.selectedAddress) {
-      this.errorMessage = 'Please select a shipping address';
-      return;
-    }
-
-    if (!this.selectedPaymentMethod) {
-      this.errorMessage = 'Please select a payment method';
-      return;
-    }
-
-    const checkoutData = {
-      shipping_address: {
-        latitude: this.selectedAddress.latitude,
-        longitude: this.selectedAddress.longitude,
-        street: this.selectedAddress.street,
-        house_number: this.selectedAddress.house_number,
-        city: this.selectedAddress.city,
-        state: this.selectedAddress.state,
-        country: this.selectedAddress.country,
-        postal_code: this.selectedAddress.postal_code
-      },
-      payment_method: this.selectedPaymentMethod,
-      notes: this.orderNotes
+    const navigate = () => {
+      const checkoutData = {
+        shipping_address: this.selectedAddress ? {
+          latitude: this.selectedAddress.latitude,
+          longitude: this.selectedAddress.longitude,
+          street: this.selectedAddress.street,
+          house_number: this.selectedAddress.house_number,
+          city: this.selectedAddress.city,
+          state: this.selectedAddress.state,
+          country: this.selectedAddress.country,
+          postal_code: this.selectedAddress.postal_code
+        } : undefined,
+        payment_method: this.selectedPaymentMethod,
+        notes: this.orderNotes
+      } as any;
+      this.router.navigate(['/app/checkout'], { state: { checkoutData } });
     };
 
-    this.router.navigate(['/app/checkout'], { 
-      state: { checkoutData } 
+    this.roleIntent.ensureRoleAndExecute('buyer', () => {
+      if (!this.selectedAddress) { this.errorMessage = 'Please select a shipping address'; return; }
+      if (!this.selectedPaymentMethod) { this.errorMessage = 'Please select a payment method'; return; }
+      navigate();
     });
   }
 
@@ -593,12 +587,9 @@ export class CartComponent implements OnInit {
   }
 
   switchToBuyer(): void {
-    this.authService.switchRole().subscribe({
-      next: () => {
-        this.canCheckout = this.access.canCheckout();
-        this.loadCart();
-      },
-      error: () => {}
+    this.roleIntent.ensureRoleAndExecute('buyer', () => {
+      this.canCheckout = this.access.canCheckout();
+      this.loadCart();
     });
   }
 } 
