@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { combineLatest } from 'rxjs';
 import {
   faHome,
   faShoppingBag,
@@ -39,6 +40,7 @@ import { CartService } from '../../../core/services/cart.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ChatService } from '../../../core/services/chat.service';
 import { AccessControlService } from '../../../core/services/access-control.service';
+import { ObservableUtilsService } from '../../../core/services/observable-utils.service';
 
 @Component({
   selector: 'app-layout',
@@ -468,6 +470,7 @@ export class AppLayoutComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private chatService = inject(ChatService);
   private router = inject(Router);
+  private observableUtils = inject(ObservableUtilsService);
   public access = inject(AccessControlService);
 
   // Icons
@@ -510,6 +513,13 @@ export class AppLayoutComponent implements OnInit {
   cartItemCount = 0;
   unreadNotifications = 0;
   unreadMessages = 0;
+  
+  // Combined observables for optimization
+  private combinedState$ = combineLatest([
+    this.cartItemCount$,
+    this.unreadNotifications$,
+    this.unreadMessages$
+  ]);
 
   ngOnInit(): void {
     this.initializeComponent();
@@ -517,31 +527,22 @@ export class AppLayoutComponent implements OnInit {
   }
 
   private initializeComponent(): void {
-    // Get current user
-    this.authService.authState$.subscribe(authState => {
+    // Optimized: Combined auth and UI state subscription
+    combineLatest([
+      this.authService.authState$,
+      this.appStateService.getUIState$()
+    ]).subscribe(([authState, uiState]) => {
       this.user = authState.user;
-    });
-
-    // Get UI state
-    this.appStateService.getUIState$().subscribe(uiState => {
       this.sidebarOpen = uiState.sidebarOpen;
     });
   }
 
   private setupSubscriptions(): void {
-    // Subscribe to cart item count
-    this.cartItemCount$.subscribe(count => {
-      this.cartItemCount = count;
-    });
-
-    // Subscribe to unread notifications
-    this.unreadNotifications$.subscribe(count => {
-      this.unreadNotifications = count;
-    });
-
-    // Subscribe to unread messages
-    this.unreadMessages$.subscribe(count => {
-      this.unreadMessages = count;
+    // Optimized: Single subscription for all state updates
+    this.combinedState$.subscribe(([cartCount, notificationCount, messageCount]) => {
+      this.cartItemCount = cartCount;
+      this.unreadNotifications = notificationCount;
+      this.unreadMessages = messageCount;
     });
   }
 
@@ -573,18 +574,21 @@ export class AppLayoutComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout().subscribe({
-      next: () => {
-        this.router.navigate(['/landing']);
-      },
-      error: (error: any) => {
+    this.observableUtils.createSafeObservable(
+      this.authService.logout(),
+      () => this.router.navigate(['/landing']),
+      (error) => {
         console.error('Logout error:', error);
         this.router.navigate(['/landing']);
       }
-    });
+    );
   }
 
   toggleRole(): void {
-    this.authService.switchRole().subscribe();
+    this.observableUtils.createSafeObservable(
+      this.authService.switchRole(),
+      () => {}, // No action needed on success
+      (error) => console.error('Role switch error:', error)
+    );
   }
 } 

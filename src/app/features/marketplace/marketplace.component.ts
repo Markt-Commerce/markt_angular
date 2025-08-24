@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { combineLatest } from 'rxjs';
 import { 
   faSearch, 
   faFilter, 
@@ -31,6 +32,8 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
+import { TypeSafetyService } from '../../core/services/type-safety.service';
+import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 
 @Component({
   selector: 'app-marketplace',
@@ -453,6 +456,8 @@ export class MarketplaceComponent implements OnInit {
   authService = inject(AuthService);
   access = inject(AccessControlService);
   media = inject(MediaOptimizationService);
+  private typeSafety = inject(TypeSafetyService);
+  private observableUtils = inject(ObservableUtilsService);
 
   // Icons
   faSearch = faSearch;
@@ -519,48 +524,44 @@ export class MarketplaceComponent implements OnInit {
   private loadMarketplaceData(): void {
     this.isLoading = true;
     
-    // Load marketplace products (public marketplace feed)
-    this.apiService.getMarketplaceProducts().subscribe({
-      next: (response) => {
-        const res: any = response as any;
-        const data: any = res?.data ?? res ?? {};
-        const items: any = data?.items ?? data?.results ?? [];
-        this.products = Array.isArray(items) ? items : [];
-        const pagination: any = data?.pagination ?? data?.meta ?? {};
-        this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
-        this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+    // Optimized: Combined marketplace data loading
+    combineLatest([
+      this.apiService.getMarketplaceProducts(),
+      this.apiService.getCategories()
+    ]).subscribe({
+      next: ([productsResponse, categoriesResponse]) => {
+        // Handle products data
+        const data = this.typeSafety.getProperty(productsResponse, 'data', productsResponse);
+        const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
+        this.products = this.typeSafety.toArray(items);
+        const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
+        this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
+        this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        
+        // Handle categories data
+        this.categories = this.typeSafety.toArray(this.typeSafety.getProperty(categoriesResponse, 'data', categoriesResponse));
+        
         this.isLoading = false;
       },
       error: (error) => {
         // Fallback: some environments may not expose /products/marketplace; use generic /products
-        this.apiService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }).subscribe({
-          next: (fallbackRes) => {
-            const res: any = fallbackRes as any;
-            const data: any = res?.data ?? res ?? {};
-            const items: any = data?.items ?? data?.results ?? [];
-            this.products = Array.isArray(items) ? items : [];
-            const pagination: any = data?.pagination ?? data?.meta ?? {};
-            this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
-            this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        this.observableUtils.createSafeObservable({
+          source: this.apiService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }),
+          successHandler: (fallbackRes: any) => {
+            const data = this.typeSafety.getProperty(fallbackRes, 'data', fallbackRes);
+            const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
+            this.products = this.typeSafety.toArray(items);
+            const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
+            this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
+            this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
             this.isLoading = false;
           },
-          error: (fallbackErr) => {
+          errorSetter: (fallbackErr: string | null) => {
             console.error('Error loading products (fallback):', fallbackErr);
-        this.products = [];
-        this.isLoading = false;
+            this.products = [];
+            this.isLoading = false;
           }
         });
-      }
-    });
-
-    // Load categories
-    this.apiService.getCategories().subscribe({
-      next: (response) => {
-        this.categories = (response as any)?.data ?? response ?? [];
-      },
-      error: (error) => {
-        console.error('Error loading categories:', error);
-        this.categories = [];
       }
     });
   }
@@ -617,13 +618,12 @@ export class MarketplaceComponent implements OnInit {
 
     this.marketplaceService.getProducts(params).subscribe({
       next: (response) => {
-        const res: any = response as any;
-        const data: any = res?.data ?? res ?? {};
-        const items: any = data?.items ?? data?.results ?? [];
-        this.products = Array.isArray(items) ? items : [];
-        const pagination: any = data?.pagination ?? data?.meta ?? {};
-        this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
-        this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        const data = this.typeSafety.getProperty(response, 'data', response);
+        const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
+        this.products = this.typeSafety.toArray(items);
+        const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
+        this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
+        this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
         this.isLoading = false;
       },
       error: (error) => {
@@ -639,17 +639,16 @@ export class MarketplaceComponent implements OnInit {
       page: 1,
       per_page: 20,
       seller_id: sellerId,
-      status: 'active'
-    } as any;
+      status: 'active' as const
+    };
     this.marketplaceService.getProducts(params).subscribe({
       next: (response) => {
-        const res: any = response as any;
-        const data: any = res?.data ?? res ?? {};
-        const items: any = data?.items ?? data?.results ?? [];
-        this.products = Array.isArray(items) ? items : [];
-        const pagination: any = data?.pagination ?? data?.meta ?? {};
-        this.totalResults = pagination?.total_items ?? pagination?.total ?? this.products.length ?? 0;
-        this.totalPages = pagination?.total_pages ?? (this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        const data = this.typeSafety.getProperty(response, 'data', response);
+        const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
+        this.products = this.typeSafety.toArray(items);
+        const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
+        this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
+        this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
         this.isLoading = false;
       },
       error: (error) => {
@@ -678,14 +677,14 @@ export class MarketplaceComponent implements OnInit {
   }
 
   addToCart(product: any): void {
-    this.cartService.addToCart(product.id, 1).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.cartService.addToCart(product.id, 1),
+      successHandler: (response: any) => {
         if (response.success) {
           // Show success message
-          
         }
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error adding to cart:', error);
       }
     });
@@ -748,11 +747,12 @@ export class MarketplaceComponent implements OnInit {
 
   // Additional marketplace endpoint integrations
   getProducts(): void {
-    this.apiService.getProducts().subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.getProducts(),
+      successHandler: (response: any) => {
         this.products = response.data?.items || [];
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error loading products:', error);
         this.products = [];
       }
@@ -760,11 +760,12 @@ export class MarketplaceComponent implements OnInit {
   }
 
   getRecommendedProducts(): void {
-    this.apiService.getRecommendedProducts().subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.getRecommendedProducts(),
+      successHandler: (response: any) => {
         this.recommendedProducts = response.data || [];
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error loading recommended products:', error);
         this.recommendedProducts = [];
       }
@@ -772,11 +773,12 @@ export class MarketplaceComponent implements OnInit {
   }
 
   getTrendingProducts(): void {
-    this.apiService.getTrendingProducts().subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.getTrendingProducts(),
+      successHandler: (response: any) => {
         this.trendingProducts = response.data || [];
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error loading trending products:', error);
         this.trendingProducts = [];
       }
@@ -784,22 +786,24 @@ export class MarketplaceComponent implements OnInit {
   }
 
   trackProductView(productId: string): void {
-    this.apiService.trackProductView(productId).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.trackProductView(productId),
+      successHandler: (response: any) => {
         console.log('Product view tracked:', response.data);
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error tracking product view:', error);
       }
     });
   }
 
   upvoteReview(reviewId: string): void {
-    this.apiService.upvoteReview(reviewId).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.upvoteReview(reviewId),
+      successHandler: (response: any) => {
         console.log('Review upvoted:', response.data);
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error upvoting review:', error);
       }
     });

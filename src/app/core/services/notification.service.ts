@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { Observable, BehaviorSubject, interval } from 'rxjs';
 import { tap, switchMap } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -23,6 +24,7 @@ export interface NotificationState {
   providedIn: 'root'
 })
 export class NotificationService {
+  private typeSafety = inject(TypeSafetyService);
   private apiService = inject(ApiService);
   private realtime = inject(RealtimeService);
   
@@ -470,14 +472,15 @@ export class NotificationService {
           }
           break;
         case 'unread_count':
-          if (data && typeof (data as any).count === 'number') {
-            this.updateUnreadCount((data as any).count);
+              if (data && this.typeSafety.isNumber(this.typeSafety.getProperty(data, 'count'))) {
+      this.updateUnreadCount(this.typeSafety.toNumber(this.typeSafety.getProperty(data, 'count')));
           }
           break;
         case 'mark_read':
           // Backend might push mark_read acknowledgements
-          if (data && Array.isArray((data as any).notification_ids)) {
-            const ids = (data as any).notification_ids as string[];
+              const notificationIds = this.typeSafety.getProperty(data, 'notification_ids');
+    if (data && this.typeSafety.isArray(notificationIds)) {
+      const ids = this.typeSafety.toArray<string>(notificationIds);
             this.updateNotificationsAsRead(ids);
           }
           break;

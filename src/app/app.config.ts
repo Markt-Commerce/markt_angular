@@ -6,13 +6,14 @@ import { FormsModule } from '@angular/forms';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { GlobalErrorHandler, setupGlobalErrorListeners } from './core/services/global-error.handler';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([authInterceptor]),
+      withInterceptors([authInterceptor, errorInterceptor]),
       withFetch()
     ),
     provideAnimations(),

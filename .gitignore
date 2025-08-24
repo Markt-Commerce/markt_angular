@@ -46,3 +46,47 @@ Transcribed audio file.docx
 
 docs/
 
+# Backend info directory
+docs/backend-info-ife/
+
+# User data dumps and sensitive files
+user_dump_*/
+.last_user_dump_dir
+*.json
+!package.json
+!package-lock.json
+!angular.json
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.spec.json
+!tsconfig.node.json
+
+# Development and utility files
+dump_user.sh
+current_user_context.json
+docs/updates.log
+
+# Documentation and reference files (keep locally, don't push)
+*.pdf
+*.docx
+*.txt
+!package.json
+!package-lock.json
+!angular.json
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.spec.json
+!tsconfig.node.json
+!proxy.conf.json
+!eslint.config.js
+!postcss.config.js
+!tailwind.config.js
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+!CONTRIBUTING.md
+
+# Specific files to exclude
+MARKT_FRONTEND_GUIDE.md
+docs/transcripts/
+

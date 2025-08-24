@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { TypeSafetyService } from './type-safety.service';
 import { 
   ApiResponse, 
   PaginatedResponse, 
@@ -376,6 +377,7 @@ export interface CouponData {
 })
 export class ApiService {
   private http = inject(HttpClient);
+  private typeSafety = inject(TypeSafetyService);
   private readonly API_BASE_URL = '/api/v1';
   
   // Configure HTTP options to include credentials (cookies)
@@ -430,12 +432,12 @@ export class ApiService {
   }
 
   switchRole(targetRole?: 'buyer' | 'seller'): Observable<ApiResponse<{ user: User; message: string }>> {
-    const body = targetRole ? { role: targetRole } : {} as any;
+    const body = targetRole ? { role: targetRole } : {};
     return this.post<{ user: User; message: string }>('/users/switch-role', Object.keys(body).length ? body : undefined).pipe(
       catchError((error: HttpErrorResponse) => {
         // Some backends may require a different method; try PATCH then GET with params
         if (error.status === 405 || error.status === 404) {
-          const patchBody = targetRole ? { role: targetRole } : {} as any;
+          const patchBody = targetRole ? { role: targetRole } : {};
           return this.patch<{ user: User; message: string }>('/users/switch-role', patchBody).pipe(
             catchError((patchErr: HttpErrorResponse) => {
               if (patchErr.status === 405 || patchErr.status === 404) {

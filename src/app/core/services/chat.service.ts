@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -25,6 +26,7 @@ export interface ChatState {
   providedIn: 'root'
 })
 export class ChatService {
+  private typeSafety = inject(TypeSafetyService);
   private apiService = inject(ApiService);
   private realtime = inject(RealtimeService);
   
@@ -403,9 +405,9 @@ export class ChatService {
   private handleTypingIndicator(data: any): void {
     if (!data) return;
     const payload = {
-      roomId: String((data as any).room_id || ''),
-      userId: (data as any).user_id as string | undefined,
-      isTyping: !!(data as any).is_typing
+      roomId: String(this.typeSafety.getProperty(data, 'room_id', '')),
+      userId: this.typeSafety.getProperty(data, 'user_id') as string | undefined,
+      isTyping: this.typeSafety.toBoolean(this.typeSafety.getProperty(data, 'is_typing'))
     };
     this.typingSubject.next(payload);
   }

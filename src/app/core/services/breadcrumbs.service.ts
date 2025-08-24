@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject, Observable, combineLatest, of } from 'rxjs';
 import { filter, map, switchMap, shareReplay } from 'rxjs/operators';
@@ -11,6 +12,7 @@ export interface BreadcrumbItem {
 
 @Injectable({ providedIn: 'root' })
 export class BreadcrumbsService {
+  private typeSafety = inject(TypeSafetyService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private api = inject(ApiService);
@@ -78,9 +80,8 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getProduct(id).pipe(
           map(res => {
-            const r: any = res as any;
-            const data = r?.data?.item || r?.data?.product || r?.data || r;
-            const name = data?.name || 'Product';
+            const data = this.typeSafety.getProperty(res, 'data.item') || this.typeSafety.getProperty(res, 'data.product') || this.typeSafety.getProperty(res, 'data') || res;
+            const name = this.typeSafety.toString(this.typeSafety.getProperty(data, 'name'), 'Product');
             this.productLabelCache.set(id, name);
             return { label: name, url: linkUrl } as BreadcrumbItem;
           })
@@ -93,8 +94,8 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getUserProfile(id).pipe(
           map(res => {
-            const u: any = (res as any)?.data || {};
-            const username = u?.username ? `@${u.username}` : 'User';
+            const data = this.typeSafety.getProperty(res, 'data', {});
+            const username = this.typeSafety.getProperty(data, 'username') ? `@${this.typeSafety.toString(this.typeSafety.getProperty(data, 'username'))}` : 'User';
             this.userLabelCache.set(id, username);
             return { label: username, url: linkUrl } as BreadcrumbItem;
           })
@@ -107,13 +108,13 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getOrder(id).pipe(
           map(res => {
-            const o: any = (res as any)?.data || {};
-            const raw = o?.id || id;
+            const data = this.typeSafety.getProperty(res, 'data', {});
+            const raw = this.typeSafety.getProperty(data, 'id', id);
             const short = typeof raw === 'string' ? `#${raw.slice(-6)}` : `#${String(raw)}`;
             const label = `Order ${short}`;
             this.orderLabelCache.set(id, label);
             return { label, url: linkUrl } as BreadcrumbItem;
-          }, () => ({ label: 'Order', url: linkUrl } as BreadcrumbItem))
+          })
         );
       }
       if (bc?.type === 'request') {
@@ -123,8 +124,8 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getRequest(id).pipe(
           map(res => {
-            const r: any = (res as any)?.data || {};
-            const title = r?.title || 'Request';
+            const data = this.typeSafety.getProperty(res, 'data', {});
+            const title = this.typeSafety.toString(this.typeSafety.getProperty(data, 'title'), 'Request');
             this.requestLabelCache.set(id, title);
             return { label: title, url: linkUrl } as BreadcrumbItem;
           })
@@ -137,8 +138,8 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getChatRoom(id).pipe(
           map(res => {
-            const room: any = (res as any)?.data || {};
-            const other = room.other_user?.username || room.name || 'Conversation';
+            const data = this.typeSafety.getProperty(res, 'data', {});
+            const other = this.typeSafety.toString(this.typeSafety.getProperty(data, 'other_user.username') || this.typeSafety.getProperty(data, 'name'), 'Conversation');
             this.chatLabelCache.set(id, other);
             return { label: other, url: linkUrl } as BreadcrumbItem;
           })
@@ -151,8 +152,8 @@ export class BreadcrumbsService {
         if (cached) return of({ label: cached, url: linkUrl });
         return this.api.getPost(id).pipe(
           map(res => {
-            const p: any = (res as any)?.data || {};
-            const raw = p?.caption || 'Post';
+            const data = this.typeSafety.getProperty(res, 'data', {});
+            const raw = this.typeSafety.toString(this.typeSafety.getProperty(data, 'caption'), 'Post');
             const label = raw.length > 30 ? raw.slice(0, 30) + '…' : raw;
             this.postLabelCache.set(id, label);
             return { label, url: linkUrl } as BreadcrumbItem;

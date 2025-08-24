@@ -10,6 +10,7 @@ import { faStar, faPlus, faBox } from '@fortawesome/free-solid-svg-icons';
 
 import { Product } from '../../../core/models';
 import { RoleIntentService } from '../../../core/services/role-intent.service';
+import { TypeSafetyService } from '../../../core/services/type-safety.service';
 
 @Component({
   selector: 'app-listings',
@@ -510,6 +511,7 @@ export class ListingsComponent implements OnInit {
   private router = inject(Router);
   private apiService = inject(ApiService);
   private roleIntent = inject(RoleIntentService);
+  private typeSafety = inject(TypeSafetyService);
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -630,12 +632,14 @@ export class ListingsComponent implements OnInit {
   getPrimaryCategoryName(product: Product): string {
     if (product?.category?.name) return product.category.name;
     // Try from product_metadata or first categories item if present
-    const metaCategory = (product?.product_metadata as any)?.category_name;
-    if (metaCategory) return String(metaCategory);
-    const firstCategory = Array.isArray((product as any).categories) && (product as any).categories.length > 0
-      ? (product as any).categories[0]
-      : null;
-    return firstCategory?.name || 'Uncategorized';
+    const metaCategory = this.typeSafety.getNestedProperty(product, 'product_metadata.category_name');
+    if (metaCategory) return this.typeSafety.toString(metaCategory);
+    const categories = this.typeSafety.getProperty(product, 'categories');
+    if (this.typeSafety.isArray(categories) && categories.length > 0) {
+      const firstCategory = categories[0];
+      return this.typeSafety.toString(this.typeSafety.getProperty(firstCategory, 'name'), 'Uncategorized');
+    }
+    return 'Uncategorized';
   }
 
   deleteProduct(productId: string): void {

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { ApiService } from './api.service';
 import { 
@@ -34,6 +35,7 @@ export interface OrderFilters {
   providedIn: 'root'
 })
 export class OrderService {
+  private typeSafety = inject(TypeSafetyService);
   private apiService = inject(ApiService);
   private realtime = inject(RealtimeService);
   
@@ -683,13 +685,13 @@ export class OrderService {
       switch (event) {
         case 'order_status_updated':
           if (data?.order_id && data?.status) {
-            this.updateOrderStatus(String((data as any).order_id), (data as any).status as OrderStatus);
+            this.updateOrderStatus(String(this.typeSafety.getProperty(data, 'order_id')), this.typeSafety.getProperty(data, 'status') as OrderStatus);
           }
           break;
         case 'payment_confirmed':
           if (data?.order_id) {
             // Refresh specific order or stats as needed
-            this.getOrder(String((data as any).order_id)).subscribe();
+            this.getOrder(String(this.typeSafety.getProperty(data, 'order_id'))).subscribe();
           }
           break;
         default:

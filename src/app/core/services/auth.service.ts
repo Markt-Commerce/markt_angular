@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, Subject, forkJoin, of } from 'rxjs';
 import { map, tap, switchMap, catchError, timeout, finalize } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { User, UserLogin, UserRegister } from '../models';
+import { ErrorHandlerService } from './error-handler.service';
 
 export interface AuthState {
   user: User | null;
@@ -16,6 +17,7 @@ export interface AuthState {
 })
 export class AuthService {
   private apiService = inject(ApiService);
+  private errorHandler = inject(ErrorHandlerService);
   
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
@@ -78,7 +80,7 @@ export class AuthService {
         });
         console.log('🔍 AuthService: Auth state set to authenticated (with or without token)');
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        this.errorHandler.logError(error, 'Error parsing user data');
         this.clearAuth();
       }
     } else {
@@ -200,7 +202,7 @@ export class AuthService {
           this.setLoading(false);
         },
         error: (error: any) => {
-          console.error('Login error in auth service:', error);
+          this.errorHandler.logError(error, 'Login error in auth service');
           this.setError(error.message);
           this.setLoading(false);
         }
@@ -218,7 +220,7 @@ export class AuthService {
           this.clearAuth();
         },
         error: (error: any) => {
-          console.error('Logout error:', error);
+          this.errorHandler.logError(error, 'Logout error');
           // Clear auth even if logout fails
           this.clearAuth();
         }
@@ -355,7 +357,7 @@ export class AuthService {
         const hasBoth = !!(currentUser?.is_buyer && currentUser?.is_seller);
         if (currentUser && hasBoth) {
           const current = currentUser.current_role;
-          const nextRole: 'buyer' | 'seller' = (targetRole || (current === 'buyer' ? 'seller' : 'buyer')) as any;
+          const nextRole: 'buyer' | 'seller' = targetRole || (current === 'buyer' ? 'seller' : 'buyer');
           const updatedUser = { ...currentUser, current_role: nextRole } as User;
           this.setUser(updatedUser);
           this.roleSwitched$.next(nextRole);
@@ -371,7 +373,7 @@ export class AuthService {
         const hasBoth = !!(currentUser?.is_buyer && currentUser?.is_seller);
         if ((methodNotAllowed || redirectedToLogin || unauthorized) && currentUser && hasBoth) {
           const current = currentUser.current_role;
-          const nextRole: 'buyer' | 'seller' = (targetRole || (current === 'buyer' ? 'seller' : 'buyer')) as any;
+          const nextRole: 'buyer' | 'seller' = targetRole || (current === 'buyer' ? 'seller' : 'buyer');
           const updatedUser = { ...currentUser, current_role: nextRole } as User;
           this.setUser(updatedUser);
           this.roleSwitched$.next(nextRole);

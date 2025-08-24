@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { combineLatest } from 'rxjs';
 import { 
   faTrash, 
   faPlus, 
@@ -28,6 +29,8 @@ import { CartItem, Product, SellerAccount, Address } from '../../core/models';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 import { RoleIntentService } from '../../core/services/role-intent.service';
+import { TypeSafetyService } from '../../core/services/type-safety.service';
+import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 
 @Component({
   selector: 'app-cart',
@@ -358,6 +361,8 @@ export class CartComponent implements OnInit {
   public access = inject(AccessControlService);
   public media = inject(MediaOptimizationService);
   private roleIntent = inject(RoleIntentService);
+  private typeSafety = inject(TypeSafetyService);
+  private observableUtils = inject(ObservableUtilsService);
 
   // Icons
   faTrash = faTrash;
@@ -403,21 +408,19 @@ export class CartComponent implements OnInit {
   }
 
   private loadCart(): void {
-    this.loading = true;
-    
-    this.cartService.getCart().subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.cartService.getCart(),
+      loadingSetter: (loading: boolean) => this.loading = loading,
+      successHandler: (response: any) => {
         if (response.success) {
           this.cartItems = response.data.items || [];
           this.cartItemCount = response.data.total_items || 0;
           this.calculateTotals();
         }
-        this.loading = false;
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error loading cart:', error);
         this.errorMessage = 'Error loading cart. Please try again.';
-        this.loading = false;
       }
     });
   }
@@ -478,13 +481,14 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    this.cartService.updateCartItem(itemId, newQuantity).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.cartService.updateCartItem(itemId, newQuantity),
+      successHandler: (response: any) => {
         if (response.success) {
           this.loadCart(); // Refresh cart data
         }
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error updating quantity:', error);
         this.errorMessage = 'Error updating quantity. Please try again.';
       }
@@ -492,13 +496,14 @@ export class CartComponent implements OnInit {
   }
 
   removeItem(itemId: string): void {
-    this.cartService.removeCartItem(itemId).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.cartService.removeCartItem(itemId),
+      successHandler: (response: any) => {
         if (response.success) {
           this.loadCart(); // Refresh cart data
         }
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         console.error('Error removing item:', error);
         this.errorMessage = 'Error removing item. Please try again.';
       }
@@ -516,11 +521,12 @@ export class CartComponent implements OnInit {
       quantity: quantity
     };
 
-    this.apiService.addToCart(cartData).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.addToCart(cartData),
+      successHandler: (response: any) => {
         this.loadCart(); // Refresh cart data
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         this.errorMessage = 'Error adding item to cart. Please try again.';
         console.error('Error adding item to cart:', error);
       }
@@ -542,7 +548,7 @@ export class CartComponent implements OnInit {
         } : undefined,
         payment_method: this.selectedPaymentMethod,
         notes: this.orderNotes
-      } as any;
+      };
       this.router.navigate(['/app/checkout'], { state: { checkoutData } });
     };
 
@@ -554,11 +560,12 @@ export class CartComponent implements OnInit {
   }
 
   removeCartItem(itemId: string): void {
-    this.apiService.removeCartItem(itemId).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.removeCartItem(itemId),
+      successHandler: (response: any) => {
         this.loadCart(); // Refresh cart data
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         this.errorMessage = 'Error removing item from cart. Please try again.';
         console.error('Error removing item from cart:', error);
       }
@@ -566,11 +573,12 @@ export class CartComponent implements OnInit {
   }
 
   toggleWishlist(productId: string): void {
-    this.apiService.toggleWishlist(productId).subscribe({
-      next: (response) => {
+    this.observableUtils.createSafeObservable({
+      source: this.apiService.toggleWishlist(productId),
+      successHandler: (response: any) => {
         // Wishlist updated successfully
       },
-      error: (error) => {
+      errorSetter: (error: string | null) => {
         this.errorMessage = 'Error updating wishlist. Please try again.';
         console.error('Error toggling wishlist:', error);
       }

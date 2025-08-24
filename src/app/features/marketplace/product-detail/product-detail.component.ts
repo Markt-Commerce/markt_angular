@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { TypeSafetyService } from '../../../core/services/type-safety.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -555,6 +556,7 @@ export class ProductDetailComponent implements OnInit {
   public accessControl = inject(AccessControlService);
   private titleMeta = inject(TitleMetaService);
   public media = inject(MediaOptimizationService);
+  private typeSafety = inject(TypeSafetyService);
   
 
   // Icons
@@ -613,9 +615,8 @@ export class ProductDetailComponent implements OnInit {
         .pipe(finalize(() => { this.isLoading = false; }))
         .subscribe({
           next: (response) => {
-            const r: any = response as any;
-            const data: any = r?.data?.item || r?.data?.product || r?.data || r?.item || r?.product || r || null;
-            if (!data || !(data.id || data.product_id || data.slug)) {
+            const data = this.typeSafety.getProperty(response, 'data.item') || this.typeSafety.getProperty(response, 'data.product') || this.typeSafety.getProperty(response, 'data') || this.typeSafety.getProperty(response, 'item') || this.typeSafety.getProperty(response, 'product') || response || null;
+            if (!data || !(this.typeSafety.getProperty(data, 'id') || this.typeSafety.getProperty(data, 'product_id') || this.typeSafety.getProperty(data, 'slug'))) {
               this.product = null;
               return;
             }
@@ -795,7 +796,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   toggleWishlist(): void {
-    if (!this.product) return;
+  if (!this.product) return;
 
     this.apiService.toggleWishlist(this.product.id).subscribe({
       next: (response) => {
@@ -813,7 +814,7 @@ export class ProductDetailComponent implements OnInit {
 
     this.apiService.shareProduct(this.product.id).subscribe({
       next: (response) => {
-        const shareUrl = (response as any)?.share_url || (response as any)?.data?.share_url || window.location.href;
+        const shareUrl = this.typeSafety.toString(this.typeSafety.getProperty(response, 'share_url') || this.typeSafety.getNestedProperty(response, 'data.share_url'), window.location.href);
         navigator.clipboard.writeText(shareUrl);
       },
       error: (error) => {

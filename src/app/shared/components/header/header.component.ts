@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ErrorHandlerService } from '../../../core/services/error-handler.service';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -112,6 +113,7 @@ import { map } from 'rxjs/operators';
 export class HeaderComponent {
   authService = inject(AuthService);
   private router = inject(Router);
+  private errorHandler = inject(ErrorHandlerService);
   switching = false;
   mobileMenuOpen = false;
 
@@ -155,7 +157,7 @@ export class HeaderComponent {
         this.router.navigate(['/landing']);
       },
       error: (error) => {
-        console.error('Logout error:', error);
+        this.errorHandler.logError(error, 'Logout failed');
         // Still navigate to landing page even if logout fails
         this.router.navigate(['/landing']);
       }

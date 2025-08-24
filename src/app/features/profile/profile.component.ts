@@ -6,6 +6,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivatedRoute } from '@angular/router';
+import { TypeSafetyService } from '../../core/services/type-safety.service';
 
 interface UserProfile {
   id: number;
@@ -288,6 +289,7 @@ export class ProfileComponent implements OnInit {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
+  private typeSafety = inject(TypeSafetyService);
 
   profile: UserProfile | null = null;
   activeTab = 'about';
@@ -329,8 +331,7 @@ export class ProfileComponent implements OnInit {
     
     this.apiService.getProfile().subscribe({
       next: (response) => {
-        const res: any = response as any;
-        const u: any = (res && res.data != null) ? res.data : res || {};
+        const u = (this.typeSafety.getProperty(response, 'data', response) || response) as any;
         const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
         const location = u.address ? [u.address.city, u.address.state, u.address.country].filter(Boolean).join(', ') : '';
         const seller = u.seller_account || {};
@@ -354,7 +355,7 @@ export class ProfileComponent implements OnInit {
           shop_name: seller?.shop_name || '',
           verification_status: seller?.verification_status || '',
           shop_description: seller?.description || '',
-          shop_categories: Array.isArray(seller?.categories) ? seller.categories.map((c: any) => c?.name).filter(Boolean) : [],
+          shop_categories: Array.isArray(seller?.categories) ? seller.categories.map((c: any) => this.typeSafety.getProperty(c, 'name')).filter(Boolean) : [],
           policies: seller?.policies || {}
         } as UserProfile;
         this.loading = false;

@@ -1,8 +1,10 @@
 import { ErrorHandler, Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { ErrorHandlingService } from './error-handling.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
+  private typeSafety = inject(TypeSafetyService);
   private errors = inject(ErrorHandlingService);
 
   handleError(error: unknown): void {
@@ -22,7 +24,7 @@ export function setupGlobalErrorListeners() {
       errors.notify(event.error || event.message);
     });
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-      errors.notify((event as any).reason || 'Unhandled promise rejection');
+      errors.notify(this.typeSafety.toString(this.typeSafety.getProperty(event, 'reason'), 'Unhandled promise rejection'));
     });
   };
 } 

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TypeSafetyService } from './type-safety.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { ApiService } from './api.service';
 import { 
@@ -79,6 +80,7 @@ export interface ModerationData {
   providedIn: 'root'
 })
 export class SocialService {
+  private typeSafety = inject(TypeSafetyService);
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
   private realtime = inject(RealtimeService);
@@ -884,7 +886,7 @@ export class SocialService {
         case 'post_liked':
           if (data?.post_id) {
             const updated = this.feedSubject.value.map(p => 
-              p.id === (data as any).post_id ? { ...p, like_count: (p.like_count || 0) + 1 } : p
+              p.id === this.typeSafety.getProperty(data, 'post_id') ? { ...p, like_count: (p.like_count || 0) + 1 } : p
             );
             this.feedSubject.next(updated);
           }
@@ -892,7 +894,7 @@ export class SocialService {
         case 'comment_added':
           if (data?.post_id) {
             const updated = this.feedSubject.value.map(p => 
-              p.id === (data as any).post_id ? { ...p, comment_count: (p.comment_count || 0) + 1 } : p
+              p.id === this.typeSafety.getProperty(data, 'post_id') ? { ...p, comment_count: (p.comment_count || 0) + 1 } : p
             );
             this.feedSubject.next(updated);
           }

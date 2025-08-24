@@ -5,7 +5,10 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractContro
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterRequest } from '../../../core/models/auth.model';
 import { ApiService } from '../../../core/services/api.service';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, switchMap, map, catchError, finalize } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { TypeSafetyService } from '../../../core/services/type-safety.service';
+import { ErrorHandlerService } from '../../../core/services/error-handler.service';
 
 @Component({
   selector: 'app-register',
@@ -284,6 +287,8 @@ export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private typeSafety = inject(TypeSafetyService);
+  private errorHandler = inject(ErrorHandlerService);
 
   registerForm!: FormGroup;
   loading = false;
@@ -297,28 +302,34 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    // Live username availability check
+    // Live username availability check with proper error handling
     this.registerForm.get('username')?.valueChanges
-      .pipe(debounceTime(400), distinctUntilChanged())
-      .subscribe((value: string) => {
-        this.usernameAvailable = null;
-        if (!value || value.trim().length < 3) {
-          this.usernameChecking = false;
-          return;
-        }
-        this.usernameChecking = true;
-        this.apiService.checkUsername(value.trim()).subscribe({
-          next: (res) => {
-            // Some APIs return {success,data:{available:true}} or {available:true}
-            const available = (res as any)?.data?.available ?? (res as any)?.available;
-            this.usernameAvailable = available !== false;
-            this.usernameChecking = false;
-          },
-          error: () => {
-            // If check fails, don't block registration; just stop spinner
-            this.usernameChecking = false;
-          }
-        });
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        filter((value: string) => Boolean(value && value.trim().length >= 3)),
+        switchMap((value: string) => {
+          this.usernameChecking = true;
+          this.usernameAvailable = null;
+          return this.apiService.checkUsername(value.trim()).pipe(
+            map((res) => {
+              // Type-safe extraction of availability status
+              const available = this.typeSafety.getNestedProperty(res, 'data.available') ?? this.typeSafety.getProperty(res, 'available');
+              return this.typeSafety.toBoolean(available, true);
+            }),
+            catchError((error) => {
+              // Log error but don't block registration
+              console.error('Username availability check failed:', error);
+              return of(null);
+            }),
+            finalize(() => {
+              this.usernameChecking = false;
+            })
+          );
+        })
+      )
+      .subscribe((available) => {
+        this.usernameAvailable = available as boolean | null;
       });
   }
 
@@ -415,8 +426,9 @@ export class RegisterComponent implements OnInit {
         next: (response) => {
           console.log('Register response:', response);
           if (response.success) {
-            const token = (response as any).data?.token || (response as any).token;
-            const user = (response as any).data?.user || (response as any).user;
+            const userData = this.typeSafety.extractUserData(response);
+            const token = userData.token;
+            const user = userData.user;
             if (token && user) {
               // Store user data and token using the same keys AuthService expects
               localStorage.setItem('markt_token', token);
@@ -432,8 +444,8 @@ export class RegisterComponent implements OnInit {
               this.router.navigate(['/auth/verify-email'], { queryParams: { email: formData.email } });
             }
           } else {
-            const msg = (response as any)?.message || (response as any)?.data?.message;
-            const errs = (response as any)?.errors || (response as any)?.data?.errors;
+            const msg = this.typeSafety.toString(this.typeSafety.getProperty(response, 'message') || this.typeSafety.getNestedProperty(response, 'data.message'));
+            const errs = this.typeSafety.getProperty(response, 'errors') || this.typeSafety.getNestedProperty(response, 'data.errors');
             if (errs && typeof errs === 'object') {
               const details = Object.entries(errs)
                 .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : Array.isArray(v) ? v.join(', ') : JSON.stringify(v)}`)
@@ -446,22 +458,16 @@ export class RegisterComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Registration error:', error);
-          const serverMsg = (error as any)?.body?.message;
-          const serverErrors = (error as any)?.body?.errors;
-          if ((error as any)?.status === 409) {
-            this.errorMessage = serverMsg || 'Username or email already exists. Please try a different one.';
+          this.errorHandler.logError(error, 'Registration failed');
+          const errorMessage = this.errorHandler.extractErrorMessage(error);
+          
+          if (this.typeSafety.getProperty(error, 'status') === 409) {
+            this.errorMessage = errorMessage || 'Username or email already exists. Please try a different one.';
             this.loading = false;
             return;
           }
-          if (serverErrors && typeof serverErrors === 'object') {
-            const details = Object.entries(serverErrors)
-              .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : Array.isArray(v) ? v.join(', ') : JSON.stringify(v)}`)
-              .join(' | ');
-            this.errorMessage = `${serverMsg || 'Validation error'} — ${details}`;
-          } else {
-            this.errorMessage = serverMsg || error.message || 'Registration failed. Please try again.';
-          }
+          
+          this.errorMessage = errorMessage;
           this.loading = false;
         }
       });
