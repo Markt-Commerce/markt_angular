@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order } from '../models';
+import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order, CartSummary, ApiResponse } from '../models';
 import { CheckoutData } from './api.service';
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -18,16 +18,26 @@ export class CartService {
   public cart$ = this.cartSubject.asObservable();
 
   constructor() {
+    // Constructor should only handle dependency injection
+    // Heavy initialization is moved to initialize() method
+  }
+
+  /**
+   * Initialize cart service
+   * This method should be called after the service is injected
+   */
+  initialize(): void {
     // Only auto-load cart for buyers
     const role = this.authService.getCurrentRole?.() as string | undefined;
     if (role === 'buyer') {
       this.loadCart();
     }
+    
     // React to role changes
     this.authService.authState$?.subscribe(state => {
       const currentRole = state?.user?.current_role;
       if (currentRole === 'buyer') {
-    this.loadCart();
+        this.loadCart();
       } else {
         this.cartSubject.next(null);
       }
@@ -41,20 +51,24 @@ export class CartService {
   /**
    * Get current cart
    */
-  getCart(): Observable<any> {
+  getCart(): Observable<ApiResponse<Cart>> {
     const role = this.authService.getCurrentRole?.();
     if (role !== 'buyer') {
       this.cartSubject.next(null);
-      return new BehaviorSubject<any>({ success: false, data: null }).asObservable();
+      return new BehaviorSubject<ApiResponse<Cart>>({ 
+        success: false, 
+        data: null as any,
+        message: 'Only buyers can access cart'
+      }).asObservable();
     }
     return this.apiService.getCart().pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<Cart>) => {
           if (response.success) {
             this.cartSubject.next(response.data);
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error loading cart:', error);
         }
       })
@@ -71,18 +85,18 @@ export class CartService {
   /**
    * Add item to cart with quantity
    */
-  addToCart(productId: string, quantity: number = 1): Observable<any> {
+  addToCart(productId: string, quantity: number = 1): Observable<ApiResponse<CartItem>> {
     const role = this.authService.getCurrentRole?.();
     if (role !== 'buyer') {
       return throwError(() => new Error('Only buyers can access this endpoint'));
     }
-    const cartData = {
+    const cartData: AddToCart = {
       product_id: productId,
       quantity: quantity
     };
     
     return this.apiService.addToCart(cartData).pipe(
-      tap(response => {
+      tap((response: ApiResponse<CartItem>) => {
         if (response.success) {
           this.loadCart();
         }
@@ -93,16 +107,16 @@ export class CartService {
   /**
    * Update cart item quantity
    */
-  updateCartItem(itemId: string, quantity: number): Observable<any> {
-    const updateData = { quantity };
+  updateCartItem(itemId: string, quantity: number): Observable<ApiResponse<CartItem>> {
+    const updateData: UpdateCartItem = { quantity };
     return this.apiService.updateCartItem(itemId, updateData).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<CartItem>) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error updating cart item:', error);
         }
       })
@@ -112,15 +126,15 @@ export class CartService {
   /**
    * Remove item from cart
    */
-  removeCartItem(itemId: string): Observable<any> {
+  removeCartItem(itemId: string): Observable<ApiResponse<void>> {
     return this.apiService.removeCartItem(itemId).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<void>) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error removing cart item:', error);
         }
       })
@@ -130,15 +144,15 @@ export class CartService {
   /**
    * Clear entire cart
    */
-  clearCart(): Observable<any> {
+  clearCart(): Observable<ApiResponse<void>> {
     return this.apiService.clearCart().pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<void>) => {
           if (response.success) {
             this.cartSubject.next(null);
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error clearing cart:', error);
         }
       })
@@ -148,22 +162,22 @@ export class CartService {
   /**
    * Get cart summary
    */
-  getCartSummary(): Observable<any> {
+  getCartSummary(): Observable<ApiResponse<CartSummary>> {
     return this.apiService.getCartSummary();
   }
 
   /**
    * Apply coupon to cart
    */
-  applyCoupon(couponCode: string): Observable<any> {
+  applyCoupon(couponCode: string): Observable<ApiResponse<{ discount_amount: number; message: string }>> {
     return this.apiService.applyCoupon({ code: couponCode }).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<{ discount_amount: number; message: string }>) => {
           if (response.success) {
             this.loadCart(); // Reload cart to get updated state
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error applying coupon:', error);
         }
       })
@@ -173,7 +187,7 @@ export class CartService {
   /**
    * Checkout cart
    */
-  checkout(checkoutData: Checkout): Observable<any> {
+  checkout(checkoutData: Checkout): Observable<ApiResponse<Order>> {
     // Add payment_method if not present
     const checkoutDataWithPayment: CheckoutData = {
       shipping_address: checkoutData.shipping_address,
@@ -183,13 +197,13 @@ export class CartService {
     
     return this.apiService.checkoutCart(checkoutDataWithPayment).pipe(
       tap({
-        next: (response: any) => {
+        next: (response: ApiResponse<Order>) => {
           if (response.success) {
             // Clear cart after successful checkout
             this.cartSubject.next(null);
           }
         },
-        error: (error: any) => {
+        error: (error: unknown) => {
           console.error('Error during checkout:', error);
         }
       })

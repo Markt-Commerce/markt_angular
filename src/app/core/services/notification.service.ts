@@ -12,6 +12,7 @@ import {
 } from '../models';
 import { map } from 'rxjs/operators';
 import { RealtimeService } from './realtime.service';
+import { BackgroundNotificationService } from './background-notification.service';
 
 export interface NotificationState {
   notifications: Notification[];
@@ -27,6 +28,7 @@ export class NotificationService {
   private typeSafety = inject(TypeSafetyService);
   private apiService = inject(ApiService);
   private realtime = inject(RealtimeService);
+  private backgroundService = inject(BackgroundNotificationService);
   
   private notificationStateSubject = new BehaviorSubject<NotificationState>({
     notifications: [],
@@ -44,6 +46,7 @@ export class NotificationService {
     this.initializeNotifications();
     this.startAutoRefresh();
     this.setupRealtime();
+    this.setupBackgroundNotifications();
   }
 
   // ============================================================================
@@ -488,5 +491,23 @@ export class NotificationService {
           break;
       }
     });
+  }
+
+  /**
+   * Setup background notification capabilities
+   */
+  private setupBackgroundNotifications(): void {
+    // Check if background notifications are supported
+    if (this.backgroundService.isSupported()) {
+      // Request permission if not already granted
+      if (!this.backgroundService.isEnabled()) {
+        this.backgroundService.requestPermission();
+      }
+      
+      // Subscribe to background notification state changes
+      this.backgroundService.state$.subscribe((state) => {
+        console.log('Background notification state:', state);
+      });
+    }
   }
 } 

@@ -50,7 +50,8 @@ export class FeatureFlagService {
     try {
       const raw = localStorage.getItem('markt_flags');
       return raw ? JSON.parse(raw) : null;
-    } catch {
+    } catch (error) {
+      console.error('Failed to read feature flags from localStorage:', error);
       return null;
     }
   }
@@ -58,6 +59,8 @@ export class FeatureFlagService {
   private writeLocal(flags: FeatureFlags): void {
     try {
       localStorage.setItem('markt_flags', JSON.stringify(flags));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to write feature flags to localStorage:', error);
+    }
   }
 } 

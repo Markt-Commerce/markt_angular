@@ -524,6 +524,7 @@ export class AppLayoutComponent implements OnInit {
   ngOnInit(): void {
     this.initializeComponent();
     this.setupSubscriptions();
+    this.initializeServices();
   }
 
   private initializeComponent(): void {
@@ -544,6 +545,11 @@ export class AppLayoutComponent implements OnInit {
       this.unreadNotifications = notificationCount;
       this.unreadMessages = messageCount;
     });
+  }
+
+  private initializeServices(): void {
+    // Initialize services that need lifecycle hooks
+    this.cartService.initialize();
   }
 
   toggleSidebar(): void {
@@ -574,21 +580,21 @@ export class AppLayoutComponent implements OnInit {
   }
 
   logout(): void {
-    this.observableUtils.createSafeObservable(
-      this.authService.logout(),
-      () => this.router.navigate(['/landing']),
-      (error) => {
+    this.observableUtils.createSafeObservable({
+      source: this.authService.logout(),
+      successHandler: () => this.router.navigate(['/landing']),
+      errorSetter: (error: string | null) => {
         console.error('Logout error:', error);
         this.router.navigate(['/landing']);
       }
-    );
+    });
   }
 
   toggleRole(): void {
-    this.observableUtils.createSafeObservable(
-      this.authService.switchRole(),
-      () => {}, // No action needed on success
-      (error) => console.error('Role switch error:', error)
-    );
+    this.observableUtils.createSafeObservable({
+      source: this.authService.switchRole(),
+      successHandler: () => {}, // No action needed on success
+      errorSetter: (error: string | null) => console.error('Role switch error:', error)
+    });
   }
 } 

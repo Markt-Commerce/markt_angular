@@ -1,6 +1,30 @@
 import { Routes } from '@angular/router';
 import { AuthGuard, GuestGuard, RoleGuard } from './core/guards/auth.guard';
 
+/**
+ * Route Guard Strategy:
+ * 
+ * 1. GuestGuard: Protects auth routes (login, register, etc.)
+ *    - Prevents authenticated users from accessing auth pages
+ *    - Redirects to /app/dashboard if already logged in
+ * 
+ * 2. AuthGuard: Protects all authenticated routes
+ *    - Ensures user is logged in before accessing protected pages
+ *    - Redirects to /auth/login with returnUrl for post-login redirect
+ *    - Applied to: dashboard, notifications, settings, profile, community, chat, offers, requests
+ * 
+ * 3. RoleGuard: Protects role-specific routes
+ *    - Requires specific user role (buyer/seller)
+ *    - Automatically switches roles if user has the required role
+ *    - Shows helpful notifications and error messages
+ *    - Applied to: cart, checkout, orders (buyer), seller routes (seller)
+ * 
+ * Route Protection Levels:
+ * - Public: landing, auth routes (with GuestGuard)
+ * - Authenticated: All /app routes (with AuthGuard)
+ * - Role-specific: buyer/seller specific features (with RoleGuard)
+ */
+
 export const routes: Routes = [
   {
     path: '',
@@ -93,6 +117,7 @@ export const routes: Routes = [
       },
       {
         path: 'community',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Community' },
         children: [
           {
@@ -114,6 +139,7 @@ export const routes: Routes = [
       },
       {
         path: 'profile',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Profile' },
         children: [
           {
@@ -152,6 +178,7 @@ export const routes: Routes = [
       },
       {
         path: 'offers',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Offers' },
         children: [
           {
@@ -162,7 +189,8 @@ export const routes: Routes = [
           {
             path: 'create',
             loadComponent: () => import('./features/offers/create-offer/create-offer.component').then(m => m.CreateOfferComponent),
-            data: { breadcrumb: 'Create Offer' }
+            canActivate: [RoleGuard],
+            data: { breadcrumb: 'Create Offer', requiredRole: 'buyer' }
           },
           {
             path: ':id',
@@ -173,6 +201,7 @@ export const routes: Routes = [
       },
       {
         path: 'requests',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Requests' },
         children: [
           {
@@ -195,6 +224,7 @@ export const routes: Routes = [
       },
       {
         path: 'chat',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Messages' },
         children: [
           {
@@ -212,15 +242,18 @@ export const routes: Routes = [
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent),
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Notifications' }
       },
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Dashboard' }
       },
       {
         path: 'settings',
+        canActivate: [AuthGuard],
         data: { breadcrumb: 'Settings' },
         children: [
           {
@@ -274,15 +307,17 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/seller/listings/listings.component').then(m => m.ListingsComponent),
                 data: { breadcrumb: 'Listings' }
               },
-              {
-                path: 'create',
-                loadComponent: () => import('./features/seller/listings/create-listing/create-listing.component').then(m => m.CreateListingComponent),
-                data: { breadcrumb: 'Create Listing' }
-              },
+                        {
+            path: 'create',
+            loadComponent: () => import('./features/seller/listings/create-listing/create-listing.component').then(m => m.CreateListingComponent),
+            canActivate: [RoleGuard],
+            data: { breadcrumb: 'Create Listing', requiredRole: 'seller' }
+          },
               {
                 path: 'edit/:id',
                 loadComponent: () => import('./features/seller/listings/edit-listing/edit-listing.component').then(m => m.EditListingComponent),
-                data: { breadcrumb: 'Edit Listing' }
+                canActivate: [RoleGuard],
+                data: { breadcrumb: 'Edit Listing', requiredRole: 'seller' }
               }
             ]
           },

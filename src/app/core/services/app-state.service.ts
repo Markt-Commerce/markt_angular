@@ -64,6 +64,9 @@ export interface AppState {
   // Real-time Updates
   lastUpdate: Date;
   isOnline: boolean;
+  
+  // Role switching
+  roleSwitchIntent: { target: 'buyer' | 'seller'; redirectUrl?: string } | null;
 }
 
 const initialState: AppState = {
@@ -110,7 +113,10 @@ const initialState: AppState = {
   
   // Real-time Updates
   lastUpdate: new Date(),
-  isOnline: navigator.onLine
+  isOnline: navigator.onLine,
+  
+  // Role switching
+  roleSwitchIntent: null
 };
 
 @Injectable({
@@ -572,8 +578,10 @@ export class AppStateService {
       message: `You need to switch to ${target} to continue.`,
       duration: 4000
     });
-    // UI layers can read this via activeOverlay or route query params
-    this.openOverlay(`switch-to-${target}${redirectUrl ? `:${redirectUrl}` : ''}`);
+    // Store role switch intent for UI components to handle
+    this.updateState({ 
+      roleSwitchIntent: { target, redirectUrl } 
+    });
   }
 
   /**

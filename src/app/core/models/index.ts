@@ -1,4 +1,6 @@
 // Common Models
+export type UserRole = 'buyer' | 'seller';
+
 export interface Pagination {
   page: number;
   per_page: number;
@@ -96,7 +98,7 @@ export interface User {
   address?: Address;
   is_buyer: boolean;
   is_seller: boolean;
-  current_role: 'buyer' | 'seller';
+  current_role: UserRole;
   email_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -114,7 +116,7 @@ export interface UserProfile extends User {
 export interface UserLogin {
   email: string;
   password: string;
-  account_type: 'buyer' | 'seller';
+  account_type: UserRole;
 }
 
 export interface UserRegister {
@@ -122,7 +124,7 @@ export interface UserRegister {
   email: string;
   phone_number: string;
   password: string;
-  account_type: 'buyer' | 'seller';
+  account_type: UserRole;
   seller_data?: {
     shop_name: string;
     description: string;

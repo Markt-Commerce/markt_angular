@@ -96,9 +96,9 @@ import { ApiService } from '../../../core/services/api.service';
                     formControlName="accountType"
                     class="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#181211] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-14 placeholder:text-[#886a63] p-4 text-base font-normal leading-normal"
                   >
-                    <option value="">Active Role (optional)</option>
-                    <option value="buyer">Buyer</option>
-                    <option value="seller">Seller</option>
+                    <option value="">Select Account Type</option>
+                    <option value="buyer">Buyer Account</option>
+                    <option value="seller">Seller Account</option>
                   </select>
                   <div *ngIf="getErrorMessage('accountType')" class="text-red-500 text-sm mt-1">
                     {{ getErrorMessage('accountType') }}

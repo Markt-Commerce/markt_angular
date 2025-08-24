@@ -1,3 +1,5 @@
+export type UserRole = 'buyer' | 'seller';
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -8,7 +10,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone_number: string;
-  account_type: 'buyer' | 'seller';
+  account_type: UserRole;
   seller_data?: {
     shop_name: string;
     description: string;
@@ -39,7 +41,7 @@ export interface User {
   is_buyer: boolean;
   is_seller: boolean;
   email_verified: boolean;
-  current_role: 'buyer' | 'seller';
+  current_role: UserRole;
   created_at: string;
   updated_at: string;
 }

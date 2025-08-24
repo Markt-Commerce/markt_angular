@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faSpinner, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegisterRequest } from '../../../core/models/auth.model';
 import { ApiService } from '../../../core/services/api.service';
@@ -13,7 +15,7 @@ import { ErrorHandlerService } from '../../../core/services/error-handler.servic
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, FontAwesomeModule],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
       <div class="w-full max-w-md space-y-8">
@@ -45,12 +47,22 @@ import { ErrorHandlerService } from '../../../core/services/error-handler.servic
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#E94C2A] focus:outline-none focus:ring-[#E94C2A] sm:text-sm"
               [class.border-red-500]="getErrorMessage('username')"
             />
-            <div *ngIf="getErrorMessage('username')" class="mt-1 text-sm text-red-600">
+            <!-- Username validation messages -->
+            <div *ngIf="usernameChecking" class="mt-1 text-xs text-gray-500 flex items-center">
+              <fa-icon [icon]="faSpinner" class="animate-spin mr-1 w-3 h-3"></fa-icon> Checking username availability...
+            </div>
+            <div *ngIf="!usernameChecking && usernameAvailable === false && registerForm.get('username')?.dirty" class="mt-1 text-sm text-red-600 flex items-center">
+              <fa-icon [icon]="faTimes" class="mr-1 w-3 h-3"></fa-icon> Username is already taken
+            </div>
+            <div *ngIf="!usernameChecking && usernameAvailable === true && registerForm.get('username')?.dirty" class="mt-1 text-sm text-green-600 flex items-center">
+              <fa-icon [icon]="faCheck" class="mr-1 w-3 h-3"></fa-icon> Username is available
+            </div>
+            <div *ngIf="getErrorMessage('username') && !usernameChecking" class="mt-1 text-sm text-red-600">
               {{ getErrorMessage('username') }}
             </div>
-            <div *ngIf="usernameChecking" class="mt-1 text-xs text-gray-500">Checking username...</div>
-            <div *ngIf="!usernameChecking && usernameAvailable === false" class="mt-1 text-sm text-red-600">Username is already taken</div>
-            <div *ngIf="!usernameChecking && usernameAvailable && registerForm.get('username')?.dirty" class="mt-1 text-sm text-green-600">Username is available</div>
+            <div *ngIf="!getErrorMessage('username') && registerForm.get('username')?.dirty && !isValidUsername(registerForm.get('username')?.value)" class="mt-1 text-sm text-orange-600">
+              <fa-icon [icon]="faTimes" class="mr-1 w-3 h-3"></fa-icon> Username contains invalid characters
+            </div>
           </div>
 
           <!-- Email -->
@@ -296,6 +308,11 @@ export class RegisterComponent implements OnInit {
   usernameChecking = false;
   usernameAvailable: boolean | null = null;
 
+  // Icons
+  faSpinner = faSpinner;
+  faCheck = faCheck;
+  faTimes = faTimes;
+
   get isSellerAccount(): boolean {
     return this.registerForm?.get('account_type')?.value === 'seller';
   }
@@ -307,7 +324,11 @@ export class RegisterComponent implements OnInit {
       .pipe(
         debounceTime(400),
         distinctUntilChanged(),
-        filter((value: string) => Boolean(value && value.trim().length >= 3)),
+        filter((value: string) => {
+          // Only check availability for valid usernames
+          const trimmed = value?.trim();
+          return Boolean(trimmed && trimmed.length >= 3 && /^[a-zA-Z0-9_-]+$/.test(trimmed));
+        }),
         switchMap((value: string) => {
           this.usernameChecking = true;
           this.usernameAvailable = null;
@@ -335,7 +356,12 @@ export class RegisterComponent implements OnInit {
 
   private initForm(): void {
     this.registerForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
+      username: ['', [
+        Validators.required, 
+        Validators.minLength(3),
+        Validators.maxLength(30),
+        Validators.pattern(/^[a-zA-Z0-9_-]+$/) // Only alphanumeric, underscore, and hyphen allowed
+      ]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [
         Validators.required, 
@@ -497,7 +523,7 @@ export class RegisterComponent implements OnInit {
       }
       if (control.errors['pattern']) {
         if (field === 'username') {
-          return 'Username can only contain letters, numbers, and underscores';
+          return 'Username can only contain letters, numbers, underscores (_), and hyphens (-)';
         }
         if (field === 'password') {
           return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
@@ -517,6 +543,11 @@ export class RegisterComponent implements OnInit {
     }
     
     return '';
+  }
+
+  isValidUsername(username: string): boolean {
+    if (!username) return false;
+    return /^[a-zA-Z0-9_-]+$/.test(username.trim());
   }
 
   checkUsername(): void {

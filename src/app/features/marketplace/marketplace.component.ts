@@ -34,6 +34,7 @@ import { AccessControlService } from '../../core/services/access-control.service
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
+import { SocialService } from '../../core/services/social.service';
 
 @Component({
   selector: 'app-marketplace',
@@ -458,6 +459,7 @@ export class MarketplaceComponent implements OnInit {
   media = inject(MediaOptimizationService);
   private typeSafety = inject(TypeSafetyService);
   private observableUtils = inject(ObservableUtilsService);
+  private socialService = inject(SocialService);
 
   // Icons
   faSearch = faSearch;
@@ -503,6 +505,11 @@ export class MarketplaceComponent implements OnInit {
   locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
   recommendedProducts: any[] = [];
   trendingProducts: any[] = [];
+  
+  // Content mixing
+  mixedContent: Array<{ type: 'product' | 'post'; data: any }> = [];
+  socialPosts: any[] = [];
+  enableContentMixing = true;
 
   ngOnInit(): void {
     this.loadMarketplaceData();
@@ -524,7 +531,7 @@ export class MarketplaceComponent implements OnInit {
   private loadMarketplaceData(): void {
     this.isLoading = true;
     
-    // Optimized: Combined marketplace data loading
+    // Optimized: Combined marketplace data loading with social posts
     combineLatest([
       this.apiService.getMarketplaceProducts(),
       this.apiService.getCategories()
@@ -540,6 +547,9 @@ export class MarketplaceComponent implements OnInit {
         
         // Handle categories data
         this.categories = this.typeSafety.toArray(this.typeSafety.getProperty(categoriesResponse, 'data', categoriesResponse));
+        
+        // Load social posts for content mixing
+        this.loadSocialPosts();
         
         this.isLoading = false;
       },
@@ -807,5 +817,68 @@ export class MarketplaceComponent implements OnInit {
         console.error('Error upvoting review:', error);
       }
     });
+  }
+
+  // Content Mixing Algorithm
+  private loadSocialPosts(): void {
+    this.observableUtils.createSafeObservable({
+      source: this.socialService.getFeed({ type: 'trending', per_page: 20 }),
+      successHandler: (response: any) => {
+        this.socialPosts = response.data || [];
+        this.mixContent();
+      },
+      errorSetter: (error: string | null) => {
+        console.error('Error loading social posts:', error);
+        this.socialPosts = [];
+        this.mixContent();
+      }
+    });
+  }
+
+  private mixContent(): void {
+    if (!this.enableContentMixing) {
+      this.mixedContent = this.products.map(product => ({ type: 'product', data: product }));
+      return;
+    }
+
+    const mixed: Array<{ type: 'product' | 'post'; data: any }> = [];
+    const products = [...this.products];
+    const posts = [...this.socialPosts];
+
+    // Algorithm: Mix products and posts with weighted randomization
+    while (products.length > 0 || posts.length > 0) {
+      const productWeight = products.length * 0.6; // 60% weight for products
+      const postWeight = posts.length * 0.4; // 40% weight for posts
+      const totalWeight = productWeight + postWeight;
+
+      if (totalWeight === 0) break;
+
+      const random = Math.random() * totalWeight;
+      
+      if (random < productWeight && products.length > 0) {
+        // Add product
+        const productIndex = Math.floor(Math.random() * products.length);
+        mixed.push({ type: 'product', data: products.splice(productIndex, 1)[0] });
+      } else if (posts.length > 0) {
+        // Add post
+        const postIndex = Math.floor(Math.random() * posts.length);
+        mixed.push({ type: 'post', data: posts.splice(postIndex, 1)[0] });
+      }
+    }
+
+    this.mixedContent = mixed;
+  }
+
+  toggleContentMixing(): void {
+    this.enableContentMixing = !this.enableContentMixing;
+    this.mixContent();
+  }
+
+  getContentTypeIcon(type: 'product' | 'post'): any {
+    return type === 'product' ? this.faStore : this.faUser;
+  }
+
+  getContentTypeLabel(type: 'product' | 'post'): string {
+    return type === 'product' ? 'Product' : 'Community Post';
   }
 }

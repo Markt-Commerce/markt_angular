@@ -1,21 +1,33 @@
 import { Injectable, inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { AccessControlService } from '../services/access-control.service';
 import { AppStateService } from '../services/app-state.service';
+import { ErrorHandlerService } from '../services/error-handler.service';
 
 export const AuthGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const errorHandler = inject(ErrorHandlerService);
 
-  if (authService.isAuthenticated()) {
-          return true;
+  try {
+    if (authService.isAuthenticated()) {
+      return true;
+    }
+
+    // Store the intended destination for redirect after login
+    const returnUrl = state.url;
+    router.navigate(['/auth/login'], { 
+      queryParams: { returnUrl: returnUrl !== '/auth/login' ? returnUrl : undefined }
+    });
+    return false;
+  } catch (error) {
+    errorHandler.logError(error, 'AuthGuard error');
+    router.navigate(['/auth/login']);
+    return false;
   }
-
-  router.navigate(['/auth/login']);
-  return false;
 };
 
 // RoleGuard: require buyer or seller role. If mismatched but the user has the required role,
@@ -25,31 +37,78 @@ export const RoleGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const appState = inject(AppStateService);
+  const errorHandler = inject(ErrorHandlerService);
   const required = (route.data?.['requiredRole'] as 'buyer' | 'seller' | 'either') || 'either';
 
-  if (required === 'either') return true;
-  if (access.role === required) return true;
+  try {
+    // First check if user is authenticated
+    if (!auth.isAuthenticated()) {
+      const returnUrl = state.url;
+      router.navigate(['/auth/login'], { 
+        queryParams: { returnUrl: returnUrl !== '/auth/login' ? returnUrl : undefined }
+      });
+      return false;
+    }
 
-  const user = auth.getCurrentUser?.();
-  const hasBuyer = !!user?.is_buyer;
-  const hasSeller = !!user?.is_seller;
-  const canSwitch = (required === 'buyer' && hasBuyer) || (required === 'seller' && hasSeller);
+    if (required === 'either') return true;
+    if (access.role === required) return true;
 
-  if (!canSwitch) {
-    return router.createUrlTree(['/app/dashboard'], { queryParams: { suggestRole: required, redirect: state.url } });
+    const user = auth.getCurrentUser?.();
+    const hasBuyer = !!user?.is_buyer;
+    const hasSeller = !!user?.is_seller;
+    const canSwitch = (required === 'buyer' && hasBuyer) || (required === 'seller' && hasSeller);
+
+    if (!canSwitch) {
+      appState.showNotification({ 
+        type: 'warning', 
+        message: `This feature requires a ${required} account. Please create or switch to a ${required} account.` 
+      });
+      return router.createUrlTree(['/app/dashboard'], { 
+        queryParams: { suggestRole: required, redirect: state.url } 
+      });
+    }
+
+    appState.showNotification({ 
+      type: 'info', 
+      message: `Switching to ${required} mode to continue...` 
+    });
+    
+    return auth.switchRole(required).pipe(
+      map(() => true as boolean | UrlTree),
+      catchError((error) => {
+        errorHandler.logError(error, 'RoleGuard switch error');
+        appState.showNotification({ 
+          type: 'error', 
+          message: 'Failed to switch roles. Please try again.' 
+        });
+        return of(router.createUrlTree(['/app/dashboard'], { 
+          queryParams: { suggestRole: required } 
+        }));
+      })
+    );
+  } catch (error) {
+    errorHandler.logError(error, 'RoleGuard error');
+    router.navigate(['/auth/login']);
+    return false;
   }
-
-  appState.showNotification({ type: 'info', message: `Switching to ${required} to continue...` });
-  return auth.switchRole(required).pipe(
-    map(() => true as boolean | UrlTree),
-    catchError(() => of(router.createUrlTree(['/app/dashboard'], { queryParams: { suggestRole: required } })))
-  );
 };
 
 export const GuestGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  if (!authService.isAuthenticated()) return true;
-  router.navigate(['/app']);
-  return false;
+  const errorHandler = inject(ErrorHandlerService);
+
+  try {
+    if (!authService.isAuthenticated()) {
+      return true;
+    }
+    
+    // If user is already authenticated, redirect to app
+    router.navigate(['/app/dashboard']);
+    return false;
+  } catch (error) {
+    errorHandler.logError(error, 'GuestGuard error');
+    // On error, allow access to guest routes
+    return true;
+  }
 }; 

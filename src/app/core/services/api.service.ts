@@ -28,7 +28,8 @@ import {
   Notification, 
   Review,
   Tracking,
-  RegisterResponse
+  RegisterResponse,
+  UserRole
 } from '../models';
 
 export interface UserData {
@@ -36,7 +37,7 @@ export interface UserData {
   email: string;
   phone_number: string;
   password: string;
-  account_type: 'buyer' | 'seller';
+  account_type: UserRole;
   seller_data?: {
     shop_name: string;
     description: string;
@@ -61,7 +62,7 @@ export interface UserData {
 export interface LoginCredentials {
   email: string;
   password: string;
-  account_type: 'buyer' | 'seller';
+  account_type: UserRole;
 }
 
 export interface ProfileData {
@@ -431,18 +432,22 @@ export class ApiService {
     return this.patch<User>('/users/profile/seller', sellerData);
   }
 
-  switchRole(targetRole?: 'buyer' | 'seller'): Observable<ApiResponse<{ user: User; message: string }>> {
-    const body = targetRole ? { role: targetRole } : {};
-    return this.post<{ user: User; message: string }>('/users/switch-role', Object.keys(body).length ? body : undefined).pipe(
+  switchRole(targetRole?: UserRole): Observable<ApiResponse<{ user: User; message: string }>> {
+    // Validate targetRole parameter
+    if (targetRole !== undefined && targetRole !== 'buyer' && targetRole !== 'seller') {
+      return throwError(() => new Error('Invalid targetRole: must be "buyer" or "seller"'));
+    }
+
+    const requestBody = targetRole ? { role: targetRole } : undefined;
+    
+    // Try POST first, fallback to PATCH, then GET
+    return this.post<{ user: User; message: string }>('/users/switch-role', requestBody).pipe(
       catchError((error: HttpErrorResponse) => {
-        // Some backends may require a different method; try PATCH then GET with params
         if (error.status === 405 || error.status === 404) {
-          const patchBody = targetRole ? { role: targetRole } : {};
-          return this.patch<{ user: User; message: string }>('/users/switch-role', patchBody).pipe(
+          return this.patch<{ user: User; message: string }>('/users/switch-role', requestBody).pipe(
             catchError((patchErr: HttpErrorResponse) => {
               if (patchErr.status === 405 || patchErr.status === 404) {
-                const params = targetRole ? { role: targetRole } : undefined;
-                return this.get<{ user: User; message: string }>('/users/switch-role', params);
+                return this.get<{ user: User; message: string }>('/users/switch-role', requestBody);
               }
               return throwError(() => patchErr);
             })
@@ -510,6 +515,13 @@ export class ApiService {
 
   checkUsername(username: string): Observable<ApiResponse<{ available: boolean; message?: string }>> {
     return this.get<{ available: boolean; message?: string }>('/users/check-username', { username });
+  }
+
+  /**
+   * Update push notification subscription
+   */
+  updatePushSubscription(subscription: any): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/push-subscription', subscription);
   }
 
   // ============================================================================
@@ -1351,41 +1363,81 @@ export class ApiService {
   }
 
   /**
-   * Handle HTTP errors
+   * Handle HTTP errors with server-driven approach
    */
   private handleError(error: any): Observable<never> {
-    let errorMessage = 'An error occurred';
+    // Prioritize server-provided error messages
+    let errorMessage = this.extractServerErrorMessage(error);
     
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    } else if (error.status === 401) {
-      errorMessage = 'Unauthorized. Please log in again.';
-    } else if (error.status === 403) {
-      errorMessage = 'Access denied. You do not have permission to perform this action.';
-    } else if (error.status === 404) {
-      errorMessage = 'Resource not found.';
-    } else if (error.status === 422) {
-      errorMessage = 'Validation error. Please check your input.';
-    } else if (error.status === 500) {
-      if (error?.url?.includes('/users/register')) {
-        errorMessage = 'Internal server error during registration. Please try a different username/email or try again shortly.';
-      } else if (error?.url?.includes('/users/login')) {
-        errorMessage = 'Internal server error during login. Please try again shortly.';
-      } else {
-      errorMessage = 'Server error. Please try again later.';
-      }
-    } else if (error.status === 0) {
-      errorMessage = 'Network error. Please check your internet connection.';
-    }
+    // Fallback to status-based messages only if server didn't provide one
+    if (!errorMessage) {
+      errorMessage = this.getStatusBasedErrorMessage(error);
+    } 
     
     console.error('API Error:', error);
     const enriched = new Error(errorMessage) as any;
     enriched.status = error?.status;
     enriched.body = error?.error;
-    enriched.url = error?.url;
+    enriched.url = error?.url; 
     return throwError(() => enriched);
+  }
+
+  /**
+   * Extract error message from server response
+   */
+  private extractServerErrorMessage(error: any): string | null {
+    // Check for server-provided error messages in various formats
+    if (error.error?.message) {
+      return error.error.message;
+    }
+    if (error.error?.error) {
+      return error.error.error;
+    }
+    if (error.error?.detail) {
+      return error.error.detail;
+    }
+    if (error.error?.errors && Array.isArray(error.error.errors)) {
+      return error.error.errors.join(', ');
+    }
+    if (error.message && typeof error.message === 'string') {
+      return error.message;
+    }
+    return null;
+  }
+
+  /**
+   * Get status-based error messages (fallback)
+   */
+  private getStatusBasedErrorMessage(error: any): string {
+    const statusMessages: Record<number, string> = {
+      400: 'Bad request. Please check your input.',
+      401: 'Unauthorized. Please log in again.',
+      403: 'Access denied. You do not have permission to perform this action.',
+      404: 'Resource not found.',
+      409: 'Conflict. The resource already exists.',
+      422: 'Validation error. Please check your input.',
+      429: 'Too many requests. Please try again later.',
+      500: 'Server error. Please try again later.',
+      502: 'Bad gateway. Please try again later.',
+      503: 'Service unavailable. Please try again later.',
+      504: 'Gateway timeout. Please try again later.'
+    };
+
+    // Special handling for specific endpoints
+    if (error.status === 500) {
+      if (error?.url?.includes('/users/register')) {
+        return 'Internal server error during registration. Please try a different username/email or try again shortly.';
+      }
+      if (error?.url?.includes('/users/login')) {
+        return 'Internal server error during login. Please try again shortly.';
+      }
+    }
+
+    if (error.status === 0) {
+      return 'Network error. Please check your internet connection.';
+    }
+
+    return statusMessages[error.status] || 'An unexpected error occurred.';
   }
 
   // ============================================================================

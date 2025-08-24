@@ -1,30 +1,28 @@
 import { ErrorHandler, Injectable, inject } from '@angular/core';
-import { TypeSafetyService } from './type-safety.service';
 import { ErrorHandlingService } from './error-handling.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  private typeSafety = inject(TypeSafetyService);
   private errors = inject(ErrorHandlingService);
 
   handleError(error: unknown): void {
     try {
-      this.errors.notify(error);
-    } catch {}
+      // Handle different types of errors appropriately
+      if (error instanceof Error) {
+        this.errors.notify(error, error.message);
+      } else if (typeof error === 'string') {
+        this.errors.notify(error, error);
+      } else {
+        this.errors.notify(error);
+      }
+    } catch (handlerError) {
+      // Fallback to console if error handling fails
+      console.error('Error in global error handler:', handlerError);
+      console.error('Original error:', error);
+    }
+    
     // Preserve default console output for debugging
     // eslint-disable-next-line no-console
-    console.error(error);
+    console.error('Global error:', error);
   }
-}
-
-export function setupGlobalErrorListeners() {
-  const errors = inject(ErrorHandlingService);
-  return () => {
-    window.addEventListener('error', (event: ErrorEvent) => {
-      errors.notify(event.error || event.message);
-    });
-    window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-      errors.notify(this.typeSafety.toString(this.typeSafety.getProperty(event, 'reason'), 'Unhandled promise rejection'));
-    });
-  };
 } 
