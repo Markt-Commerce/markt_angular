@@ -88,7 +88,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               <app-icon name="shopping-bag" size="5" className="mr-1"></app-icon>
               <span>Offers</span>
             </a>
-            <a *ngIf="access.canSeeSellerNav()" routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
+            <a *ngIf="access.isSeller" routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
               <app-icon name="shopping-bag" size="5" className="mr-1"></app-icon>
               <span>Listings</span>
             </a>
@@ -172,7 +172,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
                   Orders
                 </a>
                 <a routerLink="/app/seller/listings" class="dropdown-item">
-                  <span *ngIf="access.canSeeSellerNav(); else noSellerLink">
+                  <span *ngIf="access.isSeller; else noSellerLink">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
                     <line x1="7" y1="8" x2="17" y2="8"></line>
@@ -335,7 +335,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
           </a>
-          <a *ngIf="access.canSeeSellerNav()" routerLink="/app/seller/listings/create" class="qa-item" title="New Listing">
+          <a *ngIf="access.isSeller" routerLink="/app/seller/listings/create" class="qa-item" title="New Listing">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
             </svg>

@@ -4,9 +4,11 @@ import { AuthGuard, GuestGuard, RoleGuard } from './core/guards/auth.guard';
 /**
  * Route Guard Strategy:
  * 
- * 1. GuestGuard: Protects auth routes (login, register, etc.)
- *    - Prevents authenticated users from accessing auth pages
- *    - Redirects to /app/dashboard if already logged in
+ * 1. GuestGuard: Protects auth routes (login, register, etc.) from authenticated users
+ *    - Allows unauthenticated users to access auth pages (login, register, etc.)
+ *    - Prevents authenticated users from accessing auth pages (they don't need to login again)
+ *    - Redirects authenticated users to /app/dashboard if they try to access auth routes
+ *    - Applied to: /auth/* routes (login, register, forgot-password, verify-email)
  * 
  * 2. AuthGuard: Protects all authenticated routes
  *    - Ensures user is logged in before accessing protected pages

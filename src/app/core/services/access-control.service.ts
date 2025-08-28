@@ -10,11 +10,13 @@ export class AccessControlService {
   get role(): UserRole | null { return this.auth.getCurrentRole(); }
   role$ = this.auth.authState$.pipe(map(s => (s.user?.current_role ?? null) as UserRole | null));
 
+  // Core role checking method
   isRole(role: UserRole): boolean { return this.role === role; }
 
-  canViewCart(): boolean { return this.role === 'buyer'; }
-  canCheckout(): boolean { return this.role === 'buyer'; }
-  canCreateListing(): boolean { return this.role === 'seller'; }
-  canSeeSellerNav(): boolean { return this.role === 'seller'; }
-  canMessageSeller(): boolean { return this.role === 'buyer'; }
+  // Computed properties for common role checks (more efficient than methods)
+  get isBuyer(): boolean { return this.role === 'buyer'; }
+  get isSeller(): boolean { return this.role === 'seller'; }
+
+  // For more complex access control logic, use methods
+  // For simple role checks, use isRole() directly or the computed properties above
 } 

@@ -301,7 +301,7 @@ import { SocialService } from '../../core/services/social.service';
                         View
                       </a>
                   <button 
-                        *ngIf="access.canCheckout() && product.stock > 0"
+                        *ngIf="access.isBuyer && product.stock > 0"
                     (click)="addToCart(product)"
                         class="flex-1 inline-flex items-center justify-center h-10 rounded-xl bg-markt-primary text-white px-3 text-sm font-semibold hover:bg-markt-secondary transition-colors shadow-sm hover:shadow-md"
                         aria-label="Add to cart"
@@ -368,7 +368,7 @@ import { SocialService } from '../../core/services/social.service';
                           <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
                         </button>
                         <button 
-                          *ngIf="access.canCheckout()"
+                          *ngIf="access.isBuyer"
                           (click)="addToCart(product)"
                           class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition"
                         >

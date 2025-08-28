@@ -187,7 +187,7 @@ import { MediaOptimizationService } from '../../../core/services/media-optimizat
           </div>
 
           <!-- Action Buttons (hidden for sellers) -->
-          <div class="flex space-x-4" *ngIf="accessControl.canCheckout()">
+          <div class="flex space-x-4" *ngIf="accessControl.isBuyer">
             <button 
               (click)="addToCart()"
               class="flex-1 bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-3 px-6 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all font-bold"

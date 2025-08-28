@@ -518,6 +518,13 @@ export class ApiService {
   }
 
   /**
+   * Get VAPID public key for push notifications
+   */
+  getVapidPublicKey(): Observable<ApiResponse<{ publicKey: string }>> {
+    return this.get<{ publicKey: string }>('/notifications/vapid-public-key');
+  }
+
+  /**
    * Update push notification subscription
    */
   updatePushSubscription(subscription: any): Observable<ApiResponse<{ message: string }>> {

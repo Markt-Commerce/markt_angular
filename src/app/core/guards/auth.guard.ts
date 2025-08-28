@@ -99,16 +99,19 @@ export const GuestGuard: CanActivateFn = (route, state) => {
   const errorHandler = inject(ErrorHandlerService);
 
   try {
+    // Check if user is already authenticated
     if (!authService.isAuthenticated()) {
+      // User is not authenticated, allow access to auth routes
       return true;
     }
     
-    // If user is already authenticated, redirect to app
+    // User is already authenticated, redirect to dashboard
+    // This prevents authenticated users from accessing login/register pages
     router.navigate(['/app/dashboard']);
     return false;
   } catch (error) {
-    errorHandler.logError(error, 'GuestGuard error');
-    // On error, allow access to guest routes
+    errorHandler.logError(error, 'GuestGuard error - allowing access to auth route');
+    // On error, allow access to guest routes as fallback
     return true;
   }
 }; 

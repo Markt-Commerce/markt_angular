@@ -33,7 +33,7 @@ export class RoleGateComponent {
   }
 
   isAllowed(): boolean {
-    return this.requiredRole === 'buyer' ? this.access.canCheckout() : this.access.canSeeSellerNav();
+    return this.requiredRole === 'buyer' ? this.access.isBuyer : this.access.isSeller;
   }
 
   switchRole(): void {

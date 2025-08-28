@@ -31,8 +31,8 @@ export class BackgroundNotificationService {
 
   public state$ = this.stateSubject.asObservable();
 
-  // VAPID public key (should be moved to environment)
-  private readonly VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY';
+  // VAPID key will be retrieved from server for security
+  private vapidPublicKey: string | null = null;
 
   constructor() {
     this.initializeBackgroundNotifications();
@@ -87,12 +87,34 @@ export class BackgroundNotificationService {
   }
 
   /**
+   * Get VAPID public key from server
+   */
+  private async getVapidPublicKey(): Promise<string> {
+    try {
+      // Get VAPID key from server instead of hardcoding
+      const response = await this.apiService.getVapidPublicKey().toPromise();
+      if (!response) {
+        throw new Error('No response from server');
+      }
+      return response.data.publicKey;
+    } catch (error) {
+      console.error('Failed to get VAPID public key:', error);
+      throw new Error('Unable to get VAPID public key from server');
+    }
+  }
+
+  /**
    * Subscribe to push notifications
    */
   private async subscribeToPushNotifications(): Promise<void> {
     try {
+      // Get VAPID key from server first
+      if (!this.vapidPublicKey) {
+        this.vapidPublicKey = await this.getVapidPublicKey();
+      }
+
       const subscription = await this.swPush.requestSubscription({
-        serverPublicKey: this.VAPID_PUBLIC_KEY
+        serverPublicKey: this.vapidPublicKey
       });
 
       // Send subscription to server

@@ -598,9 +598,9 @@ export class CheckoutComponent implements OnInit {
     if (qp.get('source') === 'offer' && offerId) {
       this.offerContext.offerId = offerId;
     }
-    this.canCheckout = this.access.canCheckout();
+    this.canCheckout = this.access.isBuyer;
     this.authService.authState$.subscribe(() => {
-      this.canCheckout = this.access.canCheckout();
+      this.canCheckout = this.access.isBuyer;
     });
     this.loadCheckoutData();
   }
@@ -929,7 +929,7 @@ export class CheckoutComponent implements OnInit {
   switchToBuyer(): void {
     this.authService.switchRole().subscribe({
       next: () => {
-        this.canCheckout = this.access.canCheckout();
+        this.canCheckout = this.access.isBuyer;
       },
       error: () => {}
     });

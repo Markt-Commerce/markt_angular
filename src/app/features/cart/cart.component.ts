@@ -398,9 +398,9 @@ export class CartComponent implements OnInit {
   orderNotes = '';
 
   ngOnInit(): void {
-    this.canCheckout = this.access.canCheckout();
+    this.canCheckout = this.access.isBuyer;
     this.authService.authState$.subscribe(() => {
-      this.canCheckout = this.access.canCheckout();
+      this.canCheckout = this.access.isBuyer;
     });
 
     this.loadCart();
@@ -596,7 +596,7 @@ export class CartComponent implements OnInit {
 
   switchToBuyer(): void {
     this.roleIntent.ensureRoleAndExecute('buyer', () => {
-      this.canCheckout = this.access.canCheckout();
+      this.canCheckout = this.access.isBuyer;
       this.loadCart();
     });
   }
