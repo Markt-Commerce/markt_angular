@@ -1,0 +1,27 @@
+{
+  "name": "Markt - Buy and Sell with Confidence",
+  "short_name": "Markt",
+  "description": "A secure marketplace for buying and selling goods",
+  "theme_color": "#e85530",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "marketplace", "business"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "assets/icons/icon-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ]
+}
