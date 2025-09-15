@@ -70,6 +70,7 @@ docs/updates.log
 *.pdf
 *.docx
 *.txt
+*.md
 !package.json
 !package-lock.json
 !angular.json
@@ -88,6 +89,7 @@ docs/updates.log
 
 # Specific files to exclude
 MARKT_FRONTEND_GUIDE.md
+FUNCTIONALITY_AUDIT_CHECKLIST.md
 docs/transcripts/
 
 
