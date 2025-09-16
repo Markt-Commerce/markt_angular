@@ -502,6 +502,7 @@ export class ProfileComponent implements OnInit {
       error: (error) => {
         console.error('Error loading reviews:', error);
         this.reviews = [];
+        this.errorMessage = 'Failed to load reviews. Please try again.';
       }
     });
   }
@@ -530,6 +531,7 @@ export class ProfileComponent implements OnInit {
       error: (error) => {
         console.error('Error loading listings:', error);
         this.listings = [];
+        this.errorMessage = 'Failed to load listings. Please try again.';
       }
     });
   }
@@ -607,6 +609,7 @@ export class ProfileComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error switching role:', error);
+        this.errorMessage = 'Failed to switch role. Please try again.';
       }
     });
   }
@@ -715,7 +718,11 @@ export class ProfileComponent implements OnInit {
     if (this.showSellerForm && this.shopCategories.length === 0) {
       this.authService.getShopCategories().subscribe({
         next: (res: any) => { this.shopCategories = (res?.data || res || []); },
-        error: () => { this.shopCategories = []; }
+        error: (error) => { 
+          console.error('Error loading shop categories:', error);
+          this.shopCategories = [];
+          this.errorMessage = 'Failed to load shop categories. Please try again.';
+        }
       });
     }
   }
@@ -758,6 +765,7 @@ export class ProfileComponent implements OnInit {
       error: (e) => {
         this.buyerLoading = false;
         this.buyerError = e?.message || 'Failed to create buyer account.';
+        this.errorMessage = 'Failed to create buyer account. Please try again.';
       }
     });
   }
@@ -784,6 +792,7 @@ export class ProfileComponent implements OnInit {
       error: (e) => {
         this.sellerLoading = false;
         this.sellerError = e?.message || 'Failed to create seller account.';
+        this.errorMessage = 'Failed to create seller account. Please try again.';
       }
     });
   }

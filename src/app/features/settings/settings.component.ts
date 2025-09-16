@@ -28,15 +28,59 @@ interface SettingsSection {
         </div>
       </div>
 
-      <div class="settings-grid">
-        <div *ngFor="let section of settingsSections" class="settings-card" [routerLink]="section.route">
+      <!-- Loading State -->
+      @if (loading) {
+        <div class="settings-grid">
+          @for (i of [1,2,3,4,5,6]; track i) {
+            <div class="settings-card">
+              <div class="card-icon">
+                <div class="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div class="card-content">
+                <div class="card-header">
+                  <div class="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div class="h-4 w-full bg-gray-200 rounded animate-pulse mt-2"></div>
+                <div class="h-4 w-3/4 bg-gray-200 rounded animate-pulse mt-1"></div>
+              </div>
+              <div class="card-arrow">
+                <div class="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (errorMessage) {
+        <div class="text-center py-12">
+          <div class="text-4xl mb-4">⚠️</div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Error loading settings</h3>
+          <p class="text-gray-500 mb-6">{{ errorMessage }}</p>
+          <app-button
+            variant="primary"
+            size="md"
+            (click)="loadSettingsData()"
+          >
+            Try Again
+          </app-button>
+        </div>
+      }
+
+      <!-- Settings Content -->
+      @if (!loading && !errorMessage) {
+        <div class="settings-grid">
+          @for (section of settingsSections; track section.id) {
+            <div class="settings-card" [routerLink]="section.route">
           <div class="card-icon">
             <fa-icon [icon]="section.icon"></fa-icon>
           </div>
           <div class="card-content">
             <div class="card-header">
               <h3>{{ section.title }}</h3>
-              <span *ngIf="section.badge" class="badge">{{ section.badge }}</span>
+              @if (section.badge) {
+                <span class="badge">{{ section.badge }}</span>
+              }
             </div>
             <p>{{ section.description }}</p>
           </div>
@@ -44,7 +88,9 @@ interface SettingsSection {
             <fa-icon [icon]="faArrowRight"></fa-icon>
           </div>
         </div>
-      </div>
+          }
+        </div>
+      }
 
       <div class="settings-footer">
         <div class="footer-info">
@@ -213,6 +259,7 @@ export class SettingsComponent implements OnInit {
   faArrowRight = faArrowRight;
 
   loading = false;
+  errorMessage = '';
   userProfile: any = null;
 
   settingsSections: SettingsSection[] = [
@@ -269,8 +316,9 @@ export class SettingsComponent implements OnInit {
     this.loadSettingsData();
   }
 
-  private loadSettingsData(): void {
+  loadSettingsData(): void {
     this.loading = true;
+    this.errorMessage = '';
 
     this.apiService.getProfile().subscribe({
       next: (response) => {
@@ -280,6 +328,7 @@ export class SettingsComponent implements OnInit {
       error: (error) => {
         console.error('Error loading user profile:', error);
         this.loading = false;
+        this.errorMessage = 'Failed to load settings. Please try again.';
       }
     });
   }

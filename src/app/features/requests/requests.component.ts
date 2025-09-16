@@ -346,10 +346,15 @@ import { AccessControlService } from '../../core/services/access-control.service
               <div class="flex items-center space-x-6">
                 <button 
                   (click)="upvoteRequest(request.id)"
-                  class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
+                  [disabled]="upvotingRequest"
+                  class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   [class.text-blue-500]="request.is_upvoted"
                 >
-                  <fa-icon [icon]="faThumbsUp" class="w-4 h-4"></fa-icon>
+                  @if (upvotingRequest) {
+                    <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  } @else {
+                    <fa-icon [icon]="faThumbsUp" class="w-4 h-4"></fa-icon>
+                  }
                   <span class="text-sm">{{ request.upvotes }}</span>
                 </button>
                 
@@ -463,6 +468,7 @@ export class RequestsComponent implements OnInit {
   categories: any[] = [];
   user: any = null;
   isLoading = false;
+  upvotingRequest = false;
   
   // Filters and pagination
   searchQuery = '';
@@ -677,13 +683,22 @@ export class RequestsComponent implements OnInit {
   }
 
   upvoteRequest(requestId: string): void {
+    if (!requestId) {
+      console.error('Invalid request ID for upvote');
+      return;
+    }
+
+    this.upvotingRequest = true;
     this.apiService.upvoteRequest(requestId).subscribe({
       next: (response) => {
         console.log('Request upvoted:', response.data);
         this.loadRequests(); // Refresh requests list
+        this.upvotingRequest = false;
       },
       error: (error) => {
         console.error('Error upvoting request:', error);
+        this.upvotingRequest = false;
+        // Could show a toast notification here
       }
     });
   }

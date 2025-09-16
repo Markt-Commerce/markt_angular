@@ -576,6 +576,11 @@ export class DashboardComponent implements OnInit {
         this.user = response.data;
         this.loadingUser = false;
         this.errorUser = '';
+        
+        // Load seller stats if user is a seller
+        if (this.isSeller) {
+          this.loadSellerStats();
+        }
       },
       error: (error) => {
         console.error('Error loading user profile:', error);
@@ -740,5 +745,24 @@ export class DashboardComponent implements OnInit {
       const diffInDays = Math.floor(diffInHours / 24);
       return `${diffInDays}d ago`;
     }
+  }
+
+  private loadSellerStats(): void {
+    this.apiService.getSellerSales().subscribe({
+      next: (response: any) => {
+        if (response.success && response.data) {
+          this.sellerStats = {
+            totalProducts: response.data.total_products || 0,
+            totalSales: response.data.total_sales || 0,
+            averageRating: response.data.average_rating || 0,
+            totalCustomers: response.data.total_customers || 0
+          };
+        }
+      },
+      error: (error: any) => {
+        console.error('Error loading seller stats:', error);
+        // Keep default values (0) for seller stats on error
+      }
+    });
   }
 }

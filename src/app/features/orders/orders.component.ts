@@ -267,7 +267,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                   <button
                     (click)="downloadInvoice(order)"
                     class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                    title="Download Invoice"
+                    title="Download Invoice (Coming Soon)"
                   >
                     <fa-icon [icon]="faDownload" class="w-4 h-4"></fa-icon>
                   </button>
@@ -632,8 +632,17 @@ export class OrdersComponent implements OnInit {
   }
 
   downloadInvoice(order: any): void {
-    // This would typically call an API to generate and download the invoice
+    if (!order || !order.id) {
+      console.error('Invalid order data for invoice download');
+      return;
+    }
+
+    // TODO: Implement invoice download when backend endpoint is available
+    // For now, show a message that this feature is coming soon
+    console.log('Invoice download feature coming soon for order:', order.id);
     
+    // You can show a toast notification here instead
+    // this.notificationService.show('Invoice download feature coming soon!');
   }
 
   // Additional order endpoint integrations

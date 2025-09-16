@@ -873,12 +873,20 @@ export class CheckoutComponent implements OnInit {
   }
 
   placeOrder(): void {
-    if (!this.canCheckout) return;
+    if (!this.canCheckout) {
+      this.errorMessage = 'Please switch to buyer mode to complete checkout';
+      return;
+    }
+    
     if (!this.shippingForm.valid || !this.paymentForm.valid) {
+      this.errorMessage = 'Please complete all required fields';
+      this.markFormGroupTouched(this.shippingForm);
+      this.markFormGroupTouched(this.paymentForm);
       return;
     }
 
     this.isProcessing = true;
+    this.errorMessage = '';
 
     const orderData = this.createOrderData();
 
@@ -890,11 +898,14 @@ export class CheckoutComponent implements OnInit {
           
           // Navigate to order confirmation
           this.router.navigate(['/app/orders', response.data.id]);
+        } else {
+          this.errorMessage = response.message || 'Failed to place order';
         }
         this.isProcessing = false;
       },
       error: (error) => {
         console.error('Error placing order:', error);
+        this.errorMessage = error.message || 'Failed to place order. Please try again.';
         this.isProcessing = false;
       }
     });

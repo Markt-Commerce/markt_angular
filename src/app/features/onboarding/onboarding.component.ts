@@ -22,7 +22,8 @@ import { ApiService } from '../../core/services/api.service';
 
       <div class="onboarding-content">
         <!-- Step 1: Basic Information -->
-        <div *ngIf="currentStep === 1" class="step">
+        @if (currentStep === 1) {
+          <div class="step">
           <h2>Tell us about yourself</h2>
           <form [formGroup]="basicInfoForm" (ngSubmit)="nextStep()">
             <div class="form-group">
@@ -65,10 +66,12 @@ import { ApiService } from '../../core/services/api.service';
               {{ submitting ? 'Saving...' : 'Next' }}
             </button>
           </form>
-        </div>
+          </div>
+        }
 
         <!-- Step 2: Account Type -->
-        <div *ngIf="currentStep === 2" class="step">
+        @if (currentStep === 2) {
+          <div class="step">
           <h2>What type of account do you want?</h2>
           <form [formGroup]="accountTypeForm" (ngSubmit)="nextStep()">
             <div class="account-options">
@@ -116,19 +119,25 @@ import { ApiService } from '../../core/services/api.service';
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        }
 
         <!-- Step 3: Profile Picture -->
-        <div *ngIf="currentStep === 3" class="step">
+        @if (currentStep === 3) {
+          <div class="step">
           <h2>Add a profile picture</h2>
           <form [formGroup]="profilePictureForm" (ngSubmit)="nextStep()">
             <div class="profile-picture-upload">
               <div class="upload-area" (click)="fileInput.click()">
-                <img *ngIf="profilePicture" [src]="profilePicture" alt="Profile picture">
-                <div *ngIf="!profilePicture" class="upload-placeholder">
+                @if (profilePicture) {
+                  <img [src]="profilePicture" alt="Profile picture">
+                }
+                @if (!profilePicture) {
+                  <div class="upload-placeholder">
                   <i class="fas fa-camera"></i>
                   <p>Click to upload a profile picture</p>
-                </div>
+                  </div>
+                }
               </div>
               <input 
                 #fileInput
@@ -145,10 +154,12 @@ import { ApiService } from '../../core/services/api.service';
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        }
 
         <!-- Step 4: Interests -->
-        <div *ngIf="currentStep === 4" class="step">
+        @if (currentStep === 4) {
+          <div class="step">
           <h2>What interests you?</h2>
           <form [formGroup]="interestsForm" (ngSubmit)="nextStep()">
             <div class="interests-grid">
@@ -168,10 +179,12 @@ import { ApiService } from '../../core/services/api.service';
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        }
 
         <!-- Step 5: Complete -->
-        <div *ngIf="currentStep === 5" class="step">
+        @if (currentStep === 5) {
+          <div class="step">
           <h2>You're all set!</h2>
           <div class="completion-message">
             <i class="fas fa-check-circle"></i>
@@ -188,14 +201,17 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           </div>
 
-          <div *ngIf="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
+          @if (errorMessage) {
+            <div class="error-message">
+              {{ errorMessage }}
+            </div>
+          }
           
           <button (click)="completeOnboarding()" [disabled]="submitting">
             {{ submitting ? 'Completing...' : 'Get Started' }}
           </button>
-        </div>
+          </div>
+        }
       </div>
     </div>
   `,

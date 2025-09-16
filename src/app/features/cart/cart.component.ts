@@ -606,7 +606,8 @@ export class CartComponent implements OnInit {
     // Move to wishlist (local implementation - API integration pending)
     // For now, just remove from cart and show notification
     this.removeItem(item.id);
-    this.errorMessage = `${item.product.name} moved to wishlist`;
+    // Show success message instead of error
+    console.log(`${item.product.name} moved to wishlist`);
   }
 
   addToCart(productId: string, quantity = 1): void {
