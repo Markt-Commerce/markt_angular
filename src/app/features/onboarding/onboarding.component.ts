@@ -188,6 +188,10 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           </div>
 
+          <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
+          
           <button (click)="completeOnboarding()" [disabled]="submitting">
             {{ submitting ? 'Completing...' : 'Get Started' }}
           </button>
@@ -343,6 +347,14 @@ import { ApiService } from '../../core/services/api.service';
     .banner-actions { display: flex; gap: 10px; justify-content: center; }
     .banner-actions .outline { background: white; color: #181211; border: 1px solid #e5dddc; border-radius: 8px; padding: 8px 12px; }
     .banner-actions .primary { background: #e85530; color: white; border: none; border-radius: 8px; padding: 8px 12px; }
+    .error-message {
+      background: #fee;
+      color: #c33;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border: 1px solid #fcc;
+    }
   `]
 })
 export class OnboardingComponent implements OnInit {
@@ -360,6 +372,7 @@ export class OnboardingComponent implements OnInit {
   currentStep = 1;
   totalSteps = 5;
   submitting = false;
+  errorMessage = '';
 
   // Data properties
   profilePicture: string | null = null;
@@ -429,6 +442,7 @@ export class OnboardingComponent implements OnInit {
   completeOnboarding(): void {
     if (this.basicInfoForm.valid && this.accountTypeForm.valid) {
       this.submitting = true;
+      this.errorMessage = '';
 
       const formData = this.basicInfoForm.value;
       const onboardingData = {
@@ -449,6 +463,7 @@ export class OnboardingComponent implements OnInit {
         error: (error) => {
           console.error('Onboarding error:', error);
           this.submitting = false;
+          this.errorMessage = error.error?.message || 'An error occurred during onboarding. Please try again.';
         }
       });
     }

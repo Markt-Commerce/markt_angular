@@ -8,15 +8,16 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="!isAllowed(); else allowedBlock" class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
-      <div>
-        {{ message || defaultMessage }}
+    @if (!isAllowed()) {
+      <div class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
+        <div>
+          {{ message || defaultMessage }}
+        </div>
+        <button (click)="switchRole()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to {{ requiredRole | titlecase }}</button>
       </div>
-      <button (click)="switchRole()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to {{ requiredRole | titlecase }}</button>
-    </div>
-    <ng-template #allowedBlock>
+    } @else {
       <ng-content></ng-content>
-    </ng-template>
+    }
   `
 })
 export class RoleGateComponent {

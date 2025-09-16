@@ -11,15 +11,19 @@ export type InputSize = 'sm' | 'md' | 'lg';
   imports: [CommonModule],
   template: `
     <div class="input-container" [class]="containerClasses">
-      <label *ngIf="label" [for]="id" class="input-label">
-        {{ label }}
-        <span *ngIf="required" class="required-indicator">*</span>
-      </label>
+      @if (label) {
+        <label [for]="id" class="input-label">
+          {{ label }}
+          @if (required) {
+            <span class="required-indicator">*</span>
+          }
+        </label>
+      }
       
       <div class="input-wrapper">
-        <textarea
-          *ngIf="type === 'textarea'"
-          [id]="id"
+        @if (type === 'textarea') {
+          <textarea
+            [id]="id"
           [name]="name"
           [placeholder]="placeholder"
           [disabled]="disabled"
@@ -37,9 +41,10 @@ export type InputSize = 'sm' | 'md' | 'lg';
           [attr.aria-invalid]="hasError"
         ></textarea>
         
-        <input
-          *ngIf="type !== 'textarea'"
-          [id]="id"
+        }
+        @if (type !== 'textarea') {
+          <input
+            [id]="id"
           [name]="name"
           [type]="type"
           [placeholder]="placeholder"
@@ -58,24 +63,33 @@ export type InputSize = 'sm' | 'md' | 'lg';
           (focus)="onFocus()"
           [attr.aria-describedby]="ariaDescribedby"
           [attr.aria-invalid]="hasError"
-        />
+          />
+        }
         
-        <div *ngIf="loading" class="input-loading">
-          <span class="loading-spinner"></span>
-        </div>
+        @if (loading) {
+          <div class="input-loading">
+            <span class="loading-spinner"></span>
+          </div>
+        }
         
-        <div *ngIf="icon" class="input-icon">
-          <span [innerHTML]="icon"></span>
-        </div>
+        @if (icon) {
+          <div class="input-icon">
+            <span [innerHTML]="icon"></span>
+          </div>
+        }
       </div>
       
-      <div *ngIf="hint" class="input-hint" [id]="hintId">
-        {{ hint }}
-      </div>
+      @if (hint) {
+        <div class="input-hint" [id]="hintId">
+          {{ hint }}
+        </div>
+      }
       
-      <div *ngIf="errorMessage" class="input-error" [id]="errorId">
-        {{ errorMessage }}
-      </div>
+      @if (errorMessage) {
+        <div class="input-error" [id]="errorId">
+          {{ errorMessage }}
+        </div>
+      }
     </div>
   `,
   styles: [`

@@ -59,43 +59,84 @@ import { map } from 'rxjs/operators';
                     </p>
                   </div>
                   <!-- Guest User Actions -->
-                  <div *ngIf="(isAuthenticated$ | async) === false" class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
-                    <button
-                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/auth/register']"
-                    >
-                      <span class="truncate">Get Started</span>
-                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
-                    </button>
-                    <button
-                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/auth/login']"
-                    >
-                      <span class="truncate">Sign In</span>
-                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
-                    </button>
-                  </div>
+                  @if ((isAuthenticated$ | async) === false) {
+                    <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
+                      <button
+                        class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                        [routerLink]="['/auth/register']"
+                      >
+                        <span class="truncate">Get Started</span>
+                        <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                      </button>
+                      <button
+                        class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                        [routerLink]="['/auth/login']"
+                      >
+                        <span class="truncate">Sign In</span>
+                        <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                      </button>
+                    </div>
+                  }
                   
                   <!-- Authenticated User Actions -->
-                  <div *ngIf="isAuthenticated$ | async" class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
-                    <button
-                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/app/dashboard']"
-                    >
-                      <span class="truncate">Go to Dashboard</span>
-                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
-                    </button>
-                    <button
-                      class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                      [routerLink]="['/app/marketplace']"
-                    >
-                      <span class="truncate">Browse Marketplace</span>
-                      <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
-                    </button>
-                  </div>
+                  @if (isAuthenticated$ | async) {
+                    <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
+                      <button
+                        class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                        [routerLink]="['/app/dashboard']"
+                      >
+                        <span class="truncate">Go to Dashboard</span>
+                        <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                      </button>
+                      <button
+                        class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
+                        [routerLink]="['/app/marketplace']"
+                      >
+                        <span class="truncate">Browse Marketplace</span>
+                        <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
+                      </button>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
+
+            <!-- Error Message -->
+            @if (errorMessage) {
+              <div class="w-full px-10 mb-8">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-red-800">{{ errorMessage }}</p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                      <button (click)="errorMessage = ''" class="text-red-400 hover:text-red-600">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Loading States -->
+            @if (loadingFeaturedProducts || loadingTrendingRequests || loadingCommunityHighlights) {
+              <div class="w-full px-10 mb-8">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div class="flex items-center">
+                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+                    <p class="text-sm text-blue-800">Loading content...</p>
+                  </div>
+                </div>
+              </div>
+            }
 
             <!-- Enhanced Features Section -->
             <div class="mb-20 mt-20 px-10">
@@ -442,6 +483,12 @@ export class LandingComponent implements OnInit {
   featuredProducts: any[] = [];
   trendingRequests: any[] = [];
   communityHighlights: any[] = [];
+  errorMessage = '';
+  
+  // Loading states
+  loadingFeaturedProducts = false;
+  loadingTrendingRequests = false;
+  loadingCommunityHighlights = false;
 
   ngOnInit(): void {
     this.authService.authState$.subscribe(state => {
@@ -456,40 +503,50 @@ export class LandingComponent implements OnInit {
   }
 
   private loadLandingData(): void {
-    this.loading = true;
+    this.errorMessage = '';
     
     // Load featured products
+    this.loadingFeaturedProducts = true;
     this.apiService.getFeaturedProducts().subscribe({
       next: (response) => {
         this.featuredProducts = response.data || [];
-        this.loading = false;
+        this.loadingFeaturedProducts = false;
       },
       error: (error) => {
         console.error('Error loading featured products:', error);
         this.featuredProducts = [];
-        this.loading = false;
+        this.loadingFeaturedProducts = false;
+        this.errorMessage = 'Failed to load featured products. Please try again.';
       }
     });
 
     // Load trending requests
+    this.loadingTrendingRequests = true;
     this.apiService.getTrendingRequests().subscribe({
       next: (response) => {
         this.trendingRequests = response.data || [];
+        this.loadingTrendingRequests = false;
       },
       error: (error) => {
         console.error('Error loading trending requests:', error);
         this.trendingRequests = [];
+        this.loadingTrendingRequests = false;
+        this.errorMessage = 'Failed to load trending requests. Please try again.';
       }
     });
 
     // Load community highlights
+    this.loadingCommunityHighlights = true;
     this.apiService.getCommunityHighlights().subscribe({
       next: (response) => {
         this.communityHighlights = response.data || [];
+        this.loadingCommunityHighlights = false;
       },
       error: (error) => {
         console.error('Error loading community highlights:', error);
         this.communityHighlights = [];
+        this.loadingCommunityHighlights = false;
+        this.errorMessage = 'Failed to load community highlights. Please try again.';
       }
     });
   }

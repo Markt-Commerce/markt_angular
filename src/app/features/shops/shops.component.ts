@@ -73,6 +73,13 @@ import { ApiService } from '../../core/services/api.service';
           Loading shops...
         </div>
 
+        <div class="empty-state" *ngIf="!loading && shops.length === 0">
+          <div class="empty-content">
+            <h3>No shops found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+          </div>
+        </div>
+
         <div class="pagination" *ngIf="totalPages > 1">
           <button 
             [disabled]="currentPage === 1"
@@ -144,6 +151,18 @@ import { ApiService } from '../../core/services/api.service';
       justify-content: center;
       gap: 10px;
       margin-top: 30px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .empty-content h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    .empty-content p {
+      margin: 0;
+      color: #666;
     }
   `]
 })

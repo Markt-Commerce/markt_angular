@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { combineLatest } from 'rxjs';
@@ -35,22 +35,24 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, RouterModule],
   template: `
     <div class="space-y-6">
       <!-- Buyer mode gate -->
-      <div *ngIf="!canCheckout" class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
-        <div>
-          Cart and checkout are available in Buyer mode. Switch to continue.
+      @if (!canCheckout) {
+        <div class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
+          <div>
+            Cart and checkout are available in Buyer mode. Switch to continue.
+          </div>
+          <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
         </div>
-        <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
-      </div>
+      }
       
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button 
-            routerLink="/app/marketplace"
+            [routerLink]="['/app/marketplace']"
             class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
             <fa-icon [icon]="faArrowLeft" class="w-5 h-5"></fa-icon>
@@ -61,7 +63,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
           </div>
         </div>
         <button 
-          routerLink="/app/marketplace"
+          [routerLink]="['/app/marketplace']"
           class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
         >
           Continue Shopping
@@ -69,281 +71,291 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
       </div>
 
       <!-- Empty Cart -->
-      <div *ngIf="cartItemCount === 0" class="text-center py-12">
-        <fa-icon [icon]="faShoppingBag" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
-        <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
-        <p class="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
-        <button 
-          routerLink="/app/marketplace"
-          class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
-        >
-          Start Shopping
-        </button>
-      </div>
+      @if (cartItemCount === 0) {
+        <div class="text-center py-12">
+          <fa-icon [icon]="faShoppingBag" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
+          <p class="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
+          <button 
+            [routerLink]="['/app/marketplace']"
+            class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+          >
+            Start Shopping
+          </button>
+        </div>
+      }
 
       <!-- Cart Content -->
-      <div *ngIf="cartItemCount > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Cart Items -->
-        <div class="lg:col-span-2 space-y-4">
-          <!-- Cart Items List -->
-          <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900">Cart Items</h2>
-            </div>
-            <div class="divide-y divide-gray-200">
-              <div *ngFor="let item of cartItems" class="p-6">
-                <div class="flex items-center space-x-4">
-                  <!-- Product Image -->
-                  <div class="flex-shrink-0">
-                    <img 
-                      [src]="media.getPrimaryUrl(item.product.images?.[0])" 
-                      [srcset]="media.getSrcSet(item.product.images?.[0])"
-                      [sizes]="media.listThumbSizes()"
-                      loading="lazy"
-                      decoding="async"
-                      [alt]="item.product.name"
-                      class="w-20 h-20 object-cover rounded-lg"
-                    >
-                  </div>
+      @if (cartItemCount > 0) {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Cart Items -->
+          <div class="lg:col-span-2 space-y-4">
+            <!-- Cart Items List -->
+            <div class="bg-white rounded-lg shadow">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Cart Items</h2>
+              </div>
+              <div class="divide-y divide-gray-200">
+                @for (item of cartItems; track item.id) {
+                  <div class="p-6">
+                    <div class="flex items-center space-x-4">
+                      <!-- Product Image -->
+                      <div class="flex-shrink-0">
+                        <img 
+                          [src]="getProductImageUrl(item.product.images?.[0])" 
+                          [alt]="item.product.name"
+                          class="w-20 h-20 object-cover rounded-lg"
+                          loading="lazy"
+                        >
+                      </div>
 
-                  <!-- Product Details -->
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1">
-                        <h3 class="text-lg font-medium text-gray-900 mb-1">
-                          <a 
-                            [routerLink]="['/app/marketplace/product', item.product.id]"
-                            class="hover:text-markt-primary transition-colors"
-                          >
-                            {{ item.product.name }}
-                          </a>
-                        </h3>
-                        <p class="text-sm text-gray-500 mb-2">{{ item.product.description }}</p>
-                        
-                        <!-- Seller Info -->
-                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                          <span class="flex items-center">
-                            <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
-                            {{ item.product.seller?.shop_name }}
-                          </span>
+                      <!-- Product Details -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between">
+                          <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900 mb-1">
+                              <a 
+                                [routerLink]="['/app/marketplace/product', item.product.id]"
+                                class="hover:text-markt-primary transition-colors"
+                              >
+                                {{ item.product.name }}
+                              </a>
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-2">{{ item.product.description }}</p>
+                            
+                            <!-- Seller Info -->
+                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                              <span class="flex items-center">
+                                <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
+                                {{ item.product.seller?.shop_name }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- Price -->
+                          <div class="text-right">
+                            <p class="text-lg font-bold text-gray-900">{{ item.product_price | currency:'NGN' }}</p>
+                            @if (item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price) {
+                              <p class="text-sm text-gray-500 line-through">
+                                {{ item.product.compare_at_price | currency:'NGN' }}
+                              </p>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Quantity Controls -->
+                        <div class="mt-4 flex items-center justify-between">
+                          <div class="flex items-center space-x-3">
+                            <span class="text-sm font-medium text-gray-700">Quantity:</span>
+                            <div class="flex items-center border border-gray-300 rounded-md">
+                              <button 
+                                (click)="updateQuantity(item.id, item.quantity - 1)"
+                                [disabled]="item.quantity <= 1"
+                                class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
+                              </button>
+                              <span class="px-4 py-2 text-sm font-medium">{{ item.quantity }}</span>
+                              <button 
+                                (click)="updateQuantity(item.id, item.quantity + 1)"
+                                [disabled]="item.quantity >= 99"
+                                class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- Actions -->
+                          <div class="flex items-center space-x-3">
+                            <button 
+                              (click)="moveToWishlist(item)"
+                              class="text-gray-400 hover:text-red-500 transition-colors"
+                              title="Move to Wishlist"
+                            >
+                              <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
+                            </button>
+                            <button 
+                              (click)="removeItem(item.id)"
+                              class="text-gray-400 hover:text-red-500 transition-colors"
+                              title="Remove Item"
+                            >
+                              <fa-icon [icon]="faTrash" class="w-5 h-5"></fa-icon>
+                            </button>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
 
-                      <!-- Price -->
-                      <div class="text-right">
-                        <p class="text-lg font-bold text-gray-900">{{ item.product_price | currency:'NGN' }}</p>
-                        <p *ngIf="item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price" class="text-sm text-gray-500 line-through">
-                          {{ item.product.compare_at_price | currency:'NGN' }}
-                        </p>
+            <!-- Cart Summary by Seller -->
+            @for (sellerGroup of cartSummaryBySeller; track sellerGroup.seller.id) {
+              <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <img 
+                        [src]="sellerGroup.seller.profile_picture_url || '/markt-text-logo.png'" 
+                        [alt]="sellerGroup.seller.shop_name"
+                        class="w-8 h-8 rounded-full object-cover"
+                      >
+                      <div>
+                        <h3 class="font-medium text-gray-900">{{ sellerGroup.seller.shop_name }}</h3>
+                        <p class="text-sm text-gray-500">{{ sellerGroup.itemCount }} items</p>
                       </div>
                     </div>
-
-                    <!-- Quantity Controls -->
-                    <div class="mt-4 flex items-center justify-between">
-                      <div class="flex items-center space-x-3">
-                        <span class="text-sm font-medium text-gray-700">Quantity:</span>
-                        <div class="flex items-center border border-gray-300 rounded-md">
-                          <button 
-                            (click)="updateQuantity(item.id, item.quantity - 1)"
-                            [disabled]="item.quantity <= 1"
-                            class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
-                          </button>
-                          <span class="px-4 py-2 text-sm font-medium">{{ item.quantity }}</span>
-                          <button 
-                            (click)="updateQuantity(item.id, item.quantity + 1)"
-                            [disabled]="item.quantity >= 99"
-                            class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
-                          </button>
-                        </div>
-                      </div>
-
-                      <!-- Actions -->
-                      <div class="flex items-center space-x-3">
-                        <button 
-                          (click)="moveToWishlist(item)"
-                          class="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Move to Wishlist"
-                        >
-                          <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
-                        </button>
-                        <button 
-                          (click)="removeItem(item.id)"
-                          class="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Remove Item"
-                        >
-                          <fa-icon [icon]="faTrash" class="w-5 h-5"></fa-icon>
-                        </button>
-                      </div>
+                    <div class="text-right">
+                      <p class="text-lg font-bold text-gray-900">{{ sellerGroup.subtotal | currency:'NGN' }}</p>
+                      <p class="text-sm text-gray-500">Shipping: {{ sellerGroup.shipping | currency:'NGN' }}</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            }
           </div>
 
-          <!-- Cart Summary by Seller -->
-          <div *ngFor="let sellerGroup of cartSummaryBySeller" class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <img 
-                    [src]="sellerGroup.seller.profile_picture_url || '/markt-text-logo.png'" 
-                    [alt]="sellerGroup.seller.shop_name"
-                    class="w-8 h-8 rounded-full object-cover"
-                  >
-                  <div>
-                    <h3 class="font-medium text-gray-900">{{ sellerGroup.seller.shop_name }}</h3>
-                    <p class="text-sm text-gray-500">{{ sellerGroup.itemCount }} items</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="text-lg font-bold text-gray-900">{{ sellerGroup.subtotal | currency:'NGN' }}</p>
-                  <p class="text-sm text-gray-500">Shipping: {{ sellerGroup.shipping | currency:'NGN' }}</p>
-                </div>
+          <!-- Order Summary -->
+          <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow sticky top-6">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Order Summary -->
-        <div class="lg:col-span-1">
-          <div class="bg-white rounded-lg shadow sticky top-6">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
-            </div>
-            <div class="p-6 space-y-4">
-              <!-- Subtotal -->
-              <div class="flex justify-between">
-                <span class="text-gray-600">Subtotal ({{ cartItemCount }} items)</span>
-                <span class="font-medium">{{ cartSubtotal | currency:'NGN' }}</span>
-              </div>
-
-              <!-- Shipping -->
-              <div class="flex justify-between">
-                <span class="text-gray-600">Shipping</span>
-                <span class="font-medium">{{ cartShipping | currency:'NGN' }}</span>
-              </div>
-
-              <!-- Discount -->
-              <div *ngIf="cartDiscount > 0" class="flex justify-between text-green-600">
-                <span>Discount</span>
-                <span>-{{ cartDiscount | currency:'NGN' }}</span>
-              </div>
-
-              <!-- Tax -->
-              <div class="flex justify-between">
-                <span class="text-gray-600">Tax</span>
-                <span class="font-medium">{{ cartTax | currency:'NGN' }}</span>
-              </div>
-
-              <!-- Total -->
-              <div class="border-t border-gray-200 pt-4">
+              <div class="p-6 space-y-4">
+                <!-- Subtotal -->
                 <div class="flex justify-between">
-                  <span class="text-lg font-medium text-gray-900">Total</span>
-                  <span class="text-lg font-bold text-gray-900">{{ cartTotal | currency:'NGN' }}</span>
+                  <span class="text-gray-600">Subtotal ({{ cartItemCount }} items)</span>
+                  <span class="font-medium">{{ cartSubtotal | currency:'NGN' }}</span>
                 </div>
-                <p class="text-sm text-gray-500 mt-1">Including all taxes and shipping</p>
-              </div>
 
-              <!-- Checkout Button -->
-              <button 
-                (click)="proceedToCheckout()"
-                [disabled]="!canCheckout"
-                class="w-full bg-markt-primary text-white py-3 px-4 rounded-md hover:bg-markt-secondary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Proceed to Checkout
-              </button>
+                <!-- Shipping -->
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Shipping</span>
+                  <span class="font-medium">{{ cartShipping | currency:'NGN' }}</span>
+                </div>
 
-              <!-- Security Notice -->
-              <div class="flex items-center space-x-2 text-sm text-gray-500">
-                <fa-icon [icon]="faShieldAlt" class="w-4 h-4"></fa-icon>
-                <span>Secure checkout with SSL encryption</span>
-              </div>
-
-              <!-- Payment Methods -->
-              <div class="border-t border-gray-200 pt-4">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">Accepted Payment Methods</h3>
-                <div class="flex items-center space-x-2">
-                  <div class="flex items-center space-x-1 text-xs text-gray-500">
-                    <fa-icon [icon]="faCreditCard" class="w-4 h-4"></fa-icon>
-                    <span>Cards</span>
+                <!-- Discount -->
+                @if (cartDiscount > 0) {
+                  <div class="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>-{{ cartDiscount | currency:'NGN' }}</span>
                   </div>
-                  <span class="text-gray-300">•</span>
-                  <span class="text-xs text-gray-500">Bank Transfer</span>
-                  <span class="text-gray-300">•</span>
-                  <span class="text-xs text-gray-500">Digital Wallets</span>
+                }
+
+                <!-- Tax -->
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Tax</span>
+                  <span class="font-medium">{{ cartTax | currency:'NGN' }}</span>
                 </div>
-              </div>
+
+                <!-- Total -->
+                <div class="border-t border-gray-200 pt-4">
+                  <div class="flex justify-between">
+                    <span class="text-lg font-medium text-gray-900">Total</span>
+                    <span class="text-lg font-bold text-gray-900">{{ cartTotal | currency:'NGN' }}</span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">Including all taxes and shipping</p>
+                </div>
+
+                <!-- Checkout Button -->
+                <button 
+                  (click)="proceedToCheckout()"
+                  [disabled]="!canCheckout"
+                  class="w-full bg-markt-primary text-white py-3 px-4 rounded-md hover:bg-markt-secondary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Proceed to Checkout
+                </button>
+
+                <!-- Security Notice -->
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                  <fa-icon [icon]="faShieldAlt" class="w-4 h-4"></fa-icon>
+                  <span>Secure checkout with SSL encryption</span>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="border-t border-gray-200 pt-4">
+                  <h3 class="text-sm font-medium text-gray-900 mb-2">Accepted Payment Methods</h3>
+                  <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                      <fa-icon [icon]="faCreditCard" class="w-4 h-4"></fa-icon>
+                      <span>Cards</span>
+                    </div>
+                    <span class="text-gray-300">•</span>
+                    <span class="text-xs text-gray-500">Bank Transfer</span>
+                    <span class="text-gray-300">•</span>
+                    <span class="text-xs text-gray-500">Digital Wallets</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Shipping Info -->
-          <div class="mt-6 bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="font-medium text-gray-900">Shipping Information</h3>
-            </div>
-            <div class="p-6">
-              <div class="space-y-4">
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
-                    <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
+            <!-- Shipping Info -->
+            <div class="mt-6 bg-white rounded-lg shadow">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="font-medium text-gray-900">Shipping Information</h3>
+              </div>
+              <div class="p-6">
+                <div class="space-y-4">
+                  <div class="flex items-center space-x-3">
+                    <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
+                    <div>
+                      <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
+                      <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
+                    <div>
+                      <p class="font-medium text-gray-900">Secure packaging</p>
+                      <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
+                    <div>
+                      <p class="font-medium text-gray-900">Easy returns</p>
+                      <p class="text-sm text-gray-500">30-day return policy for most items</p>
+                    </div>
                   </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Secure packaging</p>
-                    <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
-                  <div>
-                    <p class="font-medium text-gray-900">Easy returns</p>
-                    <p class="text-sm text-gray-500">30-day return policy for most items</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- Recently Viewed Section -->
-      <div class="mt-12">
-        <h3 class="text-xl font-bold text-gray-900 mb-6">Recently Viewed</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div *ngFor="let product of recentlyViewed" class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
-            <img 
-              [src]="media.getPrimaryUrl(product.images?.[0])" 
-              [srcset]="media.getSrcSet(product.images?.[0])"
-              [sizes]="media.gridSizes()"
-              loading="lazy"
-              decoding="async"
-              [alt]="product.name"
-              class="w-full h-48 object-cover"
-            >
-            <div class="p-4">
-              <h4 class="font-medium text-gray-900 mb-2">{{ product.name }}</h4>
-              <div class="flex items-center justify-between">
-                <span class="text-lg font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
-                <button 
-                  (click)="addToCart(product.id, 1)"
-                  class="bg-markt-primary text-white px-3 py-1 rounded-md hover:bg-markt-secondary transition-colors text-sm"
+      @if (recentlyViewed.length > 0) {
+        <div class="mt-12">
+          <h3 class="text-xl font-bold text-gray-900 mb-6">Recently Viewed</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @for (product of recentlyViewed; track product.id) {
+              <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+                <img 
+                  [src]="getProductImageUrl(product.images?.[0])" 
+                  [alt]="product.name"
+                  class="w-full h-48 object-cover"
+                  loading="lazy"
                 >
-                  Add to Cart
-                </button>
+                <div class="p-4">
+                  <h4 class="font-medium text-gray-900 mb-2">{{ product.name }}</h4>
+                  <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
+                    <button 
+                      (click)="addToCart(product.id, 1)"
+                      class="bg-markt-primary text-white px-3 py-1 rounded-md hover:bg-markt-secondary transition-colors text-sm"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            }
           </div>
         </div>
-      </div>
+      }
     </div>
   `,
   styles: [`
@@ -456,13 +468,15 @@ export class CartComponent implements OnInit {
           existing.subtotal += item.product_price * item.quantity;
           existing.itemCount += item.quantity;
         } else {
-          sellerMap.set(sellerId, {
+          const group = {
             seller: item.product.seller,
             items: [item],
             subtotal: item.product_price * item.quantity,
-            shipping: this.calculateShippingForSeller({ seller: item.product.seller, items: [item], subtotal: item.product_price * item.quantity, shipping: 0 }),
+            shipping: 0,
             itemCount: item.quantity
-          });
+          };
+          group.shipping = this.calculateShippingForSeller(group);
+          sellerMap.set(sellerId, group);
         }
       }
     });
@@ -553,8 +567,14 @@ export class CartComponent implements OnInit {
     };
 
     this.roleIntent.ensureRoleAndExecute('buyer', () => {
-      if (!this.selectedAddress) { this.errorMessage = 'Please select a shipping address'; return; }
-      if (!this.selectedPaymentMethod) { this.errorMessage = 'Please select a payment method'; return; }
+      if (!this.selectedAddress) { 
+        this.errorMessage = 'Please select a shipping address'; 
+        return; 
+      }
+      if (!this.selectedPaymentMethod) { 
+        this.errorMessage = 'Please select a payment method'; 
+        return; 
+      }
       navigate();
     });
   }
@@ -600,4 +620,12 @@ export class CartComponent implements OnInit {
       this.loadCart();
     });
   }
-} 
+
+  // Helper method for getting product image URLs
+  getProductImageUrl(imageData: any): string {
+    if (!imageData) {
+      return '/assets/images/product-placeholder.png';
+    }
+    return this.media.getPrimaryUrl(imageData);
+  }
+}

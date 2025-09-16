@@ -59,227 +59,350 @@ interface Listing {
     <div class="relative flex min-h-screen flex-col bg-white overflow-x-hidden font-sans">
       <div class="absolute inset-0 bg-gradient-to-br from-markt-light/30 via-white to-markt-accent/10"></div>
       <div class="relative w-full mx-auto px-6 lg:px-10 py-8 lg:py-12">
-        <!-- Header Card -->
-        <div class="rounded-3xl overflow-hidden shadow-xl border border-markt-border/30 mb-8">
-          <div class="bg-gradient-to-r from-markt-primary to-markt-secondary p-8 lg:p-10 text-white flex flex-col lg:flex-row items-center gap-6">
-            <div class="relative">
-              <img *ngIf="profile?.avatar_url" [src]="profile?.avatar_url" [alt]="profile?.full_name" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white object-cover" />
-              <div *ngIf="!profile?.avatar_url" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white bg-white/20 flex items-center justify-center text-4xl font-bold">
-              {{ profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U' }}
-              </div>
-              <div *ngIf="profile?.is_verified" class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-            </div>
-            <div class="flex-1 text-center lg:text-left">
-              <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">{{ profile?.full_name || profile?.username }}</h1>
-              <p class="opacity-90">@{{ profile?.username }}</p>
-              <p class="opacity-80 mt-1">Member since {{ profile?.join_date | date:'MMMM yyyy' }}</p>
-              <p *ngIf="profile?.shop_name" class="opacity-90 mt-2 text-sm">Shop: <span class="font-semibold">{{ profile?.shop_name }}</span></p>
-            </div>
-            <div class="flex gap-3">
-              <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white text-markt-primary font-semibold shadow-lg hover:shadow-xl transition-all" routerLink="/app/profile/edit" aria-label="Edit profile">
-              Edit Profile
-              </a>
-              <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white/20 text-white font-semibold border-2 border-white/40 hover:bg-white/30 transition-all" routerLink="/app/chat" aria-label="Send message">
-              Send Message
-              </a>
-      </div>
-          </div>
-          <!-- Stats Row -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 lg:p-8 bg-white">
-            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
-              <div class="text-2xl font-black text-markt-dark">{{ profile?.rating || 0 }}</div>
-              <div class="text-markt-muted">Rating</div>
-        </div>
-            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
-              <div class="text-2xl font-black text-markt-dark">{{ profile?.total_reviews || 0 }}</div>
-              <div class="text-markt-muted">Reviews</div>
-        </div>
-            <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
-              <div class="text-2xl font-black text-markt-dark">{{ profile?.total_orders || 0 }}</div>
-              <div class="text-markt-muted">Orders</div>
-            </div>
-            <div *ngIf="profile?.is_seller" class="rounded-2xl border border-markt-border/40 p-5 text-center">
-              <div class="text-2xl font-black text-markt-dark">{{ listings.length }}</div>
-              <div class="text-markt-muted">Listings</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tabs + Content Cards -->
-        <div class="bg-white rounded-3xl shadow-xl border border-markt-border/30">
-          <div class="flex border-b border-markt-border/30 overflow-x-auto">
-            <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='about'" [class.border-markt-primary]="activeTab==='about'" (click)="setActiveTab('about')">About</button>
-            <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='reviews'" [class.border-markt-primary]="activeTab==='reviews'" (click)="setActiveTab('reviews')">Reviews ({{ profile?.total_reviews || 0 }})</button>
-            <button *ngIf="profile?.is_seller" class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='listings'" [class.border-markt-primary]="activeTab==='listings'" (click)="setActiveTab('listings')">Listings ({{ listings.length }})</button>
-          </div>
-
-          <!-- About -->
-          <div *ngIf="activeTab==='about'" class="p-6 lg:p-8 grid gap-8">
-            <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Contact Information</h3>
-              <div class="grid gap-3">
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Email:</span>
-                  <span class="text-markt-muted">{{ profile?.email }}</span>
+        
+        <!-- Error Message -->
+        @if (errorMessage) {
+          <div class="mb-8">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <svg class="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="text-sm text-red-800">{{ errorMessage }}</span>
                 </div>
-                <div *ngIf="profile?.phone" class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Phone:</span>
-                  <span class="text-markt-muted">{{ profile?.phone }}</span>
-                </div>
+                <button (click)="errorMessage = ''" class="text-red-400 hover:text-red-600">
+                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </div>
+          </div>
+        }
 
-                    <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Account Information</h3>
-              <div class="grid gap-3">
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Username:</span>
-                  <span class="text-markt-muted">@{{ profile?.username }}</span>
+        <!-- Loading State -->
+        @if (loading) {
+          <div class="mb-8">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-center">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                <span class="text-sm text-blue-800">Loading profile...</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Empty State -->
+        @if (!loading && !errorMessage && !profile) {
+          <div class="text-center py-12">
+            <div class="max-w-md mx-auto">
+              <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <h3 class="mt-4 text-lg font-medium text-gray-900">Profile not found</h3>
+              <p class="mt-2 text-gray-500">Unable to load your profile information.</p>
+              <div class="mt-6">
+                <button 
+                  (click)="loadProfile()"
+                  class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Main Content (only show when profile is loaded) -->
+        @if (!loading && !errorMessage && profile) {
+          <!-- Header Card -->
+          <div class="rounded-3xl overflow-hidden shadow-xl border border-markt-border/30 mb-8">
+            <div class="bg-gradient-to-r from-markt-primary to-markt-secondary p-8 lg:p-10 text-white flex flex-col lg:flex-row items-center gap-6">
+              <div class="relative">
+                @if (profile?.avatar_url) {
+                  <img [src]="profile?.avatar_url" [alt]="profile?.full_name" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white object-cover" />
+                } @else {
+                  <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-white bg-white/20 flex items-center justify-center text-4xl font-bold">
+                    {{ profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U' }}
+                  </div>
+                }
+                @if (profile?.is_verified) {
+                  <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                }
+              </div>
+              <div class="flex-1 text-center lg:text-left">
+                <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">{{ profile?.full_name || profile?.username }}</h1>
+                <p class="opacity-90">@{{ profile?.username }}</p>
+                <p class="opacity-80 mt-1">Member since {{ profile?.join_date | date:'MMMM yyyy' }}</p>
+                @if (profile?.shop_name) {
+                  <p class="opacity-90 mt-2 text-sm">Shop: <span class="font-semibold">{{ profile?.shop_name }}</span></p>
+                }
+              </div>
+              <div class="flex gap-3">
+                <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white text-markt-primary font-semibold shadow-lg hover:shadow-xl transition-all" routerLink="/app/profile/edit" aria-label="Edit profile">
+                  Edit Profile
+                </a>
+                <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white/20 text-white font-semibold border-2 border-white/40 hover:bg-white/30 transition-all" routerLink="/app/chat" aria-label="Send message">
+                  Send Message
+                </a>
+              </div>
+            </div>
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 lg:p-8 bg-white">
+              <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+                <div class="text-2xl font-black text-markt-dark">{{ profile?.rating || 0 }}</div>
+                <div class="text-markt-muted">Rating</div>
+              </div>
+              <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+                <div class="text-2xl font-black text-markt-dark">{{ profile?.total_reviews || 0 }}</div>
+                <div class="text-markt-muted">Reviews</div>
+              </div>
+              <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+                <div class="text-2xl font-black text-markt-dark">{{ profile?.total_orders || 0 }}</div>
+                <div class="text-markt-muted">Orders</div>
+              </div>
+              @if (profile?.is_seller) {
+                <div class="rounded-2xl border border-markt-border/40 p-5 text-center">
+                  <div class="text-2xl font-black text-markt-dark">{{ listings.length }}</div>
+                  <div class="text-markt-muted">Listings</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Tabs + Content Cards -->
+          <div class="bg-white rounded-3xl shadow-xl border border-markt-border/30">
+            <div class="flex border-b border-markt-border/30 overflow-x-auto">
+              <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='about'" [class.border-markt-primary]="activeTab==='about'" (click)="setActiveTab('about')">About</button>
+              <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='reviews'" [class.border-markt-primary]="activeTab==='reviews'" (click)="setActiveTab('reviews')">Reviews ({{ profile?.total_reviews || 0 }})</button>
+              @if (profile?.is_seller) {
+                <button class="px-6 lg:px-8 py-4 text-sm font-semibold transition-all border-b-2" [class.text-markt-primary]="activeTab==='listings'" [class.border-markt-primary]="activeTab==='listings'" (click)="setActiveTab('listings')">Listings ({{ listings.length }})</button>
+              }
+            </div>
+
+            <!-- About -->
+            @if (activeTab==='about') {
+              <div class="p-6 lg:p-8 grid gap-8">
+                <div>
+                  <h3 class="text-lg font-bold text-markt-dark mb-4">Contact Information</h3>
+                  <div class="grid gap-3">
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Email:</span>
+                      <span class="text-markt-muted">{{ profile?.email }}</span>
                     </div>
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Member Since:</span>
-                  <span class="text-markt-muted">{{ profile?.join_date | date:'longDate' }}</span>
+                    @if (profile?.phone) {
+                      <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                        <span class="font-medium text-markt-dark">Phone:</span>
+                        <span class="text-markt-muted">{{ profile?.phone }}</span>
+                      </div>
+                    }
                   </div>
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Roles:</span>
-                  <span class="text-markt-muted">
-                    <span *ngIf="profile?.is_buyer" class="inline-flex items-center px-2 py-1 rounded-full bg-white border border-markt-border/50 mr-2 text-sm">Buyer</span>
-                    <span *ngIf="profile?.is_seller" class="inline-flex items-center px-2 py-1 rounded-full bg-white border border-markt-border/50 text-sm">Seller</span>
-                  </span>
                 </div>
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Current Role:</span>
-                  <span class="text-markt-muted capitalize">{{ currentRole || (profile?.is_seller ? 'seller' : 'buyer') }}</span>
-                </div>
-                <div *ngIf="profile?.is_buyer && profile?.is_seller" class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Switch Role:</span>
-                  <button (click)="switchRole()" class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90">Toggle to {{ (currentRole === 'buyer') ? 'Seller' : 'Buyer' }}</button>
-                </div>
-                <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                  <span class="font-medium text-markt-dark">Verification:</span>
-                  <span class="text-emerald-600 font-semibold" *ngIf="profile?.is_verified; else unv">Verified</span>
-                  <ng-template #unv><span class="text-gray-500">Not Verified</span></ng-template>
-                </div>
-              </div>
-            </div>
 
-              <!-- Role creation CTAs when missing -->
-              <div *ngIf="profile && !profile.is_buyer" class="rounded-xl bg-markt-light/40 px-4 py-3">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <div class="font-medium text-markt-dark">Buyer Account</div>
-                    <div class="text-markt-muted text-sm">Add a buyer account to start purchasing.</div>
-                  </div>
-                  <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90" (click)="showBuyerForm = !showBuyerForm">{{ showBuyerForm ? 'Close' : 'Create' }}</button>
-                </div>
-                <div *ngIf="showBuyerForm" class="mt-4 grid gap-3">
-                  <div class="grid gap-2 sm:grid-cols-2">
-                    <input [(ngModel)]="buyerForm.buyername" placeholder="Full name" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.street" placeholder="Street" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.house_number" placeholder="House/Apartment" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.city" placeholder="City" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.state" placeholder="State" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.country" placeholder="Country" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="buyerForm.postal_code" placeholder="Postal Code" class="border rounded-md px-3 py-2" />
-                  </div>
-                  <div class="text-sm text-red-600" *ngIf="buyerError">{{ buyerError }}</div>
-                  <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90 w-full sm:w-auto" (click)="submitCreateBuyer()" [disabled]="buyerLoading">{{ buyerLoading ? 'Creating...' : 'Create Buyer Account' }}</button>
-                </div>
-              </div>
-
-              <div *ngIf="profile && !profile.is_seller" class="rounded-xl bg-markt-light/40 px-4 py-3">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <div class="font-medium text-markt-dark">Seller Account</div>
-                    <div class="text-markt-muted text-sm">Add a seller account to start listing products.</div>
-                  </div>
-                  <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90" (click)="toggleSellerForm()">{{ showSellerForm ? 'Close' : 'Create' }}</button>
-                </div>
-                <div *ngIf="showSellerForm" class="mt-4 grid gap-3">
-                  <div class="grid gap-2 sm:grid-cols-2">
-                    <input [(ngModel)]="sellerForm.shop_name" placeholder="Shop name" class="border rounded-md px-3 py-2" />
-                    <input [(ngModel)]="sellerForm.description" placeholder="Description" class="border rounded-md px-3 py-2" />
-                  </div>
-                  <div class="grid gap-2">
-                    <div class="text-sm font-medium">Categories</div>
-                    <div class="flex flex-wrap gap-2">
-                      <label *ngFor="let c of shopCategories" class="inline-flex items-center gap-2 text-sm border rounded-full px-3 py-1">
-                        <input type="checkbox" [value]="c.id" (change)="onSellerCategoryToggle($event)" /> {{ c.name }}
-                      </label>
+                <div>
+                  <h3 class="text-lg font-bold text-markt-dark mb-4">Account Information</h3>
+                  <div class="grid gap-3">
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Username:</span>
+                      <span class="text-markt-muted">@{{ profile?.username }}</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Member Since:</span>
+                      <span class="text-markt-muted">{{ profile?.join_date | date:'longDate' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Roles:</span>
+                      <span class="text-markt-muted">
+                        @if (profile?.is_buyer) {
+                          <span class="inline-flex items-center px-2 py-1 rounded-full bg-white border border-markt-border/50 mr-2 text-sm">Buyer</span>
+                        }
+                        @if (profile?.is_seller) {
+                          <span class="inline-flex items-center px-2 py-1 rounded-full bg-white border border-markt-border/50 text-sm">Seller</span>
+                        }
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Current Role:</span>
+                      <span class="text-markt-muted capitalize">{{ currentRole || (profile?.is_seller ? 'seller' : 'buyer') }}</span>
+                    </div>
+                    @if (profile?.is_buyer && profile?.is_seller) {
+                      <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                        <span class="font-medium text-markt-dark">Switch Role:</span>
+                        <button (click)="switchRole()" class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90">Toggle to {{ (currentRole === 'buyer') ? 'Seller' : 'Buyer' }}</button>
+                      </div>
+                    }
+                    <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                      <span class="font-medium text-markt-dark">Verification:</span>
+                      @if (profile?.is_verified) {
+                        <span class="text-emerald-600 font-semibold">Verified</span>
+                      } @else {
+                        <span class="text-gray-500">Not Verified</span>
+                      }
                     </div>
                   </div>
-                  <div class="text-sm text-red-600" *ngIf="sellerError">{{ sellerError }}</div>
-                  <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90 w-full sm:w-auto" (click)="submitCreateSeller()" [disabled]="sellerLoading">{{ sellerLoading ? 'Creating...' : 'Create Seller Account' }}</button>
                 </div>
-              </div>
-            </div>
 
-            <!-- Store Details (Seller) -->
-            <div *ngIf="profile?.is_seller" class="grid gap-3">
-              <h3 class="text-lg font-bold text-markt-dark mb-2">Store Details</h3>
-              <div *ngIf="profile?.verification_status" class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
-                <span class="font-medium text-markt-dark">Verification Status:</span>
-                <span class="text-markt-muted capitalize">{{ profile?.verification_status }}</span>
+                <!-- Role creation CTAs when missing -->
+                @if (profile && !profile.is_buyer) {
+                  <div class="rounded-xl bg-markt-light/40 px-4 py-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="font-medium text-markt-dark">Buyer Account</div>
+                        <div class="text-markt-muted text-sm">Add a buyer account to start purchasing.</div>
+                      </div>
+                      <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90" (click)="showBuyerForm = !showBuyerForm">{{ showBuyerForm ? 'Close' : 'Create' }}</button>
+                    </div>
+                    @if (showBuyerForm) {
+                      <div class="mt-4 grid gap-3">
+                        <div class="grid gap-2 sm:grid-cols-2">
+                          <input [(ngModel)]="buyerForm.buyername" placeholder="Full name" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.street" placeholder="Street" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.house_number" placeholder="House/Apartment" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.city" placeholder="City" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.state" placeholder="State" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.country" placeholder="Country" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="buyerForm.postal_code" placeholder="Postal Code" class="border rounded-md px-3 py-2" />
+                        </div>
+                        @if (buyerError) {
+                          <div class="text-sm text-red-600">{{ buyerError }}</div>
+                        }
+                        <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90 w-full sm:w-auto" (click)="submitCreateBuyer()" [disabled]="buyerLoading">{{ buyerLoading ? 'Creating...' : 'Create Buyer Account' }}</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (profile && !profile.is_seller) {
+                  <div class="rounded-xl bg-markt-light/40 px-4 py-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="font-medium text-markt-dark">Seller Account</div>
+                        <div class="text-markt-muted text-sm">Add a seller account to start listing products.</div>
+                      </div>
+                      <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90" (click)="toggleSellerForm()">{{ showSellerForm ? 'Close' : 'Create' }}</button>
+                    </div>
+                    @if (showSellerForm) {
+                      <div class="mt-4 grid gap-3">
+                        <div class="grid gap-2 sm:grid-cols-2">
+                          <input [(ngModel)]="sellerForm.shop_name" placeholder="Shop name" class="border rounded-md px-3 py-2" />
+                          <input [(ngModel)]="sellerForm.description" placeholder="Description" class="border rounded-md px-3 py-2" />
+                        </div>
+                        <div class="grid gap-2">
+                          <div class="text-sm font-medium">Categories</div>
+                          <div class="flex flex-wrap gap-2">
+                            @for (c of shopCategories; track c.id) {
+                              <label class="inline-flex items-center gap-2 text-sm border rounded-full px-3 py-1">
+                                <input type="checkbox" [value]="c.id" (change)="onSellerCategoryToggle($event)" /> {{ c.name }}
+                              </label>
+                            }
+                          </div>
+                        </div>
+                        @if (sellerError) {
+                          <div class="text-sm text-red-600">{{ sellerError }}</div>
+                        }
+                        <button class="rounded-lg bg-markt-primary text-white px-4 py-2 hover:opacity-90 w-full sm:w-auto" (click)="submitCreateSeller()" [disabled]="sellerLoading">{{ sellerLoading ? 'Creating...' : 'Create Seller Account' }}</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Store Details (Seller) -->
+                @if (profile?.is_seller) {
+                  <div class="grid gap-3">
+                    <h3 class="text-lg font-bold text-markt-dark mb-2">Store Details</h3>
+                    @if (profile?.verification_status) {
+                      <div class="flex items-center justify-between rounded-xl bg-markt-light/40 px-4 py-3">
+                        <span class="font-medium text-markt-dark">Verification Status:</span>
+                        <span class="text-markt-muted capitalize">{{ profile?.verification_status }}</span>
+                      </div>
+                    }
+                    @if (profile?.shop_description) {
+                      <div class="rounded-xl bg-markt-light/40 px-4 py-3">
+                        <div class="font-medium text-markt-dark mb-1">About Store:</div>
+                        <p class="text-markt-muted">{{ profile?.shop_description }}</p>
+                      </div>
+                    }
+                    @if (profile?.shop_categories?.length) {
+                      <div class="rounded-xl bg-markt-light/40 px-4 py-3">
+                        <div class="font-medium text-markt-dark mb-2">Categories:</div>
+                        <div class="flex flex-wrap gap-2">
+                          @for (c of profile?.shop_categories; track c) {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full border border-markt-border/50 text-sm text-markt-dark bg-white">{{ c }}</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                    @if (profile?.policies) {
+                      <div class="rounded-xl bg-markt-light/40 px-4 py-3">
+                        <div class="font-medium text-markt-dark mb-2">Policies</div>
+                        <div class="grid gap-2 text-sm text-markt-muted">
+                          @if (profile?.policies?.returns) {
+                            <div><span class="font-semibold text-markt-dark">Returns:</span> {{ profile?.policies?.returns }}</div>
+                          }
+                          @if (profile?.policies?.shipping) {
+                            <div><span class="font-semibold text-markt-dark">Shipping:</span> {{ profile?.policies?.shipping }}</div>
+                          }
+                          @if (profile?.policies?.warranty) {
+                            <div><span class="font-semibold text-markt-dark">Warranty:</span> {{ profile?.policies?.warranty }}</div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
-              <div *ngIf="profile?.shop_description" class="rounded-xl bg-markt-light/40 px-4 py-3">
-                <div class="font-medium text-markt-dark mb-1">About Store:</div>
-                <p class="text-markt-muted">{{ profile?.shop_description }}</p>
+            }
+
+            <!-- Reviews -->
+            @if (activeTab === 'reviews') {
+              <div class="p-6 lg:p-8">
+                <h3 class="text-lg font-bold text-markt-dark mb-4">User Reviews</h3>
+                @if (reviews.length > 0) {
+                  <div class="grid gap-4">
+                    @for (review of reviews; track review.id) {
+                      <div class="rounded-2xl border border-markt-border/30 p-5">
+                        <div class="flex items-center justify-between mb-2">
+                          <div class="font-semibold text-markt-dark">{{ review.reviewer_name }}</div>
+                          <div class="text-markt-muted text-sm">{{ review.created_at | date:'mediumDate' }}</div>
+                        </div>
+                        <p class="text-markt-dark">{{ review.comment }}</p>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-center text-markt-muted py-10">No reviews yet</div>
+                }
               </div>
-              <div *ngIf="profile?.shop_categories?.length" class="rounded-xl bg-markt-light/40 px-4 py-3">
-                <div class="font-medium text-markt-dark mb-2">Categories:</div>
-                <div class="flex flex-wrap gap-2">
-                  <span *ngFor="let c of profile?.shop_categories" class="inline-flex items-center px-3 py-1 rounded-full border border-markt-border/50 text-sm text-markt-dark bg-white">{{ c }}</span>
-                </div>
+            }
+
+            <!-- Listings -->
+            @if (activeTab === 'listings' && profile?.is_seller) {
+              <div class="p-6 lg:p-8">
+                <h3 class="text-lg font-bold text-markt-dark mb-4">User Listings</h3>
+                @if (listings.length > 0) {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @for (listing of listings; track listing.id) {
+                      <a [routerLink]="['/app/marketplace/product', listing.id]" class="rounded-2xl border border-markt-border/30 overflow-hidden hover:shadow-xl transition-all">
+                        <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title" class="h-48 w-full object-cover" />
+                        <div class="p-4">
+                          <h4 class="font-semibold text-markt-dark">{{ listing.title }}</h4>
+                          <p class="text-markt-muted">{{ listing.price | currency:listing.currency:'symbol':'1.0-0' }}</p>
+                        </div>
+                      </a>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-center text-markt-muted py-10">No listings yet</div>
+                }
               </div>
-              <div *ngIf="profile?.policies" class="rounded-xl bg-markt-light/40 px-4 py-3">
-                <div class="font-medium text-markt-dark mb-2">Policies</div>
-                <div class="grid gap-2 text-sm text-markt-muted">
-                  <div *ngIf="profile?.policies?.returns"><span class="font-semibold text-markt-dark">Returns:</span> {{ profile?.policies?.returns }}</div>
-                  <div *ngIf="profile?.policies?.shipping"><span class="font-semibold text-markt-dark">Shipping:</span> {{ profile?.policies?.shipping }}</div>
-                  <div *ngIf="profile?.policies?.warranty"><span class="font-semibold text-markt-dark">Warranty:</span> {{ profile?.policies?.warranty }}</div>
-                </div>
-              </div>
-            </div>
+            }
           </div>
-
-          <!-- Reviews -->
-          <div *ngIf="activeTab==='reviews'" class="p-6 lg:p-8">
-            <h3 class="text-lg font-bold text-markt-dark mb-4">User Reviews</h3>
-            <div *ngIf="reviews.length>0; else noReviews" class="grid gap-4">
-              <div *ngFor="let review of reviews" class="rounded-2xl border border-markt-border/30 p-5">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="font-semibold text-markt-dark">{{ review.reviewer_name }}</div>
-                  <div class="text-markt-muted text-sm">{{ review.created_at | date:'mediumDate' }}</div>
-                </div>
-                <p class="text-markt-dark">{{ review.comment }}</p>
-              </div>
-            </div>
-            <ng-template #noReviews>
-              <div class="text-center text-markt-muted py-10">No reviews yet</div>
-            </ng-template>
-        </div>
-
-          <!-- Listings -->
-                     <div *ngIf="activeTab==='listings' && profile?.is_seller" class="p-6 lg:p-8">
-            <h3 class="text-lg font-bold text-markt-dark mb-4">User Listings</h3>
-            <div *ngIf="listings.length>0; else noListings" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <a *ngFor="let listing of listings" [routerLink]="['/app/marketplace/product', listing.id]" class="rounded-2xl border border-markt-border/30 overflow-hidden hover:shadow-xl transition-all">
-                <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title" class="h-48 w-full object-cover" />
-                <div class="p-4">
-                  <h4 class="font-semibold text-markt-dark">{{ listing.title }}</h4>
-                  <p class="text-markt-muted">{{ listing.price | currency:listing.currency:'symbol':'1.0-0' }}</p>
-                </div>
-              </a>
-            </div>
-            <ng-template #noListings>
-              <div class="text-center text-markt-muted py-10">No listings yet</div>
-            </ng-template>
-          </div>
-        </div>
+        }
       </div>
-  
+    </div>
   `,
   styles: [`
     :host { display:block; }
@@ -292,10 +415,11 @@ export class ProfileComponent implements OnInit {
   private typeSafety = inject(TypeSafetyService);
 
   profile: UserProfile | null = null;
-  activeTab = 'about';
+  activeTab: 'about' | 'reviews' | 'listings' = 'about' as 'about' | 'reviews' | 'listings';
   reviews: Review[] = [];
   listings: Listing[] = [];
   loading = false;
+  errorMessage = '';
   currentRole: 'buyer' | 'seller' | null = null;
   // Role creation state
   showBuyerForm = false;
@@ -328,6 +452,7 @@ export class ProfileComponent implements OnInit {
 
   loadProfile(): void {
     this.loading = true;
+    this.errorMessage = '';
     
     this.apiService.getProfile().subscribe({
       next: (response) => {
@@ -363,6 +488,7 @@ export class ProfileComponent implements OnInit {
       error: (error) => {
         console.error('Error loading profile:', error);
         this.profile = null;
+        this.errorMessage = 'Failed to load profile. Please try again.';
         this.loading = false;
       }
     });
@@ -408,7 +534,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: string): void {
+  setActiveTab(tab: 'about' | 'reviews' | 'listings'): void {
     this.activeTab = tab;
   }
 
@@ -661,4 +787,4 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
-} 
+}

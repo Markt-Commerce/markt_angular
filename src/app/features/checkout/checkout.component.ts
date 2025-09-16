@@ -39,16 +39,49 @@ import { AccessControlService } from '../../core/services/access-control.service
   imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, FontAwesomeModule],
   template: `
     <div class="space-y-6">
-      <div *ngIf="offerContext.offerId" class="rounded-md border border-green-200 bg-green-50 text-green-800 px-4 py-2 text-sm">
-        Offer accepted. Item added to your cart. You can complete checkout below.
-      </div>
-      <!-- Buyer mode gate -->
-      <div *ngIf="!canCheckout" class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
-        <div>
-          Cart and checkout are available in Buyer mode. Switch to continue.
+      @if (offerContext.offerId) {
+        <div class="rounded-md border border-green-200 bg-green-50 text-green-800 px-4 py-2 text-sm">
+          Offer accepted. Item added to your cart. You can complete checkout below.
         </div>
-        <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
-      </div>
+      }
+
+      <!-- Error Message -->
+      @if (errorMessage) {
+        <div class="rounded-md border border-red-200 bg-red-50 text-red-800 px-4 py-3 text-sm mb-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <svg class="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              <span>{{ errorMessage }}</span>
+            </div>
+            <button (click)="errorMessage = ''" class="text-red-400 hover:text-red-600">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Loading State -->
+      @if (loading) {
+        <div class="rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-4 py-3 text-sm mb-4">
+          <div class="flex items-center">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+            <span>Loading checkout data...</span>
+          </div>
+        </div>
+      }
+      <!-- Buyer mode gate -->
+      @if (!canCheckout) {
+        <div class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
+          <div>
+            Cart and checkout are available in Buyer mode. Switch to continue.
+          </div>
+          <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
+        </div>
+      }
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -95,7 +128,29 @@ import { AccessControlService } from '../../core/services/access-control.service
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Empty Cart State -->
+      @if (!loading && !errorMessage && (!cartItems || cartItems.length === 0)) {
+        <div class="text-center py-12">
+          <div class="max-w-md mx-auto">
+            <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">Your cart is empty</h3>
+            <p class="mt-2 text-gray-500">Add some items to your cart to proceed with checkout.</p>
+            <div class="mt-6">
+              <button 
+                routerLink="/app/marketplace"
+                class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (!loading && !errorMessage && cartItems && cartItems.length > 0) {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Checkout Form -->
         <div class="lg:col-span-2 space-y-6" [class.opacity-60]="!canCheckout">
           <!-- Shipping Information -->
@@ -116,9 +171,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                       placeholder="Enter first name"
                       [disabled]="!canCheckout"
                     >
-                    <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-500 text-sm mt-1">
-                      First name is required
-                    </div>
+                    @if (shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched) {
+                      <div class="text-red-500 text-sm mt-1">
+                        First name is required
+                      </div>
+                    }
                   </div>
                   <div>
                     <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
@@ -130,9 +187,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                       placeholder="Enter last name"
                       [disabled]="!canCheckout"
                     >
-                    <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-500 text-sm mt-1">
-                      Last name is required
-                    </div>
+                    @if (shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched) {
+                      <div class="text-red-500 text-sm mt-1">
+                        Last name is required
+                      </div>
+                    }
                   </div>
                 </div>
 
@@ -146,9 +205,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                     placeholder="Enter email address"
                     [disabled]="!canCheckout"
                   >
-                  <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
-                    Valid email is required
-                  </div>
+                  @if (shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched) {
+                    <div class="text-red-500 text-sm mt-1">
+                      Valid email is required
+                    </div>
+                  }
                 </div>
 
                 <div>
@@ -161,9 +222,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                     placeholder="Enter phone number"
                     [disabled]="!canCheckout"
                   >
-                  <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-500 text-sm mt-1">
-                    Phone number is required
-                  </div>
+                  @if (shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched) {
+                    <div class="text-red-500 text-sm mt-1">
+                      Phone number is required
+                    </div>
+                  }
                 </div>
 
                 <div>
@@ -176,9 +239,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                     placeholder="Enter street address"
                     [disabled]="!canCheckout"
                   >
-                  <div *ngIf="shippingForm.get('address')?.invalid && shippingForm.get('address')?.touched" class="text-red-500 text-sm mt-1">
-                    Address is required
-                  </div>
+                  @if (shippingForm.get('address')?.invalid && shippingForm.get('address')?.touched) {
+                    <div class="text-red-500 text-sm mt-1">
+                      Address is required
+                    </div>
+                  }
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -247,7 +312,8 @@ import { AccessControlService } from '../../core/services/access-control.service
           </div>
 
           <!-- Payment Information (shown after shipping) -->
-          <div *ngIf="currentStep >= 2" class="bg-white rounded-lg shadow">
+          @if (currentStep >= 2) {
+            <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
               <h2 class="text-lg font-medium text-gray-900">Payment Information</h2>
             </div>
@@ -257,11 +323,11 @@ import { AccessControlService } from '../../core/services/access-control.service
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
                   <div class="space-y-3">
-                    <label 
-                      *ngFor="let method of paymentMethods" 
-                      class="flex items-center p-4 border border-gray-200 rounded-md hover:border-markt-primary cursor-pointer"
-                      [class.border-markt-primary]="selectedPaymentMethod === method.id"
-                    >
+                    @for (method of paymentMethods; track method.id) {
+                      <label 
+                        class="flex items-center p-4 border border-gray-200 rounded-md hover:border-markt-primary cursor-pointer"
+                        [class.border-markt-primary]="selectedPaymentMethod === method.id"
+                      >
                       <input 
                         type="radio" 
                         [value]="method.id"
@@ -274,11 +340,13 @@ import { AccessControlService } from '../../core/services/access-control.service
                         <span class="font-medium text-gray-900">{{ method.name }}</span>
                       </div>
                     </label>
+                    }
                   </div>
                 </div>
 
                 <!-- Card Details (if card payment selected) -->
-                <div *ngIf="selectedPaymentMethod === 'card'" class="space-y-4">
+                @if (selectedPaymentMethod === 'card') {
+                  <div class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
                     <div class="relative">
@@ -339,6 +407,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                     >
                   </div>
                 </div>
+                }
 
                 <div class="flex justify-between">
                   <button 
@@ -359,9 +428,11 @@ import { AccessControlService } from '../../core/services/access-control.service
               </form>
             </div>
           </div>
+          }
 
           <!-- Order Review (shown after payment) -->
-          <div *ngIf="currentStep >= 3" class="bg-white rounded-lg shadow">
+          @if (currentStep >= 3) {
+            <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
               <h2 class="text-lg font-medium text-gray-900">Order Review</h2>
             </div>
@@ -393,7 +464,8 @@ import { AccessControlService } from '../../core/services/access-control.service
               <div class="mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-3">Order Items</h3>
                 <div class="space-y-3">
-                  <div *ngFor="let item of cartItems" class="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
+                  @for (item of cartItems; track item.id) {
+                    <div class="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
                     <img 
                       [src]="item.product?.images[0]?.url || '/markt-text-logo.png'" 
                       [alt]="item.product?.name"
@@ -407,6 +479,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                       <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'NGN' }}</p>
                     </div>
                   </div>
+                  }
                 </div>
               </div>
 
@@ -423,16 +496,20 @@ import { AccessControlService } from '../../core/services/access-control.service
                   [disabled]="isProcessing || !canCheckout"
                   class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span *ngIf="!isProcessing">Place Order</span>
-                  <span *ngIf="isProcessing">Processing...</span>
+                  @if (!isProcessing) {
+                    <span>Place Order</span>
+                  }
+                  @if (isProcessing) {
+                    <span>Processing...</span>
+                  }
                 </button>
               </div>
             </div>
           </div>
-        </div>
+          }
 
-        <!-- Order Summary -->
-        <div class="lg:col-span-1">
+          <!-- Order Summary -->
+          <div class="lg:col-span-1">
           <div class="bg-white rounded-lg shadow sticky top-6">
             <div class="px-6 py-4 border-b border-gray-200">
               <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
@@ -440,13 +517,15 @@ import { AccessControlService } from '../../core/services/access-control.service
             <div class="p-6 space-y-4">
               <!-- Order Items Summary -->
               <div class="space-y-3">
-                <div *ngFor="let item of cartItems" class="flex justify-between text-sm">
-                  <div class="flex-1">
-                    <p class="font-medium text-gray-900">{{ item.product?.name }}</p>
-                    <p class="text-gray-500">Qty: {{ item.quantity }}</p>
+                @for (item of cartItems; track item.id) {
+                  <div class="flex justify-between text-sm">
+                    <div class="flex-1">
+                      <p class="font-medium text-gray-900">{{ item.product?.name }}</p>
+                      <p class="text-gray-500">Qty: {{ item.quantity }}</p>
+                    </div>
+                    <span class="font-medium">{{ item.price * item.quantity | currency:'NGN' }}</span>
                   </div>
-                  <span class="font-medium">{{ item.price * item.quantity | currency:'NGN' }}</span>
-                </div>
+                }
               </div>
 
               <!-- Totals -->
@@ -481,9 +560,9 @@ import { AccessControlService } from '../../core/services/access-control.service
               </div>
             </div>
           </div>
+          </div>
         </div>
-      </div>
-    </div>
+    </div>}
   `,
   styles: [`
     :host {
@@ -541,6 +620,7 @@ export class CheckoutComponent implements OnInit {
   showCvv = false;
   selectedPaymentMethod = 'card';
   loading = false;
+  errorMessage = '';
   cart: any = null;
   cartSummary: any = null;
   offerContext: { offerId?: string } = {};
@@ -607,6 +687,7 @@ export class CheckoutComponent implements OnInit {
 
   private loadCheckoutData(): void {
     this.loading = true;
+    this.errorMessage = '';
     
     // Load cart data
     this.apiService.getCart().subscribe({
@@ -617,6 +698,7 @@ export class CheckoutComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading cart:', error);
+        this.errorMessage = 'Failed to load cart. Please try again.';
         this.loading = false;
       }
     });
@@ -628,6 +710,7 @@ export class CheckoutComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading cart summary:', error);
+        this.errorMessage = 'Failed to load cart summary. Please try again.';
       }
     });
 
@@ -639,6 +722,7 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error('Error loading addresses:', error);
         this.addresses = [];
+        this.errorMessage = 'Failed to load addresses. Please try again.';
       }
     });
   }

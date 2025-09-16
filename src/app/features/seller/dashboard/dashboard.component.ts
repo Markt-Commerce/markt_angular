@@ -36,6 +36,15 @@ interface RecentOrder {
         <p>Welcome back! Here's what's happening with your shop today.</p>
       </div>
 
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <div class="error-content">
+          <h3>Error loading dashboard data</h3>
+          <p>{{ errorMessage }}</p>
+          <button (click)="loadDashboardData()" class="retry-button">Try Again</button>
+        </div>
+      </div>
+
       <!-- Stats Cards -->
       <div class="stats-grid">
         <div class="stat-card">
@@ -417,6 +426,39 @@ interface RecentOrder {
       font-size: 1.1rem;
     }
 
+    .error-message {
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .error-content h3 {
+      color: #c33;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+    }
+
+    .error-content p {
+      color: #666;
+      margin: 0 0 1rem 0;
+    }
+
+    .retry-button {
+      background: #e85530;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .retry-button:hover {
+      background: #d63924;
+    }
+
     @media (max-width: 768px) {
       .dashboard-container {
         padding: 1rem;
@@ -455,6 +497,7 @@ export class DashboardComponent implements OnInit {
   loading = false;
   analytics: any = null;
   topProducts: any[] = [];
+  errorMessage = '';
 
   stats: DashboardStats = {
     totalSales: 1250000,
@@ -511,7 +554,7 @@ export class DashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  private loadDashboardData(): void {
+  loadDashboardData(): void {
     this.loading = true;
     
     // Load seller analytics
@@ -523,6 +566,7 @@ export class DashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error loading seller analytics:', error);
         this.loading = false;
+        this.errorMessage = 'Failed to load analytics data. Please try again.';
       }
     });
 

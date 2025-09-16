@@ -88,10 +88,12 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               <app-icon name="shopping-bag" size="5" className="mr-1"></app-icon>
               <span>Offers</span>
             </a>
-            <a *ngIf="access.isSeller" routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
+            @if (access.isSeller) {
+              <a routerLink="/app/seller/listings" routerLinkActive="active" class="nav-link">
               <app-icon name="shopping-bag" size="5" className="mr-1"></app-icon>
-              <span>Listings</span>
-            </a>
+                <span>Listings</span>
+              </a>
+            }
           </nav>
 
           <!-- User Actions -->
@@ -103,10 +105,12 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               </svg>
             </button>
             <!-- Role pill + switch -->
-                         <ng-container *ngIf="currentUser$ | async as user">
-               <span class="role-pill">{{ (user.current_role || 'user') | titlecase }}</span>
-               <button class="role-switch" *ngIf="user.is_buyer && user.is_seller" [disabled]="switchingRole" (click)="switchRole()" [title]="switchingRole ? 'Switching...' : 'Switch role'">{{ switchingRole ? 'Switching...' : 'Switch' }}</button>
-             </ng-container>
+            @if (currentUser$ | async; as user) {
+              <span class="role-pill">{{ (user.current_role || 'user') | titlecase }}</span>
+              @if (user.is_buyer && user.is_seller) {
+                <button class="role-switch" [disabled]="switchingRole" (click)="switchRole()" [title]="switchingRole ? 'Switching...' : 'Switch role'">{{ switchingRole ? 'Switching...' : 'Switch' }}</button>
+              }
+            }
 
             <!-- Cart -->
             <a routerLink="/app/cart" class="action-link cart-link" [class.has-items]="(cartItemCount$ | async) ?? 0 > 0" aria-label="Cart">
@@ -115,7 +119,9 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
                 <circle cx="20" cy="21" r="1"></circle>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
               </svg>
-              <span class="cart-count" *ngIf="(cartItemCount$ | async) ?? 0 > 0">{{ cartItemCount$ | async }}</span>
+              @if ((cartItemCount$ | async) ?? 0 > 0) {
+                <span class="cart-count">{{ cartItemCount$ | async }}</span>
+              }
             </a>
 
             <!-- Notifications -->
@@ -124,26 +130,35 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              <span class="notification-badge" *ngIf="(unreadNotificationsCount$ | async) ?? 0 > 0">{{ unreadNotificationsCount$ | async }}</span>
+              @if ((unreadNotificationsCount$ | async) ?? 0 > 0) {
+                <span class="notification-badge">{{ unreadNotificationsCount$ | async }}</span>
+              }
             </a>
 
             <!-- User Menu -->
-            <div class="user-menu" *ngIf="currentUser$ | async as user; else loginButton">
-              <button class="user-avatar" type="button" (click)="toggleUserMenu()" [attr.aria-expanded]="userMenuOpen" aria-haspopup="menu" aria-controls="user-dropdown">
-                <img *ngIf="user.profile_picture_url" [src]="user.profile_picture_url" [alt]="user.username" class="avatar-img">
-                <div *ngIf="!user.profile_picture_url" class="avatar-placeholder" aria-hidden="true">
-                  {{ (user.username || 'U').charAt(0).toUpperCase() }}
-                </div>
-              </button>
+            @if (currentUser$ | async; as user) {
+              <div class="user-menu">
+                <button class="user-avatar" type="button" (click)="toggleUserMenu()" [attr.aria-expanded]="userMenuOpen" aria-haspopup="menu" aria-controls="user-dropdown">
+                  @if (user.profile_picture_url) {
+                    <img [src]="user.profile_picture_url" [alt]="user.username" class="avatar-img">
+                  }
+                  @if (!user.profile_picture_url) {
+                    <div class="avatar-placeholder" aria-hidden="true">
+                      {{ (user.username || 'U').charAt(0).toUpperCase() }}
+                    </div>
+                  }
+                </button>
               
               <div id="user-dropdown" class="user-dropdown" [class.open]="userMenuOpen">
                 <div class="dropdown-header">
                   <strong>{{ user.username }}</strong>
                   <small>{{ user.email }}</small>
-                  <div *ngIf="user.is_buyer && user.is_seller" class="role-segment" role="tablist" aria-label="Switch role">
-                    <button type="button" class="segment-btn" [class.active]="access.role === 'buyer'" role="tab" [attr.aria-selected]="access.role === 'buyer'" (click)="switchRoleTo('buyer')">Buyer</button>
-                    <button type="button" class="segment-btn" [class.active]="access.role === 'seller'" role="tab" [attr.aria-selected]="access.role === 'seller'" (click)="switchRoleTo('seller')">Seller</button>
-                  </div>
+                  @if (user.is_buyer && user.is_seller) {
+                    <div class="role-segment" role="tablist" aria-label="Switch role">
+                      <button type="button" class="segment-btn" [class.active]="access.role === 'buyer'" role="tab" [attr.aria-selected]="access.role === 'buyer'" (click)="switchRoleTo('buyer')">Buyer</button>
+                      <button type="button" class="segment-btn" [class.active]="access.role === 'seller'" role="tab" [attr.aria-selected]="access.role === 'seller'" (click)="switchRoleTo('seller')">Seller</button>
+                    </div>
+                  }
                 </div>
                 <a routerLink="/app/dashboard" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -172,18 +187,17 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
                   Orders
                 </a>
                 <a routerLink="/app/seller/listings" class="dropdown-item">
-                  <span *ngIf="access.isSeller; else noSellerLink">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
-                    <line x1="7" y1="8" x2="17" y2="8"></line>
-                    <line x1="7" y1="12" x2="17" y2="12"></line>
-                    <line x1="7" y1="16" x2="13" y2="16"></line>
-                  </svg>
-                  Listings
-                  </span>
-                  <ng-template #noSellerLink>
+                  @if (access.isSeller) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                      <line x1="7" y1="8" x2="17" y2="8"></line>
+                      <line x1="7" y1="12" x2="17" y2="12"></line>
+                      <line x1="7" y1="16" x2="13" y2="16"></line>
+                    </svg>
+                    Listings
+                  } @else {
                     <span class="text-gray-400">Listings (seller only)</span>
-                  </ng-template>
+                  }
                 </a>
                 <a routerLink="/app/settings" class="dropdown-item">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -202,25 +216,28 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
                   Logout
                 </button>
               </div>
-            </div>
-
-            <ng-template #loginButton>
+              </div>
+            } @else {
               <app-button variant="primary" size="sm" (clicked)="goToLogin()">
                 Sign In
               </app-button>
-            </ng-template>
+            }
 
             <!-- Mobile Menu Toggle -->
             <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen" aria-controls="app-mobile-menu" aria-label="Toggle menu">
-              <svg *ngIf="!mobileMenuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-              <svg *ngIf="mobileMenuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+              @if (!mobileMenuOpen) {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              }
+              @if (mobileMenuOpen) {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              }
             </button>
           </div>
         </div>
@@ -230,9 +247,11 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
       <app-breadcrumbs></app-breadcrumbs>
 
       <!-- Beta banner (feature-flagged) -->
-      <div *ngIf="flags.isEnabled('beta_banner')" class="mx-auto max-w-6xl px-4 lg:px-8 py-2 text-center text-sm bg-gradient-to-r from-markt-primary/10 to-markt-accent/10 text-markt-dark border border-markt-border/40 rounded-xl mt-2">
-        You’re using the new navigation. Share feedback anytime!
-      </div>
+      @if (flags.isEnabled('beta_banner')) {
+        <div class="mx-auto max-w-6xl px-4 lg:px-8 py-2 text-center text-sm bg-gradient-to-r from-markt-primary/10 to-markt-accent/10 text-markt-dark border border-markt-border/40 rounded-xl mt-2">
+          You're using the new navigation. Share feedback anytime!
+        </div>
+      }
 
       <!-- Mobile Menu -->
       <div class="mobile-menu-backdrop" [class.open]="mobileMenuOpen || searchOverlayOpen" (click)="mobileMenuOpen ? toggleMobileMenu() : closeSearchOverlay()"></div>
@@ -335,11 +354,13 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
           </a>
-          <a *ngIf="access.isSeller" routerLink="/app/seller/listings/create" class="qa-item" title="New Listing">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-            </svg>
-          </a>
+          @if (access.isSeller) {
+            <a routerLink="/app/seller/listings/create" class="qa-item" title="New Listing">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+            </a>
+          }
         </div>
       </div>
     </div>

@@ -19,7 +19,9 @@ export type ButtonType = 'button' | 'submit' | 'reset';
       [attr.aria-describedby]="ariaDescribedby"
       [attr.aria-busy]="loading"
     >
-      <span *ngIf="loading" class="loading-spinner"></span>
+      @if (loading) {
+        <span class="loading-spinner"></span>
+      }
       <ng-content></ng-content>
     </button>
   `,

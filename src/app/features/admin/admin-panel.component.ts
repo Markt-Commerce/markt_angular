@@ -265,6 +265,12 @@ export class AdminPanelComponent implements OnInit {
 
   // State properties
   loading = false;
+  loadingUsers = false;
+  loadingReports = false;
+  loadingModeration = false;
+  loadingAnalytics = false;
+  loadingPaymentStats = false;
+  loadingSystemHealth = false;
 
   ngOnInit(): void {
     this.loadAdminData();
@@ -274,76 +280,90 @@ export class AdminPanelComponent implements OnInit {
   }
 
   private loadAdminData(): void {
-    this.loading = true;
-
     // Load users
+    this.loadingUsers = true;
     this.apiService.getAdminUsers().subscribe({
       next: (response) => {
         this.users = response.data?.items || [];
+        this.loadingUsers = false;
       },
       error: (error) => {
         console.error('Error loading admin users:', error);
         this.users = [];
+        this.loadingUsers = false;
       }
     });
 
     // Load reports
+    this.loadingReports = true;
     this.apiService.getAdminReports().subscribe({
       next: (response) => {
         this.reports = response.data?.items || [];
+        this.loadingReports = false;
       },
       error: (error) => {
         console.error('Error loading admin reports:', error);
         this.reports = [];
+        this.loadingReports = false;
       }
     });
 
     // Load moderation queue
+    this.loadingModeration = true;
     this.apiService.getModerationQueue().subscribe({
       next: (response) => {
         this.moderationQueue = response.data?.items || [];
-        this.loading = false;
+        this.loadingModeration = false;
       },
       error: (error) => {
         console.error('Error loading moderation queue:', error);
         this.moderationQueue = [];
-        this.loading = false;
+        this.loadingModeration = false;
       }
     });
   }
 
   private loadPlatformAnalytics(): void {
+    this.loadingAnalytics = true;
     this.apiService.getPlatformAnalytics().subscribe({
       next: (response) => {
         this.platformAnalytics = response.data || {};
+        this.loadingAnalytics = false;
       },
       error: (error) => {
         console.error('Error loading platform analytics:', error);
         this.platformAnalytics = {};
+        this.loadingAnalytics = false;
       }
     });
   }
 
   private loadPaymentStats(): void {
+    this.loadingPaymentStats = true;
     this.apiService.getPaymentStats().subscribe({
       next: (response) => {
         this.paymentStats = response.data || {};
+        this.loadingPaymentStats = false;
       },
       error: (error) => {
         console.error('Error loading payment stats:', error);
         this.paymentStats = {};
+        this.loadingPaymentStats = false;
       }
     });
   }
 
   private loadSystemHealth(): void {
+    this.loadingSystemHealth = true;
     this.apiService.healthCheck().subscribe({
       next: (response) => {
         this.systemHealth = response.data || {};
+        this.loadingSystemHealth = false;
       },
       error: (error) => {
         console.error('Error loading system health:', error);
         this.systemHealth = { status: 'error', database: 'error', api: 'error' };
+        this.loadingSystemHealth = false;
       }
     });
   }

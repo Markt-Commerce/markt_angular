@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faChartLine,
@@ -11,7 +11,7 @@ import {
   faArrowUp,
   faArrowDown,
   faEye,
-  faTimesCircle,
+  faBell,
   faUser,
   faStore,
   faCalendar,
@@ -20,7 +20,13 @@ import {
   faHeart,
   faShare,
   faEllipsisH,
-  faArrowRight
+  faArrowRight,
+  faPlus,
+  faEnvelope,
+  faExclamationTriangle,
+  faCheckCircle,
+  faUserPlus,
+  faCamera
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/services/auth.service';
 import { OrderService } from '../../core/services/order.service';
@@ -35,7 +41,7 @@ import { ApiService } from '../../core/services/api.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FontAwesomeModule],
+  imports: [CommonModule, FontAwesomeModule, RouterModule],
   template: `
     <div class="space-y-6">
       <!-- Welcome Section -->
@@ -107,7 +113,7 @@ import { ApiService } from '../../core/services/api.service';
         <div class="bg-white rounded-lg shadow p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <fa-icon [icon]="faTimesCircle" class="w-6 h-6"></fa-icon>
+              <fa-icon [icon]="faBell" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Notifications</p>
@@ -128,7 +134,7 @@ import { ApiService } from '../../core/services/api.service';
         <div class="bg-white rounded-lg shadow p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-              <fa-icon [icon]="faTimesCircle" class="w-6 h-6"></fa-icon>
+              <fa-icon [icon]="faEnvelope" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Messages</p>
@@ -147,55 +153,57 @@ import { ApiService } from '../../core/services/api.service';
       </div>
 
       <!-- Seller Stats (if seller) -->
-      <div *ngIf="isSeller" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
-              <fa-icon [icon]="faStore" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Products</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalProducts }}</p>
+      @if (isSeller) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                <fa-icon [icon]="faStore" class="w-6 h-6"></fa-icon>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Products</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalProducts }}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">
-              <fa-icon [icon]="faChartLine" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Sales</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalSales | currency:'NGN' }}</p>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">
+                <fa-icon [icon]="faChartLine" class="w-6 h-6"></fa-icon>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Sales</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalSales | currency:'NGN' }}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-orange-100 text-orange-600">
-              <fa-icon [icon]="faStar" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Rating</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.averageRating }}</p>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                <fa-icon [icon]="faStar" class="w-6 h-6"></fa-icon>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Rating</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.averageRating }}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-pink-100 text-pink-600">
-              <fa-icon [icon]="faUsers" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Customers</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalCustomers }}</p>
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-pink-100 text-pink-600">
+                <fa-icon [icon]="faUsers" class="w-6 h-6"></fa-icon>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Customers</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalCustomers }}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- Recent Activity -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -205,43 +213,49 @@ import { ApiService } from '../../core/services/api.service';
             <h3 class="text-lg font-medium text-gray-900">Recent Orders</h3>
           </div>
           <div class="p-6">
-            <div *ngIf="recentOrders.length === 0" class="text-center py-8">
-              <fa-icon [icon]="faBox" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-              <p class="text-gray-500">No orders yet</p>
-              <a
-                routerLink="/app/marketplace"
-                class="mt-2 inline-block text-markt-primary hover:text-markt-secondary font-medium"
-              >
-                Start shopping <fa-icon [icon]="faArrowRight"></fa-icon>
-              </a>
-            </div>
-            <div *ngFor="let order of recentOrders.slice(0, 5)" class="flex items-center py-3 border-b border-gray-100 last:border-b-0">
-              <div class="flex-shrink-0">
-                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                  <fa-icon [icon]="faBox" class="w-5 h-5 text-gray-600"></fa-icon>
+            @if (recentOrders.length === 0) {
+              <div class="text-center py-8">
+                <fa-icon [icon]="faBox" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
+                <p class="text-gray-500">No orders yet</p>
+                <a
+                  routerLink="/app/marketplace"
+                  class="mt-2 inline-block text-markt-primary hover:text-markt-secondary font-medium"
+                >
+                  Start shopping <fa-icon [icon]="faArrowRight"></fa-icon>
+                </a>
+              </div>
+            }
+            @for (order of recentOrders.slice(0, 5); track order.id) {
+              <div class="flex items-center py-3 border-b border-gray-100 last:border-b-0">
+                <div class="flex-shrink-0">
+                  <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <fa-icon [icon]="faBox" class="w-5 h-5 text-gray-600"></fa-icon>
+                  </div>
+                </div>
+                <div class="ml-4 flex-1">
+                  <p class="text-sm font-medium text-gray-900">Order #{{ order.order_number }}</p>
+                  <p class="text-sm text-gray-500">{{ order.total | currency:'NGN' }}</p>
+                </div>
+                <div class="ml-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [ngClass]="getOrderStatusClasses(order.status)"
+                  >
+                    {{ getOrderStatusDisplay(order.status) }}
+                  </span>
                 </div>
               </div>
-              <div class="ml-4 flex-1">
-                <p class="text-sm font-medium text-gray-900">Order #{{ order.order_number }}</p>
-                <p class="text-sm text-gray-500">{{ order.total | currency:'NGN' }}</p>
-              </div>
-              <div class="ml-4">
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                  [ngClass]="getOrderStatusClasses(order.status)"
+            }
+            @if (recentOrders.length > 5) {
+              <div class="mt-4 text-center">
+                <a
+                  routerLink="/app/orders"
+                  class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
                 >
-                  {{ getOrderStatusDisplay(order.status) }}
-                </span>
+                  View all orders <fa-icon [icon]="faArrowRight"></fa-icon>
+                </a>
               </div>
-            </div>
-            <div *ngIf="recentOrders.length > 5" class="mt-4 text-center">
-              <a
-                routerLink="/app/orders"
-                class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
-              >
-                View all orders <fa-icon [icon]="faArrowRight"></fa-icon>
-              </a>
-            </div>
+            }
           </div>
         </div>
 
@@ -251,32 +265,40 @@ import { ApiService } from '../../core/services/api.service';
             <h3 class="text-lg font-medium text-gray-900">Recent Notifications</h3>
           </div>
           <div class="p-6">
-            <div *ngIf="recentNotifications.length === 0" class="text-center py-8">
-              <fa-icon [icon]="faTimesCircle" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-              <p class="text-gray-500">No notifications</p>
-            </div>
-            <div *ngFor="let notification of recentNotifications.slice(0, 5)" class="flex items-start py-3 border-b border-gray-100 last:border-b-0">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <fa-icon [icon]="getNotificationIcon(notification.type)" class="w-4 h-4 text-gray-600"></fa-icon>
+            @if (recentNotifications.length === 0) {
+              <div class="text-center py-8">
+                <fa-icon [icon]="faBell" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
+                <p class="text-gray-500">No notifications</p>
+              </div>
+            }
+            @for (notification of recentNotifications.slice(0, 5); track notification.id) {
+              <div class="flex items-start py-3 border-b border-gray-100 last:border-b-0">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <fa-icon [icon]="getNotificationIcon(notification.type)" class="w-4 h-4 text-gray-600"></fa-icon>
+                  </div>
                 </div>
+                <div class="ml-3 flex-1">
+                  <p class="text-sm text-gray-900">{{ notification.message }}</p>
+                  <p class="text-xs text-gray-500">{{ formatTimestamp(notification.created_at) }}</p>
+                </div>
+                @if (!notification.is_read) {
+                  <div class="ml-2">
+                    <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                  </div>
+                }
               </div>
-              <div class="ml-3 flex-1">
-                <p class="text-sm text-gray-900">{{ notification.message }}</p>
-                <p class="text-xs text-gray-500">{{ formatTimestamp(notification.created_at) }}</p>
+            }
+            @if (recentNotifications.length > 5) {
+              <div class="mt-4 text-center">
+                <a
+                  routerLink="/app/notifications"
+                  class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
+                >
+                  View all notifications <fa-icon [icon]="faArrowRight"></fa-icon>
+                </a>
               </div>
-              <div *ngIf="!notification.is_read" class="ml-2">
-                <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-              </div>
-            </div>
-            <div *ngIf="recentNotifications.length > 5" class="mt-4 text-center">
-              <a
-                routerLink="/app/notifications"
-                class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
-              >
-                View all notifications <fa-icon [icon]="faArrowRight"></fa-icon>
-              </a>
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -303,7 +325,7 @@ import { ApiService } from '../../core/services/api.service';
               class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
             >
               <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faTimesCircle" class="w-6 h-6 text-green-600"></fa-icon>
+                <fa-icon [icon]="faEye" class="w-6 h-6 text-green-600"></fa-icon>
               </div>
               <span class="text-sm font-medium text-gray-900">View Requests</span>
             </a>
@@ -332,54 +354,56 @@ import { ApiService } from '../../core/services/api.service';
       </div>
 
       <!-- Seller Quick Actions (if seller) -->
-      <div *ngIf="isSeller" class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Seller Tools</h3>
-        </div>
-        <div class="p-6">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a
-              routerLink="/app/seller/products/create"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faPlus" class="w-6 h-6 text-blue-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Add Product</span>
-            </a>
+      @if (isSeller) {
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Seller Tools</h3>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <a
+                routerLink="/app/seller/products/create"
+                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
+              >
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                  <fa-icon [icon]="faPlus" class="w-6 h-6 text-blue-600"></fa-icon>
+                </div>
+                <span class="text-sm font-medium text-gray-900">Add Product</span>
+              </a>
 
-            <a
-              routerLink="/app/seller/orders"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faBox" class="w-6 h-6 text-green-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Manage Orders</span>
-            </a>
+              <a
+                routerLink="/app/seller/orders"
+                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
+              >
+                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                  <fa-icon [icon]="faBox" class="w-6 h-6 text-green-600"></fa-icon>
+                </div>
+                <span class="text-sm font-medium text-gray-900">Manage Orders</span>
+              </a>
 
-            <a
-              routerLink="/app/seller/analytics"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faChartLine" class="w-6 h-6 text-purple-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Analytics</span>
-            </a>
+              <a
+                routerLink="/app/seller/analytics"
+                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
+              >
+                <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
+                  <fa-icon [icon]="faChartLine" class="w-6 h-6 text-purple-600"></fa-icon>
+                </div>
+                <span class="text-sm font-medium text-gray-900">Analytics</span>
+              </a>
 
-            <a
-              routerLink="/app/seller/products"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faStore" class="w-6 h-6 text-orange-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">My Products</span>
-            </a>
+              <a
+                routerLink="/app/seller/products"
+                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
+              >
+                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+                  <fa-icon [icon]="faStore" class="w-6 h-6 text-orange-600"></fa-icon>
+                </div>
+                <span class="text-sm font-medium text-gray-900">My Products</span>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
   `,
   styles: [`
@@ -400,31 +424,27 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   private apiService = inject(ApiService);
 
-  // Font Awesome Icons
-  faShoppingBag = faShoppingCart;
+  // Font Awesome Icons - properly defined
+  faShoppingCart = faShoppingCart;
   faBox = faBox;
   faHeart = faHeart;
-  faMessageCircle = faTimesCircle;
-  faBell = faTimesCircle;
-  faTrendingUp = faChartLine;
+  faEnvelope = faEnvelope;
+  faBell = faBell;
+  faChartLine = faChartLine;
   faUsers = faUsers;
   faStore = faStore;
-  faFileText = faTimesCircle;
-  faPlus = faTimesCircle;
+  faPlus = faPlus;
   faEye = faEye;
   faClock = faClock;
-  faCheckCircle = faTimesCircle;
-  faExclamationTriangle = faTimesCircle;
+  faCheckCircle = faCheckCircle;
+  faExclamationTriangle = faExclamationTriangle;
   faArrowUp = faArrowUp;
   faArrowDown = faArrowDown;
   faDollarSign = faDollarSign;
-  faChartLine = faChartLine;
   faStar = faStar;
-  faShoppingCart = faShoppingCart;
-  faUserPlus = faUser;
-  faCamera = faTimesCircle;
-  faTimesCircle = faTimesCircle;
   faUser = faUser;
+  faUserPlus = faUserPlus;
+  faCamera = faCamera;
   faArrowRight = faArrowRight;
 
   // Data
@@ -437,6 +457,12 @@ export class DashboardComponent implements OnInit {
   recentRequests: any[] = [];
   notifications: any[] = [];
   loading = true;
+  
+  // Individual loading states
+  loadingUser = false;
+  loadingOrders = false;
+  loadingRequests = false;
+  loadingNotifications = false;
 
   // Stats
   orderStats = {
@@ -458,85 +484,73 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadDashboardData(): void {
-    this.loading = true;
-    
     // Load user profile
+    this.loadingUser = true;
     this.apiService.getProfile().subscribe({
       next: (response) => {
         this.user = response.data;
-        this.loading = false;
+        this.loadingUser = false;
       },
       error: (error) => {
         console.error('Error loading user profile:', error);
-        this.loading = false;
+        this.loadingUser = false;
       }
     });
 
     // Load recent orders
+    this.loadingOrders = true;
     this.apiService.getMyOrders({ limit: 5 }).subscribe({
       next: (response) => {
         this.recentOrders = response.data?.items || [];
+        this.loadingOrders = false;
       },
       error: (error) => {
         console.error('Error loading recent orders:', error);
         this.recentOrders = [];
+        this.loadingOrders = false;
       }
     });
 
     // Load recent requests
+    this.loadingRequests = true;
     this.apiService.getMyRequests({ limit: 5 }).subscribe({
       next: (response) => {
         this.recentRequests = response.data?.items || [];
+        this.loadingRequests = false;
       },
       error: (error) => {
         console.error('Error loading recent requests:', error);
         this.recentRequests = [];
+        this.loadingRequests = false;
       }
     });
 
     // Load notifications
+    this.loadingNotifications = true;
     this.apiService.getNotifications({ limit: 5 }).subscribe({
       next: (response) => {
         this.notifications = response.data || [];
+        this.recentNotifications = this.notifications;
+        this.unreadNotifications = this.notifications.filter(n => !n.is_read).length;
+        this.loadingNotifications = false;
       },
       error: (error) => {
         console.error('Error loading notifications:', error);
         this.notifications = [];
+        this.recentNotifications = [];
+        this.loadingNotifications = false;
       }
     });
-  }
 
-  private loadRecentData(): void {
-    // Load recent orders
-    this.orderService.getOrders$().subscribe(orders => {
-      this.recentOrders = orders.slice(0, 5);
+    // Load cart item count
+    this.cartService.getCartItemCount$().subscribe(count => {
+      this.cartItemCount = count;
     });
 
-    // Load recent notifications
-    this.notificationService.getNotifications$().subscribe(notifications => {
-      this.recentNotifications = notifications.slice(0, 5);
+    // Load unread message count
+    this.chatService.getUnreadCount$().subscribe(count => {
+      this.unreadMessages = count;
     });
-
-    // Load order statistics
-    this.orderService.getOrderStatistics().subscribe(stats => {
-      this.orderStats = stats;
-    });
-
-    // Load seller statistics if seller
-    if (this.isSeller) {
-      this.loadSellerStats();
-    }
-  }
-
-  private loadSellerStats(): void {
-    // This would typically come from the seller service
-    // For now, using mock data
-    this.sellerStats = {
-      totalProducts: 12,
-      totalSales: 150000,
-      averageRating: 4.5,
-      totalCustomers: 45
-    };
   }
 
   getUserDisplayName(): string {
@@ -579,9 +593,9 @@ export class DashboardComponent implements OnInit {
   getNotificationIcon(type: string): any {
     const iconMap: Record<string, any> = {
       'order': this.faBox,
-      'message': this.faMessageCircle,
+      'message': this.faEnvelope,
       'like': this.faHeart,
-      'comment': this.faMessageCircle,
+      'comment': this.faEnvelope,
       'follow': this.faUserPlus,
       'product': this.faStore,
       'payment': this.faDollarSign,
@@ -604,4 +618,4 @@ export class DashboardComponent implements OnInit {
       return `${diffInDays}d ago`;
     }
   }
-} 
+}

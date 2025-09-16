@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { combineLatest } from 'rxjs';
@@ -22,7 +22,8 @@ import {
   faMapMarkerAlt,
   faClock,
   faUser,
-  faStore
+  faStore,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { CartService } from '../../core/services/cart.service';
@@ -39,7 +40,7 @@ import { SocialService } from '../../core/services/social.service';
 @Component({
   selector: 'app-marketplace',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, RouterModule],
   template: `
     <div class="container mx-auto px-4 lg:px-8 space-y-8 animate-fade-in-up">
       <!-- Header -->
@@ -123,19 +124,18 @@ import { SocialService } from '../../core/services/social.service';
             <div>
               <h3 class="text-lg font-bold text-markt-dark mb-4">Categories</h3>
               <div class="space-y-2">
-                <label 
-                  *ngFor="let category of categories" 
-                  class="flex items-center"
-                >
-                  <input 
-                    type="checkbox" 
-                    [value]="category.id"
-                    [(ngModel)]="selectedCategories"
-                    (change)="onCategoryChange()"
-                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
-                  >
-                  <span class="ml-2 text-sm text-markt-dark">{{ category.name }}</span>
-                </label>
+                @for (category of categories; track category.id) {
+                  <label class="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      [value]="category.id"
+                      [checked]="selectedCategories.includes(category.id)"
+                      (change)="onCategoryToggle(category.id, $event)"
+                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
+                    >
+                    <span class="ml-2 text-sm text-markt-dark">{{ category.name }}</span>
+                  </label>
+                }
               </div>
             </div>
 
@@ -170,23 +170,22 @@ import { SocialService } from '../../core/services/social.service';
             <div>
               <h3 class="text-lg font-bold text-markt-dark mb-4">Rating</h3>
               <div class="space-y-2">
-                <label 
-                  *ngFor="let rating of [4, 3, 2, 1]" 
-                  class="flex items-center"
-                >
-                  <input 
-                    type="radio" 
-                    [value]="rating"
-                    [(ngModel)]="selectedRating"
-                    (change)="onRatingChange()"
-                    name="rating"
-                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
-                  >
-                  <span class="ml-2 text-sm text-markt-dark">
-                    <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                    {{ rating }}+ stars
-                  </span>
-                </label>
+                @for (rating of [4, 3, 2, 1]; track rating) {
+                  <label class="flex items-center">
+                    <input 
+                      type="radio" 
+                      [value]="rating"
+                      [checked]="selectedRating === rating"
+                      (change)="onRatingChange(rating)"
+                      name="rating"
+                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
+                    >
+                    <span class="ml-2 text-sm text-markt-dark flex items-center">
+                      <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
+                      {{ rating }}+ stars
+                    </span>
+                  </label>
+                }
               </div>
             </div>
 
@@ -194,19 +193,18 @@ import { SocialService } from '../../core/services/social.service';
             <div>
               <h3 class="text-lg font-bold text-markt-dark mb-4">Location</h3>
               <div class="space-y-2">
-                <label 
-                  *ngFor="let location of locations" 
-                  class="flex items-center"
-                >
-                  <input 
-                    type="checkbox" 
-                    [value]="location"
-                    [(ngModel)]="selectedLocations"
-                    (change)="onLocationChange()"
-                    class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
-                  >
-                  <span class="ml-2 text-sm text-markt-dark">{{ location }}</span>
-                </label>
+                @for (location of locations; track location) {
+                  <label class="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      [value]="location"
+                      [checked]="selectedLocations.includes(location)"
+                      (change)="onLocationToggle(location, $event)"
+                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
+                    >
+                    <span class="ml-2 text-sm text-markt-dark">{{ location }}</span>
+                  </label>
+                }
               </div>
             </div>
 
@@ -223,211 +221,259 @@ import { SocialService } from '../../core/services/social.service';
         <!-- Products Grid -->
         <div class="flex-1">
           <!-- Loading State -->
-          <div *ngIf="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div *ngFor="let item of [1,2,3,4,5,6,8]" class="bg-white rounded-3xl border border-markt-border/30 shadow-sm animate-pulse">
-              <div class="h-48 bg-gray-200 rounded-t-lg"></div>
-              <div class="p-4 space-y-3">
-                <div class="h-4 bg-gray-200 rounded"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div class="h-6 bg-gray-200 rounded w-1/2"></div>
-              </div>
+          @if (isLoading) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              @for (item of [1,2,3,4,5,6,8]; track item) {
+                <div class="bg-white rounded-3xl border border-markt-border/30 shadow-sm animate-pulse">
+                  <div class="h-48 bg-gray-200 rounded-t-lg"></div>
+                  <div class="p-4 space-y-3">
+                    <div class="h-4 bg-gray-200 rounded"></div>
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              }
             </div>
-          </div>
+          }
 
           <!-- Products -->
-          <div 
-            *ngIf="!isLoading && products.length > 0"
-                         [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 'space-y-4'"
-          >
+          @if (!isLoading && products.length > 0) {
             <div 
-              *ngFor="let product of products"
-              [ngClass]="viewMode === 'grid' ? 'group bg-white rounded-3xl border border-markt-border/30 overflow-hidden shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all h-full flex flex-col' : 'group bg-white rounded-3xl border border-markt-border/30 p-4 shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all'"
+              [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 'space-y-4'"
             >
-              <!-- Grid View -->
-              <div *ngIf="viewMode === 'grid'" class="relative">
-                <img 
-                  [src]="media.getPrimaryUrl(product?.images?.[0])"
-                  [attr.srcset]="media.getSrcSet(product?.images?.[0])"
-                  [attr.sizes]="media.gridSizes()"
-                  [alt]="product.name"
-                  loading="lazy"
-                  decoding="async"
-                  class="w-full aspect-[4/3] object-cover"
+              @for (product of products; track product.id) {
+                <div 
+                  [ngClass]="viewMode === 'grid' ? 'group bg-white rounded-3xl border border-markt-border/30 overflow-hidden shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all h-full flex flex-col' : 'group bg-white rounded-3xl border border-markt-border/30 p-4 shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all'"
                 >
-                <!-- Badges -->
-                <div class="absolute top-2 left-2 flex gap-2">
-                  <span *ngIf="(product.compare_at_price ?? 0) > (product.price ?? 0)" class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
-                    -{{ getDiscountPercent(product) }}%
-                  </span>
-                  <span *ngIf="product.stock === 0" class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Out of stock</span>
-                </div>
-                <div class="absolute top-2 right-2">
-                  <button 
-                    (click)="toggleWishlist(product)"
-                    class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                    [class.text-red-500]="isInWishlist(product)"
-                    [class.text-gray-400]="!isInWishlist(product)"
-                    aria-label="Toggle wishlist"
-                  >
-                    <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
-                  </button>
-                </div>
-                                                   <div class="p-5 flex-1 flex flex-col">
-                   <h3 class="text-base font-semibold text-markt-dark mb-1 line-clamp-2 group-hover:text-markt-primary transition-colors">{{ product.name }}</h3>
-                   <p class="text-sm text-markt-muted mb-3 line-clamp-2">{{ product.description }}</p>
-                   <div class="mt-auto pt-2">
-                  <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xl font-extrabold text-markt-dark">{{ product.price | currency:(product.currency || 'NGN') }}</span>
-                      <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-sm text-gray-400 line-through">{{ product.compare_at_price | currency:(product.currency || 'NGN') }}</span>
-                    </div>
-                    <div class="flex items-center text-sm text-gray-600">
-                      <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                      <span class="ml-1">{{ (product.rating || 0) | number:'1.1-1' }}</span>
-                    </div>
-                  </div>
-                  <div class="flex items-center justify-between mb-3" *ngIf="product.seller as s">
-                    <div class="flex items-center gap-2 text-sm">
-                      <img [src]="s.profile_picture_url || '/markt-text-logo.png'" [alt]="s.shop_name" class="w-6 h-6 rounded-full object-cover">
-                      <span class="text-gray-700 truncate max-w-[10rem] flex items-center gap-1">
-                        {{ s.shop_name }}
-                        <span *ngIf="s.is_verified" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
-                      </span>
-                    </div>
-                    <div class="text-xs text-gray-500">{{ s.location }}</div>
-                  </div>
-                                      <div class="flex gap-2">
-                      <a [routerLink]="['/app/marketplace/product', product.id]" class="flex-1 inline-flex items-center justify-center h-10 rounded-xl border border-markt-border/40 px-3 text-sm font-semibold text-markt-dark hover:bg-markt-light/50 transition-colors" aria-label="View details">
-                        View
-                      </a>
-                  <button 
-                        *ngIf="access.isBuyer && product.stock > 0"
-                    (click)="addToCart(product)"
-                        class="flex-1 inline-flex items-center justify-center h-10 rounded-xl bg-markt-primary text-white px-3 text-sm font-semibold hover:bg-markt-secondary transition-colors shadow-sm hover:shadow-md"
-                        aria-label="Add to cart"
-                  >
-                    <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
-                        Add
-                  </button>
-                    </div>
-                   </div>
-                </div>
-              </div>
-
-              <!-- List View -->
-              <div *ngIf="viewMode === 'list'" class="flex space-x-4">
-                <img 
-                  [src]="media.getPrimaryUrl(product?.images?.[0])" 
-                  [attr.srcset]="media.getSrcSet(product?.images?.[0])"
-                  [attr.sizes]="media.listThumbSizes()"
-                  [alt]="product.name"
-                  loading="lazy"
-                  decoding="async"
-                  class="w-28 h-28 object-cover rounded-lg"
-                >
-                <div class="flex-1">
-                  <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                      <h3 class="text-lg font-semibold text-markt-dark mb-1">{{ product.name }}</h3>
-                      <p class="text-sm text-markt-muted mb-2 line-clamp-2">{{ product.description }}</p>
-                      <div class="flex items-center space-x-4 text-sm text-markt-muted">
-                        <span class="flex items-center">
-                          <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
-                          <span class="flex items-center gap-1">
-                          {{ product.seller?.shop_name }}
-                            <span *ngIf="product.seller?.is_verified" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
+                  <!-- Grid View -->
+                  @if (viewMode === 'grid') {
+                    <div class="relative">
+                      <img 
+                        [src]="getProductImageUrl(product.images?.[0])"
+                        [alt]="product.name"
+                        loading="lazy"
+                        decoding="async"
+                        class="w-full aspect-[4/3] object-cover"
+                      >
+                      <!-- Badges -->
+                      <div class="absolute top-2 left-2 flex gap-2">
+                        @if ((product.compare_at_price ?? 0) > (product.price ?? 0)) {
+                          <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+                            -{{ getDiscountPercent(product) }}%
                           </span>
-                        </span>
-                        <span class="flex items-center">
-                          <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
-                          {{ product.seller?.location }}
-                        </span>
-                        <span class="flex items-center">
-                          <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
-                          {{ product.rating }}
-                        </span>
+                        }
+                        @if (product.stock === 0) {
+                          <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Out of stock</span>
+                        }
                       </div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <span *ngIf="product.seller?.policies?.shipping" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Shipping: {{ product.seller?.policies?.shipping }}</span>
-                        <span *ngIf="product.seller?.policies?.returns" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Returns: {{ product.seller?.policies?.returns }}</span>
-                      </div>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-xl font-extrabold text-markt-dark">
-                        {{ product.price | currency:(product.currency || 'NGN') }}
-                      </div>
-                      <div *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-sm text-gray-400 line-through">
-                        {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
-                      </div>
-                      <div class="flex items-center space-x-2 mt-2">
+                      <div class="absolute top-2 right-2">
                         <button 
                           (click)="toggleWishlist(product)"
-                          class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                           [class.text-red-500]="isInWishlist(product)"
+                          [class.text-gray-400]="!isInWishlist(product)"
+                          aria-label="Toggle wishlist"
                         >
                           <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
                         </button>
-                        <button 
-                          *ngIf="access.isBuyer"
-                          (click)="addToCart(product)"
-                          class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition"
-                        >
-                          <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
-                          Add to Cart
-                        </button>
-                        <a *ngIf="product.seller?.id" [routerLink]="['/app/chat']" [queryParams]="{ user: product.seller.id, product: product.id }" class="text-markt-primary text-sm underline ml-2">Message seller</a>
                       </div>
                     </div>
-                  </div>
+                    <div class="p-5 flex-1 flex flex-col">
+                      <h3 class="text-base font-semibold text-markt-dark mb-1 line-clamp-2 group-hover:text-markt-primary transition-colors">{{ product.name }}</h3>
+                      <p class="text-sm text-markt-muted mb-3 line-clamp-2">{{ product.description }}</p>
+                      <div class="mt-auto pt-2">
+                        <div class="flex items-center justify-between mb-3">
+                          <div class="flex items-center gap-2">
+                            <span class="text-xl font-extrabold text-markt-dark">{{ product.price | currency:(product.currency || 'NGN') }}</span>
+                            @if (product.compare_at_price && product.compare_at_price > product.price) {
+                              <span class="text-sm text-gray-400 line-through">{{ product.compare_at_price | currency:(product.currency || 'NGN') }}</span>
+                            }
+                          </div>
+                          <div class="flex items-center text-sm text-gray-600">
+                            <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
+                            <span class="ml-1">{{ (product.rating || 0) | number:'1.1-1' }}</span>
+                          </div>
+                        </div>
+                        @if (product.seller; as s) {
+                          <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2 text-sm">
+                              <img [src]="s.profile_picture_url || '/markt-text-logo.png'" [alt]="s.shop_name" class="w-6 h-6 rounded-full object-cover">
+                              <span class="text-gray-700 truncate max-w-[10rem] flex items-center gap-1">
+                                {{ s.shop_name }}
+                                @if (s.is_verified) {
+                                  <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
+                                }
+                              </span>
+                            </div>
+                            <div class="text-xs text-gray-500">{{ s.location }}</div>
+                          </div>
+                        }
+                        <div class="flex gap-2">
+                          <a [routerLink]="['/app/marketplace/product', product.id]" class="flex-1 inline-flex items-center justify-center h-10 rounded-xl border border-markt-border/40 px-3 text-sm font-semibold text-markt-dark hover:bg-markt-light/50 transition-colors" aria-label="View details">
+                            View
+                          </a>
+                          @if (access.isBuyer && product.stock > 0) {
+                            <button 
+                              (click)="addToCart(product)"
+                              class="flex-1 inline-flex items-center justify-center h-10 rounded-xl bg-markt-primary text-white px-3 text-sm font-semibold hover:bg-markt-secondary transition-colors shadow-sm hover:shadow-md"
+                              aria-label="Add to cart"
+                            >
+                              <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
+                              Add
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- List View -->
+                  @if (viewMode === 'list') {
+                    <div class="flex space-x-4">
+                      <img 
+                        [src]="getProductImageUrl(product.images?.[0])" 
+                        [alt]="product.name"
+                        loading="lazy"
+                        decoding="async"
+                        class="w-28 h-28 object-cover rounded-lg"
+                      >
+                      <div class="flex-1">
+                        <div class="flex items-start justify-between">
+                          <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-markt-dark mb-1">{{ product.name }}</h3>
+                            <p class="text-sm text-markt-muted mb-2 line-clamp-2">{{ product.description }}</p>
+                            <div class="flex items-center space-x-4 text-sm text-markt-muted">
+                              <span class="flex items-center">
+                                <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
+                                <span class="flex items-center gap-1">
+                                  {{ product.seller?.shop_name }}
+                                  @if (product.seller?.is_verified) {
+                                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
+                                  }
+                                </span>
+                              </span>
+                              <span class="flex items-center">
+                                <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
+                                {{ product.seller?.location }}
+                              </span>
+                              <span class="flex items-center">
+                                <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
+                                {{ product.rating }}
+                              </span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                              @if (product.seller?.policies?.shipping) {
+                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Shipping: {{ product.seller?.policies?.shipping }}</span>
+                              }
+                              @if (product.seller?.policies?.returns) {
+                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Returns: {{ product.seller?.policies?.returns }}</span>
+                              }
+                            </div>
+                          </div>
+                          <div class="text-right">
+                            <div class="text-xl font-extrabold text-markt-dark">
+                              {{ product.price | currency:(product.currency || 'NGN') }}
+                            </div>
+                            @if (product.compare_at_price && product.compare_at_price > product.price) {
+                              <div class="text-sm text-gray-400 line-through">
+                                {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
+                              </div>
+                            }
+                            <div class="flex items-center space-x-2 mt-2">
+                              <button 
+                                (click)="toggleWishlist(product)"
+                                class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                [class.text-red-500]="isInWishlist(product)"
+                              >
+                                <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
+                              </button>
+                              @if (access.isBuyer) {
+                                <button 
+                                  (click)="addToCart(product)"
+                                  class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition"
+                                >
+                                  <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
+                                  Add to Cart
+                                </button>
+                              }
+                              @if (product.seller?.id) {
+                                <a [routerLink]="['/app/chat']" [queryParams]="{ user: product.seller.id, product: product.id }" class="text-markt-primary text-sm underline ml-2">Message seller</a>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
                 </div>
-              </div>
+              }
             </div>
-          </div>
+          }
+
+          <!-- Error State -->
+          @if (errorMessage) {
+            <div class="text-center py-12">
+              <fa-icon [icon]="faExclamationTriangle" class="w-12 h-12 text-red-400 mx-auto mb-4"></fa-icon>
+              <h3 class="text-lg font-bold text-red-600 mb-2">Error loading products</h3>
+              <p class="text-gray-600 mb-4">{{ errorMessage }}</p>
+              <button 
+                (click)="loadMarketplaceData()"
+                class="px-4 py-2 bg-markt-primary text-white rounded-lg hover:bg-markt-secondary transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          }
 
           <!-- Empty State -->
-          <div *ngIf="!isLoading && products.length === 0" class="text-center py-12">
-            <fa-icon [icon]="faSearch" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-            <h3 class="text-lg font-bold text-markt-dark mb-2">No products found</h3>
-            <p class="text-markt-muted mb-4">Try adjusting your search or filters to find what you're looking for.</p>
-            <button 
-              (click)="clearFilters()"
-              class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition"
-            >
-              Clear Filters
-            </button>
-          </div>
+          @if (!isLoading && !errorMessage && products.length === 0) {
+            <div class="text-center py-12">
+              <fa-icon [icon]="faSearch" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
+              <h3 class="text-lg font-bold text-markt-dark mb-2">No products found</h3>
+              <p class="text-markt-muted mb-4">Try adjusting your search or filters to find what you're looking for.</p>
+              <button 
+                (click)="clearFilters()"
+                class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition"
+              >
+                Clear Filters
+              </button>
+            </div>
+          }
 
           <!-- Pagination -->
-          <div *ngIf="totalPages > 1" class="mt-8 flex items-center justify-center">
-            <nav class="flex items-center space-x-2">
-              <button 
-                (click)="previousPage()"
-                [disabled]="currentPage === 1"
-                class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
-              <button 
-                *ngFor="let page of getPageNumbers()"
-                (click)="goToPage(page)"
-                [class.bg-markt-primary]="page === currentPage"
-                [class.text-white]="page === currentPage"
-                [class.text-markt-dark]="page !== currentPage"
-                class="px-3 py-2 text-sm font-semibold bg-white border border-markt-border rounded-md hover:border-markt-primary"
-              >
-                {{ page }}
-              </button>
-              
-              <button 
-                (click)="nextPage()"
-                [disabled]="currentPage === totalPages"
-                class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </nav>
-          </div>
+          @if (totalPages > 1) {
+            <div class="mt-8 flex items-center justify-center">
+              <nav class="flex items-center space-x-2">
+                <button 
+                  (click)="previousPage()"
+                  [disabled]="currentPage === 1"
+                  class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                @for (page of getPageNumbers(); track page) {
+                  <button 
+                    (click)="goToPage(page)"
+                    [class.bg-markt-primary]="page === currentPage"
+                    [class.text-white]="page === currentPage"
+                    [class.text-markt-dark]="page !== currentPage"
+                    class="px-3 py-2 text-sm font-semibold bg-white border border-markt-border rounded-md hover:border-markt-primary"
+                  >
+                    {{ page }}
+                  </button>
+                }
+                
+                <button 
+                  (click)="nextPage()"
+                  [disabled]="currentPage === totalPages"
+                  class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -480,6 +526,7 @@ export class MarketplaceComponent implements OnInit {
   faClock = faClock;
   faUser = faUser;
   faStore = faStore;
+  faExclamationTriangle = faExclamationTriangle;
 
   // State
   products: any[] = [];
@@ -487,6 +534,7 @@ export class MarketplaceComponent implements OnInit {
   isLoading = false;
   viewMode: 'grid' | 'list' = 'grid';
   showFilters = false;
+  errorMessage = '';
   
   // Search and filters
   searchQuery = '';
@@ -528,7 +576,7 @@ export class MarketplaceComponent implements OnInit {
     this.setupSubscriptions();
   }
 
-  private loadMarketplaceData(): void {
+  loadMarketplaceData(): void {
     this.isLoading = true;
     
     // Optimized: Combined marketplace data loading with social posts
@@ -554,6 +602,7 @@ export class MarketplaceComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
+        this.errorMessage = 'Failed to load products. Please try again.';
         // Fallback: some environments may not expose /products/marketplace; use generic /products
         this.observableUtils.createSafeObservable({
           source: this.apiService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }),
@@ -565,11 +614,13 @@ export class MarketplaceComponent implements OnInit {
             this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
             this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
             this.isLoading = false;
+            this.errorMessage = ''; // Clear error if fallback succeeds
           },
           errorSetter: (fallbackErr: string | null) => {
             console.error('Error loading products (fallback):', fallbackErr);
             this.products = [];
             this.isLoading = false;
+            this.errorMessage = 'Failed to load products. Please check your connection and try again.';
           }
         });
       }
@@ -594,7 +645,12 @@ export class MarketplaceComponent implements OnInit {
     this.loadProducts();
   }
 
-  onCategoryChange(): void {
+  onCategoryToggle(categoryId: string, event: any): void {
+    if (event.target.checked) {
+      this.selectedCategories = [...this.selectedCategories, categoryId];
+    } else {
+      this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
+    }
     this.currentPage = 1;
     this.loadProducts();
   }
@@ -604,12 +660,18 @@ export class MarketplaceComponent implements OnInit {
     this.loadProducts();
   }
 
-  onRatingChange(): void {
+  onRatingChange(rating: number): void {
+    this.selectedRating = rating;
     this.currentPage = 1;
     this.loadProducts();
   }
 
-  onLocationChange(): void {
+  onLocationToggle(location: string, event: any): void {
+    if (event.target.checked) {
+      this.selectedLocations = [...this.selectedLocations, location];
+    } else {
+      this.selectedLocations = this.selectedLocations.filter(loc => loc !== location);
+    }
     this.currentPage = 1;
     this.loadProducts();
   }
@@ -702,7 +764,6 @@ export class MarketplaceComponent implements OnInit {
 
   toggleWishlist(product: any): void {
     // This would typically call a wishlist service
-    
   }
 
   isInWishlist(product: any): boolean {
@@ -746,13 +807,19 @@ export class MarketplaceComponent implements OnInit {
     return pages;
   }
 
-  // image helpers centralized in MediaOptimizationService
-
   getDiscountPercent(product: any): number {
     const price = Number(product?.price ?? 0);
     const compare = Number(product?.compare_at_price ?? 0);
     if (!compare || compare <= price) return 0;
     return Math.round(((compare - price) / compare) * 100);
+  }
+
+  // Helper method for getting product image URLs
+  getProductImageUrl(imageData: any): string {
+    if (!imageData) {
+      return '/assets/images/product-placeholder.png';
+    }
+    return this.media.getPrimaryUrl(imageData);
   }
 
   // Additional marketplace endpoint integrations

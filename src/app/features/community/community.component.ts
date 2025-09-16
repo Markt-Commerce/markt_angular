@@ -859,8 +859,11 @@ export class CommunityComponent implements OnInit {
   ];
 
   posts: CommunityPost[] = [];
-
   discussions: CommunityDiscussion[] = [];
+  
+  // Loading states
+  loadingPosts = false;
+  loadingDiscussions = false;
 
   ngOnInit(): void {
     this.initForm();
@@ -876,13 +879,16 @@ export class CommunityComponent implements OnInit {
 
   private loadPosts(): void {
     // Load posts from the API
+    this.loadingPosts = true;
     this.apiService.getPersonalizedFeed().subscribe({
       next: (response) => {
         this.posts = response.data || [];
+        this.loadingPosts = false;
       },
       error: (error) => {
         console.error('Error loading posts:', error);
         this.posts = [];
+        this.loadingPosts = false;
       }
     });
   }
@@ -904,12 +910,15 @@ export class CommunityComponent implements OnInit {
       time: this.timeFilter
     };
     
+    this.loadingPosts = true;
     this.apiService.getPersonalizedFeed(params).subscribe({
       next: (response) => {
         this.posts = response.data || [];
+        this.loadingPosts = false;
       },
       error: (error) => {
         console.error('Error applying filters:', error);
+        this.loadingPosts = false;
       }
     });
   }

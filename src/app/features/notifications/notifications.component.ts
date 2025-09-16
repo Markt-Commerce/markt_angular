@@ -42,6 +42,39 @@ interface UINotification {
         </div>
       </div>
 
+      <!-- Error Message -->
+      @if (errorMessage) {
+        <div class="mb-6">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-sm text-red-800">{{ errorMessage }}</span>
+              </div>
+              <button (click)="errorMessage = ''" class="text-red-400 hover:text-red-600">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Loading State -->
+      @if (loading) {
+        <div class="mb-6">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center">
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+              <span class="text-sm text-blue-800">Loading notifications...</span>
+            </div>
+          </div>
+        </div>
+      }
+
       <div class="notifications-content">
         <!-- Filter Tabs -->
         <div class="filter-tabs">
@@ -76,34 +109,40 @@ interface UINotification {
         </div>
 
         <!-- Notifications List -->
-        <div class="notifications-list" *ngIf="filteredNotifications.length > 0; else emptyState">
-          <div 
-            class="notification-item" 
-            *ngFor="let notification of filteredNotifications"
-            [class.unread]="!notification.read"
-            [class]="'type-' + notification.type"
-          >
-            <div class="notification-icon">
-              <svg *ngIf="notification.type === 'success'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22,4 12,14.01 9,11.01"></polyline>
-              </svg>
-              <svg *ngIf="notification.type === 'warning'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <svg *ngIf="notification.type === 'error'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
-              <svg *ngIf="notification.type === 'info'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-            </div>
+        @if (filteredNotifications.length > 0) {
+          <div class="notifications-list">
+            @for (notification of filteredNotifications; track notification.id) {
+              <div 
+                class="notification-item" 
+                [class.unread]="!notification.read"
+                [class]="'type-' + notification.type"
+              >
+                <div class="notification-icon">
+                  @if (notification.type === 'success') {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22,4 12,14.01 9,11.01"></polyline>
+                    </svg>
+                  } @else if (notification.type === 'warning') {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  } @else if (notification.type === 'error') {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                  } @else if (notification.type === 'info') {
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  }
+                </div>
 
             <div class="notification-content">
               <div class="notification-header">
@@ -112,15 +151,17 @@ interface UINotification {
               </div>
               <p class="notification-message">{{ notification.message }}</p>
               
-              <div class="notification-actions" *ngIf="notification.action_url">
-                <app-button 
-                  variant="primary" 
-                  size="sm"
-                  [routerLink]="[notification.action_url]"
-                >
-                  {{ notification.action_text || 'View Details' }}
-                </app-button>
-              </div>
+              @if (notification.action_url) {
+                <div class="notification-actions">
+                  <app-button 
+                    variant="primary" 
+                    size="sm"
+                    [routerLink]="[notification.action_url]"
+                  >
+                    {{ notification.action_text || 'View Details' }}
+                  </app-button>
+                </div>
+              }
             </div>
 
             <div class="notification-actions-menu">
@@ -146,22 +187,26 @@ interface UINotification {
               </button>
             </div>
           </div>
-        </div>
-
-        <!-- Empty State -->
-        <ng-template #emptyState>
+            }
+          </div>
+        } @else {
           <div class="empty-state">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
             <h3>No notifications</h3>
-            <p *ngIf="activeFilter === 'all'">You're all caught up! Check back later for new updates.</p>
-            <p *ngIf="activeFilter === 'unread'">No unread notifications at the moment.</p>
-            <p *ngIf="activeFilter === 'orders'">No order-related notifications.</p>
-            <p *ngIf="activeFilter === 'messages'">No message notifications.</p>
+            @if (activeFilter === 'all') {
+              <p>You're all caught up! Check back later for new updates.</p>
+            } @else if (activeFilter === 'unread') {
+              <p>No unread notifications at the moment.</p>
+            } @else if (activeFilter === 'orders') {
+              <p>No order-related notifications.</p>
+            } @else if (activeFilter === 'messages') {
+              <p>No message notifications.</p>
+            }
           </div>
-        </ng-template>
+        }
       </div>
     </div>
   `,
@@ -430,6 +475,7 @@ export class NotificationsComponent implements OnInit {
   activeFilter = 'all';
   hasUnreadNotifications = false;
   loading = false;
+  errorMessage = '';
 
   get filteredNotifications(): UINotification[] {
     switch (this.activeFilter) {
@@ -449,14 +495,37 @@ export class NotificationsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loading = true;
+    this.errorMessage = '';
+    
     // initial load
-    this.notificationService.getNotifications().subscribe();
-    this.notificationService.getUnreadCount().subscribe();
+    this.notificationService.getNotifications().subscribe({
+      next: () => {
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading notifications:', error);
+        this.errorMessage = 'Failed to load notifications. Please try again.';
+        this.loading = false;
+      }
+    });
+    
+    this.notificationService.getUnreadCount().subscribe({
+      error: (error) => {
+        console.error('Error loading unread count:', error);
+      }
+    });
 
     // subscribe to realtime/state
-    this.notificationService.getNotifications$().subscribe(list => {
-      this.notifications = (list || []).map(n => this.mapNotification(n));
-      this.hasUnreadNotifications = this.unreadCount > 0;
+    this.notificationService.getNotifications$().subscribe({
+      next: (list) => {
+        this.notifications = (list || []).map(n => this.mapNotification(n));
+        this.hasUnreadNotifications = this.unreadCount > 0;
+      },
+      error: (error) => {
+        console.error('Error in notifications stream:', error);
+        this.errorMessage = 'Failed to load notifications. Please try again.';
+      }
     });
   }
 
