@@ -70,8 +70,29 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
         </button>
       </div>
 
+      <!-- Error Message -->
+      @if (errorMessage) {
+        <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div class="flex items-center">
+            <fa-icon [icon]="faExclamationTriangle" class="w-5 h-5 text-red-400 mr-2"></fa-icon>
+            <span class="text-sm text-red-800">{{ errorMessage }}</span>
+            <button (click)="errorMessage = ''" class="ml-auto text-red-400 hover:text-red-600">
+              <fa-icon [icon]="faTimes" class="w-4 h-4"></fa-icon>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Loading State -->
+      @if (loadingCart) {
+        <div class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-markt-primary"></div>
+          <p class="mt-2 text-gray-600">Loading cart...</p>
+        </div>
+      }
+
       <!-- Empty Cart -->
-      @if (cartItemCount === 0) {
+      @if (!loadingCart && cartItemCount === 0 && !errorMessage) {
         <div class="text-center py-12">
           <fa-icon [icon]="faShoppingBag" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
           <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
@@ -102,7 +123,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                       <!-- Product Image -->
                       <div class="flex-shrink-0">
                         <img 
-                          [src]="getProductImageUrl(item.product.images?.[0])" 
+                          [src]="getProductImageUrl(item.product.images && item.product.images[0])" 
                           [alt]="item.product.name"
                           class="w-20 h-20 object-cover rounded-lg"
                           loading="lazy"
@@ -127,7 +148,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                             <div class="flex items-center space-x-4 text-sm text-gray-500">
                               <span class="flex items-center">
                                 <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
-                                {{ item.product.seller?.shop_name }}
+                                {{ item.product.seller && item.product.seller.shop_name }}
                               </span>
                             </div>
                           </div>
@@ -150,18 +171,26 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                             <div class="flex items-center border border-gray-300 rounded-md">
                               <button 
                                 (click)="updateQuantity(item.id, item.quantity - 1)"
-                                [disabled]="item.quantity <= 1"
+                                [disabled]="item.quantity <= 1 || updatingQuantity"
                                 class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
+                                @if (updatingQuantity) {
+                                  <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                } @else {
+                                  <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
+                                }
                               </button>
                               <span class="px-4 py-2 text-sm font-medium">{{ item.quantity }}</span>
                               <button 
                                 (click)="updateQuantity(item.id, item.quantity + 1)"
-                                [disabled]="item.quantity >= 99"
+                                [disabled]="item.quantity >= 99 || updatingQuantity"
                                 class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
+                                @if (updatingQuantity) {
+                                  <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                } @else {
+                                  <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
+                                }
                               </button>
                             </div>
                           </div>
@@ -177,10 +206,15 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                             </button>
                             <button 
                               (click)="removeItem(item.id)"
-                              class="text-gray-400 hover:text-red-500 transition-colors"
+                              [disabled]="removingItem"
+                              class="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Remove Item"
                             >
-                              <fa-icon [icon]="faTrash" class="w-5 h-5"></fa-icon>
+                              @if (removingItem) {
+                                <div class="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                              } @else {
+                                <fa-icon [icon]="faTrash" class="w-5 h-5"></fa-icon>
+                              }
                             </button>
                           </div>
                         </div>
@@ -334,7 +368,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
             @for (product of recentlyViewed; track product.id) {
               <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
                 <img 
-                  [src]="getProductImageUrl(product.images?.[0])" 
+                  [src]="getProductImageUrl(product.images && product.images[0])" 
                   [alt]="product.name"
                   class="w-full h-48 object-cover"
                   loading="lazy"
@@ -405,6 +439,10 @@ export class CartComponent implements OnInit {
   canCheckout = true;
   errorMessage = '';
   loading = false;
+  loadingCart = false;
+  loadingRecentlyViewed = false;
+  updatingQuantity = false;
+  removingItem = false;
   selectedAddress: Address | null = null;
   selectedPaymentMethod = '';
   orderNotes = '';
@@ -420,19 +458,27 @@ export class CartComponent implements OnInit {
   }
 
   private loadCart(): void {
+    this.loadingCart = true;
+    this.errorMessage = '';
+    
     this.observableUtils.createSafeObservable({
       source: this.cartService.getCart(),
-      loadingSetter: (loading: boolean) => this.loading = loading,
+      loadingSetter: (loading: boolean) => this.loadingCart = loading,
       successHandler: (response: any) => {
         if (response.success) {
           this.cartItems = response.data.items || [];
           this.cartItemCount = response.data.total_items || 0;
           this.calculateTotals();
+          this.errorMessage = '';
+        } else {
+          this.errorMessage = response.message || 'Failed to load cart';
         }
       },
       errorSetter: (error: string | null) => {
         console.error('Error loading cart:', error);
-        this.errorMessage = 'Error loading cart. Please try again.';
+        this.errorMessage = error || 'Error loading cart. Please try again.';
+        this.cartItems = [];
+        this.cartItemCount = 0;
       }
     });
   }
@@ -495,38 +541,72 @@ export class CartComponent implements OnInit {
       return;
     }
 
+    if (newQuantity > 99) {
+      this.errorMessage = 'Maximum quantity is 99';
+      return;
+    }
+
+    this.updatingQuantity = true;
+    this.errorMessage = '';
+
     this.observableUtils.createSafeObservable({
       source: this.cartService.updateCartItem(itemId, newQuantity),
       successHandler: (response: any) => {
         if (response.success) {
-          this.loadCart(); // Refresh cart data
+          // Update the specific item in the local array instead of reloading everything
+          const itemIndex = this.cartItems.findIndex(item => item.id === itemId);
+          if (itemIndex !== -1) {
+            this.cartItems[itemIndex].quantity = newQuantity;
+            this.calculateTotals();
+          }
+          this.errorMessage = '';
+        } else {
+          this.errorMessage = response.message || 'Failed to update quantity';
         }
       },
       errorSetter: (error: string | null) => {
         console.error('Error updating quantity:', error);
-        this.errorMessage = 'Error updating quantity. Please try again.';
-      }
+        this.errorMessage = error || 'Error updating quantity. Please try again.';
+      },
+      loadingSetter: (loading: boolean) => this.updatingQuantity = loading
     });
   }
 
   removeItem(itemId: string): void {
+    this.removingItem = true;
+    this.errorMessage = '';
+
     this.observableUtils.createSafeObservable({
       source: this.cartService.removeCartItem(itemId),
       successHandler: (response: any) => {
         if (response.success) {
-          this.loadCart(); // Refresh cart data
+          // Remove the item from local array instead of reloading everything
+          this.cartItems = this.cartItems.filter(item => item.id !== itemId);
+          this.cartItemCount = this.cartItems.reduce((total, item) => total + item.quantity, 0);
+          this.calculateTotals();
+          this.errorMessage = '';
+        } else {
+          this.errorMessage = response.message || 'Failed to remove item';
         }
       },
       errorSetter: (error: string | null) => {
         console.error('Error removing item:', error);
-        this.errorMessage = 'Error removing item. Please try again.';
-      }
+        this.errorMessage = error || 'Error removing item. Please try again.';
+      },
+      loadingSetter: (loading: boolean) => this.removingItem = loading
     });
   }
 
   moveToWishlist(item: CartItem): void {
-    // Add to wishlist - implement when service is available
+    if (!item || !item.product || !item.product.id) {
+      this.errorMessage = 'Invalid item data';
+      return;
+    }
+
+    // Move to wishlist (local implementation - API integration pending)
+    // For now, just remove from cart and show notification
     this.removeItem(item.id);
+    this.errorMessage = `${item.product.name} moved to wishlist`;
   }
 
   addToCart(productId: string, quantity = 1): void {

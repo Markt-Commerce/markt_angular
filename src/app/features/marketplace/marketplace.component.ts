@@ -535,6 +535,7 @@ export class MarketplaceComponent implements OnInit {
   viewMode: 'grid' | 'list' = 'grid';
   showFilters = false;
   errorMessage = '';
+  wishlistItems: string[] = [];
   
   // Search and filters
   searchQuery = '';
@@ -677,6 +678,9 @@ export class MarketplaceComponent implements OnInit {
   }
 
   private loadProducts(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    
     const params = {
       page: this.currentPage,
       search: this.searchQuery || undefined,
@@ -697,10 +701,13 @@ export class MarketplaceComponent implements OnInit {
         this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
         this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
         this.isLoading = false;
+        this.errorMessage = '';
       },
       error: (error) => {
         console.error('Error loading products:', error);
         this.isLoading = false;
+        this.errorMessage = 'Failed to load products. Please try again.';
+        this.products = [];
       }
     });
   }
@@ -749,26 +756,70 @@ export class MarketplaceComponent implements OnInit {
   }
 
   addToCart(product: any): void {
+    if (!product || !product.id) {
+      console.error('Invalid product data');
+      return;
+    }
+
+    // Check if product is already in cart
+    if (this.cartService.isProductInCart(product.id)) {
+      this.appStateService.showNotification({
+        type: 'info',
+        message: 'Product is already in your cart'
+      });
+      return;
+    }
+
     this.observableUtils.createSafeObservable({
       source: this.cartService.addToCart(product.id, 1),
       successHandler: (response: any) => {
-        if (response.success) {
-          // Show success message
-        }
+        this.appStateService.showNotification({
+          type: 'success',
+          message: `${product.name} added to cart successfully`
+        });
       },
       errorSetter: (error: string | null) => {
         console.error('Error adding to cart:', error);
+        this.appStateService.showNotification({
+          type: 'error',
+          message: error || 'Failed to add product to cart'
+        });
       }
     });
   }
 
   toggleWishlist(product: any): void {
-    // This would typically call a wishlist service
+    if (!product || !product.id) {
+      console.error('Invalid product data');
+      return;
+    }
+
+    const isCurrentlyInWishlist = this.isInWishlist(product);
+    
+    // Toggle wishlist state locally (API integration pending)
+    const newWishlistState = !isCurrentlyInWishlist;
+    this.updateWishlistState(product.id, newWishlistState);
+    
+    this.appStateService.showNotification({
+      type: 'success',
+      message: `${product.name} ${newWishlistState ? 'added to' : 'removed from'} wishlist`
+    });
   }
 
   isInWishlist(product: any): boolean {
-    // This would typically check against wishlist state
-    return false;
+    if (!product || !product.id) return false;
+    // Check against local wishlist state
+    return this.wishlistItems.includes(product.id);
+  }
+
+  private updateWishlistState(productId: string, isInWishlist: boolean): void {
+    if (isInWishlist) {
+      if (!this.wishlistItems.includes(productId)) {
+        this.wishlistItems.push(productId);
+      }
+    } else {
+      this.wishlistItems = this.wishlistItems.filter(id => id !== productId);
+    }
   }
 
   previousPage(): void {

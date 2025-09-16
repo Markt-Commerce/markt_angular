@@ -48,19 +48,37 @@ import { ApiService } from '../../core/services/api.service';
       <div class="bg-gradient-to-r from-markt-primary to-markt-secondary rounded-lg p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold">
-              {{ isSeller ? 'Seller Dashboard' : 'My Dashboard' }}
-            </h1>
-            <p class="text-markt-light mt-1">
-              {{ isSeller ? "Here's what's happening with your shop today" : "Here's what's happening with your account today" }}
-            </p>
+            @if (loadingUser) {
+              <div class="animate-pulse">
+                <div class="h-8 w-64 bg-white/20 rounded mb-2"></div>
+                <div class="h-4 w-80 bg-white/10 rounded"></div>
+              </div>
+            } @else if (errorUser) {
+              <div>
+                <h1 class="text-2xl font-bold">Dashboard</h1>
+                <p class="text-markt-light mt-1">Unable to load user information</p>
+              </div>
+            } @else {
+              <div>
+                <h1 class="text-2xl font-bold">
+                  {{ isSeller ? 'Seller Dashboard' : 'My Dashboard' }}
+                </h1>
+                <p class="text-markt-light mt-1">
+                  {{ isSeller ? "Here's what's happening with your shop today" : "Here's what's happening with your account today" }}
+                </p>
+              </div>
+            }
           </div>
           <div class="hidden md:block">
-            <img
-              [src]="user?.profile_picture_url || '/markt-text-logo.png'"
-              alt="Profile"
-              class="w-16 h-16 rounded-full border-4 border-white/20"
-            >
+            @if (loadingUser) {
+              <div class="w-16 h-16 rounded-full border-4 border-white/20 bg-white/10 animate-pulse"></div>
+            } @else {
+              <img
+                [src]="user?.profile_picture_url || '/markt-text-logo.png'"
+                alt="Profile"
+                class="w-16 h-16 rounded-full border-4 border-white/20"
+              >
+            }
           </div>
         </div>
       </div>
@@ -74,8 +92,22 @@ import { ApiService } from '../../core/services/api.service';
               <fa-icon [icon]="isSeller ? faStore : faShoppingCart" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalProducts : cartItemCount }}</p>
+              @if (loadingCart) {
+                <div class="animate-pulse">
+                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              } @else if (errorCart) {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
+                  <p class="text-sm text-red-600">Error loading</p>
+                </div>
+              } @else {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
+                  <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalProducts : cartItemCount }}</p>
+                </div>
+              }
             </div>
           </div>
           <div class="mt-4">
@@ -95,8 +127,22 @@ import { ApiService } from '../../core/services/api.service';
               <fa-icon [icon]="faBox" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalSales : orderStats.total }}</p>
+              @if (loadingOrders) {
+                <div class="animate-pulse">
+                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              } @else if (errorOrders) {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
+                  <p class="text-sm text-red-600">Error loading</p>
+                </div>
+              } @else {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
+                  <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalSales : orderStats.total }}</p>
+                </div>
+              }
             </div>
           </div>
           <div class="mt-4">
@@ -116,8 +162,22 @@ import { ApiService } from '../../core/services/api.service';
               <fa-icon [icon]="faBell" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Notifications</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ unreadNotifications }}</p>
+              @if (loadingNotifications) {
+                <div class="animate-pulse">
+                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              } @else if (errorNotifications) {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Notifications</p>
+                  <p class="text-sm text-red-600">Error loading</p>
+                </div>
+              } @else {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Notifications</p>
+                  <p class="text-2xl font-semibold text-gray-900">{{ unreadNotifications }}</p>
+                </div>
+              }
             </div>
           </div>
           <div class="mt-4">
@@ -137,8 +197,22 @@ import { ApiService } from '../../core/services/api.service';
               <fa-icon [icon]="faEnvelope" class="w-6 h-6"></fa-icon>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Messages</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ unreadMessages }}</p>
+              @if (loadingMessages) {
+                <div class="animate-pulse">
+                  <div class="h-4 w-20 bg-gray-200 rounded mb-2"></div>
+                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              } @else if (errorMessages) {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Messages</p>
+                  <p class="text-sm text-red-600">Error loading</p>
+                </div>
+              } @else {
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Messages</p>
+                  <p class="text-2xl font-semibold text-gray-900">{{ unreadMessages }}</p>
+                </div>
+              }
             </div>
           </div>
           <div class="mt-4">
@@ -463,6 +537,16 @@ export class DashboardComponent implements OnInit {
   loadingOrders = false;
   loadingRequests = false;
   loadingNotifications = false;
+  loadingCart = false;
+  loadingMessages = false;
+  
+  // Error states
+  errorUser = '';
+  errorOrders = '';
+  errorRequests = '';
+  errorNotifications = '';
+  errorCart = '';
+  errorMessages = '';
 
   // Stats
   orderStats = {
@@ -486,70 +570,109 @@ export class DashboardComponent implements OnInit {
   private loadDashboardData(): void {
     // Load user profile
     this.loadingUser = true;
+    this.errorUser = '';
     this.apiService.getProfile().subscribe({
       next: (response) => {
         this.user = response.data;
         this.loadingUser = false;
+        this.errorUser = '';
       },
       error: (error) => {
         console.error('Error loading user profile:', error);
         this.loadingUser = false;
+        this.errorUser = 'Failed to load user profile';
       }
     });
 
     // Load recent orders
     this.loadingOrders = true;
+    this.errorOrders = '';
     this.apiService.getMyOrders({ limit: 5 }).subscribe({
       next: (response) => {
         this.recentOrders = response.data?.items || [];
+        this.orderStats.total = response.data?.items?.length || 0;
         this.loadingOrders = false;
+        this.errorOrders = '';
       },
       error: (error) => {
         console.error('Error loading recent orders:', error);
         this.recentOrders = [];
+        this.orderStats.total = 0;
         this.loadingOrders = false;
+        this.errorOrders = 'Failed to load orders';
       }
     });
 
     // Load recent requests
     this.loadingRequests = true;
+    this.errorRequests = '';
     this.apiService.getMyRequests({ limit: 5 }).subscribe({
       next: (response) => {
         this.recentRequests = response.data?.items || [];
         this.loadingRequests = false;
+        this.errorRequests = '';
       },
       error: (error) => {
         console.error('Error loading recent requests:', error);
         this.recentRequests = [];
         this.loadingRequests = false;
+        this.errorRequests = 'Failed to load requests';
       }
     });
 
     // Load notifications
     this.loadingNotifications = true;
+    this.errorNotifications = '';
     this.apiService.getNotifications({ limit: 5 }).subscribe({
       next: (response) => {
         this.notifications = response.data || [];
         this.recentNotifications = this.notifications;
         this.unreadNotifications = this.notifications.filter(n => !n.is_read).length;
         this.loadingNotifications = false;
+        this.errorNotifications = '';
       },
       error: (error) => {
         console.error('Error loading notifications:', error);
         this.notifications = [];
         this.recentNotifications = [];
+        this.unreadNotifications = 0;
         this.loadingNotifications = false;
+        this.errorNotifications = 'Failed to load notifications';
       }
     });
 
     // Load cart item count
-    this.cartService.getCartItemCount$().subscribe(count => {
-      this.cartItemCount = count;
+    this.loadingCart = true;
+    this.errorCart = '';
+    this.cartService.getCartItemCount$().subscribe({
+      next: (count) => {
+        this.cartItemCount = count;
+        this.loadingCart = false;
+        this.errorCart = '';
+      },
+      error: (error) => {
+        console.error('Error loading cart count:', error);
+        this.cartItemCount = 0;
+        this.loadingCart = false;
+        this.errorCart = 'Failed to load cart';
+      }
     });
 
     // Load unread message count
-    this.chatService.getUnreadCount$().subscribe(count => {
-      this.unreadMessages = count;
+    this.loadingMessages = true;
+    this.errorMessages = '';
+    this.chatService.getUnreadCount$().subscribe({
+      next: (count) => {
+        this.unreadMessages = count;
+        this.loadingMessages = false;
+        this.errorMessages = '';
+      },
+      error: (error) => {
+        console.error('Error loading message count:', error);
+        this.unreadMessages = 0;
+        this.loadingMessages = false;
+        this.errorMessages = 'Failed to load messages';
+      }
     });
   }
 
