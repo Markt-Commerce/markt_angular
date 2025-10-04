@@ -1,0 +1,307 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <div class="mx-auto">
+    <div class="grid grid-cols-12 gap-8">
+      
+      <!-- Post Content -->
+      <div class="col-span-8">
+        <div class="bg-white rounded-xl shadow-sm border border-border">
+          
+          <!-- Post Header -->
+          <div class="p-6 border-b border-border">
+            <div class="flex items-start justify-between">
+              <div class="flex items-start space-x-3">
+                <img [src]="seller?.avatar" [alt]="seller?.name" class="w-12 h-12 rounded-full">
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-dark">{{ seller?.name }}</h3>
+                    <fa-icon *ngIf="seller?.isVerified" [icon]="faCheckCircle" class="text-primary text-sm"></fa-icon>
+                    <span class="text-muted text-sm">{{ seller?.username }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 mt-1">
+                    <span class="text-sm text-muted">{{ product?.timestamp }}</span>
+                    <span class="text-muted">•</span>
+                    <span class="text-sm text-muted">{{ product?.location }}</span>
+                    <span class="text-muted">•</span>
+                    <span class="text-sm bg-light text-muted px-2 py-1 rounded-full">{{ product?.category }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button 
+                  (click)="toggleFollow()"
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+                  [class.bg-gray-500]="isFollowing"
+                >
+                  <fa-icon [icon]="faUserPlus" class="mr-2"></fa-icon>
+                  {{ isFollowing ? 'Following' : 'Follow' }}
+                </button>
+                <button class="p-2 text-muted hover:text-dark">
+                  <fa-icon [icon]="faEllipsis"></fa-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post Content -->
+          <div class="p-6">
+            <h1 class="text-2xl font-bold text-dark mb-4">{{ product?.title }}</h1>
+            <p class="text-gray-700 mb-6 leading-relaxed whitespace-pre-line">{{ product?.description }}</p>
+
+            <!-- Post Image -->
+            <div class="mb-6">
+              <img 
+                [src]="product?.image" 
+                [alt]="product?.title" 
+                class="w-full h-96 object-cover rounded-lg"
+              />
+            </div>
+
+            <!-- Product Details -->
+            <div class="bg-light rounded-lg p-4 mb-6">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <span class="text-sm text-muted">Price</span>
+                  <p class="font-bold text-xl text-primary">${{ product?.price?.toLocaleString() }}</p>
+                </div>
+                <div>
+                  <span class="text-sm text-muted">Condition</span>
+                  <p class="font-semibold text-dark">{{ product?.condition }}</p>
+                </div>
+                <div>
+                  <span class="text-sm text-muted">Location</span>
+                  <p class="text-dark">{{ product?.location }}</p>
+                </div>
+                <div>
+                  <span class="text-sm text-muted">Availability</span>
+                  <p class="text-green-600 font-medium">{{ product?.availability }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-4 mb-6">
+              <button 
+                (click)="messageSeller()"
+                class="flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-secondary transition-colors"
+              >
+                <fa-icon [icon]="faMessage" class="mr-2"></fa-icon>Message Seller
+              </button>
+              <button 
+                (click)="makeOffer()"
+                class="flex-1 border border-border py-3 rounded-lg font-medium hover:bg-light transition-colors"
+              >
+                <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>Make Offer
+              </button>
+              <button 
+                (click)="toggleBookmark()"
+                class="px-4 py-3 border border-border rounded-lg hover:bg-light transition-colors"
+                [class.bg-primary]="product?.isBookmarked"
+                [class.text-white]="product?.isBookmarked"
+              >
+                <fa-icon [icon]="faBookmark"></fa-icon>
+              </button>
+              <button class="px-4 py-3 border border-border rounded-lg hover:bg-light transition-colors">
+                <fa-icon [icon]="faShare"></fa-icon>
+              </button>
+            </div>
+
+            <!-- Engagement Stats -->
+            <div class="flex items-center justify-between py-4 border-t border-border">
+              <div class="flex items-center space-x-6">
+                <button 
+                  (click)="toggleLike()"
+                  class="flex items-center space-x-2 text-muted hover:text-primary"
+                  [class.text-red-500]="product?.isLiked"
+                >
+                  <fa-icon [icon]="faHeart"></fa-icon>
+                  <span>{{ product?.likes }} likes</span>
+                </button>
+                <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                  <fa-icon [icon]="faComment"></fa-icon>
+                  <span>{{ product?.comments }} comments</span>
+                </button>
+                <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                  <fa-icon [icon]="faShare"></fa-icon>
+                  <span>{{ product?.shares }} shares</span>
+                </button>
+              </div>
+              <div class="flex items-center space-x-2 text-sm text-muted">
+                <span>{{ product?.views }} views</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="border-t border-border">
+            <div class="p-6">
+              <h3 class="font-semibold text-dark mb-4">Comments ({{ product?.comments }})</h3>
+              
+              <!-- Comment Input -->
+              <div class="flex items-start space-x-3 mb-6">
+                <img [src]="currentUser?.avatar || '/Logo.png'" alt="You" class="w-10 h-10 rounded-full">
+                <div class="flex-1">
+                  <textarea 
+                    [(ngModel)]="newComment"
+                    placeholder="Write a comment..." 
+                    class="w-full p-3 border border-border rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                    rows="3"
+                  ></textarea>
+                  <div class="flex justify-between items-center mt-2">
+                    <div class="flex items-center space-x-2 text-sm text-muted">
+                      <button class="hover:text-primary">
+                        <fa-icon [icon]="faImage"></fa-icon>
+                      </button>
+                      <button class="hover:text-primary">
+                        <fa-icon [icon]="faPaperclip"></fa-icon>
+                      </button>
+                    </div>
+                    <button 
+                      (click)="postComment()"
+                      class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary"
+                      [disabled]="!newComment.trim()"
+                    >
+                      Post
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comments List -->
+              <div class="space-y-6">
+                <div 
+                  *ngFor="let comment of comments; trackBy: trackByCommentId" 
+                  class="flex items-start space-x-3"
+                >
+                  <img [src]="comment.author.avatar" [alt]="comment.author.name" class="w-10 h-10 rounded-full">
+                  <div class="flex-1">
+                    <div class="bg-light rounded-lg p-3">
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="font-medium text-dark">{{ comment.author.name }}</span>
+                        <fa-icon *ngIf="comment.author.isVerified" [icon]="faCheckCircle" class="text-primary text-xs"></fa-icon>
+                        <span class="text-sm text-muted">{{ comment.timestamp }}</span>
+                      </div>
+                      <p class="text-gray-700">{{ comment.content }}</p>
+                    </div>
+                    <div class="flex items-center space-x-4 mt-2 text-sm">
+                      <button 
+                        (click)="toggleCommentLike(comment)"
+                        class="text-muted hover:text-primary flex items-center space-x-1"
+                        [class.text-red-500]="comment.isLiked"
+                      >
+                        <fa-icon [icon]="faHeart"></fa-icon>
+                        <span>{{ comment.likes }}</span>
+                      </button>
+                      <button class="text-muted hover:text-primary">Reply</button>
+                    </div>
+                    
+                    <!-- Replies -->
+                    <div *ngIf="comment.replies && comment.replies.length > 0" class="ml-8 mt-4 space-y-4">
+                      <div 
+                        *ngFor="let reply of comment.replies; trackBy: trackByCommentId" 
+                        class="flex items-start space-x-3"
+                      >
+                        <img [src]="reply.author.avatar" [alt]="reply.author.name" class="w-8 h-8 rounded-full">
+                        <div class="flex-1">
+                          <div class="bg-white border border-border rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-1">
+                              <span class="font-medium text-dark">{{ reply.author.name }}</span>
+                              <fa-icon *ngIf="reply.author.isVerified" [icon]="faCheckCircle" class="text-primary text-xs"></fa-icon>
+                              <span class="text-xs bg-primary text-white px-2 py-0.5 rounded-full">OP</span>
+                              <span class="text-sm text-muted">{{ reply.timestamp }}</span>
+                            </div>
+                            <p class="text-gray-700">{{ reply.content }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Load More Comments -->
+              <div class="text-center mt-6">
+                <button class="text-primary hover:text-secondary font-medium">Load more comments</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-span-4 space-y-6">
+        
+        <!-- Seller Info -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6">
+          <h3 class="font-semibold text-dark mb-4">About the Seller</h3>
+          <div class="flex items-center space-x-3 mb-4">
+            <img [src]="seller?.avatar" [alt]="seller?.name" class="w-12 h-12 rounded-full">
+            <div>
+              <h4 class="font-medium text-dark">{{ seller?.name }}</h4>
+              <p class="text-sm text-muted">{{ seller?.school }} • {{ seller?.major }}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="text-center">
+              <div class="font-semibold text-dark">{{ seller?.rating }}</div>
+              <div class="text-sm text-muted">Rating</div>
+            </div>
+            <div class="text-center">
+              <div class="font-semibold text-dark">{{ seller?.sales }}</div>
+              <div class="text-sm text-muted">Sales</div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <button 
+              (click)="viewProfile()"
+              class="w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-secondary"
+            >
+              View Profile
+            </button>
+            <button 
+              (click)="messageSeller()"
+              class="w-full border border-border py-2 rounded-lg font-medium hover:bg-light"
+            >
+              Message
+            </button>
+          </div>
+        </div>
+
+        <!-- Similar Products -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6">
+          <h3 class="font-semibold text-dark mb-4">Similar Products</h3>
+          <div class="space-y-4">
+            <div 
+              *ngFor="let similarProduct of similarProducts; trackBy: trackBySimilarProductId" 
+              (click)="viewSimilarProduct(similarProduct)"
+              class="flex space-x-3 cursor-pointer hover:bg-light p-2 rounded-lg transition-colors"
+            >
+              <img 
+                [src]="similarProduct.image" 
+                [alt]="similarProduct.title" 
+                class="w-16 h-16 object-cover rounded-lg"
+              />
+              <div class="flex-1">
+                <h4 class="font-medium text-dark text-sm">{{ similarProduct.title }}</h4>
+                <p class="text-sm text-muted">${{ similarProduct.price }}</p>
+                <p class="text-xs text-muted">{{ similarProduct.timestamp }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trending Tags -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6">
+          <h3 class="font-semibold text-dark mb-4">Trending on Campus</h3>
+          <div class="flex flex-wrap gap-2">
+            <span 
+              *ngFor="let tag of trendingTags" 
+              class="px-3 py-1 bg-light text-muted rounded-full text-sm cursor-pointer hover:bg-border"
+            >
+              {{ tag }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

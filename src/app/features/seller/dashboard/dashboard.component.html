@@ -1,0 +1,191 @@
+<div class="bg-light min-h-screen p-6">
+  <!-- Welcome Section -->
+  <section class="mb-8">
+    <div class="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-white relative overflow-hidden">
+      <img class="absolute inset-0 w-full h-full object-cover opacity-20" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/347f903e8a-934eda4f341600f4fbb6.png" alt="modern entrepreneur workspace with laptop and business charts, professional office environment" />
+      <div class="relative z-10">
+        <h1 class="text-3xl font-bold mb-2">Welcome back, Alex!</h1>
+        <p class="text-white-90 mb-4">Here's your business overview for today</p>
+        <div class="flex items-center space-x-6">
+          <div>
+            <div class="text-2xl font-bold">${{ stats().todaysRevenue | number }}</div>
+            <div class="text-white-80 text-sm">Today's Revenue</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold">{{ stats().newOrders }}</div>
+            <div class="text-white-80 text-sm">New Orders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Grid -->
+  <section class="grid grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+          <fa-icon [icon]="faDollarSign" class="text-green-600 text-xl"></fa-icon>
+        </div>
+        <span class="text-green-600 text-sm font-medium">+12.5%</span>
+      </div>
+      <div class="text-2xl font-bold text-dark mb-1">${{ stats().totalRevenue | number }}</div>
+      <div class="text-muted text-sm">Total Revenue</div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+          <fa-icon [icon]="faShoppingBag" class="text-blue-600 text-xl"></fa-icon>
+        </div>
+        <span class="text-green-600 text-sm font-medium">+8.2%</span>
+      </div>
+      <div class="text-2xl font-bold text-dark mb-1">{{ stats().totalOrders }}</div>
+      <div class="text-muted text-sm">Total Orders</div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+          <fa-icon [icon]="faEye" class="text-purple-600 text-xl"></fa-icon>
+        </div>
+        <span class="text-green-600 text-sm font-medium">+15.3%</span>
+      </div>
+      <div class="text-2xl font-bold text-dark mb-1">{{ stats().productViews | number }}</div>
+      <div class="text-muted text-sm">Product Views</div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+          <fa-icon [icon]="faPercentage" class="text-orange-600 text-xl"></fa-icon>
+        </div>
+        <span class="text-green-600 text-sm font-medium">+2.1%</span>
+      </div>
+      <div class="text-2xl font-bold text-dark mb-1">{{ stats().conversionRate }}%</div>
+      <div class="text-muted text-sm">Conversion Rate</div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-3 gap-6">
+    <!-- Sales Chart -->
+    <section class="col-span-2 bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-dark">Sales Overview</h2>
+        <select class="border border-border rounded-lg px-3 py-2 text-sm">
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>Last 3 months</option>
+        </select>
+      </div>
+      <div id="sales-chart" class="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+        <div class="text-center text-muted">
+          <fa-icon [icon]="faChartLine" class="text-4xl mb-2"></fa-icon>
+          <p>Sales chart will be displayed here</p>
+          <p class="text-sm">Monthly revenue trends and analytics</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="bg-white rounded-xl p-6 border border-border">
+      <h2 class="text-xl font-semibold text-dark mb-6">Quick Actions</h2>
+      <div class="space-y-4">
+        <button 
+          (click)="navigateToCreateListing()"
+          class="w-full bg-primary text-white px-4 py-3 rounded-lg font-medium hover:bg-secondary transition-colors">
+          <fa-icon [icon]="faPlus" class="mr-2"></fa-icon>
+          New Listing
+        </button>
+        <button 
+          (click)="navigateToAnalytics()"
+          class="w-full border border-border text-dark px-4 py-3 rounded-lg font-medium hover:bg-light transition-colors">
+          <fa-icon [icon]="faChartBar" class="mr-2"></fa-icon>
+          View Analytics
+        </button>
+        <button 
+          (click)="navigateToInventory()"
+          class="w-full border border-border text-dark px-4 py-3 rounded-lg font-medium hover:bg-light transition-colors">
+          <fa-icon [icon]="faWarehouse" class="mr-2"></fa-icon>
+          Manage Inventory
+        </button>
+        <button 
+          (click)="navigateToOrders()"
+          class="w-full border border-border text-dark px-4 py-3 rounded-lg font-medium hover:bg-light transition-colors">
+          <fa-icon [icon]="faShippingFast" class="mr-2"></fa-icon>
+          Ship Orders
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-2 gap-6 mt-6">
+    <!-- Recent Orders -->
+    <section class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-dark">Recent Orders</h2>
+        <span class="text-primary text-sm font-medium hover:underline cursor-pointer" (click)="navigateToOrders()">View All</span>
+      </div>
+      <div class="space-y-4">
+        <div *ngFor="let order of recentOrders()" class="flex items-center justify-between p-4 border border-border rounded-lg">
+          <div class="flex items-center space-x-3">
+            <img [src]="order.customerAvatar" [alt]="order.customerName" class="w-10 h-10 rounded-full">
+            <div>
+              <div class="font-medium text-dark">{{ order.customerName }}</div>
+              <div class="text-sm text-muted">Order #{{ order.orderNumber }}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-medium text-dark">${{ order.total }}</div>
+            <span class="text-xs px-2 py-1 rounded-full"
+                  [class.bg-yellow-100]="order.status === 'pending'"
+                  [class.text-yellow-800]="order.status === 'pending'"
+                  [class.bg-green-100]="order.status === 'shipped'"
+                  [class.text-green-800]="order.status === 'shipped'"
+                  [class.bg-blue-100]="order.status === 'processing'"
+                  [class.text-blue-800]="order.status === 'processing'">
+              {{ getStatusLabel(order.status) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Messages -->
+    <section class="bg-white rounded-xl p-6 border border-border">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-dark">Recent Messages</h2>
+        <span class="text-primary text-sm font-medium hover:underline cursor-pointer" (click)="navigateToMessages()">View All</span>
+      </div>
+      <div class="space-y-4">
+        <div *ngFor="let message of recentMessages()" class="flex items-start space-x-3 p-4 border border-border rounded-lg">
+          <img [src]="message.customerAvatar" [alt]="message.customerName" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <div class="flex items-center justify-between mb-1">
+              <div class="font-medium text-dark">{{ message.customerName }}</div>
+              <div class="text-xs text-muted">{{ message.timeAgo }}</div>
+            </div>
+            <div class="text-sm text-muted">{{ message.message }}</div>
+          </div>
+          <div *ngIf="message.isUnread" class="w-3 h-3 bg-primary rounded-full"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Top Products -->
+  <section class="bg-white rounded-xl p-6 border border-border mt-6">
+    <h2 class="text-xl font-semibold text-dark mb-6">Top Performing Products</h2>
+    <div class="grid grid-cols-4 gap-4">
+      <div *ngFor="let product of topProducts()" class="border border-border rounded-lg p-4">
+        <img [src]="product.image" [alt]="product.name" class="w-full h-32 object-cover rounded-lg mb-3" />
+        <div class="font-medium text-dark mb-1">{{ product.name }}</div>
+        <div class="text-sm text-muted mb-2">{{ product.category }}</div>
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-primary">${{ product.price }}</span>
+          <span class="text-sm text-green-600">+{{ product.sold }} sold</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

@@ -74,6 +74,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'dev-navigation',
+    loadComponent: () => import('./features/dev/dev-navigation/dev-navigation.component').then(m => m.DevNavigationComponent),
+    data: { hideBreadcrumbs: true }
+  },
+  {
     path: 'app',
     canActivate: [AuthGuard],
     loadComponent: () => import('./shared/components/app-layout/app-layout.component').then(m => m.AppLayoutComponent),
@@ -101,6 +106,10 @@ export const routes: Routes = [
           },
           {
             path: 'product/:id',
+            loadComponent: () => import('./features/marketplace/product-listing/product-listing.component').then(m => m.ProductListingComponent)
+          },
+          {
+            path: 'product-detail/:id',
             loadComponent: () => import('./features/marketplace/product-detail/product-detail.component').then(m => m.ProductDetailComponent)
           }
         ]
@@ -175,6 +184,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/orders/orders.component').then(m => m.OrdersComponent)
           },
           {
+            path: 'history',
+            loadComponent: () => import('./features/orders/order-history.component').then(m => m.OrderHistoryComponent)
+          },
+          {
             path: ':id',
             loadComponent: () => import('./features/orders/order-detail/order-detail.component').then(m => m.OrderDetailComponent)
           },
@@ -241,6 +254,30 @@ export const routes: Routes = [
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'shops',
+        loadComponent: () => import('./features/shops/shops.component').then(m => m.ShopsComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'social',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'feed',
+            loadComponent: () => import('./features/social/feed.component').then(m => m.FeedComponent)
+          },
+          {
+            path: 'stories',
+            loadComponent: () => import('./features/social/stories/stories.component').then(m => m.StoriesComponent)
+          }
+        ]
+      },
+      {
+        path: 'admin',
+        loadComponent: () => import('./features/admin/admin-panel.component').then(m => m.AdminPanelComponent),
         canActivate: [AuthGuard]
       },
       {

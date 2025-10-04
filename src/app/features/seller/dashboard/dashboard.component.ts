@@ -1,607 +1,255 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faStar, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBell,
+  faChartLine,
+  faBox,
+  faShoppingCart,
+  faComments,
+  faChartBar,
+  faWarehouse,
+  faCog,
+  faPlus,
+  faDollarSign,
+  faShoppingBag,
+  faEye,
+  faPercentage,
+  faShippingFast,
+  faChevronDown
+} from '@fortawesome/free-solid-svg-icons';
 
 interface DashboardStats {
-  totalSales: number;
+  totalRevenue: number;
   totalOrders: number;
-  pendingOrders: number;
-  totalProducts: number;
-  averageRating: number;
-  monthlyRevenue: number;
+  productViews: number;
+  conversionRate: number;
+  todaysRevenue: number;
+  newOrders: number;
 }
 
 interface RecentOrder {
   id: string;
   orderNumber: string;
   customerName: string;
+  customerAvatar: string;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'shipped' | 'processing';
   date: string;
-  items: number;
+}
+
+interface RecentMessage {
+  id: string;
+  customerName: string;
+  customerAvatar: string;
+  message: string;
+  timeAgo: string;
+  isUnread: boolean;
+}
+
+interface TopProduct {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  image: string;
+  sold: number;
+}
+
+interface SalesData {
+  day: string;
+  revenue: number;
 }
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-seller-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonComponent, FontAwesomeModule],
-  template: `
-    <div class="dashboard-container">
-      <div class="dashboard-header">
-        <h1>Seller Dashboard</h1>
-        <p>Welcome back! Here's what's happening with your shop today.</p>
-      </div>
-
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="error-message">
-        <div class="error-content">
-          <h3>Error loading dashboard data</h3>
-          <p>{{ errorMessage }}</p>
-          <button (click)="loadDashboardData()" class="retry-button">Try Again</button>
-        </div>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <i class="fas fa-money-bill text-green-500"></i>
-          <div class="stat-content">
-            <h3>Total Sales</h3>
-            <p class="stat-value">₦{{ stats.totalSales.toLocaleString() }}</p>
-            <span class="stat-change positive">+12.5% from last month</span>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <i class="fas fa-box text-blue-500"></i>
-          <div class="stat-content">
-            <h3>Total Orders</h3>
-            <p class="stat-value">{{ stats.totalOrders }}</p>
-            <span class="stat-change positive">+8.2% from last month</span>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">⏳</div>
-          <div class="stat-content">
-            <h3>Pending Orders</h3>
-            <p class="stat-value">{{ stats.pendingOrders }}</p>
-            <span class="stat-change neutral">No change</span>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon"><fa-icon [icon]="faStar"></fa-icon></div>
-          <div class="stat-content">
-            <h3>Average Rating</h3>
-            <p class="stat-value">{{ stats.averageRating.toFixed(1) }}</p>
-            <span class="stat-change positive">+0.3 from last month</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <h2>Quick Actions</h2>
-        <div class="actions-grid">
-          <app-button 
-            variant="primary" 
-            size="lg"
-            [routerLink]="['/app/seller/listings/create']"
-          >
-            <span>➕</span>
-            Add New Product
-          </app-button>
-          
-          <app-button 
-            variant="secondary" 
-            size="lg"
-            [routerLink]="['/app/seller/listings']"
-          >
-            <i class="fas fa-clipboard-list"></i>
-            Manage Products
-          </app-button>
-          
-          <app-button 
-            variant="secondary" 
-            size="lg"
-            [routerLink]="['/app/orders']"
-          >
-            <i class="fas fa-box"></i>
-            View Orders
-          </app-button>
-          
-          <app-button 
-            variant="secondary" 
-            size="lg"
-            [routerLink]="['/app/seller/analytics']"
-          >
-            <span>📊</span>
-            View Analytics
-          </app-button>
-        </div>
-      </div>
-
-      <!-- Recent Orders -->
-      <div class="recent-orders">
-        <div class="section-header">
-          <h2>Recent Orders</h2>
-          <app-button 
-            variant="secondary" 
-            size="sm"
-            [outline]="true"
-            [routerLink]="['/app/orders']"
-          >
-            View All Orders
-          </app-button>
-        </div>
-
-        <div class="orders-table">
-          <div class="table-header">
-            <span>Order #</span>
-            <span>Customer</span>
-            <span>Items</span>
-            <span>Total</span>
-            <span>Status</span>
-            <span>Date</span>
-            <span>Actions</span>
-          </div>
-
-          <div class="table-row" *ngFor="let order of recentOrders">
-            <span class="order-number">{{ order.orderNumber }}</span>
-            <span class="customer-name">{{ order.customerName }}</span>
-            <span class="items-count">{{ order.items }} items</span>
-            <span class="order-total">₦{{ order.total.toLocaleString() }}</span>
-            <span class="order-status" [class]="order.status">
-              {{ getStatusLabel(order.status) }}
-            </span>
-            <span class="order-date">{{ formatDate(order.date) }}</span>
-            <div class="order-actions">
-              <app-button 
-                variant="secondary" 
-                size="sm"
-                [outline]="true"
-                [routerLink]="['/app/orders', order.id]"
-              >
-                View
-              </app-button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Performance Chart Placeholder -->
-      <div class="performance-chart">
-        <h2>Sales Performance</h2>
-        <div class="chart-placeholder">
-          <p><fa-icon [icon]="faChartLine"></fa-icon> Sales chart will be displayed here</p>
-          <p>Monthly revenue trends and analytics</p>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .dashboard-container {
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .dashboard-header {
-      margin-bottom: 2rem;
-    }
-
-    .dashboard-header h1 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-
-    .dashboard-header p {
-      color: #7f8c8d;
-      font-size: 1.1rem;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
-
-    .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      transition: transform 0.2s ease;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-2px);
-    }
-
-    .stat-icon {
-      font-size: 2rem;
-      width: 60px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8f9fa;
-      border-radius: 12px;
-    }
-
-    .stat-content h3 {
-      margin: 0 0 0.5rem 0;
-      color: #6c757d;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      margin: 0 0 0.25rem 0;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #2c3e50;
-    }
-
-    .stat-change {
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .stat-change.positive {
-      color: #28a745;
-    }
-
-    .stat-change.negative {
-      color: #dc3545;
-    }
-
-    .stat-change.neutral {
-      color: #6c757d;
-    }
-
-    .quick-actions {
-      margin-bottom: 3rem;
-    }
-
-    .quick-actions h2 {
-      color: #2c3e50;
-      margin-bottom: 1rem;
-    }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .actions-grid app-button {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      justify-content: center;
-    }
-
-    .recent-orders {
-      margin-bottom: 3rem;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .section-header h2 {
-      color: #2c3e50;
-      margin: 0;
-    }
-
-    .orders-table {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .table-header {
-      display: grid;
-      grid-template-columns: 1fr 1fr 0.5fr 1fr 1fr 1fr 0.5fr;
-      gap: 1rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      font-weight: 600;
-      color: #495057;
-      font-size: 0.9rem;
-    }
-
-    .table-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 0.5fr 1fr 1fr 1fr 0.5fr;
-      gap: 1rem;
-      padding: 1rem;
-      border-bottom: 1px solid #e9ecef;
-      align-items: center;
-    }
-
-    .table-row:last-child {
-      border-bottom: none;
-    }
-
-    .table-row:hover {
-      background: #f8f9fa;
-    }
-
-    .order-number {
-      font-weight: 600;
-      color: #007bff;
-    }
-
-    .customer-name {
-      font-weight: 500;
-    }
-
-    .order-total {
-      font-weight: 600;
-      color: #28a745;
-    }
-
-    .order-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-align: center;
-      text-transform: capitalize;
-    }
-
-    .order-status.pending {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .order-status.processing {
-      background: #cce5ff;
-      color: #004085;
-    }
-
-    .order-status.shipped {
-      background: #d1ecf1;
-      color: #0c5460;
-    }
-
-    .order-status.delivered {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .order-status.cancelled {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .order-date {
-      font-size: 0.9rem;
-      color: #6c757d;
-    }
-
-    .performance-chart {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .performance-chart h2 {
-      color: #2c3e50;
-      margin-bottom: 1rem;
-    }
-
-    .chart-placeholder {
-      height: 300px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #f8f9fa;
-      border-radius: 8px;
-      color: #6c757d;
-      text-align: center;
-    }
-
-    .chart-placeholder p {
-      margin: 0.5rem 0;
-      font-size: 1.1rem;
-    }
-
-    .error-message {
-      background: #fee;
-      border: 1px solid #fcc;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .error-content h3 {
-      color: #c33;
-      margin: 0 0 0.5rem 0;
-      font-size: 1.1rem;
-    }
-
-    .error-content p {
-      color: #666;
-      margin: 0 0 1rem 0;
-    }
-
-    .retry-button {
-      background: #e85530;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .retry-button:hover {
-      background: #d63924;
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-container {
-        padding: 1rem;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .actions-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .table-header,
-      .table-row {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-      }
-
-      .table-header {
-        display: none;
-      }
-
-      .table-row {
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        padding: 1rem;
-      }
-    }
-  `]
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
   private apiService = inject(ApiService);
+  private router = inject(Router);
 
-  loading = false;
-  analytics: any = null;
-  topProducts: any[] = [];
-  errorMessage = '';
+  // Font Awesome Icons
+  faBell = faBell;
+  faChartLine = faChartLine;
+  faBox = faBox;
+  faShoppingCart = faShoppingCart;
+  faComments = faComments;
+  faChartBar = faChartBar;
+  faWarehouse = faWarehouse;
+  faCog = faCog;
+  faPlus = faPlus;
+  faDollarSign = faDollarSign;
+  faShoppingBag = faShoppingBag;
+  faEye = faEye;
+  faPercentage = faPercentage;
+  faShippingFast = faShippingFast;
+  faChevronDown = faChevronDown;
 
-  stats: DashboardStats = {
-    totalSales: 1250000,
+  // Signals for reactive state management
+  stats = signal<DashboardStats>({
+    totalRevenue: 18432,
     totalOrders: 156,
-    pendingOrders: 12,
-    totalProducts: 45,
-    averageRating: 4.7,
-    monthlyRevenue: 450000
-  };
+    productViews: 3247,
+    conversionRate: 4.8,
+    todaysRevenue: 2847,
+    newOrders: 23
+  });
 
-  recentOrders: RecentOrder[] = [
+  recentOrders = signal<RecentOrder[]>([
     {
       id: '1',
-      orderNumber: 'ORD-001',
-              customerName: 'Customer',
-      total: 25000,
+      orderNumber: '1234',
+      customerName: 'Sarah Johnson',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
+      total: 89.99,
       status: 'pending',
-      date: '2025-01-03T10:30:00Z',
-      items: 2
+      date: '2024-03-15T10:30:00Z'
     },
     {
       id: '2',
-      orderNumber: 'ORD-002',
-      customerName: 'Jane Smith',
-      total: 15000,
-      status: 'processing',
-      date: '2025-01-03T09:15:00Z',
-      items: 1
+      orderNumber: '1233',
+      customerName: 'Mike Wilson',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-8.jpg',
+      total: 156.50,
+      status: 'shipped',
+      date: '2024-03-15T09:15:00Z'
     },
     {
       id: '3',
-      orderNumber: 'ORD-003',
-      customerName: 'Mike Johnson',
-      total: 35000,
-      status: 'shipped',
-      date: '2025-01-02T16:45:00Z',
-      items: 3
+      orderNumber: '1232',
+      customerName: 'Emma Davis',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg',
+      total: 67.25,
+      status: 'processing',
+      date: '2024-03-15T08:45:00Z'
+    }
+  ]);
+
+  recentMessages = signal<RecentMessage[]>([
+    {
+      id: '1',
+      customerName: 'Lisa Chen',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg',
+      message: 'Hi! Is this item still available?',
+      timeAgo: '2 min ago',
+      isUnread: true
+    },
+    {
+      id: '2',
+      customerName: 'Tom Rodriguez',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-9.jpg',
+      message: 'Can you provide more details about shipping?',
+      timeAgo: '1 hour ago',
+      isUnread: false
+    },
+    {
+      id: '3',
+      customerName: 'Anna Smith',
+      customerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg',
+      message: 'Thank you for the quick delivery!',
+      timeAgo: '3 hours ago',
+      isUnread: false
+    }
+  ]);
+
+  topProducts = signal<TopProduct[]>([
+    {
+      id: '1',
+      name: 'MacBook Pro 13"',
+      category: 'Electronics',
+      price: 1299,
+      image: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/e8796dd9de-84cb6ce4422a01eb5d70.png',
+      sold: 24
+    },
+    {
+      id: '2',
+      name: 'Student Backpack',
+      category: 'Accessories',
+      price: 89,
+      image: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/74028f9f61-9979014e14c1a16de9d5.png',
+      sold: 18
+    },
+    {
+      id: '3',
+      name: 'Wireless Headphones',
+      category: 'Electronics',
+      price: 159,
+      image: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/c0a6c1cda3-12a4ca92dca2d1a52fe1.png',
+      sold: 15
     },
     {
       id: '4',
-      orderNumber: 'ORD-004',
-      customerName: 'Sarah Wilson',
-      total: 18000,
-      status: 'delivered',
-      date: '2025-01-01T14:20:00Z',
-      items: 2
+      name: 'Study Desk Lamp',
+      category: 'Home & Living',
+      price: 45,
+      image: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/ca180432b2-e43e0972ffed8f9bf3b9.png',
+      sold: 12
     }
-  ];
-
-  faStar = faStar;
-  faChartLine = faChartLine;
+  ]);
 
   ngOnInit(): void {
     this.loadDashboardData();
   }
 
-  loadDashboardData(): void {
-    this.loading = true;
-    
+  /**
+   * Load dashboard data from API
+   * This method fetches real data from the backend when available
+   */
+  private loadDashboardData(): void {
     // Load seller analytics
     this.apiService.getSellerAnalytics().subscribe({
       next: (response) => {
-        this.analytics = response.data;
-        this.loading = false;
+        if (response.success && response.data) {
+          // Update stats with real data
+          this.stats.set({
+            totalRevenue: response.data.total_revenue || 18432,
+            totalOrders: response.data.total_orders || 156,
+            productViews: response.data.product_views || 3247,
+            conversionRate: response.data.conversion_rate || 4.8,
+            todaysRevenue: response.data.todays_revenue || 2847,
+            newOrders: response.data.new_orders || 23
+          });
+        }
       },
       error: (error) => {
         console.error('Error loading seller analytics:', error);
-        this.loading = false;
-        this.errorMessage = 'Failed to load analytics data. Please try again.';
+        // Keep mock data on error
       }
     });
 
     // Load recent orders
-    this.apiService.getMyOrders({ limit: 5 }).subscribe({
+    this.apiService.getMyOrders({ limit: 3 }).subscribe({
       next: (response) => {
-        // Transform API response to match RecentOrder interface
-        this.recentOrders = (response.data?.items || []).map((order: any) => ({
-          id: order.id,
-          orderNumber: order.order_number,
-          customerName: order.buyer?.buyername || 'Unknown Customer',
-          total: order.total,
-          status: order.status,
-          date: order.created_at,
-          items: order.items?.length || 0
-        }));
+        if (response.success && response.data?.items) {
+          const orders: RecentOrder[] = response.data.items.map((order: any) => ({
+            id: order.id,
+            orderNumber: order.order_number,
+            customerName: order.buyer?.buyername || 'Unknown Customer',
+            customerAvatar: order.buyer?.profile_picture_url || '/assets/images/default-avatar.png',
+            total: order.total,
+            status: order.status,
+            date: order.created_at
+          }));
+          this.recentOrders.set(orders);
+        }
       },
       error: (error) => {
         console.error('Error loading recent orders:', error);
-        this.recentOrders = [];
-      }
-    });
-
-    // Load top products
-    this.apiService.getMyProducts({ sort: 'sales', limit: 5 }).subscribe({
-      next: (response) => {
-        this.topProducts = response.data?.items || [];
-      },
-      error: (error) => {
-        console.error('Error loading top products:', error);
-        this.topProducts = [];
+        // Keep mock data on error
       }
     });
   }
 
+  /**
+   * Get status label for display
+   */
   getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
       pending: 'Pending',
@@ -613,11 +261,26 @@ export class DashboardComponent implements OnInit {
     return statusMap[status] || status;
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+  /**
+   * Navigation methods
+   */
+  navigateToCreateListing(): void {
+    this.router.navigate(['/app/seller/listings/create']);
   }
-} 
+
+  navigateToAnalytics(): void {
+    this.router.navigate(['/app/seller/analytics']);
+  }
+
+  navigateToInventory(): void {
+    this.router.navigate(['/app/seller/listings']);
+  }
+
+  navigateToOrders(): void {
+    this.router.navigate(['/app/orders']);
+  }
+
+  navigateToMessages(): void {
+    this.router.navigate(['/app/chat']);
+  }
+}

@@ -1,0 +1,33 @@
+/* Custom color variables to match Figma design */
+:host {
+  --primary: #E94C2A;
+  --secondary: #E94B26;
+  --accent: #E07575;
+  --dark: #181211;
+  --light: #F4F1F0;
+  --muted: #886A63;
+  --border: #E5DDDC;
+}
+
+.text-primary { color: var(--primary) !important; }
+.bg-primary { background-color: var(--primary) !important; }
+.border-primary { border-color: var(--primary) !important; }
+.ring-primary { --tw-ring-color: var(--primary) !important; }
+
+.text-secondary { color: var(--secondary) !important; }
+.bg-secondary { background-color: var(--secondary) !important; }
+
+.text-dark { color: var(--dark) !important; }
+.text-muted { color: var(--muted) !important; }
+.bg-light { background-color: var(--light) !important; }
+.bg-border { background-color: var(--border) !important; }
+.border-border { border-color: var(--border) !important; }
+
+/* Additional Tailwind-like utilities */
+.bg-gradient-to-r { background: linear-gradient(to right, var(--primary), var(--secondary)); }
+.text-white-90 { color: rgba(255, 255, 255, 0.9); }
+.text-white-80 { color: rgba(255, 255, 255, 0.8); }
+.hover\:bg-secondary:hover { background-color: var(--secondary) !important; }
+.hover\:bg-light:hover { background-color: var(--light) !important; }
+.hover\:underline:hover { text-decoration: underline; }
+.transition-colors { transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out; }

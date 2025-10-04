@@ -571,4 +571,26 @@ export class AuthService {
       error: null
     });
   }
+
+  /**
+   * Login with Google (placeholder implementation)
+   */
+  loginWithGoogle(): Observable<any> {
+    // TODO: Implement Google OAuth integration
+    return of({
+      success: false,
+      message: 'Google login not implemented yet'
+    });
+  }
+
+  /**
+   * Login with Facebook (placeholder implementation)
+   */
+  loginWithFacebook(): Observable<any> {
+    // TODO: Implement Facebook OAuth integration
+    return of({
+      success: false,
+      message: 'Facebook login not implemented yet'
+    });
+  }
 } 

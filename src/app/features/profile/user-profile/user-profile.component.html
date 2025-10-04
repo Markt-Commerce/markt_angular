@@ -1,0 +1,249 @@
+<main class=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Profile Hero Section -->
+  <section class="bg-white rounded-xl shadow-sm border border-markt-border overflow-hidden mb-8">
+    <div class="h-48 bg-gradient-to-r from-markt-primary to-markt-accent"></div>
+    <div class="px-8 pb-8">
+      <div class="flex items-start justify-between -mt-16">
+        <div class="flex items-end space-x-6">
+          <img 
+            [src]="profile?.avatar_url || 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg'" 
+            [alt]="profile?.full_name"
+            class="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+          >
+          <div class="pb-4">
+            <div class="flex items-center space-x-3 mb-2">
+              <h1 class="text-3xl font-bold text-markt-dark">{{ profile?.full_name || 'Alex Chen' }}</h1>
+              <div class="flex items-center space-x-2">
+                <span *ngIf="profile?.is_verified" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+                  <fa-icon [icon]="faCheckCircle" class="mr-1"></fa-icon>
+                  Verified
+                </span>
+                <span *ngIf="profile?.is_campus_ambassador" class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                  Campus Ambassador
+                </span>
+              </div>
+            </div>
+            <p class="text-markt-muted mb-1">@{{ profile?.username || 'alexchen_stanford' }}</p>
+            <div class="flex items-center space-x-4 text-sm text-markt-muted">
+              <span *ngIf="profile?.university" class="flex items-center">
+                <fa-icon [icon]="faGraduationCap" class="mr-1"></fa-icon>
+                {{ profile?.university }}
+              </span>
+              <span class="flex items-center">
+                <fa-icon [icon]="faCalendar" class="mr-1"></fa-icon>
+                Joined {{ profile?.member_since ? (profile?.member_since | date:'MMMM yyyy') : 'March 2023' }}
+              </span>
+              <span *ngIf="profile?.location" class="flex items-center">
+                <fa-icon [icon]="faMapMarkerAlt" class="mr-1"></fa-icon>
+                {{ profile?.location }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3 mt-4">
+          <button 
+            class="bg-markt-primary text-white px-6 py-2 rounded-lg hover:bg-markt-secondary transition-colors font-medium"
+            (click)="toggleFollow()"
+          >
+            <fa-icon [icon]="faUserPlus" class="mr-2"></fa-icon>
+            {{ isFollowing ? 'Unfollow' : 'Follow' }}
+          </button>
+          <button 
+            class="bg-white border border-markt-border text-markt-dark px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            (click)="sendMessage()"
+          >
+            <fa-icon [icon]="faEnvelope" class="mr-2"></fa-icon>
+            Message
+          </button>
+          <button class="bg-white border border-markt-border text-gray-600 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <fa-icon [icon]="faShare"></fa-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column -->
+    <div class="lg:col-span-2 space-y-8">
+      <!-- Profile Statistics -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <h2 class="text-xl font-semibold text-markt-dark mb-6">Profile Statistics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-markt-primary mb-1">{{ (profile?.followers_count || 1247) | number }}</div>
+            <div class="text-sm text-markt-muted">Followers</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-markt-primary mb-1">{{ profile?.total_sales || 89 }}</div>
+            <div class="text-sm text-markt-muted">Sales</div>
+          </div>
+          <div class="text-center">
+            <div class="flex items-center justify-center mb-1">
+              <div class="text-2xl font-bold text-markt-primary mr-1">{{ (profile?.rating || 4.9) | number:'1.1-1' }}</div>
+              <div class="flex text-yellow-400">
+                <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]" class="text-sm"></fa-icon>
+              </div>
+            </div>
+            <div class="text-sm text-markt-muted">Rating</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-markt-primary mb-1">{{ profile?.review_count || 156 }}</div>
+            <div class="text-sm text-markt-muted">Reviews</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Listings -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-markt-dark">Active Listings</h2>
+          <span class="text-sm text-markt-muted">{{ products.length }} items</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div *ngFor="let product of products.slice(0, 2)" class="border border-markt-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <img 
+              class="w-full h-48 object-cover" 
+              [src]="product.image_url || 'https://storage.googleapis.com/uxpilot-auth.appspot.com/60e853eaff-f5e99be783cada63c6b3.png'" 
+              [alt]="product.name" 
+            />
+            <div class="p-4">
+              <h3 class="font-semibold text-markt-dark mb-2">{{ product.name }}</h3>
+              <p class="text-markt-muted text-sm mb-2">{{ product.description || 'Perfect condition, all highlighted sections included' }}</p>
+              <div class="flex items-center justify-between">
+                <span class="text-lg font-bold text-markt-primary">${{ product.price | number:'1.0-0' }}</span>
+                <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                  {{ product.views_today || 12 }} views today
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button 
+          class="w-full mt-4 text-markt-primary hover:text-markt-secondary font-medium text-sm"
+          (click)="viewAllListings()"
+        >
+          View All Listings <fa-icon [icon]="faArrowRight" class="ml-1"></fa-icon>
+        </button>
+      </section>
+
+      <!-- Recent Reviews -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-markt-dark">Recent Reviews</h2>
+          <button class="text-markt-primary hover:text-markt-secondary text-sm font-medium">View All</button>
+        </div>
+        <div class="space-y-4">
+          <div *ngFor="let review of reviews.slice(0, 2)" class="border-b border-markt-border pb-4 last:border-b-0">
+            <div class="flex items-start space-x-3">
+              <img 
+                [src]="review.reviewer_avatar || 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg'" 
+                [alt]="review.reviewer_name" 
+                class="w-10 h-10 rounded-full"
+              >
+              <div class="flex-1">
+                <div class="flex items-center space-x-2 mb-1">
+                  <span class="font-medium text-markt-dark">{{ review.reviewer_name }}</span>
+                  <div class="flex text-yellow-400">
+                    <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]" class="text-xs"></fa-icon>
+                  </div>
+                  <span class="text-xs text-markt-muted">{{ review.created_at | date:'short' }}</span>
+                </div>
+                <p class="text-sm text-markt-muted">{{ review.comment }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right Column -->
+    <div class="space-y-6">
+      <!-- About -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <h3 class="text-lg font-semibold text-markt-dark mb-4">About</h3>
+        <p class="text-markt-muted text-sm mb-4">
+          {{ profile?.bio || 'Computer Science major passionate about tech and helping fellow students find great deals on textbooks and electronics. Always happy to answer questions!' }}
+        </p>
+        <div class="space-y-3">
+          <div *ngIf="profile?.major" class="flex items-center text-sm">
+            <fa-icon [icon]="faBook" class="w-4 text-markt-muted mr-3"></fa-icon>
+            <span class="text-markt-muted">{{ profile?.major }} • {{ profile?.year || 'Junior Year' }}</span>
+          </div>
+          <div *ngIf="profile?.response_time" class="flex items-center text-sm">
+            <fa-icon [icon]="faClock" class="w-4 text-markt-muted mr-3"></fa-icon>
+            <span class="text-markt-muted">Usually responds within {{ profile?.response_time }}</span>
+          </div>
+          <div *ngIf="profile?.preferred_meetup" class="flex items-center text-sm">
+            <fa-icon [icon]="faHandshake" class="w-4 text-markt-muted mr-3"></fa-icon>
+            <span class="text-markt-muted">{{ profile?.preferred_meetup }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trust & Safety -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <h3 class="text-lg font-semibold text-markt-dark mb-4">Trust & Safety</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <fa-icon [icon]="faCheckCircle" class="text-green-500 mr-2"></fa-icon>
+              <span class="text-sm text-markt-dark">Identity Verified</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <fa-icon [icon]="faCheckCircle" class="text-green-500 mr-2"></fa-icon>
+              <span class="text-sm text-markt-dark">Email Confirmed</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <fa-icon [icon]="faCheckCircle" class="text-green-500 mr-2"></fa-icon>
+              <span class="text-sm text-markt-dark">Phone Verified</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <fa-icon [icon]="faGraduationCap" class="text-blue-500 mr-2"></fa-icon>
+              <span class="text-sm text-markt-dark">Student Verified</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Activity -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <h3 class="text-lg font-semibold text-markt-dark mb-4">Recent Activity</h3>
+        <div class="space-y-3">
+          <div *ngFor="let activity of recentActivities" class="flex items-start space-x-3">
+            <div class="w-2 h-2 rounded-full mt-2" [style.background-color]="activity.color"></div>
+            <div>
+              <p class="text-sm text-markt-dark">{{ activity.description }}</p>
+              <p class="text-xs text-markt-muted">{{ activity.created_at | date:'short' }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Options -->
+      <section class="bg-white rounded-xl shadow-sm border border-markt-border p-6">
+        <h3 class="text-lg font-semibold text-markt-dark mb-4">Contact Options</h3>
+        <div class="space-y-3">
+          <button 
+            class="w-full bg-markt-primary text-white py-2 px-4 rounded-lg hover:bg-markt-secondary transition-colors text-sm font-medium"
+            (click)="sendMessage()"
+          >
+            <fa-icon [icon]="faEnvelope" class="mr-2"></fa-icon>Send Message
+          </button>
+          <button class="w-full bg-white border border-markt-border text-markt-dark py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            <fa-icon [icon]="faCalendar" class="mr-2"></fa-icon>Schedule Meetup
+          </button>
+          <button class="w-full bg-white border border-markt-border text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+            <fa-icon [icon]="faFlag" class="mr-2"></fa-icon>Report User
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>

@@ -25,8 +25,9 @@ import {
   faPlusCircle, 
   faCog, 
   faTimes, 
-  faChevronRight,
-  faStream
+  faChevronRight, 
+  faStream,
+  faCode
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
@@ -134,6 +135,15 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                     (click)="closeUserMenu()"
                   >
                     Settings
+                  </a>
+                  <hr class="my-1 border-border">
+                  <a 
+                    routerLink="/dev-navigation"
+                    class="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                    (click)="closeUserMenu()"
+                  >
+                    <fa-icon [icon]="faCode" class="w-3 h-3 mr-2"></fa-icon>
+                    Dev Navigation
                   </a>
                   <hr class="my-1 border-border">
                   <button 
@@ -450,6 +460,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   faTimes = faTimes;
   faChevronRight = faChevronRight;
   faStream = faStream;
+  faCode = faCode;
 
   // State
   user: any = null;
