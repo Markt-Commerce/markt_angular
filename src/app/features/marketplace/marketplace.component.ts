@@ -23,7 +23,14 @@ import {
   faClock,
   faUser,
   faStore,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faCheck,
+  faBell,
+  faLaptop,
+  faBook,
+  faFire,
+  faComment,
+  faMobile
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { CartService } from '../../core/services/cart.service';
@@ -42,454 +49,369 @@ import { SocialService } from '../../core/services/social.service';
   standalone: true,
   imports: [CommonModule, FormsModule, FontAwesomeModule, RouterModule],
   template: `
-    <div class="container mx-auto px-4 lg:px-8 space-y-8 animate-fade-in-up">
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-3xl font-black text-markt-dark">Marketplace</h1>
-          <p class="mt-1 text-sm text-markt-muted">
-            Discover amazing products from trusted sellers
-          </p>
-        </div>
-        <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-          <button 
-            (click)="toggleViewMode()"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-            [title]="viewMode === 'grid' ? 'List View' : 'Grid View'"
-          >
-            <fa-icon [icon]="viewMode === 'grid' ? faList : faGrid3" class="w-5 h-5"></fa-icon>
-          </button>
-          <button 
-            (click)="toggleFilters()"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-            title="Filters"
-          >
-            <fa-icon [icon]="faFilter" class="w-5 h-5"></fa-icon>
-          </button>
-        </div>
-      </div>
+    <div class="min-h-screen bg-gray-50">
 
-      <!-- Search and Filters Bar -->
-      <div class="bg-white rounded-2xl border border-markt-border/30 shadow-sm p-4 lg:p-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
-          <!-- Search -->
-          <div class="flex-1">
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
-              </div>
-              <input 
-                type="text" 
-                placeholder="Search products..."
-                [(ngModel)]="searchQuery"
-                (input)="onSearchInput()"
-                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+      <!-- Filter Bar -->
+      <section class="bg-white border-b border-border">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4 overflow-x-auto">
+              <button 
+                *ngFor="let category of categories" 
+                (click)="onCategorySelect(category.id)"
+                [class.bg-primary]="selectedCategory === category.id"
+                [class.text-white]="selectedCategory === category.id"
+                [class.text-gray-600]="selectedCategory !== category.id"
+                [class.hover:bg-gray-100]="selectedCategory !== category.id"
+                class="px-4 py-2 rounded-lg font-medium whitespace-nowrap"
               >
+                {{ category.name }}
+              </button>
+              </div>
+            <div class="flex items-center space-x-3">
+              <button class="p-2 text-gray-600 hover:text-primary">
+                <fa-icon [icon]="faFilter"></fa-icon>
+              </button>
+                <button 
+                  (click)="viewMode = 'grid'"
+                [class.text-primary]="viewMode === 'grid'"
+                [class.text-gray-400]="viewMode !== 'grid'"
+                class="p-2 hover:text-primary"
+                >
+                  <fa-icon [icon]="faGrid3"></fa-icon>
+                </button>
+                <button 
+                  (click)="viewMode = 'list'"
+                [class.text-primary]="viewMode === 'list'"
+                [class.text-gray-400]="viewMode !== 'list'"
+                class="p-2 hover:text-primary"
+                >
+                  <fa-icon [icon]="faList"></fa-icon>
+                </button>
+              </div>
             </div>
           </div>
+        </section>
 
-          <!-- Sort -->
-          <div class="flex items-center space-x-2">
-            <label class="text-sm font-medium text-markt-dark">Sort by:</label>
+      <!-- Featured Section -->
+      <section class="bg-gradient-to-r from-primary to-secondary text-white py-12">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div>
+              <h2 class="text-4xl font-bold mb-4">Featured Campus Deals</h2>
+              <p class="text-xl mb-6 opacity-90">Discover amazing products from verified student sellers</p>
+              <button class="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                Explore Featured Items
+              </button>
+                </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                <fa-icon [icon]="faMobile" class="text-3xl mb-2"></fa-icon>
+                <h3 class="font-semibold">Electronics</h3>
+                <p class="text-sm opacity-80">Latest gadgets</p>
+              </div>
+              <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                <fa-icon [icon]="faBook" class="text-3xl mb-2"></fa-icon>
+                <h3 class="font-semibold">Textbooks</h3>
+                <p class="text-sm opacity-80">Academic books</p>
+                </div>
+              </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Sellers -->
+      <section class="py-8 bg-white">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Live Sellers</h2>
+            <span class="text-primary font-medium hover:underline cursor-pointer">View All</span>
+          </div>
+          <div class="flex space-x-4 overflow-x-auto pb-4">
+            <div *ngFor="let seller of liveSellers" class="flex-shrink-0 bg-white border border-border rounded-lg p-4 w-64">
+              <div class="flex items-center space-x-3 mb-3">
+                <div class="relative">
+                  <img [src]="seller.avatar" [alt]="seller.name" class="h-10 w-10 rounded-full">
+                  <div class="absolute -bottom-1 -right-1 bg-green-500 border-2 border-white rounded-full h-4 w-4"></div>
+                </div>
+              <div>
+                  <h3 class="font-semibold text-gray-900">{{ seller.name }}</h3>
+                  <p class="text-sm text-gray-500">Online now</p>
+                    </div>
+              </div>
+              <p class="text-sm text-gray-600 mb-3">{{ seller.description }}</p>
+              <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-1">
+                  <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                  <span class="text-sm font-medium">{{ seller.rating }}</span>
+                    </div>
+                <button class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-primary/90">Chat</button>
+                </div>
+              </div>
+                </div>
+              </div>
+      </section>
+
+      <!-- Product Grid -->
+      <section class="py-8">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Recent Listings</h2>
             <select 
               [(ngModel)]="sortBy"
               (change)="onSortChange()"
-              class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-markt-primary focus:border-markt-primary sm:text-sm rounded-md"
+              class="border border-border rounded-lg px-3 py-2 text-sm"
             >
-              <option value="relevance">Relevance</option>
+              <option value="newest">Sort by: Newest</option>
               <option value="price_asc">Price: Low to High</option>
               <option value="price_desc">Price: High to Low</option>
-              <option value="rating">Rating</option>
-              <option value="newest">Newest</option>
-              <option value="popular">Most Popular</option>
+              <option value="rating">Most Popular</option>
             </select>
           </div>
 
-          <!-- Results Count -->
-          <div class="text-sm text-markt-muted">
-            {{ totalResults }} products found
-          </div>
-        </div>
-      </div>
-
-      <!-- Filters Sidebar -->
-      <div class="lg:flex lg:space-x-6">
-        <!-- Filters -->
-        <div 
-          class="lg:w-64 lg:flex-shrink-0"
-          [class.hidden]="!showFilters"
-        >
-          <div class="bg-gradient-to-br from-markt-light/50 to-white rounded-2xl border border-markt-border/30 p-6 space-y-6">
-            <!-- Categories -->
-            <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Categories</h3>
-              <div class="space-y-2">
-                @for (category of categories; track category.id) {
-                  <label class="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      [value]="category.id"
-                      [checked]="selectedCategories.includes(category.id)"
-                      (change)="onCategoryToggle(category.id, $event)"
-                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
-                    >
-                    <span class="ml-2 text-sm text-markt-dark">{{ category.name }}</span>
-                  </label>
-                }
-              </div>
-            </div>
-
-            <!-- Price Range -->
-            <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Price Range</h3>
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-sm text-markt-dark">Min Price</label>
-                  <input 
-                    type="number" 
-                    [(ngModel)]="priceRange.min"
-                    (input)="onPriceChange()"
-                    placeholder="0"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
-                  >
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <!-- Product Card 1 -->
+            <div class="bg-white rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer" (click)="navigateToProduct('macbook-pro-13-2021')">
+                <div class="relative">
+                <img class="w-full h-48 object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/9e580a234a-dfedd1ac85a893bb0f65.png" alt="modern laptop computer on desk, clean product photography">
+                <div class="absolute top-2 left-2 bg-primary text-white px-2 py-1 rounded text-xs font-medium">Featured</div>
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="bg-white/80 p-2 rounded-full hover:bg-white" (click)="toggleWishlist({id: 'macbook-pro-13-2021', name: 'MacBook Pro 13 2021'}); $event.stopPropagation()">
+                    <fa-icon [icon]="faHeart" class="text-gray-600"></fa-icon>
+                  </button>
                 </div>
-                <div>
-                  <label class="block text-sm text-markt-dark">Max Price</label>
-                  <input 
-                    type="number" 
-                    [(ngModel)]="priceRange.max"
-                    (input)="onPriceChange()"
-                    placeholder="100000"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
-                  >
                 </div>
-              </div>
-            </div>
-
-            <!-- Rating -->
-            <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Rating</h3>
-              <div class="space-y-2">
-                @for (rating of [4, 3, 2, 1]; track rating) {
-                  <label class="flex items-center">
-                    <input 
-                      type="radio" 
-                      [value]="rating"
-                      [checked]="selectedRating === rating"
-                      (change)="onRatingChange(rating)"
-                      name="rating"
-                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
-                    >
-                    <span class="ml-2 text-sm text-markt-dark flex items-center">
-                      <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
-                      {{ rating }}+ stars
-                    </span>
-                  </label>
-                }
-              </div>
-            </div>
-
-            <!-- Location -->
-            <div>
-              <h3 class="text-lg font-bold text-markt-dark mb-4">Location</h3>
-              <div class="space-y-2">
-                @for (location of locations; track location) {
-                  <label class="flex items-center">
-                    <input 
-                      type="checkbox" 
-                      [value]="location"
-                      [checked]="selectedLocations.includes(location)"
-                      (change)="onLocationToggle(location, $event)"
-                      class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300 rounded"
-                    >
-                    <span class="ml-2 text-sm text-markt-dark">{{ location }}</span>
-                  </label>
-                }
-              </div>
-            </div>
-
-            <!-- Clear Filters -->
-            <button 
-              (click)="clearFilters()"
-              class="w-full px-4 py-2 text-sm font-semibold text-markt-dark bg-white border border-markt-border rounded-xl hover:border-markt-primary transition-colors"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        </div>
-
-        <!-- Products Grid -->
-        <div class="flex-1">
-          <!-- Loading State -->
-          @if (isLoading) {
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              @for (item of [1,2,3,4,5,6,8]; track item) {
-                <div class="bg-white rounded-3xl border border-markt-border/30 shadow-sm animate-pulse">
-                  <div class="h-48 bg-gray-200 rounded-t-lg"></div>
-                  <div class="p-4 space-y-3">
-                    <div class="h-4 bg-gray-200 rounded"></div>
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+                <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1">MacBook Pro 13" 2021</h3>
+                <p class="text-sm text-gray-600 mb-2">Excellent condition, barely used</p>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xl font-bold text-primary">$1,200</span>
+                  <span class="text-sm text-gray-500">Like New</span>
+                  </div>
+                <div class="flex items-center space-x-2 mb-3">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" alt="Seller" class="h-6 w-6 rounded-full">
+                  <span class="text-sm text-gray-600">Mike Davis</span>
+                    <div class="flex items-center space-x-1">
+                    <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                    <span class="text-xs">4.9</span>
+                    </div>
+                  </div>
+                  <div class="flex space-x-2">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                    Make Offer
+                  </button>
+                  <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
+                    <fa-icon [icon]="faComment" class="text-gray-600"></fa-icon>
+                    </button>
                   </div>
                 </div>
-              }
-            </div>
-          }
+              </div>
 
-          <!-- Products -->
-          @if (!isLoading && products.length > 0) {
-            <div 
-              [ngClass]="viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 'space-y-4'"
-            >
-              @for (product of products; track product.id) {
-                <div 
-                  [ngClass]="viewMode === 'grid' ? 'group bg-white rounded-3xl border border-markt-border/30 overflow-hidden shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all h-full flex flex-col' : 'group bg-white rounded-3xl border border-markt-border/30 p-4 shadow-lg hover:shadow-xl hover:border-markt-primary/40 transition-all'"
-                >
-                  <!-- Grid View -->
-                  @if (viewMode === 'grid') {
-                    <div class="relative">
-                      <img 
-                        [src]="getProductImageUrl(product.images?.[0])"
-                        [alt]="product.name"
-                        loading="lazy"
-                        decoding="async"
-                        class="w-full aspect-[4/3] object-cover"
-                      >
-                      <!-- Badges -->
-                      <div class="absolute top-2 left-2 flex gap-2">
-                        @if ((product.compare_at_price ?? 0) > (product.price ?? 0)) {
-                          <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
-                            -{{ getDiscountPercent(product) }}%
-                          </span>
-                        }
-                        @if (product.stock === 0) {
-                          <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Out of stock</span>
-                        }
-                      </div>
-                      <div class="absolute top-2 right-2">
-                        <button 
-                          (click)="toggleWishlist(product)"
-                          class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                          [class.text-red-500]="isInWishlist(product)"
-                          [class.text-gray-400]="!isInWishlist(product)"
-                          aria-label="Toggle wishlist"
-                        >
-                          <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="p-5 flex-1 flex flex-col">
-                      <h3 class="text-base font-semibold text-markt-dark mb-1 line-clamp-2 group-hover:text-markt-primary transition-colors">{{ product.name }}</h3>
-                      <p class="text-sm text-markt-muted mb-3 line-clamp-2">{{ product.description }}</p>
-                      <div class="mt-auto pt-2">
-                        <div class="flex items-center justify-between mb-3">
-                          <div class="flex items-center gap-2">
-                            <span class="text-xl font-extrabold text-markt-dark">{{ product.price | currency:(product.currency || 'NGN') }}</span>
-                            @if (product.compare_at_price && product.compare_at_price > product.price) {
-                              <span class="text-sm text-gray-400 line-through">{{ product.compare_at_price | currency:(product.currency || 'NGN') }}</span>
-                            }
-                          </div>
-                          <div class="flex items-center text-sm text-gray-600">
-                            <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                            <span class="ml-1">{{ (product.rating || 0) | number:'1.1-1' }}</span>
-                          </div>
-                        </div>
-                        @if (product.seller; as s) {
-                          <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-2 text-sm">
-                              <img [src]="s.profile_picture_url || '/markt-text-logo.png'" [alt]="s.shop_name" class="w-6 h-6 rounded-full object-cover">
-                              <span class="text-gray-700 truncate max-w-[10rem] flex items-center gap-1">
-                                {{ s.shop_name }}
-                                @if (s.is_verified) {
-                                  <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
-                                }
-                              </span>
-                            </div>
-                            <div class="text-xs text-gray-500">{{ s.location }}</div>
-                          </div>
-                        }
-                        <div class="flex gap-2">
-                          <a [routerLink]="['/app/marketplace/product', product.id]" class="flex-1 inline-flex items-center justify-center h-10 rounded-xl border border-markt-border/40 px-3 text-sm font-semibold text-markt-dark hover:bg-markt-light/50 transition-colors" aria-label="View details">
-                            View
-                          </a>
-                          @if (access.isBuyer && product.stock > 0) {
-                            <button 
-                              (click)="addToCart(product)"
-                              class="flex-1 inline-flex items-center justify-center h-10 rounded-xl bg-markt-primary text-white px-3 text-sm font-semibold hover:bg-markt-secondary transition-colors shadow-sm hover:shadow-md"
-                              aria-label="Add to cart"
-                            >
-                              <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
-                              Add
-                            </button>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-
-                  <!-- List View -->
-                  @if (viewMode === 'list') {
-                    <div class="flex space-x-4">
-                      <img 
-                        [src]="getProductImageUrl(product.images?.[0])" 
-                        [alt]="product.name"
-                        loading="lazy"
-                        decoding="async"
-                        class="w-28 h-28 object-cover rounded-lg"
-                      >
-                      <div class="flex-1">
-                        <div class="flex items-start justify-between">
-                          <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-markt-dark mb-1">{{ product.name }}</h3>
-                            <p class="text-sm text-markt-muted mb-2 line-clamp-2">{{ product.description }}</p>
-                            <div class="flex items-center space-x-4 text-sm text-markt-muted">
-                              <span class="flex items-center">
-                                <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
-                                <span class="flex items-center gap-1">
-                                  {{ product.seller?.shop_name }}
-                                  @if (product.seller?.is_verified) {
-                                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 text-[10px]">✓</span>
-                                  }
-                                </span>
-                              </span>
-                              <span class="flex items-center">
-                                <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
-                                {{ product.seller?.location }}
-                              </span>
-                              <span class="flex items-center">
-                                <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
-                                {{ product.rating }}
-                              </span>
-                            </div>
-                            <div class="mt-2 flex flex-wrap gap-2">
-                              @if (product.seller?.policies?.shipping) {
-                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Shipping: {{ product.seller?.policies?.shipping }}</span>
-                              }
-                              @if (product.seller?.policies?.returns) {
-                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-markt-dark text-xs">Returns: {{ product.seller?.policies?.returns }}</span>
-                              }
-                            </div>
-                          </div>
-                          <div class="text-right">
-                            <div class="text-xl font-extrabold text-markt-dark">
-                              {{ product.price | currency:(product.currency || 'NGN') }}
-                            </div>
-                            @if (product.compare_at_price && product.compare_at_price > product.price) {
-                              <div class="text-sm text-gray-400 line-through">
-                                {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
-                              </div>
-                            }
-                            <div class="flex items-center space-x-2 mt-2">
-                              <button 
-                                (click)="toggleWishlist(product)"
-                                class="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                [class.text-red-500]="isInWishlist(product)"
-                              >
-                                <fa-icon [icon]="faHeart" class="w-4 h-4"></fa-icon>
-                              </button>
-                              @if (access.isBuyer) {
-                                <button 
-                                  (click)="addToCart(product)"
-                                  class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition"
-                                >
-                                  <fa-icon [icon]="faShoppingCart" class="w-4 h-4 mr-2"></fa-icon>
-                                  Add to Cart
-                                </button>
-                              }
-                              @if (product.seller?.id) {
-                                <a [routerLink]="['/app/chat']" [queryParams]="{ user: product.seller.id, product: product.id }" class="text-markt-primary text-sm underline ml-2">Message seller</a>
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Error State -->
-          @if (errorMessage) {
-            <div class="text-center py-12">
-              <fa-icon [icon]="faExclamationTriangle" class="w-12 h-12 text-red-400 mx-auto mb-4"></fa-icon>
-              <h3 class="text-lg font-bold text-red-600 mb-2">Error loading products</h3>
-              <p class="text-gray-600 mb-4">{{ errorMessage }}</p>
-              <button 
-                (click)="loadMarketplaceData()"
-                class="px-4 py-2 bg-markt-primary text-white rounded-lg hover:bg-markt-secondary transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          }
-
-          <!-- Empty State -->
-          @if (!isLoading && !errorMessage && products.length === 0) {
-            <div class="text-center py-12">
-              <fa-icon [icon]="faSearch" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-              <h3 class="text-lg font-bold text-markt-dark mb-2">No products found</h3>
-              <p class="text-markt-muted mb-4">Try adjusting your search or filters to find what you're looking for.</p>
-              <button 
-                (click)="clearFilters()"
-                class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition"
-              >
-                Clear Filters
-              </button>
-            </div>
-          }
-
-          <!-- Pagination -->
-          @if (totalPages > 1) {
-            <div class="mt-8 flex items-center justify-center">
-              <nav class="flex items-center space-x-2">
-                <button 
-                  (click)="previousPage()"
-                  [disabled]="currentPage === 1"
-                  class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                
-                @for (page of getPageNumbers(); track page) {
-                  <button 
-                    (click)="goToPage(page)"
-                    [class.bg-markt-primary]="page === currentPage"
-                    [class.text-white]="page === currentPage"
-                    [class.text-markt-dark]="page !== currentPage"
-                    class="px-3 py-2 text-sm font-semibold bg-white border border-markt-border rounded-md hover:border-markt-primary"
-                  >
-                    {{ page }}
+              <!-- Product Card 2 -->
+            <div class="bg-white rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer" (click)="navigateToProduct('calculus-textbook-bundle')">
+                <div class="relative">
+                <img class="w-full h-48 object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/d2e5820307-936957b5d254a5a5cb38.png" alt="textbook stack college books academic">
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="bg-white/80 p-2 rounded-full hover:bg-white">
+                    <fa-icon [icon]="faHeart" class="text-gray-600"></fa-icon>
                   </button>
-                }
-                
-                <button 
-                  (click)="nextPage()"
-                  [disabled]="currentPage === totalPages"
-                  class="px-3 py-2 text-sm font-medium text-markt-dark bg-white border border-markt-border rounded-md hover:border-markt-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </nav>
+                </div>
+                </div>
+                <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1">Calculus Textbook Bundle</h3>
+                <p class="text-sm text-gray-600 mb-2">Math 101-102 required books</p>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xl font-bold text-primary">$85</span>
+                  <span class="text-sm text-gray-500">Good</span>
+                  </div>
+                <div class="flex items-center space-x-2 mb-3">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg" alt="Seller" class="h-6 w-6 rounded-full">
+                  <span class="text-sm text-gray-600">Emma Wilson</span>
+                    <div class="flex items-center space-x-1">
+                    <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                    <span class="text-xs">4.7</span>
+                    </div>
+                  </div>
+                  <div class="flex space-x-2">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                    Make Offer
+                  </button>
+                  <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
+                    <fa-icon [icon]="faComment" class="text-gray-600"></fa-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Product Card 3 -->
+            <div class="bg-white rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer" (click)="navigateToProduct('vintage-denim-jacket')">
+                <div class="relative">
+                <img class="w-full h-48 object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/1d0a014a05-98e516dc00329c7cf656.png" alt="vintage denim jacket fashion clothing">
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="bg-white/80 p-2 rounded-full hover:bg-white">
+                    <fa-icon [icon]="faHeart" class="text-gray-600"></fa-icon>
+                  </button>
+                </div>
+                </div>
+                <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1">Vintage Denim Jacket</h3>
+                <p class="text-sm text-gray-600 mb-2">Size M, perfect for campus style</p>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xl font-bold text-primary">$45</span>
+                  <span class="text-sm text-gray-500">Very Good</span>
+                  </div>
+                <div class="flex items-center space-x-2 mb-3">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg" alt="Seller" class="h-6 w-6 rounded-full">
+                  <span class="text-sm text-gray-600">Lisa Park</span>
+                    <div class="flex items-center space-x-1">
+                    <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                    <span class="text-xs">5.0</span>
+                    </div>
+                  </div>
+                  <div class="flex space-x-2">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                    Make Offer
+                  </button>
+                  <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
+                    <fa-icon [icon]="faComment" class="text-gray-600"></fa-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Product Card 4 -->
+            <div class="bg-white rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer" (click)="navigateToProduct('study-desk-with-drawers')">
+                <div class="relative">
+                <img class="w-full h-48 object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/92f2ea4247-12d5dc88e2f1267dcf65.png" alt="study desk furniture wooden clean minimalist">
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="bg-white/80 p-2 rounded-full hover:bg-white">
+                    <fa-icon [icon]="faHeart" class="text-gray-600"></fa-icon>
+                  </button>
+                </div>
+                </div>
+                <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1">Study Desk with Drawers</h3>
+                <p class="text-sm text-gray-600 mb-2">Perfect for dorm room setup</p>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xl font-bold text-primary">$120</span>
+                  <span class="text-sm text-gray-500">Excellent</span>
+                  </div>
+                <div class="flex items-center space-x-2 mb-3">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-8.jpg" alt="Seller" class="h-6 w-6 rounded-full">
+                  <span class="text-sm text-gray-600">Tom Rodriguez</span>
+                    <div class="flex items-center space-x-1">
+                    <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                    <span class="text-xs">4.8</span>
+                    </div>
+                  </div>
+                  <div class="flex space-x-2">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                    Make Offer
+                  </button>
+                  <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
+                    <fa-icon [icon]="faComment" class="text-gray-600"></fa-icon>
+                    </button>
+                </div>
+                  </div>
+                </div>
+              </div>
+
+          <div class="text-center mt-8">
+            <button class="bg-white border border-border text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50">
+              Load More Products
+                  </button>
+                </div>
+                  </div>
+      </section>
+
+      <!-- Trending Section -->
+      <section class="py-8 bg-light">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">Trending This Week</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg p-6 border border-border">
+              <div class="flex items-center space-x-3 mb-4">
+                <fa-icon [icon]="faFire" class="text-primary text-xl"></fa-icon>
+                <h3 class="font-semibold text-gray-900">Most Viewed</h3>
+                    </div>
+              <div class="space-y-3">
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/ddd07042da-d59618a1ef4e80ff46dc.png" alt="gaming headset product">
+                  <div>
+                    <p class="font-medium text-sm">Gaming Headset</p>
+                    <p class="text-primary font-semibold">$65</p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/ab03d9c126-6bb14268bf91719ed74d.png" alt="coffee maker appliance">
+                  <div>
+                    <p class="font-medium text-sm">Coffee Maker</p>
+                    <p class="text-primary font-semibold">$35</p>
+                  </div>
+                  </div>
+                </div>
+              </div>
+
+            <div class="bg-white rounded-lg p-6 border border-border">
+              <div class="flex items-center space-x-3 mb-4">
+                <i class="fa-solid fa-heart text-red-500 text-xl"></i>
+                <h3 class="font-semibold text-gray-900">Most Liked</h3>
+                </div>
+              <div class="space-y-3">
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/228f4dad58-d835ef58698757d54300.png" alt="plant succulent decoration">
+                  <div>
+                    <p class="font-medium text-sm">Plant Collection</p>
+                    <p class="text-primary font-semibold">$25</p>
+                  </div>
+                    </div>
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/970ecf1a9e-161727dfa5debd0b5b74.png" alt="backpack student bag">
+                  <div>
+                    <p class="font-medium text-sm">Student Backpack</p>
+                    <p class="text-primary font-semibold">$40</p>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            
+            <div class="bg-white rounded-lg p-6 border border-border">
+              <div class="flex items-center space-x-3 mb-4">
+                <i class="fa-solid fa-clock text-yellow-500 text-xl"></i>
+                <h3 class="font-semibold text-gray-900">Ending Soon</h3>
             </div>
-          }
+              <div class="space-y-3">
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/bce6d37881-406bc75ae4a35b2a3530.png" alt="guitar musical instrument">
+                  <div>
+                    <p class="font-medium text-sm">Acoustic Guitar</p>
+                    <p class="text-primary font-semibold">$180</p>
         </div>
-      </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <img class="w-12 h-12 rounded object-cover" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/93bef5ffcb-0dfdc9ac4b88f5111977.png" alt="sneakers shoes fashion">
+                  <div>
+                    <p class="font-medium text-sm">Designer Sneakers</p>
+                    <p class="text-primary font-semibold">$95</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   `,
   styles: [`
     :host {
       display: block;
-      min-height: 100vh;
-      background-image: linear-gradient(135deg, rgba(244, 241, 240, 0.6) 0%, rgba(255,255,255, 0.9) 50%, rgba(224, 117, 117, 0.08) 100%);
-      background-attachment: fixed;
     }
-    @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    .animate-fade-in-up { animation: fade-in-up 0.5s ease-out both; }
   `]
 })
 export class MarketplaceComponent implements OnInit {
@@ -527,19 +449,28 @@ export class MarketplaceComponent implements OnInit {
   faUser = faUser;
   faStore = faStore;
   faExclamationTriangle = faExclamationTriangle;
+  faCheck = faCheck;
+  faBell = faBell;
+  faLaptop = faLaptop;
+  faBook = faBook;
+  faFire = faFire;
+  faComment = faComment;
+  faMobile = faMobile;
 
   // State
   products: any[] = [];
   categories: any[] = [];
+  liveSellers: any[] = [];
   isLoading = false;
   viewMode: 'grid' | 'list' = 'grid';
-  showFilters = false;
+  showFilters = true; // Show filters by default to match Figma design
   errorMessage = '';
   wishlistItems: string[] = [];
   
   // Search and filters
   searchQuery = '';
-  sortBy = 'relevance';
+  sortBy = 'newest'; // Default to 'newest' to match Figma design
+  selectedCategory: string = 'all';
   selectedCategories: string[] = [];
   priceRange = { min: null, max: null };
   selectedRating: number | null = null;
@@ -548,7 +479,7 @@ export class MarketplaceComponent implements OnInit {
   // Pagination
   currentPage = 1;
   totalPages = 1;
-  totalResults = 0;
+  totalResults = 1247; // Default value to match Figma design
   
   // Mock data
   locations = ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'];
@@ -561,20 +492,165 @@ export class MarketplaceComponent implements OnInit {
   enableContentMixing = true;
 
   ngOnInit(): void {
-    this.loadMarketplaceData();
-    // Apply seller filter from query param if provided
-    this.route.queryParamMap.subscribe(params => {
-      const seller = params.get('seller');
-      if (seller) {
-        this.selectedCategories = [];
-        this.selectedLocations = [];
-        this.searchQuery = '';
-        this.sortBy = 'relevance';
-        this.currentPage = 1;
-        this.loadProductsForSeller(seller);
-      }
-    });
+    this.loadFigmaMockData();
     this.setupSubscriptions();
+  }
+
+  loadFigmaMockData(): void {
+    // Mock data that matches the Figma design exactly
+    this.products = [
+      {
+        id: '1',
+        name: 'Premium Wireless Headphones',
+        price: 89.99,
+        currency: 'USD',
+        rating: 5.0,
+        review_count: 24,
+        distance: '2.1',
+        images: [{ url: '/assets/images/products/premium-wireless-headphones.jpg' }],
+        seller: {
+          id: 'seller1',
+          shop_name: 'TechStore',
+          profile_picture_url: '/assets/images/sellers/techstore-avatar.jpg',
+          is_verified: true,
+          location: 'San Francisco, CA'
+        },
+        description: 'High-quality wireless headphones with noise cancellation and premium sound quality.',
+        stock: 15,
+        category: 'Electronics'
+      },
+      {
+        id: '2',
+        name: 'Vintage Leather Jacket',
+        price: 125.00,
+        currency: 'USD',
+        rating: 4.0,
+        review_count: 18,
+        distance: '1.5',
+        images: [{ url: '/assets/images/products/vintage-leather-jacket.jpg' }],
+        seller: {
+          id: 'seller2',
+          shop_name: 'StyleHub',
+          profile_picture_url: '/assets/images/sellers/stylehub-avatar.jpg',
+          is_verified: true,
+          location: 'Los Angeles, CA'
+        },
+        description: 'Authentic vintage leather jacket in excellent condition.',
+        stock: 8,
+        category: 'Fashion'
+      },
+      {
+        id: '3',
+        name: 'Succulent Plant Collection',
+        price: 35.99,
+        currency: 'USD',
+        rating: 5.0,
+        review_count: 31,
+        distance: '3.2',
+        images: [{ url: '/assets/images/products/succulent-plant-collection.jpg' }],
+        seller: {
+          id: 'seller3',
+          shop_name: 'GreenThumb',
+          profile_picture_url: '/assets/images/sellers/greenthumb-avatar.jpg',
+          is_verified: true,
+          location: 'Portland, OR'
+        },
+        description: 'Beautiful collection of 6 different succulent plants perfect for home decoration.',
+        stock: 12,
+        category: 'Home & Garden'
+      },
+      {
+        id: '4',
+        name: 'Premium Yoga Mat',
+        price: 42.50,
+        currency: 'USD',
+        rating: 4.0,
+        review_count: 12,
+        distance: '4.1',
+        images: [{ url: '/assets/images/products/premium-yoga-mat.jpg' }],
+        seller: {
+          id: 'seller4',
+          shop_name: 'FitLife',
+          profile_picture_url: '/assets/images/sellers/fitlife-avatar.jpg',
+          is_verified: true,
+          location: 'Austin, TX'
+        },
+        description: 'Non-slip premium yoga mat with excellent grip and cushioning.',
+        stock: 20,
+        category: 'Sports'
+      },
+      {
+        id: '5',
+        name: 'Handmade Ceramic Mug',
+        price: 28.00,
+        currency: 'USD',
+        rating: 5.0,
+        review_count: 9,
+        distance: '1.8',
+        images: [{ url: '/assets/images/products/handmade-ceramic-mug.jpg' }],
+        seller: {
+          id: 'seller5',
+          shop_name: 'ArtisanCrafts',
+          profile_picture_url: '/assets/images/sellers/artisancrafts-avatar.jpg',
+          is_verified: true,
+          location: 'Seattle, WA'
+        },
+        description: 'Beautiful handmade ceramic mug with unique glazing pattern.',
+        stock: 25,
+        category: 'Home & Garden'
+      },
+      {
+        id: '6',
+        name: 'Protective Phone Case',
+        price: 24.99,
+        currency: 'USD',
+        rating: 4.5,
+        review_count: 15,
+        distance: '2.5',
+        images: [{ url: '/assets/images/products/protective-phone-case.jpg' }],
+        seller: {
+          id: 'seller6',
+          shop_name: 'TechStore',
+          profile_picture_url: '/assets/images/sellers/techstore-avatar.jpg',
+          is_verified: true,
+          location: 'San Francisco, CA'
+        },
+        description: 'Durable protective case for iPhone with military-grade protection.',
+        stock: 30,
+        category: 'Electronics'
+      }
+    ];
+
+    this.categories = [
+      { id: 'all', name: 'All Items', count: 1247 },
+      { id: 'electronics', name: 'Electronics', count: 45 },
+      { id: 'books', name: 'Books', count: 32 },
+      { id: 'clothing', name: 'Clothing', count: 28 },
+      { id: 'furniture', name: 'Furniture', count: 19 },
+      { id: 'sports', name: 'Sports', count: 15 }
+    ];
+
+    this.liveSellers = [
+      {
+        id: '1',
+        name: 'Alex Chen',
+        avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg',
+        description: 'Selling electronics and gadgets',
+        rating: 4.9,
+        isOnline: true
+      },
+      {
+        id: '2',
+        name: 'Sarah Johnson',
+        avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
+        description: 'Fashion and accessories',
+        rating: 4.8,
+        isOnline: true
+      }
+    ];
+
+    this.isLoading = false;
+    this.errorMessage = '';
   }
 
   loadMarketplaceData(): void {
@@ -638,12 +714,18 @@ export class MarketplaceComponent implements OnInit {
   onSearchInput(): void {
     this.searchService.setSearchQuery(this.searchQuery);
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
   }
 
   onSortChange(): void {
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
+  }
+
+  onCategorySelect(categoryId: string): void {
+    this.selectedCategory = categoryId;
+    this.currentPage = 1;
+    this.filterProducts();
   }
 
   onCategoryToggle(categoryId: string, event: any): void {
@@ -653,18 +735,18 @@ export class MarketplaceComponent implements OnInit {
       this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
     }
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
   }
 
   onPriceChange(): void {
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
   }
 
   onRatingChange(rating: number): void {
     this.selectedRating = rating;
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
   }
 
   onLocationToggle(location: string, event: any): void {
@@ -751,8 +833,66 @@ export class MarketplaceComponent implements OnInit {
     this.priceRange = { min: null, max: null };
     this.selectedRating = null;
     this.selectedLocations = [];
+    this.searchQuery = '';
     this.currentPage = 1;
-    this.loadProducts();
+    this.filterProducts();
+  }
+
+  filterProducts(): void {
+    // Start with all products
+    let filteredProducts = [...this.products];
+
+    // Apply search filter
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      filteredProducts = filteredProducts.filter(product => 
+        product.name.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query) ||
+        product.seller.shop_name.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply category filter
+    if (this.selectedCategories.length > 0) {
+      filteredProducts = filteredProducts.filter(product =>
+        this.selectedCategories.includes(product.category.toLowerCase().replace(' & ', '-').replace(' ', '-'))
+      );
+    }
+
+    // Apply price filter
+    if (this.priceRange.min !== null) {
+      filteredProducts = filteredProducts.filter(product => product.price >= (this.priceRange.min ?? 0));
+    }
+    if (this.priceRange.max !== null) {
+      filteredProducts = filteredProducts.filter(product => product.price <= (this.priceRange.max ?? Infinity));
+    }
+
+    // Apply rating filter
+    if (this.selectedRating !== null) {
+      filteredProducts = filteredProducts.filter(product => product.rating >= (this.selectedRating ?? 0));
+    }
+
+    // Apply sorting
+    switch (this.sortBy) {
+      case 'price_asc':
+        filteredProducts.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_desc':
+        filteredProducts.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        filteredProducts.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'newest':
+        // For mock data, we'll just keep the original order
+        break;
+      default:
+        break;
+    }
+
+    // Update the products array with filtered results
+    this.products = filteredProducts;
+    this.totalResults = filteredProducts.length;
   }
 
   addToCart(product: any): void {
@@ -870,7 +1010,8 @@ export class MarketplaceComponent implements OnInit {
     if (!imageData) {
       return '/assets/images/product-placeholder.png';
     }
-    return this.media.getPrimaryUrl(imageData);
+    // For mock data, imageData.url is already the full path
+    return imageData.url || '/assets/images/product-placeholder.png';
   }
 
   // Additional marketplace endpoint integrations
@@ -999,4 +1140,9 @@ export class MarketplaceComponent implements OnInit {
   getContentTypeLabel(type: 'product' | 'post'): string {
     return type === 'product' ? 'Product' : 'Community Post';
   }
+
+  navigateToProduct(productId: string): void {
+    this.router.navigate(['/app/marketplace/product', productId]);
+  }
+
 }

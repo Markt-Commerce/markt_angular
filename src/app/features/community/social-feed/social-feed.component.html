@@ -1,0 +1,162 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Main Content -->
+      <!-- Stories Section -->
+      <section class="mb-6">
+        <div class="bg-white rounded-lg p-4 border border-border">
+          <div class="flex space-x-4 overflow-x-auto">
+            <div class="flex-shrink-0 text-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full p-0.5">
+                <div class="w-full h-full bg-white rounded-full flex items-center justify-center">
+                  <fa-icon [icon]="faPlus" class="text-primary"></fa-icon>
+                </div>
+              </div>
+              <p class="text-xs mt-1 text-muted">Your Story</p>
+            </div>
+            <div *ngFor="let story of stories; trackBy: trackByStoryId" class="flex-shrink-0 text-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full p-0.5">
+                <img [src]="story.user.avatar" [alt]="story.user.name" class="w-full h-full rounded-full object-cover">
+              </div>
+              <p class="text-xs mt-1 text-muted">{{ story.user.name }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Create Post -->
+      <section class="mb-6">
+        <div class="bg-white rounded-lg p-4 border border-border">
+          <div class="flex space-x-3">
+            <img [src]="currentUser?.avatar || '/Logo.png'" alt="Profile" class="w-10 h-10 rounded-full">
+            <div class="flex-1">
+              <input 
+                type="text" 
+                placeholder="What's happening on campus?" 
+                class="w-full bg-gray-100 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                [(ngModel)]="newPostContent"
+                (keyup.enter)="createPost()"
+              >
+            </div>
+          </div>
+          <div class="flex justify-between items-center mt-3 pt-3 border-t border-border">
+            <div class="flex space-x-4">
+              <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                <fa-icon [icon]="faImage"></fa-icon>
+                <span class="text-sm">Photo</span>
+              </button>
+              <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                <fa-icon [icon]="faTag"></fa-icon>
+                <span class="text-sm">Product</span>
+              </button>
+              <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                <fa-icon [icon]="faCalendar"></fa-icon>
+                <span class="text-sm">Event</span>
+              </button>
+            </div>
+            <button 
+              (click)="createPost()"
+              class="bg-primary text-white px-6 py-2 rounded-full font-medium hover:bg-secondary transition-colors"
+              [disabled]="!newPostContent.trim()"
+            >
+              Post
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feed Posts -->
+      <section class="space-y-6">
+        <article *ngFor="let post of posts; trackBy: trackByPostId" class="bg-white rounded-lg border border-border overflow-hidden">
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <img [src]="post.author.avatar" [alt]="post.author.name" class="w-10 h-10 rounded-full">
+                  <div>
+                    <h4 class="font-semibold text-dark">{{ post.author.name }}</h4>
+                    <p class="text-sm text-muted">{{ post.author.username }} • {{ post.timestamp }}</p>
+                  </div>
+                  <span *ngIf="post.author.badge" class="bg-primary text-white text-xs px-2 py-1 rounded-full">{{ post.author.badge }}</span>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600">
+                  <fa-icon [icon]="faEllipsis"></fa-icon>
+                </button>
+              </div>
+              
+              <p class="text-dark mb-3">{{ post.content }}</p>
+              
+              <div *ngIf="post.type === 'product' && post.productInfo">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <img [src]="post.productInfo.image" [alt]="post.productInfo.title" class="w-full h-48 object-cover rounded-lg">
+                  <div class="space-y-2">
+                    <div class="bg-light p-3 rounded-lg">
+                      <h5 class="font-semibold text-dark">{{ post.productInfo.title }}</h5>
+                      <p class="text-primary font-bold text-lg">${{ post.productInfo.price }}</p>
+                      <p *ngIf="post.productInfo.originalPrice" class="text-sm text-muted line-through">${{ post.productInfo.originalPrice }} new</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex space-x-3">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg font-medium hover:bg-secondary">
+                    Buy Now
+                  </button>
+                  <button class="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white">
+                    Message
+                  </button>
+                  <button class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100">
+                    <fa-icon [icon]="faShoppingCart"></fa-icon>
+                  </button>
+                </div>
+              </div>
+              <div *ngIf="post.type === 'event' && post.eventInfo">
+                <img [src]="post.eventInfo.image" [alt]="post.eventInfo.title" class="w-full h-64 object-cover rounded-lg mb-4">
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mb-4">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h5 class="font-semibold text-dark mb-1">{{ post.eventInfo.title }}</h5>
+                      <p class="text-sm text-muted mb-2">{{ post.eventInfo.date }}</p>
+                      <p class="text-sm text-muted">{{ post.eventInfo.location }}</p>
+                    </div>
+                    <button class="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600">
+                      RSVP
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <img *ngIf="post.type !== 'product' && post.type !== 'event' && post.image" [src]="post.image" [alt]="'Post image'" class="w-full h-64 object-cover rounded-lg">
+            </div>
+            
+            <div class="px-4 py-3 border-t border-border">
+              <div class="flex items-center justify-between">
+                <div class="flex space-x-6">
+                  <button 
+                    (click)="toggleLike(post)"
+                    class="flex items-center space-x-2 text-muted hover:text-red-500"
+                    [class.text-red-500]="post.isLiked"
+                  >
+                    <fa-icon [icon]="faHeart"></fa-icon>
+                    <span class="text-sm">{{ post.likes }}</span>
+                  </button>
+                  <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                    <fa-icon [icon]="faComment"></fa-icon>
+                    <span class="text-sm">{{ post.comments }}</span>
+                  </button>
+                  <button class="flex items-center space-x-2 text-muted hover:text-primary">
+                    <fa-icon [icon]="faShare"></fa-icon>
+                    <span class="text-sm">Share</span>
+                  </button>
+                </div>
+                <button class="text-muted hover:text-primary">
+                  <fa-icon [icon]="faBookmark"></fa-icon>
+                </button>
+              </div>
+            </div>
+          </article>
+      </section>
+
+  <!-- Floating Create Button -->
+  <button 
+    class="fixed bottom-6 right-6 bg-primary text-white w-14 h-14 rounded-full shadow-lg hover:bg-secondary transition-colors z-40"
+    (click)="scrollToCreatePost()"
+  >
+    <fa-icon [icon]="faPlus" class="text-xl"></fa-icon>
+  </button>
+</div>

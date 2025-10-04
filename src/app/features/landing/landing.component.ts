@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { HeaderComponent } from '../../shared/components/header/header.component';
+// HeaderComponent removed - no longer needed
 import { 
   faUsers, 
   faSearch, 
@@ -20,15 +20,14 @@ import { map } from 'rxjs/operators';
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, FontAwesomeModule, HeaderComponent],
+  imports: [CommonModule, RouterLink, FontAwesomeModule],
   template: `
     <div class="relative flex min-h-screen flex-col bg-white overflow-x-hidden font-sans">
       <!-- Background Pattern -->
       <div class="absolute inset-0 bg-gradient-to-br from-markt-light/30 via-white to-markt-accent/10"></div>
       
       <div class="relative layout-container flex h-full grow flex-col">
-        <!-- Enhanced Header -->
-        <app-header></app-header>
+        <!-- Header removed - no layout component -->
 
         <!-- Enhanced Main Content -->
         <div class="flex flex-1 justify-center ">

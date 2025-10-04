@@ -1,768 +1,317 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
-  faChartLine,
+  faUsers, 
+  faComments, 
   faShoppingCart,
-  faUsers,
-  faBox,
-  faDollarSign,
-  faArrowUp,
-  faArrowDown,
-  faEye,
-  faBell,
-  faUser,
-  faStore,
-  faCalendar,
-  faClock,
-  faStar,
-  faHeart,
-  faShare,
-  faEllipsisH,
-  faArrowRight,
-  faPlus,
   faEnvelope,
-  faExclamationTriangle,
-  faCheckCircle,
-  faUserPlus,
-  faCamera
+  faStar,
+  faDollarSign,
+  faCheck,
+  faMessage,
+  faPlus,
+  faSearch,
+  faHandshake
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/services/auth.service';
-import { OrderService } from '../../core/services/order.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
+import { AppStateService } from '../../core/services/app-state.service';
 import { CartService } from '../../core/services/cart.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ChatService } from '../../core/services/chat.service';
-import { RequestService } from '../../core/services/request.service';
-import { ProfileService } from '../../core/services/profile.service';
-import { ApiService } from '../../core/services/api.service';
+import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule, RouterModule],
+  imports: [CommonModule, RouterLink, FontAwesomeModule],
   template: `
-    <div class="space-y-6">
-      <!-- Welcome Section -->
-      <div class="bg-gradient-to-r from-markt-primary to-markt-secondary rounded-lg p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            @if (loadingUser) {
-              <div class="animate-pulse">
-                <div class="h-8 w-64 bg-white/20 rounded mb-2"></div>
-                <div class="h-4 w-80 bg-white/10 rounded"></div>
-              </div>
-            } @else if (errorUser) {
+    <!-- Dashboard Content -->
+    <div class="min-h-screen bg-gray-50 p-6">
+      <div class="space-y-6">
+      <!-- Welcome Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-dark mb-2">Welcome back, {{ getUserDisplayName() }}! 👋</h1>
+        <p class="text-muted">Here's what's happening with your Markt activity today</p>
+      </div>
+      <!-- Stats Section -->
+      <section>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-border">
+            <div class="flex items-center justify-between">
               <div>
-                <h1 class="text-2xl font-bold">Dashboard</h1>
-                <p class="text-markt-light mt-1">Unable to load user information</p>
-              </div>
-            } @else {
-              <div>
-                <h1 class="text-2xl font-bold">
-                  {{ isSeller ? 'Seller Dashboard' : 'My Dashboard' }}
-                </h1>
-                <p class="text-markt-light mt-1">
-                  {{ isSeller ? "Here's what's happening with your shop today" : "Here's what's happening with your account today" }}
+                <p class="text-muted text-sm font-medium">Active Orders</p>
+                <p class="text-2xl font-bold text-dark mt-1">12</p>
+                <p class="text-green-600 text-sm mt-1">
+                  <fa-icon [icon]="faCheck" class="text-xs"></fa-icon> +2 from yesterday
                 </p>
               </div>
-            }
+              <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <fa-icon [icon]="faShoppingCart" class="text-blue-600"></fa-icon>
+              </div>
+            </div>
           </div>
-          <div class="hidden md:block">
-            @if (loadingUser) {
-              <div class="w-16 h-16 rounded-full border-4 border-white/20 bg-white/10 animate-pulse"></div>
-            } @else {
-              <img
-                [src]="user?.profile_picture_url || '/markt-text-logo.png'"
-                alt="Profile"
-                class="w-16 h-16 rounded-full border-4 border-white/20"
-              >
-            }
+          
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-border">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-muted text-sm font-medium">Unread Messages</p>
+                <p class="text-2xl font-bold text-dark mt-1">{{ unreadMessages }}</p>
+                <p class="text-primary text-sm mt-1">
+                  <fa-icon [icon]="faMessage" class="text-xs"></fa-icon> 3 urgent
+                </p>
+              </div>
+              <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <fa-icon [icon]="faEnvelope" class="text-green-600"></fa-icon>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-border">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-muted text-sm font-medium">Pending Reviews</p>
+                <p class="text-2xl font-bold text-dark mt-1">4</p>
+                <p class="text-orange-600 text-sm mt-1">
+                  <fa-icon [icon]="faStar" class="text-xs"></fa-icon> 4.8 avg rating
+                </p>
+              </div>
+              <div class="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center">
+                <fa-icon [icon]="faStar" class="text-yellow-600"></fa-icon>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-border">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-muted text-sm font-medium">This Month</p>
+                <p class="text-2xl font-bold text-dark mt-1">$1,247</p>
+                <p class="text-green-600 text-sm mt-1">
+                  <fa-icon [icon]="faCheck" class="text-xs"></fa-icon> +15% vs last month
+                </p>
+              </div>
+              <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <fa-icon [icon]="faDollarSign" class="text-primary"></fa-icon>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Activity -->
+        <section class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-border">
+          <div class="p-6 border-b border-border">
+            <h3 class="text-lg font-semibold text-dark">Recent Activity</h3>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <fa-icon [icon]="faCheck" class="text-green-600 text-sm"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-dark">Order #1247 completed</p>
+                <p class="text-xs text-muted">Vintage textbook sold to @michaelj</p>
+                <p class="text-xs text-muted">2 hours ago</p>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <fa-icon [icon]="faMessage" class="text-blue-600 text-sm"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-dark">New message from Emma Wilson</p>
+                <p class="text-xs text-muted">Interested in your dorm furniture listing</p>
+                <p class="text-xs text-muted">4 hours ago</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <fa-icon [icon]="faStar" class="text-yellow-600 text-sm"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-dark">New 5-star review received</p>
+                <p class="text-xs text-muted">"Great seller, fast shipping!" - @alexd</p>
+                <p class="text-xs text-muted">6 hours ago</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <fa-icon [icon]="faPlus" class="text-primary text-sm"></fa-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-dark">New listing published</p>
+                <p class="text-xs text-muted">MacBook Pro 2019 - Electronics</p>
+                <p class="text-xs text-muted">1 day ago</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="bg-white rounded-xl shadow-sm border border-border">
+          <div class="p-6 border-b border-border">
+            <h3 class="text-lg font-semibold text-dark">Quick Actions</h3>
+          </div>
+          <div class="p-6 space-y-3">
+            <button routerLink="/app/seller/listings/create" class="w-full bg-primary text-white px-4 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+              <fa-icon [icon]="faPlus" class="mr-2"></fa-icon>
+              Create New Listing
+            </button>
+            <button routerLink="/app/marketplace" class="w-full bg-blue-50 text-blue-600 px-4 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+              <fa-icon [icon]="faSearch" class="mr-2"></fa-icon>
+              Browse Marketplace
+            </button>
+            <button routerLink="/app/community" class="w-full bg-green-50 text-green-600 px-4 py-3 rounded-lg font-medium hover:bg-green-100 transition-colors">
+              <fa-icon [icon]="faUsers" class="mr-2"></fa-icon>
+              Join Community
+            </button>
+            <button routerLink="/app/offers/create" class="w-full bg-purple-50 text-purple-600 px-4 py-3 rounded-lg font-medium hover:bg-purple-100 transition-colors">
+              <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>
+              Make an Offer
+            </button>
+          </div>
+        </section>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Cart Items (Buyers) / Products (Sellers) -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-              <fa-icon [icon]="isSeller ? faStore : faShoppingCart" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              @if (loadingCart) {
-                <div class="animate-pulse">
-                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
-                </div>
-              } @else if (errorCart) {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
-                  <p class="text-sm text-red-600">Error loading</p>
-                </div>
-              } @else {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Active Products' : 'Cart Items' }}</p>
-                  <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalProducts : cartItemCount }}</p>
-                </div>
-              }
-            </div>
+      <!-- Recommended Items -->
+      <section class="bg-white rounded-xl shadow-sm border border-border">
+        <div class="p-6 border-b border-border">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-dark">Recommended for You</h3>
+            <span class="text-primary text-sm font-medium hover:underline cursor-pointer">View All</span>
           </div>
-          <div class="mt-4">
-            <a
-              [routerLink]="isSeller ? '/app/seller/listings' : '/app/cart'"
-              class="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              {{ isSeller ? 'Manage Products' : 'View Cart' }} <fa-icon [icon]="faArrowRight"></fa-icon>
-            </a>
-          </div>
-        </div>
-
-        <!-- Orders -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-green-100 text-green-600">
-              <fa-icon [icon]="faBox" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              @if (loadingOrders) {
-                <div class="animate-pulse">
-                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
-                </div>
-              } @else if (errorOrders) {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
-                  <p class="text-sm text-red-600">Error loading</p>
-                </div>
-              } @else {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">{{ isSeller ? 'Total Sales' : 'Total Orders' }}</p>
-                  <p class="text-2xl font-semibold text-gray-900">{{ isSeller ? sellerStats.totalSales : orderStats.total }}</p>
-                </div>
-              }
-            </div>
-          </div>
-          <div class="mt-4">
-            <a
-              [routerLink]="isSeller ? '/app/seller/analytics' : '/app/orders'"
-              class="text-sm text-green-600 hover:text-green-800 font-medium"
-            >
-              {{ isSeller ? 'View Analytics' : 'View Orders' }} <fa-icon [icon]="faArrowRight"></fa-icon>
-            </a>
-          </div>
-        </div>
-
-        <!-- Notifications -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <fa-icon [icon]="faBell" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              @if (loadingNotifications) {
-                <div class="animate-pulse">
-                  <div class="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
-                </div>
-              } @else if (errorNotifications) {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Notifications</p>
-                  <p class="text-sm text-red-600">Error loading</p>
-                </div>
-              } @else {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Notifications</p>
-                  <p class="text-2xl font-semibold text-gray-900">{{ unreadNotifications }}</p>
-                </div>
-              }
-            </div>
-          </div>
-          <div class="mt-4">
-            <a
-              routerLink="/app/notifications"
-              class="text-sm text-yellow-600 hover:text-yellow-800 font-medium"
-            >
-              View All <fa-icon [icon]="faArrowRight"></fa-icon>
-            </a>
-          </div>
-        </div>
-
-        <!-- Messages -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-              <fa-icon [icon]="faEnvelope" class="w-6 h-6"></fa-icon>
-            </div>
-            <div class="ml-4">
-              @if (loadingMessages) {
-                <div class="animate-pulse">
-                  <div class="h-4 w-20 bg-gray-200 rounded mb-2"></div>
-                  <div class="h-8 w-12 bg-gray-200 rounded"></div>
-                </div>
-              } @else if (errorMessages) {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Messages</p>
-                  <p class="text-sm text-red-600">Error loading</p>
-                </div>
-              } @else {
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Messages</p>
-                  <p class="text-2xl font-semibold text-gray-900">{{ unreadMessages }}</p>
-                </div>
-              }
-            </div>
-          </div>
-          <div class="mt-4">
-            <a
-              routerLink="/app/chat"
-              class="text-sm text-purple-600 hover:text-purple-800 font-medium"
-            >
-              View Messages <fa-icon [icon]="faArrowRight"></fa-icon>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Seller Stats (if seller) -->
-      @if (isSeller) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
-                <fa-icon [icon]="faStore" class="w-6 h-6"></fa-icon>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Products</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalProducts }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">
-                <fa-icon [icon]="faChartLine" class="w-6 h-6"></fa-icon>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Sales</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalSales | currency:'NGN' }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="p-3 rounded-full bg-orange-100 text-orange-600">
-                <fa-icon [icon]="faStar" class="w-6 h-6"></fa-icon>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Rating</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.averageRating }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="p-3 rounded-full bg-pink-100 text-pink-600">
-                <fa-icon [icon]="faUsers" class="w-6 h-6"></fa-icon>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Customers</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ sellerStats.totalCustomers }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Recent Activity -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Orders -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Recent Orders</h3>
-          </div>
-          <div class="p-6">
-            @if (recentOrders.length === 0) {
-              <div class="text-center py-8">
-                <fa-icon [icon]="faBox" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-                <p class="text-gray-500">No orders yet</p>
-                <a
-                  routerLink="/app/marketplace"
-                  class="mt-2 inline-block text-markt-primary hover:text-markt-secondary font-medium"
-                >
-                  Start shopping <fa-icon [icon]="faArrowRight"></fa-icon>
-                </a>
-              </div>
-            }
-            @for (order of recentOrders.slice(0, 5); track order.id) {
-              <div class="flex items-center py-3 border-b border-gray-100 last:border-b-0">
-                <div class="flex-shrink-0">
-                  <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                    <fa-icon [icon]="faBox" class="w-5 h-5 text-gray-600"></fa-icon>
-                  </div>
-                </div>
-                <div class="ml-4 flex-1">
-                  <p class="text-sm font-medium text-gray-900">Order #{{ order.order_number }}</p>
-                  <p class="text-sm text-gray-500">{{ order.total | currency:'NGN' }}</p>
-                </div>
-                <div class="ml-4">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    [ngClass]="getOrderStatusClasses(order.status)"
-                  >
-                    {{ getOrderStatusDisplay(order.status) }}
-                  </span>
-                </div>
-              </div>
-            }
-            @if (recentOrders.length > 5) {
-              <div class="mt-4 text-center">
-                <a
-                  routerLink="/app/orders"
-                  class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
-                >
-                  View all orders <fa-icon [icon]="faArrowRight"></fa-icon>
-                </a>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Recent Notifications -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Recent Notifications</h3>
-          </div>
-          <div class="p-6">
-            @if (recentNotifications.length === 0) {
-              <div class="text-center py-8">
-                <fa-icon [icon]="faBell" class="w-12 h-12 text-gray-400 mx-auto mb-4"></fa-icon>
-                <p class="text-gray-500">No notifications</p>
-              </div>
-            }
-            @for (notification of recentNotifications.slice(0, 5); track notification.id) {
-              <div class="flex items-start py-3 border-b border-gray-100 last:border-b-0">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <fa-icon [icon]="getNotificationIcon(notification.type)" class="w-4 h-4 text-gray-600"></fa-icon>
-                  </div>
-                </div>
-                <div class="ml-3 flex-1">
-                  <p class="text-sm text-gray-900">{{ notification.message }}</p>
-                  <p class="text-xs text-gray-500">{{ formatTimestamp(notification.created_at) }}</p>
-                </div>
-                @if (!notification.is_read) {
-                  <div class="ml-2">
-                    <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                  </div>
-                }
-              </div>
-            }
-            @if (recentNotifications.length > 5) {
-              <div class="mt-4 text-center">
-                <a
-                  routerLink="/app/notifications"
-                  class="text-sm text-markt-primary hover:text-markt-secondary font-medium"
-                >
-                  View all notifications <fa-icon [icon]="faArrowRight"></fa-icon>
-                </a>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
         </div>
         <div class="p-6">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a
-              routerLink="/app/marketplace"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faStore" class="w-6 h-6 text-blue-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Browse Products</span>
-            </a>
-
-            <a
-              routerLink="/app/requests"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faEye" class="w-6 h-6 text-green-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">View Requests</span>
-            </a>
-
-            <a
-              routerLink="/app/social"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faUsers" class="w-6 h-6 text-purple-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Social Feed</span>
-            </a>
-
-            <a
-              routerLink="/app/profile"
-              class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-            >
-              <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-                <fa-icon [icon]="faUser" class="w-6 h-6 text-orange-600"></fa-icon>
-              </div>
-              <span class="text-sm font-medium text-gray-900">My Profile</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Seller Quick Actions (if seller) -->
-      @if (isSeller) {
-        <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Seller Tools</h3>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <a
-                routerLink="/app/seller/products/create"
-                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-              >
-                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                  <fa-icon [icon]="faPlus" class="w-6 h-6 text-blue-600"></fa-icon>
-                </div>
-                <span class="text-sm font-medium text-gray-900">Add Product</span>
-              </a>
-
-              <a
-                routerLink="/app/seller/orders"
-                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-              >
-                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                  <fa-icon [icon]="faBox" class="w-6 h-6 text-green-600"></fa-icon>
-                </div>
-                <span class="text-sm font-medium text-gray-900">Manage Orders</span>
-              </a>
-
-              <a
-                routerLink="/app/seller/analytics"
-                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-              >
-                <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                  <fa-icon [icon]="faChartLine" class="w-6 h-6 text-purple-600"></fa-icon>
-                </div>
-                <span class="text-sm font-medium text-gray-900">Analytics</span>
-              </a>
-
-              <a
-                routerLink="/app/seller/products"
-                class="flex flex-col items-center p-4 rounded-lg border border-gray-200 hover:border-markt-primary hover:bg-markt-primary/5 transition-colors"
-              >
-                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-                  <fa-icon [icon]="faStore" class="w-6 h-6 text-orange-600"></fa-icon>
-                </div>
-                <span class="text-sm font-medium text-gray-900">My Products</span>
-              </a>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <img class="w-full h-32 object-cover rounded-lg mb-3" src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=300&fit=crop&crop=center" alt="Economics textbook for college students">
+              <h4 class="font-medium text-dark text-sm mb-1">Economics Textbook</h4>
+              <p class="text-muted text-xs mb-2">Excellent condition</p>
+              <p class="text-primary font-semibold">$45</p>
+            </div>
+            <div class="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <img class="w-full h-32 object-cover rounded-lg mb-3" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center" alt="Modern LED desk lamp for studying">
+              <h4 class="font-medium text-dark text-sm mb-1">Desk Lamp</h4>
+              <p class="text-muted text-xs mb-2">Perfect for studying</p>
+              <p class="text-primary font-semibold">$25</p>
+            </div>
+            <div class="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <img class="w-full h-32 object-cover rounded-lg mb-3" src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop&crop=center" alt="Wireless noise cancelling headphones">
+              <h4 class="font-medium text-dark text-sm mb-1">Wireless Headphones</h4>
+              <p class="text-muted text-xs mb-2">Noise cancelling</p>
+              <p class="text-primary font-semibold">$89</p>
+            </div>
+            <div class="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <img class="w-full h-32 object-cover rounded-lg mb-3" src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=300&fit=crop&crop=center" alt="Vintage film camera for photography">
+              <h4 class="font-medium text-dark text-sm mb-1">Vintage Camera</h4>
+              <p class="text-muted text-xs mb-2">Film photography</p>
+              <p class="text-primary font-semibold">$120</p>
             </div>
           </div>
         </div>
-      }
+      </section>
+
+      <!-- Live Feed -->
+      <section class="bg-white rounded-xl shadow-sm border border-border">
+        <div class="p-6 border-b border-border">
+          <h3 class="text-lg font-semibold text-dark">Campus Live Feed</h3>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex items-start space-x-3">
+            <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" alt="User" class="w-8 h-8 rounded-full">
+            <div class="flex-1">
+              <p class="text-sm"><span class="font-medium">@mikejohnson</span> just listed a new item: "Gaming Chair - Like New"</p>
+              <p class="text-xs text-muted">5 minutes ago</p>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3">
+            <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg" alt="User" class="w-8 h-8 rounded-full">
+            <div class="flex-1">
+              <p class="text-sm"><span class="font-medium">@emmastone</span> is looking for: "Calculus II textbook for spring semester"</p>
+              <p class="text-xs text-muted">12 minutes ago</p>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3">
+            <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" alt="User" class="w-8 h-8 rounded-full">
+            <div class="flex-1">
+              <p class="text-sm"><span class="font-medium">@alexdavis</span> completed a trade with @sarahchen</p>
+              <p class="text-xs text-muted">18 minutes ago</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
     </div>
   `,
   styles: [`
     :host {
       display: block;
     }
+    
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    
+    html, body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   `]
 })
 export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
+  private appStateService = inject(AppStateService);
   private cartService = inject(CartService);
-  private orderService = inject(OrderService);
   private notificationService = inject(NotificationService);
   private chatService = inject(ChatService);
-  private marketplaceService = inject(MarketplaceService);
-  private requestService = inject(RequestService);
-  private profileService = inject(ProfileService);
-  private router = inject(Router);
-  private apiService = inject(ApiService);
+  public access = inject(AccessControlService);
 
-  // Font Awesome Icons - properly defined
-  faShoppingCart = faShoppingCart;
-  faBox = faBox;
-  faHeart = faHeart;
-  faEnvelope = faEnvelope;
-  faBell = faBell;
-  faChartLine = faChartLine;
+  // FontAwesome Icons
   faUsers = faUsers;
-  faStore = faStore;
-  faPlus = faPlus;
-  faEye = faEye;
-  faClock = faClock;
-  faCheckCircle = faCheckCircle;
-  faExclamationTriangle = faExclamationTriangle;
-  faArrowUp = faArrowUp;
-  faArrowDown = faArrowDown;
-  faDollarSign = faDollarSign;
+  faComments = faComments;
+  faShoppingCart = faShoppingCart;
+  faEnvelope = faEnvelope;
   faStar = faStar;
-  faUser = faUser;
-  faUserPlus = faUserPlus;
-  faCamera = faCamera;
-  faArrowRight = faArrowRight;
+  faDollarSign = faDollarSign;
+  faCheck = faCheck;
+  faMessage = faMessage;
+  faPlus = faPlus;
+  faSearch = faSearch;
+  faHandshake = faHandshake;
 
-  // Data
+  // State
   user: any = null;
-  cartItemCount = 0;
-  unreadNotifications = 0;
   unreadMessages = 0;
-  recentOrders: any[] = [];
-  recentNotifications: any[] = [];
-  recentRequests: any[] = [];
-  notifications: any[] = [];
-  loading = true;
-  
-  // Individual loading states
-  loadingUser = false;
-  loadingOrders = false;
-  loadingRequests = false;
-  loadingNotifications = false;
-  loadingCart = false;
-  loadingMessages = false;
-  
-  // Error states
-  errorUser = '';
-  errorOrders = '';
-  errorRequests = '';
-  errorNotifications = '';
-  errorCart = '';
-  errorMessages = '';
-
-  // Stats
-  orderStats = {
-    total: 0,
-    pending: 0,
-    completed: 0,
-    cancelled: 0
-  };
-
-  sellerStats = {
-    totalProducts: 0,
-    totalSales: 0,
-    averageRating: 0,
-    totalCustomers: 0
-  };
 
   ngOnInit(): void {
-    this.loadDashboardData();
+    this.loadUserData();
+    this.setupSubscriptions();
   }
 
-  private loadDashboardData(): void {
-    // Load user profile
-    this.loadingUser = true;
-    this.errorUser = '';
-    this.apiService.getProfile().subscribe({
-      next: (response) => {
-        this.user = response.data;
-        this.loadingUser = false;
-        this.errorUser = '';
-        
-        // Load seller stats if user is a seller
-        if (this.isSeller) {
-          this.loadSellerStats();
-        }
-      },
-      error: (error) => {
-        console.error('Error loading user profile:', error);
-        this.loadingUser = false;
-        this.errorUser = 'Failed to load user profile';
-      }
-    });
+  private loadUserData(): void {
+    this.user = this.authService.getCurrentUser();
+  }
 
-    // Load recent orders
-    this.loadingOrders = true;
-    this.errorOrders = '';
-    this.apiService.getMyOrders({ limit: 5 }).subscribe({
-      next: (response) => {
-        this.recentOrders = response.data?.items || [];
-        this.orderStats.total = response.data?.items?.length || 0;
-        this.loadingOrders = false;
-        this.errorOrders = '';
-      },
-      error: (error) => {
-        console.error('Error loading recent orders:', error);
-        this.recentOrders = [];
-        this.orderStats.total = 0;
-        this.loadingOrders = false;
-        this.errorOrders = 'Failed to load orders';
-      }
-    });
-
-    // Load recent requests
-    this.loadingRequests = true;
-    this.errorRequests = '';
-    this.apiService.getMyRequests({ limit: 5 }).subscribe({
-      next: (response) => {
-        this.recentRequests = response.data?.items || [];
-        this.loadingRequests = false;
-        this.errorRequests = '';
-      },
-      error: (error) => {
-        console.error('Error loading recent requests:', error);
-        this.recentRequests = [];
-        this.loadingRequests = false;
-        this.errorRequests = 'Failed to load requests';
-      }
-    });
-
-    // Load notifications
-    this.loadingNotifications = true;
-    this.errorNotifications = '';
-    this.apiService.getNotifications({ limit: 5 }).subscribe({
-      next: (response) => {
-        this.notifications = response.data || [];
-        this.recentNotifications = this.notifications;
-        this.unreadNotifications = this.notifications.filter(n => !n.is_read).length;
-        this.loadingNotifications = false;
-        this.errorNotifications = '';
-      },
-      error: (error) => {
-        console.error('Error loading notifications:', error);
-        this.notifications = [];
-        this.recentNotifications = [];
-        this.unreadNotifications = 0;
-        this.loadingNotifications = false;
-        this.errorNotifications = 'Failed to load notifications';
-      }
-    });
-
-    // Load cart item count
-    this.loadingCart = true;
-    this.errorCart = '';
-    this.cartService.getCartItemCount$().subscribe({
-      next: (count) => {
-        this.cartItemCount = count;
-        this.loadingCart = false;
-        this.errorCart = '';
-      },
-      error: (error) => {
-        console.error('Error loading cart count:', error);
-        this.cartItemCount = 0;
-        this.loadingCart = false;
-        this.errorCart = 'Failed to load cart';
-      }
-    });
-
-    // Load unread message count
-    this.loadingMessages = true;
-    this.errorMessages = '';
-    this.chatService.getUnreadCount$().subscribe({
-      next: (count) => {
-        this.unreadMessages = count;
-        this.loadingMessages = false;
-        this.errorMessages = '';
-      },
-      error: (error) => {
-        console.error('Error loading message count:', error);
-        this.unreadMessages = 0;
-        this.loadingMessages = false;
-        this.errorMessages = 'Failed to load messages';
-      }
+  private setupSubscriptions(): void {
+    this.chatService.getUnreadCount$().subscribe(count => {
+      this.unreadMessages = count;
     });
   }
 
   getUserDisplayName(): string {
     if (!this.user) return 'User';
-
-    if (this.user.current_role === 'buyer' && this.user.buyer_account) {
+    if (this.access.role === 'buyer' && this.user.buyer_account) {
       return this.user.buyer_account.buyername;
-    } else if (this.user.current_role === 'seller' && this.user.seller_account) {
+    }
+    if (this.access.role === 'seller' && this.user.seller_account) {
       return this.user.seller_account.shop_name;
     }
-    return this.user.username;
-  }
-
-  get isSeller(): boolean {
-    return this.user?.current_role === 'seller';
-  }
-
-  getOrderStatusDisplay(status: string): string {
-    const statusMap: Record<string, string> = {
-      'pending': 'Pending',
-      'confirmed': 'Confirmed',
-      'shipped': 'Shipped',
-      'delivered': 'Delivered',
-      'cancelled': 'Cancelled'
-    };
-    return statusMap[status] || status;
-  }
-
-  getOrderStatusClasses(status: string): string {
-    const classMap: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'confirmed': 'bg-blue-100 text-blue-800',
-      'shipped': 'bg-purple-100 text-purple-800',
-      'delivered': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800'
-    };
-    return classMap[status] || 'bg-gray-100 text-gray-800';
-  }
-
-  getNotificationIcon(type: string): any {
-    const iconMap: Record<string, any> = {
-      'order': this.faBox,
-      'message': this.faEnvelope,
-      'like': this.faHeart,
-      'comment': this.faEnvelope,
-      'follow': this.faUserPlus,
-      'product': this.faStore,
-      'payment': this.faDollarSign,
-      'system': this.faBell
-    };
-    return iconMap[type] || this.faBell;
-  }
-
-  formatTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
-    }
-  }
-
-  private loadSellerStats(): void {
-    this.apiService.getSellerSales().subscribe({
-      next: (response: any) => {
-        if (response.success && response.data) {
-          this.sellerStats = {
-            totalProducts: response.data.total_products || 0,
-            totalSales: response.data.total_sales || 0,
-            averageRating: response.data.average_rating || 0,
-            totalCustomers: response.data.total_customers || 0
-          };
-        }
-      },
-      error: (error: any) => {
-        console.error('Error loading seller stats:', error);
-        // Keep default values (0) for seller stats on error
-      }
-    });
+    return this.user.username || this.user.full_name || 'User';
   }
 }

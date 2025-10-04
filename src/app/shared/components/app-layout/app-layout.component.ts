@@ -1,39 +1,33 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { filter } from 'rxjs/operators';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { combineLatest } from 'rxjs';
-import {
-  faHome,
-  faShoppingBag,
-  faTimesCircle,
-  faHeart,
-  faStore,
-  faUser,
-  faCog,
-  faSignOutAlt,
-  faSearch,
-  faBell,
-  faBars,
-  faTimes,
-  faFileText,
-  faUsers,
-  faChartBar,
-  faBox,
-  faTruck,
-  faCreditCard,
-  faComments,
-  faBookmark,
-  faShare,
-  faCamera
-} from '@fortawesome/free-solid-svg-icons';
 import { 
-  faFacebook, 
-  faTwitter, 
-  faInstagram, 
-  faLinkedin 
-} from '@fortawesome/free-brands-svg-icons';
+  faBars, 
+  faSearch, 
+  faBell, 
+  faChevronDown, 
+  faUser, 
+  faHome, 
+  faStore, 
+  faUsers, 
+  faComments, 
+  faShoppingBag, 
+  faShoppingCart, 
+  faReceipt, 
+  faTag, 
+  faClipboard, 
+  faChartBar, 
+  faChartLine, 
+  faList, 
+  faPlusCircle, 
+  faCog, 
+  faTimes, 
+  faChevronRight,
+  faStream
+} from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { CartService } from '../../../core/services/cart.service';
@@ -43,392 +37,108 @@ import { AccessControlService } from '../../../core/services/access-control.serv
 import { ObservableUtilsService } from '../../../core/services/observable-utils.service';
 
 @Component({
-  selector: 'app-layout',
+  selector: 'app-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, FontAwesomeModule, FormsModule],
+  imports: [CommonModule, RouterLink, RouterOutlet, FormsModule, FontAwesomeModule],
   template: `
-    <div class="flex h-screen bg-gray-50">
-      <!-- Sidebar -->
-      <div 
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out"
-        [class.translate-x-0]="sidebarOpen"
-        [class.-translate-x-full]="!sidebarOpen"
-      >
-        <!-- Sidebar Header -->
-        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <div class="flex items-center space-x-3">
-            <img src="/Logo.png" alt="Markt" class="h-8 w-8">
-            <span class="text-xl font-bold text-gray-900">Markt</span>
-          </div>
-          <button 
-            (click)="toggleSidebar()"
-            class="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
-          >
-            <fa-icon [icon]="faTimes" class="w-5 h-5"></fa-icon>
-          </button>
-        </div>
-
-        <!-- User Profile Section -->
-        <div class="p-6 border-b border-gray-200">
-          <div class="flex items-center space-x-3">
-            <div class="relative">
-              <img 
-                [src]="user?.profile_picture_url || '/Logo.png'" 
-                alt="Profile" 
-                class="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-              >
-              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">
-                {{ getUserDisplayName() }}
-              </p>
-              <p class="text-xs text-gray-500 capitalize">
-                {{ access.role || 'user' }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <!-- Main Navigation -->
-          <div class="space-y-1">
-            <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Main
-            </h3>
-            
-            <a 
-              routerLink="/app/dashboard" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faHome" class="w-5 h-5 mr-3"></fa-icon>
-              Dashboard
-            </a>
-
-            <a 
-              routerLink="/app/marketplace" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faStore" class="w-5 h-5 mr-3"></fa-icon>
-              Marketplace
-            </a>
-
-            <a 
-              routerLink="/app/requests" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faFileText" class="w-5 h-5 mr-3"></fa-icon>
-              Buyer Requests
-            </a>
-
-            <a 
-              routerLink="/app/social" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faUsers" class="w-5 h-5 mr-3"></fa-icon>
-              Social Feed
-            </a>
-          </div>
-
-          <!-- Shopping Section -->
-          <div class="space-y-1">
-            <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Shopping
-            </h3>
-            
-            <a 
-              routerLink="/app/cart" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faShoppingBag" class="w-5 h-5 mr-3"></fa-icon>
-              Cart
-              <span 
-                *ngIf="cartItemCount > 0"
-                class="ml-auto bg-markt-primary text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center"
-              >
-                {{ cartItemCount }}
-              </span>
-            </a>
-
-            <a 
-              routerLink="/app/orders" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faBox" class="w-5 h-5 mr-3"></fa-icon>
-              Orders
-            </a>
-
-            <a 
-              routerLink="/app/wishlist" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faHeart" class="w-5 h-5 mr-3"></fa-icon>
-              Wishlist
-            </a>
-          </div>
-
-          <!-- Seller Section (if seller) -->
-          <div *ngIf="isSeller" class="space-y-1">
-            <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Seller Tools
-            </h3>
-            
-            <a 
-              routerLink="/app/seller/products" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faBox" class="w-5 h-5 mr-3"></fa-icon>
-              My Products
-            </a>
-
-            <a 
-              routerLink="/app/seller/orders" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faTruck" class="w-5 h-5 mr-3"></fa-icon>
-              Seller Orders
-            </a>
-
-            <a 
-              routerLink="/app/seller/analytics" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faChartBar" class="w-5 h-5 mr-3"></fa-icon>
-              Analytics
-            </a>
-          </div>
-
-          <!-- Communication -->
-          <div class="space-y-1">
-            <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Communication
-            </h3>
-            
-            <a 
-              routerLink="/app/chat" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faComments" class="w-5 h-5 mr-3"></fa-icon>
-              Messages
-              <span 
-                *ngIf="unreadMessages > 0"
-                class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center"
-              >
-                {{ unreadMessages }}
-              </span>
-            </a>
-
-            <a 
-              routerLink="/app/notifications" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faBell" class="w-5 h-5 mr-3"></fa-icon>
-              Notifications
-              <span 
-                *ngIf="unreadNotifications > 0"
-                class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center"
-              >
-                {{ unreadNotifications }}
-              </span>
-            </a>
-          </div>
-
-          <!-- Account -->
-          <div class="space-y-1">
-            <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Account
-            </h3>
-            
-            <a 
-              routerLink="/app/profile" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faUser" class="w-5 h-5 mr-3"></fa-icon>
-              Profile
-            </a>
-
-            <a 
-              routerLink="/app/settings" 
-              routerLinkActive="bg-markt-primary text-white"
-              class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faCog" class="w-5 h-5 mr-3"></fa-icon>
-              Settings
-            </a>
-
-            <button 
-              (click)="logout()"
-              class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              <fa-icon [icon]="faSignOutAlt" class="w-5 h-5 mr-3"></fa-icon>
-              Logout
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      <!-- Main Content -->
-      <div class="flex-1 flex flex-col lg:ml-64">
-        <!-- Top Navigation -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-          <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <!-- Left side -->
-            <div class="flex items-center">
+    <div class="bg-gray-50 min-h-screen">
+      <!-- Header -->
+        <header class="bg-white border-b border-border shadow-sm sticky top-0 z-50">
+          <div class="px-6 py-2">
+          <div class="flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-4">
               <button 
                 (click)="toggleSidebar()"
-                class="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
+                class="lg:hidden text-dark hover:text-primary"
+                aria-label="Toggle menu"
               >
-                <fa-icon [icon]="faBars" class="w-5 h-5"></fa-icon>
+                <fa-icon [icon]="faBars" class="text-xl"></fa-icon>
               </button>
+                <div class="flex items-center">
+                    <img 
+                        src="/markt-text-logo.png" 
+                        alt="Markt Logo" 
+                        class="h-16 object-contain"
+                    />
+                </div>
+            </div>
               
               <!-- Search Bar -->
-              <div class="ml-4 flex-1 max-w-lg">
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
-                  </div>
+            <div class="hidden md:flex flex-1 max-w-lg mx-8">
+              <div class="relative w-full">
                   <input 
                     type="text" 
-                    placeholder="Search products, users, requests..."
-                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+                  placeholder="Search products, sellers, or communities..." 
+                  class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     [(ngModel)]="searchQuery"
-                    (input)="onSearchInput()"
+                  (keyup.enter)="onSearch()"
                   >
-                </div>
+                <fa-icon [icon]="faSearch" class="absolute left-3 top-3 text-muted w-4 h-4"></fa-icon>
               </div>
             </div>
 
-            <!-- Right side -->
+            <!-- Right Actions -->
             <div class="flex items-center space-x-4">
-              <!-- Role pill + switch -->
-              <div *ngIf="user" class="flex items-center space-x-2 mr-2">
-                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs border border-gray-300 capitalize">{{ access.role || 'user' }}</span>
-                <button *ngIf="user?.is_buyer && user?.is_seller" (click)="toggleRole()" class="text-sm text-markt-primary hover:underline">Switch</button>
-              </div>
-
-              <!-- Quick Actions -->
-              <div class="flex items-center space-x-2">
-                <button 
-                  routerLink="/app/marketplace/create"
-                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Add Product"
-                >
-                  <fa-icon [icon]="faTimes" class="w-5 h-5"></fa-icon>
-                </button>
-                
-                <button 
-                  routerLink="/app/requests/create"
-                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Create Request"
-                >
-                  <fa-icon [icon]="faFileText" class="w-5 h-5"></fa-icon>
-                </button>
-                
-                <button 
-                  routerLink="/app/social/create"
-                  class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Create Post"
-                >
-                  <fa-icon [icon]="faCamera" class="w-5 h-5"></fa-icon>
-                </button>
-              </div>
-
               <!-- Notifications -->
-              <button 
-                routerLink="/app/notifications"
-                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors relative"
-                title="Notifications"
-              >
-                <fa-icon [icon]="faBell" class="w-5 h-5"></fa-icon>
-                <span 
-                  *ngIf="unreadNotifications > 0"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+              <div class="relative">
+                <button 
+                  (click)="goToNotifications()"
+                  class="text-dark hover:text-primary relative"
+                  aria-label="Notifications"
                 >
-                  {{ unreadNotifications > 99 ? '99+' : unreadNotifications }}
-                </span>
-              </button>
+                  <fa-icon [icon]="faBell" class="text-xl"></fa-icon>
+                  <span 
+                    *ngIf="unreadNotifications > 0"
+                    class="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center"
+                  >
+                    {{ unreadNotifications }}
+                  </span>
+                </button>
+              </div>
 
-              <!-- Messages -->
-              <button 
-                routerLink="/app/chat"
-                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors relative"
-                title="Messages"
-              >
-                <fa-icon [icon]="faComments" class="w-5 h-5"></fa-icon>
-                <span 
-                  *ngIf="unreadMessages > 0"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                >
-                  {{ unreadMessages > 99 ? '99+' : unreadMessages }}
-                </span>
-              </button>
-
-              <!-- Cart -->
-              <button 
-                routerLink="/app/cart"
-                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors relative"
-                title="Cart"
-              >
-                <fa-icon [icon]="faShoppingBag" class="w-5 h-5"></fa-icon>
-                <span 
-                  *ngIf="cartItemCount > 0"
-                  class="absolute -top-1 -right-1 bg-markt-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                >
-                  {{ cartItemCount > 99 ? '99+' : cartItemCount }}
-                </span>
-              </button>
-
-              <!-- User Menu -->
+              <!-- User Profile -->
               <div class="relative">
                 <button 
                   (click)="toggleUserMenu()"
-                  class="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  class="flex items-center space-x-3 hover:bg-light rounded-lg p-2"
+                  [attr.aria-expanded]="userMenuOpen"
                 >
                   <img 
                     [src]="user?.profile_picture_url || '/Logo.png'" 
                     alt="Profile" 
                     class="w-8 h-8 rounded-full object-cover"
                   >
-                  <span class="hidden md:block text-sm font-medium text-gray-700">
-                    {{ getUserDisplayName() }}
-                  </span>
+                  <div class="hidden md:block text-left">
+                    <div class="text-sm font-medium text-dark">{{ getUserDisplayName() }}</div>
+                    <div class="text-xs text-muted capitalize">{{ access.role || 'user' }}</div>
+                  </div>
+                  <fa-icon [icon]="faChevronDown" class="text-muted text-sm hidden md:block w-3 h-3"></fa-icon>
                 </button>
 
                 <!-- User Dropdown Menu -->
                 <div 
                   *ngIf="userMenuOpen"
-                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-border"
                 >
                   <a 
                     routerLink="/app/profile"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
+                    (click)="closeUserMenu()"
                   >
                     Profile
                   </a>
                   <a 
                     routerLink="/app/settings"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
+                    (click)="closeUserMenu()"
                   >
                     Settings
                   </a>
-                  <hr class="my-1">
+                  <hr class="my-1 border-border">
                   <button 
                     (click)="logout()"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-light"
                   >
                     Logout
                   </button>
@@ -436,67 +146,310 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </div>
             </div>
           </div>
-        </header>
 
-        <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto">
-          <div class="py-6">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <router-outlet></router-outlet>
+          <!-- Mobile Search -->
+          <div class="md:hidden mt-4">
+            <div class="relative">
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                [(ngModel)]="searchQuery"
+                (keyup.enter)="onSearch()"
+              >
+              <fa-icon [icon]="faSearch" class="absolute left-3 top-3 text-muted w-4 h-4"></fa-icon>
+              </div>
             </div>
           </div>
+        </header>
+
+      <div class="flex">
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border-r border-border h-screen fixed top-16 left-0 hidden lg:block z-40">
+          <div class="p-6">
+            <!-- Role Badge -->
+            <div class="mb-6">
+              <div class="bg-primary/10 text-primary px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center">
+                <fa-icon [icon]="faUser" class="w-4 h-4 mr-2"></fa-icon>
+                <span class="capitalize">{{ access.role || 'user' }}</span>
+              </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="space-y-2">
+              <!-- Dashboard -->
+              <a 
+                routerLink="/app/dashboard" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faHome" class="w-4 h-4"></fa-icon>
+                <span>Dashboard</span>
+              </a>
+
+              <!-- Feed -->
+              <a 
+                routerLink="/app/community/social-feed" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faStream" class="w-4 h-4"></fa-icon>
+                <span>Feed</span>
+              </a>
+
+              <!-- Marketplace -->
+              <a 
+                routerLink="/app/marketplace" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faStore" class="w-4 h-4"></fa-icon>
+                <span>Marketplace</span>
+              </a>
+
+              <!-- Community -->
+              <a 
+                routerLink="/app/community" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faUsers" class="w-4 h-4"></fa-icon>
+                <span>Community</span>
+              </a>
+
+              <!-- Messages -->
+              <a 
+                routerLink="/app/chat" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faComments" class="w-4 h-4"></fa-icon>
+                <span>Messages</span>
+                <span 
+                  *ngIf="unreadMessages > 0"
+                  class="bg-primary text-white text-xs px-2 py-1 rounded-full ml-auto"
+                >
+                  {{ unreadMessages }}
+                </span>
+              </a>
+
+              <!-- Orders -->
+              <a 
+                routerLink="/app/orders" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faReceipt" class="w-4 h-4"></fa-icon>
+                <span>Orders</span>
+              </a>
+
+              <!-- Offers -->
+              <a 
+                routerLink="/app/offers" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faTag" class="w-4 h-4"></fa-icon>
+                <span>Offers</span>
+              </a>
+
+              <!-- Requests -->
+              <a 
+                routerLink="/app/requests" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faClipboard" class="w-4 h-4"></fa-icon>
+                <span>Requests</span>
+              </a>
+
+              <!-- Cart -->
+              <a 
+                routerLink="/app/cart" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faShoppingCart" class="w-4 h-4"></fa-icon>
+                <span>Cart</span>
+                <span 
+                  *ngIf="cartItemCount > 0"
+                  class="bg-primary text-white text-xs px-2 py-1 rounded-full ml-auto"
+                >
+                  {{ cartItemCount }}
+                </span>
+              </a>
+
+              <!-- Notifications removed from sidebar - available in header -->
+
+              <!-- Seller Section -->
+              <div class="pt-4 mt-4 border-t border-border">
+                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Seller Tools</h3>
+                
+                <a 
+                  routerLink="/app/seller/dashboard" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faChartBar" class="w-4 h-4"></fa-icon>
+                  <span>Seller Dashboard</span>
+                </a>
+
+                <a 
+                  routerLink="/app/seller/listings" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faList" class="w-4 h-4"></fa-icon>
+                  <span>My Listings</span>
+                </a>
+
+                <a 
+                  routerLink="/app/seller/listings/create" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faPlusCircle" class="w-4 h-4"></fa-icon>
+                  <span>Add Product</span>
+                </a>
+
+                <a 
+                  routerLink="/app/seller/analytics" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faChartLine" class="w-4 h-4"></fa-icon>
+                  <span>Analytics</span>
+                </a>
+              </div>
+
+              <!-- Account Section -->
+              <!-- User Settings removed from sidebar - available in user dropdown menu -->
+            </nav>
+          </div>
+        </aside>
+
+        <!-- Mobile Sidebar - Removed redundant navigation (use bottom nav instead) -->
+
+        <!-- Main Content Area -->
+        <main class="flex-1 lg:ml-64">
+          <!-- Page Content -->
+          <router-outlet></router-outlet>
         </main>
       </div>
 
-      <!-- Mobile Overlay -->
-      <div 
-        *ngIf="sidebarOpen"
-        (click)="toggleSidebar()"
-        class="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
-      ></div>
+      <!-- Bottom Navigation (Mobile) - Essential routes only -->
+      <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-border lg:hidden">
+        <div class="flex justify-around py-2">
+          <a 
+            routerLink="/app/community/social-feed" 
+            routerLinkActive="text-primary"
+            class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
+          >
+            <fa-icon [icon]="faStream" class="w-4 h-4"></fa-icon>
+            <span class="text-xs mt-1">Feed</span>
+          </a>
+          
+          <a 
+            routerLink="/app/marketplace" 
+            routerLinkActive="text-primary"
+            class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
+          >
+            <fa-icon [icon]="faStore" class="w-4 h-4"></fa-icon>
+            <span class="text-xs mt-1">Market</span>
+          </a>
+          
+          <a 
+            routerLink="/app/cart" 
+            routerLinkActive="text-primary"
+            class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
+          >
+            <fa-icon [icon]="faShoppingCart" class="w-4 h-4"></fa-icon>
+            <span class="text-xs mt-1">Cart</span>
+            <span 
+              *ngIf="cartItemCount > 0"
+              class="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center"
+            >
+              {{ cartItemCount }}
+            </span>
+          </a>
+          
+          <a 
+            routerLink="/app/chat" 
+            routerLinkActive="text-primary"
+            class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
+          >
+            <fa-icon [icon]="faComments" class="w-4 h-4"></fa-icon>
+            <span class="text-xs mt-1">Chat</span>
+            <span 
+              *ngIf="unreadMessages > 0"
+              class="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center"
+            >
+              {{ unreadMessages }}
+            </span>
+          </a>
+          
+          <a 
+            routerLink="/app/orders" 
+            routerLinkActive="text-primary"
+            class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
+          >
+            <fa-icon [icon]="faReceipt" class="w-4 h-4"></fa-icon>
+            <span class="text-xs mt-1">Orders</span>
+          </a>
+        </div>
+      </nav>
     </div>
   `,
   styles: [`
     :host {
       display: block;
-      height: 100vh;
+      min-height: 100vh;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    
+    html, body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   `]
 })
-export class AppLayoutComponent implements OnInit {
+export class AppLayoutComponent implements OnInit, OnDestroy {
+  private router = inject(Router);
   private authService = inject(AuthService);
   private appStateService = inject(AppStateService);
   private cartService = inject(CartService);
   private notificationService = inject(NotificationService);
   private chatService = inject(ChatService);
-  private router = inject(Router);
   private observableUtils = inject(ObservableUtilsService);
   public access = inject(AccessControlService);
 
-  // Icons
-  faHome = faHome;
-  faSearch = faSearch;
-  faShoppingBag = faShoppingBag;
-  faUser = faUser;
-  faBell = faBell;
-  faMessageCircle = faTimesCircle;
-  faHeart = faHeart;
-  faCog = faCog;
-  faSignOutAlt = faSignOutAlt;
+  // FontAwesome Icons
   faBars = faBars;
-  faTimes = faTimes;
-  faPlus = faTimes;
+  faSearch = faSearch;
+  faBell = faBell;
+  faChevronDown = faChevronDown;
+  faUser = faUser;
+  faHome = faHome;
   faStore = faStore;
-  faFileText = faFileText;
   faUsers = faUsers;
-  faChartBar = faChartBar;
-  faBox = faBox;
-  faTruck = faTruck;
-  faCreditCard = faCreditCard;
   faComments = faComments;
-  faBookmark = faBookmark;
-  faShare = faShare;
-  faCamera = faCamera;
+  faShoppingBag = faShoppingBag;
+  faShoppingCart = faShoppingCart;
+  faReceipt = faReceipt;
+  faTag = faTag;
+  faClipboard = faClipboard;
+  faChartBar = faChartBar;
+  faChartLine = faChartLine;
+  faList = faList;
+  faPlusCircle = faPlusCircle;
+  faCog = faCog;
+  faTimes = faTimes;
+  faChevronRight = faChevronRight;
+  faStream = faStream;
 
   // State
   user: any = null;
@@ -513,13 +466,6 @@ export class AppLayoutComponent implements OnInit {
   cartItemCount = 0;
   unreadNotifications = 0;
   unreadMessages = 0;
-  
-  // Combined observables for optimization
-  private combinedState$ = combineLatest([
-    this.cartItemCount$,
-    this.unreadNotifications$,
-    this.unreadMessages$
-  ]);
 
   ngOnInit(): void {
     this.initializeComponent();
@@ -527,23 +473,41 @@ export class AppLayoutComponent implements OnInit {
     this.initializeServices();
   }
 
+  ngOnDestroy(): void {
+    // Cleanup if needed
+  }
+
   private initializeComponent(): void {
-    // Optimized: Combined auth and UI state subscription
-    combineLatest([
-      this.authService.authState$,
-      this.appStateService.getUIState$()
-    ]).subscribe(([authState, uiState]) => {
+    // Subscribe to auth state
+    this.authService.authState$.subscribe(authState => {
       this.user = authState.user;
+    });
+
+    // Subscribe to UI state
+    this.appStateService.getUIState$().subscribe(uiState => {
       this.sidebarOpen = uiState.sidebarOpen;
     });
   }
 
   private setupSubscriptions(): void {
-    // Optimized: Single subscription for all state updates
-    this.combinedState$.subscribe(([cartCount, notificationCount, messageCount]) => {
-      this.cartItemCount = cartCount;
-      this.unreadNotifications = notificationCount;
-      this.unreadMessages = messageCount;
+    // Subscribe to cart, notification and message counts
+    this.cartItemCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
+
+    this.unreadNotifications$.subscribe(count => {
+      this.unreadNotifications = count;
+    });
+
+    this.unreadMessages$.subscribe(count => {
+      this.unreadMessages = count;
+    });
+
+    // Close user menu on route change
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.userMenuOpen = false;
     });
   }
 
@@ -560,8 +524,21 @@ export class AppLayoutComponent implements OnInit {
     this.userMenuOpen = !this.userMenuOpen;
   }
 
-  onSearchInput(): void {
-    this.appStateService.setSearchQuery(this.searchQuery);
+  closeUserMenu(): void {
+    this.userMenuOpen = false;
+  }
+
+  onSearch(): void {
+    if (this.searchQuery.trim()) {
+      this.router.navigate(['/app/marketplace/search'], {
+        queryParams: { q: this.searchQuery.trim() }
+      });
+      this.searchQuery = '';
+    }
+  }
+
+  goToNotifications(): void {
+    this.router.navigate(['/app/notifications']);
   }
 
   getUserDisplayName(): string {
@@ -575,10 +552,6 @@ export class AppLayoutComponent implements OnInit {
     return this.user.username;
   }
 
-  get isSeller(): boolean {
-    return this.access.role === 'seller';
-  }
-
   logout(): void {
     this.observableUtils.createSafeObservable({
       source: this.authService.logout(),
@@ -589,12 +562,4 @@ export class AppLayoutComponent implements OnInit {
       }
     });
   }
-
-  toggleRole(): void {
-    this.observableUtils.createSafeObservable({
-      source: this.authService.switchRole(),
-      successHandler: () => {}, // No action needed on success
-      errorSetter: (error: string | null) => console.error('Role switch error:', error)
-    });
-  }
-} 
+}

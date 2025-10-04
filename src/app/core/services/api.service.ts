@@ -627,6 +627,10 @@ export class ApiService {
     return this.get<Tracking[]>(`/orders/${orderId}/track`);
   }
 
+  getOrderTracking(orderId: string): Observable<ApiResponse<any>> {
+    return this.get<any>(`/orders/${orderId}/tracking`);
+  }
+
   reviewOrder(orderId: string, reviewData: ReviewData): Observable<ApiResponse<Review>> {
     return this.post<Review>(`/orders/${orderId}/review`, reviewData);
   }

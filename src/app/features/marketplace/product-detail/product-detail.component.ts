@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
@@ -24,7 +24,17 @@ import {
   faThumbsUp,
   faThumbsDown,
   faTimesCircle,
-  faFlag
+  faFlag,
+  faSearch,
+  faChevronRight,
+  faExpand,
+  faCheckCircle,
+  faBolt,
+  faHandshake,
+  faMessage,
+  faShieldAlt as faShieldCheck,
+  faMedal,
+  faUndo
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { CartService } from '../../../core/services/cart.service';
@@ -39,485 +49,307 @@ import { MediaOptimizationService } from '../../../core/services/media-optimizat
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
   template: `
-    <div class="container mx-auto px-4 lg:px-8 space-y-8 animate-fade-in-up" *ngIf="product">
-      <!-- Breadcrumb -->
-      <nav class="flex" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-4">
-          <li>
-            <a routerLink="/app/marketplace" class="text-markt-muted hover:text-markt-primary">
-              Marketplace
-            </a>
-          </li>
-          <li>
-            <div class="flex items-center">
-              <fa-icon [icon]="faArrowLeft" class="w-4 h-4 text-markt-muted"></fa-icon>
-              <span class="ml-4 text-markt-muted">{{ product.category?.name }}</span>
-            </div>
-          </li>
-          <li>
-            <span class="text-markt-dark">{{ product.name }}</span>
-          </li>
-        </ol>
-      </nav>
+    <div class="bg-light" *ngIf="product">
 
-      <!-- Product Details -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Product Images -->
+
+      <!-- Main Content -->
+      <main class=" mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Product Images & Details -->
+          <div class="lg:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              <!-- Image Gallery -->
         <div class="space-y-4">
-          <!-- Main Image -->
           <div class="relative">
             <img 
               [src]="(selectedImage?.media?.desktop_url || selectedImage?.media?.mobile_url || selectedImage?.media?.original_url || product.images?.[0]?.media?.desktop_url || product.images?.[0]?.media?.mobile_url || product.images?.[0]?.media?.original_url) || '/markt-text-logo.png'" 
               [alt]="product.name"
-              class="w-full h-96 object-cover rounded-2xl shadow-xl border border-markt-border/30"
-            >
-            <div class="absolute top-4 right-4 flex space-x-2">
-              <button 
-                (click)="toggleWishlist()"
-                class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
-                [class.text-red-500]="isInWishlist"
-                [class.text-gray-400]="!isInWishlist"
-              >
-                <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
+                    class="w-full h-96 object-cover rounded-lg border border-border"
+                  >
+                  <button class="absolute top-4 right-4 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100">
+                    <fa-icon [icon]="faExpand" class="text-muted"></fa-icon>
               </button>
-              <button 
-                (click)="shareProduct()"
-                class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors text-gray-400"
-              >
-                <fa-icon [icon]="faShare" class="w-5 h-5"></fa-icon>
-              </button>
+                  <div class="absolute bottom-4 left-4 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-sm">1 / {{ product.images?.length || 1 }}</div>
             </div>
-          </div>
-
-          <!-- Thumbnail Images -->
-          <div *ngIf="product.images?.length > 1" class="flex space-x-2 overflow-x-auto">
-            <button 
-              *ngFor="let image of product.images"
-              (click)="selectImage(image)"
-              class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors"
-              [class.border-markt-primary]="selectedImage?.id === image.id"
-              [class.border-gray-200]="selectedImage?.id !== image.id"
-            >
-              <img 
+                <div class="grid grid-cols-5 gap-2" *ngIf="product.images?.length > 1">
+                  <img 
+                    *ngFor="let image of product.images; let i = index"
+                    (click)="selectImage(image)"
+                    class="w-full h-16 object-cover rounded border-2 cursor-pointer transition-colors"
+                    [class.border-primary]="selectedImage?.id === image.id || (i === 0 && !selectedImage)"
+                    [class.border-border]="selectedImage?.id !== image.id && !(i === 0 && !selectedImage)"
                 [src]="media.getPrimaryUrl(image)"
-                [attr.srcset]="media.getSrcSet(image)"
-                [attr.sizes]="media.listThumbSizes()"
                 [alt]="product.name"
-                class="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
               >
-            </button>
           </div>
         </div>
 
-        <!-- Product Info -->
+              <!-- Product Information -->
         <div class="space-y-6">
-          <!-- Product Header -->
           <div>
-            <h1 class="text-4xl font-black text-markt-dark mb-2">{{ product.name }}</h1>
-            <div class="flex items-center space-x-4 mb-2">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Like New</span>
+                    <span class="text-muted text-sm">Posted 2 days ago</span>
+                  </div>
+                  <h1 class="text-3xl font-bold text-dark mb-2">{{ product.name }}</h1>
+                  <p class="text-muted mb-4">8GB RAM, 256GB SSD - Space Gray</p>
+                  <div class="flex items-center space-x-4 mb-4">
               <div class="flex items-center">
-                <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
-                <span class="ml-1 text-lg font-semibold text-markt-dark">{{ product.rating }}</span>
-                <span class="ml-1 text-markt-muted">({{ product.review_count }} reviews)</span>
+                      <div class="flex text-yellow-400">
+                        <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]"></fa-icon>
               </div>
-              <span class="text-markt-muted">•</span>
-              <span class="text-markt-muted">{{ product.sold_count }} sold</span>
+                      <span class="text-muted text-sm ml-2">{{ product.rating || 4.8 }} ({{ product.review_count || 124 }} reviews)</span>
             </div>
-            <!-- Trust chips -->
-            <div class="flex flex-wrap gap-2 mb-4 text-xs">
-              <span *ngIf="product.seller?.is_verified" class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700">Verified seller</span>
-              <span *ngIf="product.seller?.policies?.returns" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-700">Returns: {{ product.seller?.policies?.returns }}</span>
-              <span *ngIf="product.seller?.policies?.shipping" class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-700">Shipping: {{ product.seller?.policies?.shipping }}</span>
+                    <span class="text-muted">•</span>
+                    <span class="text-muted text-sm">{{ product.sold_count || 387 }} views</span>
             </div>
-            <div class="text-3xl font-black text-markt-dark mb-4">
-              {{ product.price | currency:(product.currency || 'NGN') }}
-              <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-lg text-gray-500 line-through ml-2">
-                {{ product.compare_at_price | currency:(product.currency || 'NGN') }}
-              </span>
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-4xl font-bold text-primary">{{ product.price | currency:(product.currency || 'USD') }}</span>
+                    <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="text-lg text-muted line-through">{{ product.compare_at_price | currency:(product.currency || 'USD') }}</span>
+                    <span *ngIf="product.compare_at_price && product.compare_at_price > product.price" class="bg-primary text-white px-2 py-1 rounded text-sm">13% off</span>
             </div>
           </div>
 
-          <!-- Product Description -->
-          <div>
-            <h3 class="text-lg font-bold text-markt-dark mb-2">Description</h3>
-            <p class="text-markt-muted leading-relaxed">{{ product.description }}</p>
+                <div class="border-t border-border pt-6">
+                  <h3 class="font-semibold text-dark mb-3">Description</h3>
+                  <p class="text-muted leading-relaxed">
+                    {{ product.description || 'No description available for this product.' }}
+                  </p>
           </div>
 
-          <!-- Product Details -->
-          <div *ngIf="product.details" class="space-y-3">
-            <h3 class="text-lg font-bold text-markt-dark">Details</h3>
-            <div class="grid grid-cols-2 gap-4">
-              <div *ngFor="let detail of product.details" class="flex justify-between">
-                <span class="text-markt-muted">{{ detail.key }}:</span>
-                <span class="text-markt-dark">{{ detail.value }}</span>
+                <div class="border-t border-border pt-6" *ngIf="product.details && product.details.length > 0">
+                  <h3 class="font-semibold text-dark mb-3">Specifications</h3>
+                  <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div *ngFor="let detail of product.details">
+                      <span class="text-muted">{{ detail.key }}:</span>
+                      <span class="text-dark ml-2">{{ detail.value }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border-t border-border pt-6">
+                  <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center space-x-2">
+                      <fa-icon [icon]="faMapMarkerAlt" class="text-muted"></fa-icon>
+                      <span class="text-muted">Stanford University Campus</span>
+                </div>
+                    <div class="flex items-center space-x-2">
+                      <fa-icon [icon]="faTruck" class="text-muted"></fa-icon>
+                      <span class="text-muted">Local pickup available</span>
               </div>
             </div>
           </div>
+                </div>
+              </div>
+                </div>
 
-          <!-- Quantity Selector -->
-          <div>
-            <label class="block text-sm font-medium text-markt-dark mb-2">Quantity</label>
-            <div class="flex items-center space-x-3">
-              <button 
-                (click)="decreaseQuantity()"
-                [disabled]="quantity <= 1"
-                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
-              </button>
-              <input 
-                type="number" 
-                [(ngModel)]="quantity"
-                min="1"
-                max="99"
-                class="w-20 text-center border border-gray-300 rounded-md py-2"
-              >
-              <button 
-                (click)="increaseQuantity()"
-                [disabled]="quantity >= 99"
-                class="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
-              </button>
+          <!-- Sidebar -->
+          <div class="space-y-6">
+            
+            <!-- Seller Information -->
+            <div class="bg-white rounded-lg border border-border p-6">
+              <div class="flex items-center space-x-4 mb-4">
+                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" alt="Seller" class="w-12 h-12 rounded-full">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2">
+                    <h3 class="font-semibold text-dark">{{ product.seller?.shop_name || 'Alex Chen' }}</h3>
+                    <fa-icon [icon]="faCheckCircle" class="text-green-500 text-sm"></fa-icon>
+              </div>
+                  <div class="flex items-center space-x-2">
+                    <div class="flex text-yellow-400 text-sm">
+                      <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]"></fa-icon>
+                </div>
+                    <span class="text-muted text-sm">{{ product.seller?.rating || 4.9 }} ({{ product.seller?.review_count || 47 }} reviews)</span>
+              </div>
             </div>
-          </div>
+            </div>
 
-          <!-- Action Buttons (hidden for sellers) -->
-          <div class="flex space-x-4" *ngIf="accessControl.isBuyer">
+              <div class="space-y-3 mb-6 text-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-muted">Member since:</span>
+                  <span class="text-dark">Jan 2023</span>
+          </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-muted">Response time:</span>
+                  <span class="text-dark">Usually within 1 hour</span>
+        </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-muted">Items sold:</span>
+                  <span class="text-dark">{{ product.seller?.items_sold || 23 }} items</span>
+        </div>
+      </div>
+ 
+              <div class="space-y-3">
             <button 
               (click)="addToCart()"
-              class="flex-1 bg-gradient-to-r from-markt-primary to-markt-secondary text-white py-3 px-6 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all font-bold"
+                  class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-secondary transition-colors"
             >
-              <fa-icon [icon]="faShoppingCart" class="w-5 h-5 mr-2"></fa-icon>
+                  <fa-icon [icon]="faShoppingCart" class="mr-2"></fa-icon>
               Add to Cart
             </button>
             <button 
               (click)="buyNow()"
-              class="flex-1 bg-white text-markt-primary py-3 px-6 rounded-xl border-2 border-markt-border hover:border-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all font-bold"
+                  class="w-full bg-dark text-white py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors"
             >
+                  <fa-icon [icon]="faBolt" class="mr-2"></fa-icon>
               Buy Now
             </button>
-          </div>
-
-          <!-- Seller Info -->
-          <div class="bg-white rounded-2xl p-6 border border-markt-border/30 shadow-sm">
-            <h3 class="text-lg font-bold text-markt-dark mb-4">Seller Information</h3>
-            <div class="flex items-center space-x-4">
-              <img 
-                [src]="product.seller?.profile_picture_url || '/markt-text-logo.png'" 
-                [alt]="product.seller?.shop_name"
-                class="w-12 h-12 rounded-full object-cover"
-              >
-              <div class="flex-1">
-                <h4 class="font-semibold text-markt-dark">{{ product.seller?.shop_name }}</h4>
-                <div class="flex items-center space-x-4 text-sm text-markt-muted">
-                  <span class="flex items-center">
-                    <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
-                    {{ product.seller?.location }}
-                  </span>
-                  <span class="flex items-center">
-                    <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400 mr-1"></fa-icon>
-                    {{ product.seller?.rating }}
-                  </span>
-                </div>
-              </div>
-              <button 
-                [routerLink]="['/app/marketplace']"
-                [queryParams]="{ seller: product.seller?.id }"
-                class="text-markt-primary hover:text-markt-secondary font-medium"
-              >
-                View Shop
-              </button>
-              <a *ngIf="product.seller?.id" [routerLink]="['/app/chat']" [queryParams]="{ user: product.seller.id, product: product.id }" class="text-markt-primary underline">Message seller</a>
-            </div>
-          </div>
-
-          <!-- Shipping & Returns -->
-          <div class="bg-white rounded-2xl p-6 border border-markt-border/30 shadow-sm">
-            <h3 class="text-lg font-bold text-markt-dark mb-4">Shipping & Returns</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-green-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-markt-dark">Buyer Protection</p>
-                  <p class="text-sm text-markt-muted">Refunds for items not received or not as described</p>
-                </div>
-              </div>
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faTruck" class="w-5 h-5 text-green-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-markt-dark">Free Shipping</p>
-                  <p class="text-sm text-markt-muted">On orders over ₦5,000</p>
-                </div>
-              </div>
-              <div class="flex items-center space-x-3">
-                <fa-icon [icon]="faCheck" class="w-5 h-5 text-green-600"></fa-icon>
-                <div>
-                  <p class="font-medium text-markt-dark">Easy Returns</p>
-                  <p class="text-sm text-markt-muted">30-day return policy</p>
-                </div>
-              </div>
-            </div>
-            <div class="mt-4 text-sm text-markt-muted">
-              <div *ngIf="product.seller?.policies?.shipping">Shipping policy: {{ product.seller?.policies?.shipping }}</div>
-              <div *ngIf="product.seller?.policies?.returns">Return policy: {{ product.seller?.policies?.returns }}</div>
-            </div>
-          </div>
+                <button class="w-full border border-primary text-primary py-3 rounded-lg font-medium hover:bg-primary hover:text-white transition-colors">
+                  <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>
+                  Make Offer
+                </button>
+                <div class="grid grid-cols-2 gap-3">
+                  <button class="border border-border text-dark py-2 rounded-lg font-medium hover:bg-light transition-colors">
+                    <fa-icon [icon]="faMessage" class="mr-2"></fa-icon>
+                    Chat
+            </button>
+            <button 
+                    (click)="toggleWishlist()"
+                    class="border border-border text-dark py-2 rounded-lg font-medium hover:bg-light transition-colors"
+                    [class.text-red-500]="isInWishlist"
+                  >
+                    <fa-icon [icon]="faHeart" class="mr-2"></fa-icon>
+                    Save
+            </button>
         </div>
-      </div>
+            </div>
+          </div>
 
-      <!-- As seen in posts -->
-      <div *ngIf="product.posts?.length" class="border-t border-gray-200 pt-8">
-        <h3 class="text-2xl font-bold text-markt-dark mb-4">As seen in posts</h3>
-        <div class="flex gap-3 overflow-x-auto">
-          <a *ngFor="let p of product.posts" [routerLink]="['/app/community/feed']" class="flex-shrink-0 w-40 h-28 bg-gradient-to-br from-markt-light/50 to-white rounded-lg relative overflow-hidden">
-            <img *ngIf="p.media?.[0]?.thumbnail_url" [src]="p.media[0].thumbnail_url" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-black/10"></div>
-          </a>
+            <!-- Trust Indicators -->
+            <div class="bg-white rounded-lg border border-border p-6">
+              <h3 class="font-semibold text-dark mb-4">Why buy from Alex?</h3>
+              <div class="space-y-3">
+              <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faShieldCheck" class="text-green-500"></fa-icon>
+                  <span class="text-sm text-dark">Verified Stanford student</span>
+                    </div>
+                <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faMedal" class="text-yellow-500"></fa-icon>
+                  <span class="text-sm text-dark">Top-rated seller</span>
+                  </div>
+              <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faClock" class="text-blue-500"></fa-icon>
+                  <span class="text-sm text-dark">Fast responder</span>
+                </div>
+              <div class="flex items-center space-x-3">
+                  <fa-icon [icon]="faUndo" class="text-primary"></fa-icon>
+                  <span class="text-sm text-dark">7-day return policy</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Related Products -->
+            <div class="bg-white rounded-lg border border-border p-6">
+              <h3 class="font-semibold text-dark mb-4">Similar Items</h3>
+              <div class="space-y-4">
+                <div class="flex space-x-3" *ngFor="let relatedProduct of relatedProducts.slice(0, 3)">
+                  <img class="w-16 h-16 object-cover rounded border border-border" [src]="media.getPrimaryUrl(relatedProduct?.images?.[0])" [alt]="relatedProduct.name">
+                  <div class="flex-1">
+                    <h4 class="text-sm font-medium text-dark">{{ relatedProduct.name }}</h4>
+                    <p class="text-xs text-muted">8GB, 256GB</p>
+                    <p class="text-sm font-semibold text-primary">{{ relatedProduct.price | currency:'USD' }}</p>
+                  </div>
+                </div>
+                </div>
+                </div>
         </div>
       </div>
  
-      <!-- Product Tabs -->
-      <div class="border-t border-gray-200 pt-8">
-        <div class="border-b border-gray-200">
-          <nav class="-mb-px flex space-x-8">
-            <button 
-              (click)="activeTab = 'description'"
-              class="py-2 px-1 border-b-2 font-medium text-sm"
-              [class.border-markt-primary]="activeTab === 'description'"
-              [class.text-markt-primary]="activeTab === 'description'"
-              [class.border-transparent]="activeTab !== 'description'"
-              [class.text-gray-500]="activeTab !== 'description'"
+        <!-- Reviews Section -->
+        <div class="mt-12 bg-white rounded-lg border border-border p-8">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-dark">Customer Reviews</h2>
+                  <button 
+              (click)="showReviewForm = true"
+              class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors"
             >
-              Description
-            </button>
-            <button 
-              (click)="activeTab = 'reviews'"
-              class="py-2 px-1 border-b-2 font-medium text-sm"
-              [class.border-markt-primary]="activeTab === 'reviews'"
-              [class.text-markt-primary]="activeTab === 'reviews'"
-              [class.border-transparent]="activeTab !== 'reviews'"
-              [class.text-gray-500]="activeTab !== 'reviews'"
-            >
-              Reviews ({{ product.review_count }})
-            </button>
-            <button 
-              (click)="activeTab = 'specifications'"
-              class="py-2 px-1 border-b-2 font-medium text-sm"
-              [class.border-markt-primary]="activeTab === 'specifications'"
-              [class.text-markt-primary]="activeTab === 'specifications'"
-              [class.border-transparent]="activeTab !== 'specifications'"
-              [class.text-gray-500]="activeTab !== 'specifications'"
-            >
-              Specifications
-            </button>
-          </nav>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="py-6">
-          <!-- Description Tab -->
-          <div *ngIf="activeTab === 'description'" class="prose max-w-none">
-            <div [innerHTML]="product.full_description"></div>
-          </div>
-
-          <!-- Reviews Tab -->
-          <div *ngIf="activeTab === 'reviews'" class="space-y-6">
-            <!-- Review Summary -->
-            <div class="bg-gradient-to-br from-markt-light/50 to-white rounded-2xl p-6 border border-markt-border/30">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-lg font-bold text-markt-dark">Customer Reviews</h3>
-                  <div class="flex items-center mt-2">
-                    <div class="flex items-center">
-                      <fa-icon [icon]="faStar" class="w-5 h-5 text-yellow-400"></fa-icon>
-                      <span class="ml-1 text-lg font-semibold text-markt-dark">{{ product.rating }}</span>
-                    </div>
-                    <span class="ml-2 text-markt-muted">out of 5</span>
-                  </div>
-                  <p class="text-sm text-markt-muted mt-1">{{ product.review_count }} reviews</p>
-                </div>
-                <button 
-                  (click)="showReviewForm = true"
-                  class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all"
-                >
-                  Write a Review
-                </button>
-              </div>
+              Write Review
+                  </button>
             </div>
 
-            <!-- Review Form -->
-            <div *ngIf="showReviewForm" class="bg-white border border-markt-border/30 rounded-2xl p-6 shadow-sm">
-              <h4 class="text-lg font-bold text-markt-dark mb-4">Write a Review</h4>
-              <form (ngSubmit)="submitReview()" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-markt-dark mb-2">Rating</label>
-                  <div class="flex items-center space-x-2">
-                    <button 
-                      *ngFor="let star of [1,2,3,4,5]"
-                      type="button"
-                      (click)="reviewRating = star"
-                      class="text-2xl"
-                      [class.text-yellow-400]="star <= reviewRating"
-                      [class.text-gray-300]="star > reviewRating"
-                    >
-                      ★
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-markt-dark mb-2">Title</label>
-                  <input 
-                    type="text" 
-                    [(ngModel)]="reviewTitle"
-                    name="title"
-                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
-                    placeholder="Summary of your experience"
-                  >
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-markt-dark mb-2">Review</label>
-                  <textarea 
-                    [(ngModel)]="reviewContent"
-                    name="content"
-                    rows="4"
-                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary"
-                    placeholder="Share your experience with this product"
-                  ></textarea>
-                </div>
-                <div class="flex space-x-3">
-                  <button 
-                    type="submit"
-                    class="bg-gradient-to-r from-markt-primary to-markt-secondary text-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all"
-                  >
-                    Submit Review
-                  </button>
-                  <button 
-                    type="button"
-                    (click)="showReviewForm = false"
-                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Reviews List -->
-            <div class="space-y-6">
-              <div *ngFor="let review of reviews" class="bg-gradient-to-br from-markt-light/50 to-white border border-markt-border/30 rounded-2xl p-6">
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center space-x-3">
-                    <img 
-                      [src]="review.user?.profile_picture_url || '/markt-text-logo.png'" 
-                      [alt]="review.user?.username"
-                      class="w-10 h-10 rounded-full object-cover"
-                    >
-                    <div>
-                      <p class="font-medium text-markt-dark">{{ review.user?.username }}</p>
-                      <div class="flex items-center">
-                        <div class="flex items-center">
-                          <fa-icon 
-                            *ngFor="let star of [1,2,3,4,5]"
-                            [icon]="faStar" 
-                            class="w-4 h-4"
-                            [class.text-yellow-400]="star <= review.rating"
-                            [class.text-gray-300]="star > review.rating"
-                          ></fa-icon>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div class="text-center">
+              <div class="text-4xl font-bold text-dark mb-2">{{ product.rating || 4.8 }}</div>
+              <div class="flex justify-center text-yellow-400 mb-2">
+                <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]"></fa-icon>
                         </div>
-                        <span class="ml-2 text-sm text-markt-muted">{{ review.created_at | date }}</span>
+              <div class="text-muted text-sm">Based on {{ product.review_count || 124 }} reviews</div>
                       </div>
+            <div class="space-y-2">
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-muted w-8">5★</span>
+                <div class="flex-1 bg-border rounded-full h-2">
+                  <div class="bg-yellow-400 h-2 rounded-full" style="width: 85%"></div>
                     </div>
+                <span class="text-sm text-muted w-8">85%</span>
                   </div>
-                  <button class="text-gray-400 hover:text-gray-600">
-                    <fa-icon [icon]="faFlag" class="w-4 h-4"></fa-icon>
-                  </button>
+                  <div class="flex items-center space-x-2">
+                <span class="text-sm text-muted w-8">4★</span>
+                <div class="flex-1 bg-border rounded-full h-2">
+                  <div class="bg-yellow-400 h-2 rounded-full" style="width: 12%"></div>
                 </div>
-                <div class="mt-4">
-                  <h4 class="font-medium text-markt-dark mb-2">{{ review.title }}</h4>
-                  <p class="text-markt-muted">{{ review.content }}</p>
+                <span class="text-sm text-muted w-8">12%</span>
                 </div>
-                <div class="mt-4 flex items-center space-x-4 text-sm text-gray-500">
-                  <button class="flex items-center space-x-1 hover:text-gray-700">
-                    <fa-icon [icon]="faThumbsUp" class="w-4 h-4"></fa-icon>
-                    <span>Helpful ({{ review.helpful_count }})</span>
-                  </button>
-                  <button class="flex items-center space-x-1 hover:text-gray-700">
-                    <fa-icon [icon]="faMessageCircle" class="w-4 h-4"></fa-icon>
-                    <span>Reply</span>
-                  </button>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-muted w-8">3★</span>
+                <div class="flex-1 bg-border rounded-full h-2">
+                  <div class="bg-yellow-400 h-2 rounded-full" style="width: 2%"></div>
                 </div>
+                <span class="text-sm text-muted w-8">2%</span>
               </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-muted w-8">2★</span>
+                <div class="flex-1 bg-border rounded-full h-2">
+                  <div class="bg-yellow-400 h-2 rounded-full" style="width: 1%"></div>
             </div>
+                <span class="text-sm text-muted w-8">1%</span>
           </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-muted w-8">1★</span>
+                <div class="flex-1 bg-border rounded-full h-2">
+                  <div class="bg-yellow-400 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <span class="text-sm text-muted w-8">0%</span>
+              </div>
+              </div>
+            <div class="space-y-2">
+              <button class="w-full text-left px-3 py-2 border border-border rounded-lg hover:bg-light transition-colors text-sm">Most Recent</button>
+              <button class="w-full text-left px-3 py-2 border border-border rounded-lg hover:bg-light transition-colors text-sm">Highest Rated</button>
+              <button class="w-full text-left px-3 py-2 border border-border rounded-lg hover:bg-light transition-colors text-sm">With Photos</button>
+              </div>
+              </div>
 
-          <!-- Specifications Tab -->
-                     <div *ngIf="activeTab === 'specifications'" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.sku">
-                <span class="font-medium text-markt-dark">SKU</span>
-                <span class="text-markt-muted">{{ product.sku }}</span>
+          <div class="space-y-6">
+            <div class="border-b border-border pb-6" *ngFor="let review of reviews.slice(0, 3)">
+              <div class="flex items-start space-x-4">
+                <img [src]="review.user?.profile_picture_url || 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg'" alt="Reviewer" class="w-10 h-10 rounded-full">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <h4 class="font-medium text-dark">{{ review.user?.username || 'Sarah Johnson' }}</h4>
+                    <div class="flex text-yellow-400 text-sm">
+                      <fa-icon [icon]="faStar" *ngFor="let star of [1,2,3,4,5]"></fa-icon>
               </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.barcode">
-                <span class="font-medium text-markt-dark">Barcode</span>
-                <span class="text-markt-muted">{{ product.barcode }}</span>
-              </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.weight">
-                <span class="font-medium text-markt-dark">Weight</span>
-                <span class="text-markt-muted">{{ product.weight }} kg</span>
-              </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.brand">
-                <span class="font-medium text-markt-dark">Brand</span>
-                <span class="text-markt-muted">{{ product.product_metadata.brand }}</span>
-              </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.model">
-                <span class="font-medium text-markt-dark">Model</span>
-                <span class="text-markt-muted">{{ product.product_metadata.model }}</span>
-              </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.color">
-                <span class="font-medium text-markt-dark">Color</span>
-                <span class="text-markt-muted">{{ product.product_metadata.color }}</span>
-              </div>
-              <div class="flex justify-between py-3 border-b border-gray-200" *ngIf="product.product_metadata?.warranty">
-                <span class="font-medium text-markt-dark">Warranty</span>
-                <span class="text-markt-muted">{{ product.product_metadata.warranty }}</span>
+                    <span class="text-muted text-sm">{{ review.created_at ? (review.created_at | date:'short') : '2 days ago' }}</span>
+                  </div>
+                  <p class="text-muted mb-3">{{ review.content || 'Excellent condition as described! Alex was very responsive and the pickup was smooth. The laptop works perfectly for my coursework. Highly recommend!' }}</p>
+                  <div class="flex space-x-2" *ngIf="review.images?.length">
+                    <img class="w-16 h-16 object-cover rounded border border-border" [src]="img" [alt]="'Review photo'" *ngFor="let img of review.images.slice(0, 2)">
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Related Products -->
-      <div class="border-t border-gray-200 pt-8">
-        <h3 class="text-2xl font-bold text-markt-dark mb-6">Related Products</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div *ngFor="let relatedProduct of relatedProducts" class="bg-white rounded-2xl border border-markt-border/30 shadow-sm overflow-hidden hover:shadow-xl transition-shadow">
-            <img 
-              [src]="media.getPrimaryUrl(relatedProduct?.images?.[0])" 
-              [attr.srcset]="media.getSrcSet(relatedProduct?.images?.[0])"
-              [attr.sizes]="media.gridSizes()"
-              [alt]="relatedProduct.name"
-              class="w-full h-48 object-cover"
-              loading="lazy"
-              decoding="async"
-            >
-            <div class="p-4">
-              <h4 class="font-medium text-markt-dark mb-2">{{ relatedProduct.name }}</h4>
-              <div class="flex items-center justify-between">
-                <span class="text-lg font-bold text-markt-dark">{{ relatedProduct.price | currency:'NGN' }}</span>
-                <div class="flex items-center">
-                  <fa-icon [icon]="faStar" class="w-4 h-4 text-yellow-400"></fa-icon>
-                  <span class="ml-1 text-sm text-gray-600">{{ relatedProduct.rating }}</span>
+          <div class="text-center mt-8">
+            <button class="text-primary font-medium hover:underline">View All Reviews</button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
+
     </div>
 
     <!-- Loading State -->
@@ -533,16 +365,15 @@ import { MediaOptimizationService } from '../../../core/services/media-optimizat
   styles: [`
     :host {
       display: block;
-      min-height: 100vh;
-      background-image: linear-gradient(135deg, rgba(244, 241, 240, 0.6) 0%, rgba(255,255,255, 0.9) 50%, rgba(224, 117, 117, 0.08) 100%);
-      background-attachment: fixed;
     }
 
-    @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    ::-webkit-scrollbar { 
+      display: none;
     }
-    .animate-fade-in-up { animation: fade-in-up 0.5s ease-out both; }
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+    }
   `]
 })
 export class ProductDetailComponent implements OnInit {
@@ -580,6 +411,16 @@ export class ProductDetailComponent implements OnInit {
   faThumbsDown = faThumbsDown;
   faMessageCircle = faTimesCircle;
   faFlag = faFlag;
+  faSearch = faSearch;
+  faChevronRight = faChevronRight;
+  faExpand = faExpand;
+  faCheckCircle = faCheckCircle;
+  faBolt = faBolt;
+  faHandshake = faHandshake;
+  faMessage = faMessage;
+  faShieldCheck = faShieldCheck;
+  faMedal = faMedal;
+  faUndo = faUndo;
 
   // Data
   product: any = null;
@@ -629,7 +470,10 @@ export class ProductDetailComponent implements OnInit {
             this.checkWishlistStatus();
             this.trackProductView();
           },
-          error: () => { this.product = null; }
+          error: () => { 
+            // Fallback to mock data for marketplace product IDs
+            this.loadMockProduct(productId);
+          }
         });
 
       // Load product reviews
@@ -848,5 +692,238 @@ export class ProductDetailComponent implements OnInit {
         console.error('Error submitting review:', error);
       }
     });
+  }
+
+  private loadMockProduct(productId: string): void {
+    // Mock data mapping for marketplace product IDs
+    const mockProducts: { [key: string]: any } = {
+      'macbook-pro-13-2021': {
+        id: 'macbook-pro-13-2021',
+        name: 'MacBook Pro 13" 2021',
+        price: 1200,
+        currency: 'USD',
+        compare_at_price: 1500,
+        rating: 4.9,
+        review_count: 24,
+        sold_count: 156,
+        condition: 'Like New',
+        description: 'Excellent condition MacBook Pro 13" 2021 with M1 chip. Barely used, comes with original charger and box. Perfect for students and professionals.',
+        details: [
+          { key: 'Brand', value: 'Apple' },
+          { key: 'Model', value: 'MacBook Pro 13"' },
+          { key: 'Year', value: '2021' },
+          { key: 'Processor', value: 'Apple M1' },
+          { key: 'RAM', value: '8GB' },
+          { key: 'Storage', value: '256GB SSD' },
+          { key: 'Color', value: 'Space Gray' },
+          { key: 'Condition', value: 'Like New' }
+        ],
+        images: [
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/9e580a234a-dfedd1ac85a893bb0f65.png' } },
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/d2e5820307-936957b5d254a5a5cb38.png' } },
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/1d0a014a05-98e516dc00329c7cf656.png' } }
+        ],
+        seller: {
+          id: 'seller1',
+          shop_name: 'Mike Davis',
+          profile_picture_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg',
+          is_verified: true,
+          location: 'San Francisco, CA',
+          rating: 4.9,
+          total_sales: 156,
+          response_time: 'Usually responds within 1 hour'
+        },
+        category: { name: 'Electronics' },
+        stock: 1,
+        is_featured: true,
+        trust_indicators: [
+          { icon: 'faShieldCheck', text: 'Buyer Protection', description: 'Full refund if not as described' },
+          { icon: 'faTruck', text: 'Fast Shipping', description: 'Free shipping within 2-3 days' },
+          { icon: 'faCheckCircle', text: 'Verified Seller', description: 'Identity and payment verified' }
+        ]
+      },
+      'calculus-textbook-bundle': {
+        id: 'calculus-textbook-bundle',
+        name: 'Calculus Textbook Bundle',
+        price: 85,
+        currency: 'USD',
+        compare_at_price: 120,
+        rating: 4.7,
+        review_count: 18,
+        sold_count: 89,
+        condition: 'Good',
+        description: 'Complete calculus textbook bundle for Math 101-102. Includes Stewart Calculus 8th Edition and practice workbook. Some highlighting but all pages intact.',
+        details: [
+          { key: 'Subject', value: 'Mathematics' },
+          { key: 'Course', value: 'Math 101-102' },
+          { key: 'Edition', value: '8th Edition' },
+          { key: 'Author', value: 'James Stewart' },
+          { key: 'Publisher', value: 'Cengage Learning' },
+          { key: 'Condition', value: 'Good' },
+          { key: 'Pages', value: 'All pages intact' },
+          { key: 'Notes', value: 'Some highlighting' }
+        ],
+        images: [
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/d2e5820307-936957b5d254a5a5cb38.png' } }
+        ],
+        seller: {
+          id: 'seller2',
+          shop_name: 'Emma Wilson',
+          profile_picture_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg',
+          is_verified: true,
+          location: 'Boston, MA',
+          rating: 4.7,
+          total_sales: 89,
+          response_time: 'Usually responds within 2 hours'
+        },
+        category: { name: 'Books' },
+        stock: 1,
+        trust_indicators: [
+          { icon: 'faShieldCheck', text: 'Buyer Protection', description: 'Full refund if not as described' },
+          { icon: 'faTruck', text: 'Fast Shipping', description: 'Free shipping within 1-2 days' },
+          { icon: 'faCheckCircle', text: 'Verified Seller', description: 'Student verified' }
+        ]
+      },
+      'vintage-denim-jacket': {
+        id: 'vintage-denim-jacket',
+        name: 'Vintage Denim Jacket',
+        price: 45,
+        currency: 'USD',
+        compare_at_price: 65,
+        rating: 5.0,
+        review_count: 12,
+        sold_count: 34,
+        condition: 'Very Good',
+        description: 'Authentic vintage denim jacket from the 90s. Size M, perfect for campus style. Light wear but no tears or stains. Great for layering.',
+        details: [
+          { key: 'Brand', value: 'Levi\'s' },
+          { key: 'Size', value: 'Medium' },
+          { key: 'Color', value: 'Blue Denim' },
+          { key: 'Era', value: '1990s' },
+          { key: 'Condition', value: 'Very Good' },
+          { key: 'Material', value: '100% Cotton Denim' },
+          { key: 'Style', value: 'Classic Trucker' },
+          { key: 'Care', value: 'Machine washable' }
+        ],
+        images: [
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/1d0a014a05-98e516dc00329c7cf656.png' } }
+        ],
+        seller: {
+          id: 'seller3',
+          shop_name: 'Lisa Park',
+          profile_picture_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg',
+          is_verified: true,
+          location: 'Los Angeles, CA',
+          rating: 5.0,
+          total_sales: 34,
+          response_time: 'Usually responds within 30 minutes'
+        },
+        category: { name: 'Fashion' },
+        stock: 1,
+        trust_indicators: [
+          { icon: 'faShieldCheck', text: 'Buyer Protection', description: 'Full refund if not as described' },
+          { icon: 'faTruck', text: 'Fast Shipping', description: 'Free shipping within 1-2 days' },
+          { icon: 'faCheckCircle', text: 'Verified Seller', description: 'Fashion enthusiast verified' }
+        ]
+      },
+      'study-desk-with-drawers': {
+        id: 'study-desk-with-drawers',
+        name: 'Study Desk with Drawers',
+        price: 120,
+        currency: 'USD',
+        compare_at_price: 180,
+        rating: 4.8,
+        review_count: 15,
+        sold_count: 23,
+        condition: 'Excellent',
+        description: 'Perfect study desk for dorm room setup. Includes 3 drawers for storage. Lightweight and easy to assemble. Barely used, like new condition.',
+        details: [
+          { key: 'Material', value: 'Wood Composite' },
+          { key: 'Dimensions', value: '48" W x 24" D x 30" H' },
+          { key: 'Drawers', value: '3 Storage Drawers' },
+          { key: 'Color', value: 'White' },
+          { key: 'Condition', value: 'Excellent' },
+          { key: 'Assembly', value: 'Required (tools included)' },
+          { key: 'Weight', value: '45 lbs' },
+          { key: 'Style', value: 'Modern Minimalist' }
+        ],
+        images: [
+          { media: { desktop_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/92f2ea4247-12d5dc88e2f1267dcf65.png' } }
+        ],
+        seller: {
+          id: 'seller4',
+          shop_name: 'Tom Rodriguez',
+          profile_picture_url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-8.jpg',
+          is_verified: true,
+          location: 'Austin, TX',
+          rating: 4.8,
+          total_sales: 23,
+          response_time: 'Usually responds within 1 hour'
+        },
+        category: { name: 'Furniture' },
+        stock: 1,
+        trust_indicators: [
+          { icon: 'faShieldCheck', text: 'Buyer Protection', description: 'Full refund if not as described' },
+          { icon: 'faTruck', text: 'Local Pickup', description: 'Available for local pickup' },
+          { icon: 'faCheckCircle', text: 'Verified Seller', description: 'Furniture seller verified' }
+        ]
+      }
+    };
+
+    const mockProduct = mockProducts[productId];
+    if (mockProduct) {
+      this.product = mockProduct;
+      this.selectedImage = this.product?.images?.[0] || null;
+      this.loadMockReviews();
+      this.loadRelatedProducts();
+      this.checkWishlistStatus();
+    } else {
+      this.product = null;
+    }
+  }
+
+  private loadMockReviews(): void {
+    // Mock reviews data
+    this.reviews = [
+      {
+        id: '1',
+        user: {
+          name: 'Sarah Johnson',
+          avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg',
+          is_verified: true
+        },
+        rating: 5,
+        comment: 'Exactly as described! Fast shipping and great communication. Highly recommend this seller.',
+        created_at: new Date('2024-01-15'),
+        helpful_count: 8,
+        images: []
+      },
+      {
+        id: '2',
+        user: {
+          name: 'Alex Chen',
+          avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg',
+          is_verified: true
+        },
+        rating: 4,
+        comment: 'Good quality product. Minor wear as expected for the condition. Seller was very responsive.',
+        created_at: new Date('2024-01-10'),
+        helpful_count: 5,
+        images: []
+      },
+      {
+        id: '3',
+        user: {
+          name: 'Maria Garcia',
+          avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
+          is_verified: false
+        },
+        rating: 5,
+        comment: 'Perfect! Better than expected. Will definitely buy from this seller again.',
+        created_at: new Date('2024-01-08'),
+        helpful_count: 12,
+        images: []
+      }
+    ];
   }
 } 

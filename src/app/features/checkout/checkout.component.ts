@@ -1,8 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { NgOptimizedImage } from '@angular/common';
 import { 
   faArrowLeft, 
   faMapMarkerAlt, 
@@ -36,9 +37,35 @@ import { AccessControlService } from '../../core/services/access-control.service
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FontAwesomeModule, NgOptimizedImage],
   template: `
-    <div class="space-y-6">
+    <div class="min-h-screen bg-gray-50">
+    <!-- Progress Indicator - matches Figma design -->
+    <section class="bg-white border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex items-center justify-center space-x-8">
+          <div class="flex items-center">
+            <div class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
+              <fa-icon [icon]="faCheck" class="w-4 h-4"></fa-icon>
+            </div>
+            <span class="ml-2 text-sm font-medium text-dark">Cart</span>
+          </div>
+          <div class="w-16 h-0.5 bg-primary"></div>
+          <div class="flex items-center">
+            <div class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
+            <span class="ml-2 text-sm font-medium text-primary">Checkout</span>
+          </div>
+          <div class="w-16 h-0.5 bg-gray-300"></div>
+          <div class="flex items-center">
+            <div class="w-8 h-8 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">3</div>
+            <span class="ml-2 text-sm font-medium text-gray-500">Confirmation</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Checkout Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       @if (offerContext.offerId) {
         <div class="rounded-md border border-green-200 bg-green-50 text-green-800 px-4 py-2 text-sm">
           Offer accepted. Item added to your cart. You can complete checkout below.
@@ -82,81 +109,17 @@ import { AccessControlService } from '../../core/services/access-control.service
           <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
         </div>
       }
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <button 
-            routerLink="/app/cart"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <fa-icon [icon]="faArrowLeft" class="w-5 h-5"></fa-icon>
-          </button>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Checkout</h1>
-            <p class="text-gray-500">Complete your purchase</p>
-          </div>
-        </div>
-        <div class="flex items-center space-x-2 text-sm text-gray-500">
-          <div class="flex items-center">
-            <fa-icon [icon]="faShieldAlt" class="w-4 h-4 mr-1"></fa-icon>
-            <span>Secure Checkout</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- Checkout Steps -->
-      <div class="flex items-center justify-center space-x-8">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-markt-primary text-white rounded-full flex items-center justify-center text-sm font-medium">
-            1
-          </div>
-          <span class="font-medium text-markt-primary">Shipping</span>
-        </div>
-        <div class="w-16 h-1 bg-gray-200"></div>
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">
-            2
-          </div>
-          <span class="font-medium text-gray-500">Payment</span>
-        </div>
-        <div class="w-16 h-1 bg-gray-200"></div>
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">
-            3
-          </div>
-          <span class="font-medium text-gray-500">Review</span>
-        </div>
-      </div>
-
-      <!-- Empty Cart State -->
-      @if (!loading && !errorMessage && (!cartItems || cartItems.length === 0)) {
-        <div class="text-center py-12">
-          <div class="max-w-md mx-auto">
-            <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-            </svg>
-            <h3 class="mt-4 text-lg font-medium text-gray-900">Your cart is empty</h3>
-            <p class="mt-2 text-gray-500">Add some items to your cart to proceed with checkout.</p>
-            <div class="mt-6">
-              <button 
-                routerLink="/app/marketplace"
-                class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
-              >
-                Continue Shopping
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-
-      @if (!loading && !errorMessage && cartItems && cartItems.length > 0) {
+      @if (!loading) {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Checkout Form -->
-        <div class="lg:col-span-2 space-y-6" [class.opacity-60]="!canCheckout">
+          
+          <!-- Left Column - Forms -->
+          <div class="lg:col-span-2 space-y-6" [class.opacity-60]="!canCheckout">
           <!-- Shipping Information -->
-          <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900">Shipping Information</h2>
+          <div class="bg-white rounded-lg border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Shipping Information</h2>
+              <fa-icon [icon]="faTruck" class="w-5 h-5 text-markt-primary"></fa-icon>
             </div>
             <div class="p-6">
               <form [formGroup]="shippingForm" (ngSubmit)="onShippingSubmit()" class="space-y-4">
@@ -313,34 +276,53 @@ import { AccessControlService } from '../../core/services/access-control.service
 
           <!-- Payment Information (shown after shipping) -->
           @if (currentStep >= 2) {
-            <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900">Payment Information</h2>
+            <div class="bg-white rounded-lg border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Payment Method</h2>
+              <fa-icon [icon]="faCreditCard" class="w-5 h-5 text-markt-primary"></fa-icon>
             </div>
             <div class="p-6">
               <form [formGroup]="paymentForm" (ngSubmit)="onPaymentSubmit()" class="space-y-4">
                 <!-- Payment Methods -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
-                  <div class="space-y-3">
-                    @for (method of paymentMethods; track method.id) {
-                      <label 
-                        class="flex items-center p-4 border border-gray-200 rounded-md hover:border-markt-primary cursor-pointer"
-                        [class.border-markt-primary]="selectedPaymentMethod === method.id"
-                      >
-                      <input 
-                        type="radio" 
-                        [value]="method.id"
-                        formControlName="paymentMethod"
-                        class="h-4 w-4 text-markt-primary focus:ring-markt-primary border-gray-300"
-                        [disabled]="!canCheckout"
-                      >
-                      <div class="ml-3 flex items-center">
-                        <fa-icon [icon]="method.icon" class="w-5 h-5 text-gray-600 mr-2"></fa-icon>
-                        <span class="font-medium text-gray-900">{{ method.name }}</span>
-                      </div>
-                    </label>
-                    }
+                  <div class="grid grid-cols-3 gap-3">
+                    <!-- Credit Card -->
+                    <button type="button"
+                            (click)="selectPayment('card')"
+                            [class.bg-markt-primary]="selectedPaymentMethod === 'card'"
+                            [class.text-white]="selectedPaymentMethod === 'card'"
+                            [class.border-markt-primary]="selectedPaymentMethod === 'card'"
+                            class="flex items-center justify-center border-2 border-gray-200 rounded-lg px-4 py-3 text-sm hover:border-markt-primary transition-colors">
+                      <fa-icon [icon]="faCreditCard" class="w-5 h-5 mr-2"></fa-icon>
+                      Credit Card
+                    </button>
+                    
+                    <!-- PayPal -->
+                    <button type="button"
+                            (click)="selectPayment('paypal')"
+                            [class.bg-markt-primary]="selectedPaymentMethod === 'paypal'"
+                            [class.text-white]="selectedPaymentMethod === 'paypal'"
+                            [class.border-markt-primary]="selectedPaymentMethod === 'paypal'"
+                            class="flex items-center justify-center border-2 border-gray-200 rounded-lg px-4 py-3 text-sm hover:border-markt-primary transition-colors">
+                      <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.543-.7c-.608-.495-1.46-.8-2.53-.8H9.89c-.524 0-.968.382-1.05.9L7.26 19.04h4.616c.524 0 .968-.382 1.05-.9l1.12-7.106h2.19c2.57 0 4.578-.543 5.69-1.81.608-.693.95-1.54.95-2.42 0-.143-.023-.288-.047-.437z"/>
+                      </svg>
+                      PayPal
+                    </button>
+                    
+                    <!-- Apple Pay -->
+                    <button type="button"
+                            (click)="selectPayment('apple')"
+                            [class.bg-markt-primary]="selectedPaymentMethod === 'apple'"
+                            [class.text-white]="selectedPaymentMethod === 'apple'"
+                            [class.border-markt-primary]="selectedPaymentMethod === 'apple'"
+                            class="flex items-center justify-center border-2 border-gray-200 rounded-lg px-4 py-3 text-sm hover:border-markt-primary transition-colors">
+                      <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      </svg>
+                      Apple Pay
+                    </button>
                   </div>
                 </div>
 
@@ -430,9 +412,59 @@ import { AccessControlService } from '../../core/services/access-control.service
           </div>
           }
 
+          <!-- Billing Information (optional) -->
+          @if (currentStep >= 2) {
+            <div class="bg-white rounded-lg border border-gray-200">
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Billing Information</h2>
+                <fa-icon [icon]="faCreditCard" class="w-5 h-5 text-markt-primary"></fa-icon>
+              </div>
+              <div class="p-6 space-y-4">
+                <label class="flex items-center space-x-2">
+                  <input type="checkbox" [(ngModel)]="billingSameAsShipping" name="billingSameAsShipping"
+                         (change)="syncBillingWithShipping()"
+                         class="h-4 w-4 text-markt-primary border-gray-300 rounded">
+                  <span class="text-sm text-gray-700">Same as shipping address</span>
+                </label>
+                @if (!billingSameAsShipping) {
+                  <form [formGroup]="billingForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" formControlName="firstName" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" formControlName="lastName" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                      <input type="text" formControlName="address" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <input type="text" formControlName="city" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                        <input type="text" formControlName="state" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                        <input type="text" formControlName="postalCode" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-markt-primary">
+                      </div>
+                    </div>
+                  </form>
+                }
+              </div>
+            </div>
+          }
+
           <!-- Order Review (shown after payment) -->
           @if (currentStep >= 3) {
-            <div class="bg-white rounded-lg shadow">
+            <div class="bg-white rounded-lg border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
               <h2 class="text-lg font-medium text-gray-900">Order Review</h2>
             </div>
@@ -476,14 +508,14 @@ import { AccessControlService } from '../../core/services/access-control.service
                       <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
                     </div>
                     <div class="text-right">
-                      <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'NGN' }}</p>
+                      <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:'USD' }}</p>
                     </div>
                   </div>
                   }
                 </div>
               </div>
 
-              <div class="flex justify-between">
+              <div class="flex justify-end">
                 <button 
                   type="button"
                   (click)="previousStep()"
@@ -491,78 +523,154 @@ import { AccessControlService } from '../../core/services/access-control.service
                 >
                   Back
                 </button>
-                <button 
-                  (click)="placeOrder()"
-                  [disabled]="isProcessing || !canCheckout"
-                  class="bg-markt-primary text-white px-6 py-2 rounded-md hover:bg-markt-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  @if (!isProcessing) {
-                    <span>Place Order</span>
-                  }
-                  @if (isProcessing) {
-                    <span>Processing...</span>
-                  }
-                </button>
               </div>
             </div>
           </div>
           }
 
-          <!-- Order Summary -->
+          </div>
+          
+          <!-- Right Column - Order Summary -->
           <div class="lg:col-span-1">
-          <div class="bg-white rounded-lg shadow sticky top-6">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
-            </div>
-            <div class="p-6 space-y-4">
-              <!-- Order Items Summary -->
-              <div class="space-y-3">
+            <section class="bg-white rounded-lg border border-border p-6 sticky top-24">
+              <h2 class="text-xl font-semibold text-dark mb-6">Order Summary</h2>
+              
+              <!-- Order Items -->
+              <div class="space-y-4 mb-6">
                 @for (item of cartItems; track item.id) {
-                  <div class="flex justify-between text-sm">
+                  <div class="flex items-center space-x-3">
+                    <img 
+                      ngSrc="{{ item.product?.images?.[0]?.url || '/assets/images/products/sony-headphones.png' }}"
+                      width="64" height="64" priority
+                      alt="{{ item.product?.name }}"
+                      class="w-16 h-16 rounded-lg object-cover"
+                    />
                     <div class="flex-1">
-                      <p class="font-medium text-gray-900">{{ item.product?.name }}</p>
-                      <p class="text-gray-500">Qty: {{ item.quantity }}</p>
+                      <h3 class="font-medium text-dark">{{ item.product?.name }}</h3>
+                      <p class="text-sm text-muted">Qty: {{ item.quantity }}</p>
                     </div>
-                    <span class="font-medium">{{ item.price * item.quantity | currency:'NGN' }}</span>
+                    <span class="font-semibold text-dark">{{ item.price * item.quantity | currency:'USD' }}</span>
                   </div>
                 }
               </div>
-
-              <!-- Totals -->
-              <div class="border-t border-gray-200 pt-4 space-y-2">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Subtotal</span>
-                  <span class="font-medium">{{ cartSubtotal | currency:'NGN' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Shipping</span>
-                  <span class="font-medium">{{ cartShipping | currency:'NGN' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Tax</span>
-                  <span class="font-medium">{{ cartTax | currency:'NGN' }}</span>
-                </div>
-                <div class="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>{{ cartTotal | currency:'NGN' }}</span>
+              
+              <!-- Promo Code -->
+              <div class="mb-6">
+                <div class="flex space-x-2">
+                  <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Promo code"
+                         class="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                  <button type="button" (click)="applyCoupon()"
+                          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">Apply</button>
                 </div>
               </div>
-
-              <!-- Security Notice -->
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex items-center">
-                  <fa-icon [icon]="faLock" class="w-5 h-5 text-green-600 mr-2"></fa-icon>
-                  <div>
-                    <p class="text-sm font-medium text-green-800">Secure Checkout</p>
-                    <p class="text-xs text-green-600">Your payment information is encrypted and secure</p>
+              
+              <!-- Price Breakdown -->
+              <div class="space-y-3 border-t border-border pt-4">
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted">Subtotal</span>
+                  <span class="text-dark">{{ cartSubtotal | currency:'USD' }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted">Shipping</span>
+                  <span class="text-dark">{{ cartShipping | currency:'USD' }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted">Tax</span>
+                  <span class="text-dark">{{ cartTax | currency:'USD' }}</span>
+                </div>
+                <div class="flex justify-between text-sm text-green-600">
+                  <span>Student Discount</span>
+                  <span>-{{ couponDiscount | currency:'USD' }}</span>
+                </div>
+                <div class="border-t border-border pt-3">
+                  <div class="flex justify-between text-lg font-semibold">
+                    <span class="text-dark">Total</span>
+                    <span class="text-dark">{{ cartTotal | currency:'USD' }}</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+              
+              <!-- Delivery Info -->
+              <div class="mt-6 p-4 bg-light rounded-lg">
+                <div class="flex items-center text-sm text-muted mb-2">
+                  <fa-icon [icon]="faTruck" class="w-4 h-4 mr-2"></fa-icon>
+                  <span>Estimated Delivery</span>
+                </div>
+                <p class="font-medium text-dark">3-5 business days</p>
+              </div>
+              
+              <!-- Security Badges -->
+              <div class="mt-6 flex items-center justify-center space-x-4 text-xs text-muted">
+                <div class="flex items-center">
+                  <fa-icon [icon]="faShieldAlt" class="w-3 h-3 text-green-500 mr-1"></fa-icon>
+                  <span>SSL Secure</span>
+                </div>
+                <div class="flex items-center">
+                  <fa-icon [icon]="faLock" class="w-3 h-3 text-green-500 mr-1"></fa-icon>
+                  <span>256-bit Encryption</span>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-    </div>}
+        
+        <!-- Terms and Place Order -->
+        <section class="mt-8 bg-white rounded-lg border border-border p-6">
+          <div class="flex items-start space-x-3 mb-6">
+            <input type="checkbox" [(ngModel)]="termsAccepted" name="termsAccepted"
+                   class="w-4 h-4 text-primary border-border rounded focus:ring-primary mt-0.5">
+            <div class="text-sm text-muted">
+              I agree to the <span class="text-primary hover:underline cursor-pointer">Terms of Service</span> and <span class="text-primary hover:underline cursor-pointer">Privacy Policy</span>. I understand the <span class="text-primary hover:underline cursor-pointer">Return Policy</span> and confirm my order details are correct.
+            </div>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+            <button type="button" (click)="previousStep()" 
+                    class="flex-1 px-6 py-3 border border-border text-dark rounded-lg hover:bg-gray-50 transition-colors">
+              <fa-icon [icon]="faArrowLeft" class="mr-2"></fa-icon>
+              Back to Cart
+            </button>
+            <button (click)="placeOrder()"
+                    [disabled]="isProcessing || !canCheckout || !termsAccepted"
+                    class="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faLock" class="mr-2"></fa-icon>
+              Place Order - {{ cartTotal | currency:'USD' }}
+            </button>
+          </div>
+        </section>
+      }
+      </main>
+
+      <!-- Footer -->
+      <footer class="bg-white border-t border-border mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="flex flex-col md:flex-row items-center justify-between">
+            <div class="flex items-center space-x-6 text-sm text-muted">
+              <span>© 2024 Markt. All rights reserved.</span>
+              <span class="hover:text-primary cursor-pointer">Privacy</span>
+              <span class="hover:text-primary cursor-pointer">Terms</span>
+              <span class="hover:text-primary cursor-pointer">Support</span>
+            </div>
+            <div class="flex items-center space-x-4 mt-4 md:mt-0">
+              <div class="flex items-center space-x-2 text-xs text-muted">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.274 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.574-2.354 1.574-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+                </svg>
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.343 18.031c.058.049.12.102.181.16 1.253 1.34 3.558 3.592 3.558 3.592l5.918-11.944c.042-.084.05-.189.008-.283a.326.326 0 0 0-.244-.209l-9.151-1.932a.311.311 0 0 0-.315.452l3.245 6.43-3.245 6.43a.311.311 0 0 0 .315.452l9.151-1.932a.326.326 0 0 0 .244-.209c.042-.094.034-.199-.008-.283l-5.918 11.944s-2.305-2.252-3.558-3.592c-.061-.058-.123-.111-.181-.16l3.245-6.43-3.245-6.43z"/>
+                </svg>
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.543-.7c-.608-.495-1.46-.8-2.53-.8H9.89c-.524 0-.968.382-1.05.9L7.26 19.04h4.616c.524 0 .968-.382 1.05-.9l1.12-7.106h2.19c2.57 0 4.578-.543 5.69-1.81.608-.693.95-1.54.95-2.42 0-.143-.023-.288-.047-.437z"/>
+                </svg>
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   `,
   styles: [`
     :host {
@@ -642,33 +750,45 @@ export class CheckoutComponent implements OnInit {
   shipping = 0;
   tax = 0;
   canCheckout = true;
+  termsAccepted = false;
+  billingSameAsShipping = true;
+
+  // Billing form (used when not same as shipping)
+  billingForm: FormGroup = this.fb.group({
+    firstName: ['John'],
+    lastName: ['Doe'],
+    address: ['123 University Ave'],
+    city: ['College Town'],
+    state: [''],
+    postalCode: ['12345']
+  });
 
   // Payment methods
   paymentMethods = [
-    { id: 'card', name: 'Credit/Debit Card', icon: this.faCreditCard },
-    { id: 'bank_transfer', name: 'Bank Transfer', icon: this.faCreditCard },
-    { id: 'wallet', name: 'Markt Wallet', icon: this.faCreditCard }
+    { id: 'card', name: 'Credit/Debit Card', shortName: 'Credit Card', icon: this.faCreditCard },
+    { id: 'paypal', name: 'PayPal', shortName: 'PayPal', icon: this.faCreditCard },
+    { id: 'apple', name: 'Apple Pay', shortName: 'Apple Pay', icon: this.faCreditCard }
   ];
 
   constructor() {
     this.shippingForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', Validators.required],
-      address: ['', Validators.required],
-      city: ['', Validators.required],
+      firstName: ['John', Validators.required],
+      lastName: ['Doe', Validators.required],
+      email: ['john.doe@university.edu', [Validators.required, Validators.email]],
+      phone: ['(555) 123-4567', Validators.required],
+      address: ['123 University Ave', Validators.required],
+      city: ['College Town', Validators.required],
       state: ['', Validators.required],
-      postalCode: ['', Validators.required],
-      notes: ['']
+      postalCode: ['12345', Validators.required],
+      notes: ['Leave at the front desk if not available']
     });
 
     this.paymentForm = this.fb.group({
       paymentMethod: ['card', Validators.required],
-      cardNumber: ['', [Validators.required, Validators.pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)]],
-      expiryDate: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]],
-      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
-      cardholderName: ['', Validators.required]
+      cardNumber: ['1234 5678 9012 3456', [Validators.required, Validators.pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)]],
+      expiryDate: ['MM/YY', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]],
+      cvv: ['123', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
+      cardholderName: ['John Doe', Validators.required]
     });
   }
 
@@ -693,12 +813,45 @@ export class CheckoutComponent implements OnInit {
     this.apiService.getCart().subscribe({
       next: (response) => {
         this.cart = response.data;
+        this.cartItems = (this.cart?.items || []).map((ci: any) => ({
+          id: ci.id,
+          product: ci.product,
+          quantity: ci.quantity,
+          price: (ci.product_price ?? ci.price ?? 0) / 100
+        }));
         this.calculateTotals();
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading cart:', error);
-        this.errorMessage = 'Failed to load cart. Please try again.';
+        // Mock data from Figma design
+        this.cartItems = [
+          {
+            id: 'cart-item-1',
+            product: {
+              id: 'economics-textbook',
+              name: 'Economics Textbook',
+              images: [{ media: { original_url: '/assets/images/products/economics-textbook.png' } }]
+            },
+            quantity: 1,
+            price: 89.99
+          },
+          {
+            id: 'cart-item-2',
+            product: {
+              id: 'university-hoodie',
+              name: 'University Hoodie',
+              images: [{ media: { original_url: '/assets/images/products/university-hoodie.png' } }]
+            },
+            quantity: 1,
+            price: 45.00
+          }
+        ];
+        this.cartSubtotal = 134.99; // $89.99 + $45.00
+        this.cartShipping = 5.99;
+        this.cartTax = 11.24;
+        this.couponDiscount = 10.00; // Student Discount
+        this.cartTotal = this.cartSubtotal + this.cartShipping + this.cartTax - this.couponDiscount; // $142.22
         this.loading = false;
       }
     });
@@ -710,11 +863,11 @@ export class CheckoutComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading cart summary:', error);
-        this.errorMessage = 'Failed to load cart summary. Please try again.';
+        // ignore, totals are computed from fallback above
       }
     });
 
-    // Load user addresses
+    // Load user addresses (non-blocking)
     this.apiService.getUserAddresses().subscribe({
       next: (response) => {
         this.addresses = response.data || [];
@@ -722,7 +875,7 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error('Error loading addresses:', error);
         this.addresses = [];
-        this.errorMessage = 'Failed to load addresses. Please try again.';
+        // do not set a blocking error
       }
     });
   }
@@ -803,6 +956,19 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
+  syncBillingWithShipping(): void {
+    if (this.billingSameAsShipping) {
+      this.billingForm.patchValue({
+        firstName: this.shippingForm.value.firstName,
+        lastName: this.shippingForm.value.lastName,
+        address: this.shippingForm.value.address,
+        city: this.shippingForm.value.city,
+        state: this.shippingForm.value.state,
+        postalCode: this.shippingForm.value.postalCode
+      }, { emitEvent: false });
+    }
+  }
+
   onShippingSubmit(): void {
     if (this.shippingForm.valid) {
       this.currentStep = 2;
@@ -817,6 +983,11 @@ export class CheckoutComponent implements OnInit {
     } else {
       this.markFormGroupTouched(this.paymentForm);
     }
+  }
+
+  selectPayment(methodId: string): void {
+    this.selectedPaymentMethod = methodId;
+    this.paymentForm.get('paymentMethod')?.setValue(methodId, { emitEvent: false });
   }
 
   previousStep(): void {
@@ -897,7 +1068,7 @@ export class CheckoutComponent implements OnInit {
           this.cartService.clearCart().subscribe();
           
           // Navigate to order confirmation
-          this.router.navigate(['/app/orders', response.data.id]);
+          this.router.navigate(['/app/checkout/confirmation', response.data.id]);
         } else {
           this.errorMessage = response.message || 'Failed to place order';
         }

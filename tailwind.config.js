@@ -15,6 +15,17 @@ module.exports = {
           muted: '#886A63',
           border: '#E5DDDC'
         },
+        primary: '#E94C2A',
+        secondary: '#E94B26',
+        accent: '#E07575',
+        dark: '#181211',
+        light: '#F4F1F0',
+        muted: '#886A63',
+        border: '#E5DDDC',
+        'primary-dark': '#D63E1F',
+        'gray-text': '#6B7280',
+        'gray-light': '#F9FAFB',
+        'gray-border': '#E5E7EB',
         neutral: {
           50: '#FAFAFA',
           100: '#F5F5F5',

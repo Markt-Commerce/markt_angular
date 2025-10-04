@@ -19,7 +19,10 @@ import {
   faExclamationTriangle,
   faUser,
   faMapMarkerAlt,
-  faClock
+  faClock,
+  faChevronRight,
+  faStar,
+  faTag
 } from '@fortawesome/free-solid-svg-icons';
 import { CartService } from '../../core/services/cart.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
@@ -37,359 +40,276 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
   standalone: true,
   imports: [CommonModule, FormsModule, FontAwesomeModule, RouterModule],
   template: `
-    <div class="space-y-6">
+    <div class="bg-gray-50">
       <!-- Buyer mode gate -->
       @if (!canCheckout) {
         <div class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
           <div>
             Cart and checkout are available in Buyer mode. Switch to continue.
           </div>
-          <button (click)="switchToBuyer()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to Buyer</button>
+          <button (click)="switchToBuyer()" class="ml-4 bg-primary text-white px-3 py-1.5 rounded-md hover:bg-secondary transition-colors">Switch to Buyer</button>
         </div>
       }
-      
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <button 
-            [routerLink]="['/app/marketplace']"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-          >
-            <fa-icon [icon]="faArrowLeft" class="w-5 h-5"></fa-icon>
-          </button>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">Shopping Cart</h1>
-            <p class="text-gray-500">{{ cartItemCount }} items</p>
-          </div>
-        </div>
-        <button 
-          [routerLink]="['/app/marketplace']"
-          class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors"
-        >
-          Continue Shopping
-        </button>
-      </div>
 
-      <!-- Error Message -->
-      @if (errorMessage) {
-        <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div class="flex items-center">
-            <fa-icon [icon]="faExclamationTriangle" class="w-5 h-5 text-red-400 mr-2"></fa-icon>
-            <span class="text-sm text-red-800">{{ errorMessage }}</span>
-            <button (click)="errorMessage = ''" class="ml-auto text-red-400 hover:text-red-600">
-              <fa-icon [icon]="faTimes" class="w-4 h-4"></fa-icon>
+      <!-- Main Content -->
+      <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
+
+        <!-- Cart Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
+          <p class="text-gray-600">{{ cartItemCount }} items in your cart</p>
+        </div>
+
+        <!-- Error Message -->
+        @if (errorMessage) {
+          <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <div class="flex items-center">
+              <fa-icon [icon]="faExclamationTriangle" class="w-5 h-5 text-red-400 mr-2"></fa-icon>
+              <span class="text-sm text-red-800">{{ errorMessage }}</span>
+              <button (click)="errorMessage = ''" class="ml-auto text-red-400 hover:text-red-600">
+                <fa-icon [icon]="faTimes" class="w-4 h-4"></fa-icon>
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Loading State -->
+        @if (loadingCart) {
+          <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p class="mt-2 text-gray-600">Loading cart...</p>
+          </div>
+        }
+
+        <!-- Empty Cart -->
+        @if (!loadingCart && cartItemCount === 0 && !errorMessage) {
+          <div class="text-center py-12">
+            <fa-icon [icon]="faShoppingBag" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
+            <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
+            <p class="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
+            <button 
+              [routerLink]="['/app/marketplace']"
+              class="bg-primary text-white px-6 py-3 rounded-md hover:bg-secondary transition-colors font-medium"
+            >
+              Start Shopping
             </button>
           </div>
-        </div>
-      }
+        }
 
-      <!-- Loading State -->
-      @if (loadingCart) {
-        <div class="text-center py-12">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-markt-primary"></div>
-          <p class="mt-2 text-gray-600">Loading cart...</p>
-        </div>
-      }
-
-      <!-- Empty Cart -->
-      @if (!loadingCart && cartItemCount === 0 && !errorMessage) {
-        <div class="text-center py-12">
-          <fa-icon [icon]="faShoppingBag" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
-          <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
-          <p class="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
-          <button 
-            [routerLink]="['/app/marketplace']"
-            class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
-          >
-            Start Shopping
-          </button>
-        </div>
-      }
-
-      <!-- Cart Content -->
-      @if (cartItemCount > 0) {
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Cart Items -->
-          <div class="lg:col-span-2 space-y-4">
-            <!-- Cart Items List -->
-            <div class="bg-white rounded-lg shadow">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Cart Items</h2>
-              </div>
-              <div class="divide-y divide-gray-200">
-                @for (item of cartItems; track item.id) {
-                  <div class="p-6">
-                    <div class="flex items-center space-x-4">
-                      <!-- Product Image -->
-                      <div class="flex-shrink-0">
-                        <img 
-                          [src]="getProductImageUrl(item.product.images && item.product.images[0])" 
-                          [alt]="item.product.name"
-                          class="w-20 h-20 object-cover rounded-lg"
-                          loading="lazy"
+        <!-- Cart Content -->
+        @if (cartItemCount > 0) {
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Cart Items -->
+            <div class="lg:col-span-2 space-y-6">
+              @for (item of cartItems; track item.id) {
+                <div class="bg-white rounded-lg border border-border p-6">
+                  <div class="flex items-start space-x-4">
+                    <img 
+                      [src]="getProductImageUrl(item.product.images && item.product.images[0])" 
+                      [alt]="item.product.name"
+                      class="w-24 h-24 rounded-lg object-cover"
+                      loading="lazy"
+                    >
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between">
+                        <div>
+                          <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                            <a 
+                              [routerLink]="['/app/marketplace/product', item.product.id]"
+                              class="hover:text-primary transition-colors"
+                            >
+                              {{ item.product.name }}
+                            </a>
+                          </h3>
+                          <p class="text-sm text-gray-600 mb-2">{{ item.product.description }}</p>
+                          <div class="flex items-center space-x-2 mb-3">
+                            <img 
+                              [src]="item.product.seller.profile_picture_url" 
+                              [alt]="item.product.seller.shop_name"
+                              class="w-6 h-6 rounded-full"
+                            >
+                            <span class="text-sm text-gray-700">{{ item.product.seller.shop_name }}</span>
+                            <div class="flex items-center">
+                              <fa-icon [icon]="faStar" class="text-yellow-400 text-xs"></fa-icon>
+                              <span class="text-sm text-gray-600 ml-1">4.8</span>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Verified</span>
+                          </div>
+                          <div class="flex items-center space-x-4 text-sm text-gray-600">
+                            <span>Condition: {{ item.product.condition || 'Like New' }}</span>
+                            <span>Free Shipping</span>
+                          </div>
+                        </div>
+                        <button 
+                          (click)="removeItem(item.id)"
+                          [disabled]="removingItem"
+                          class="text-gray-400 hover:text-red-500"
                         >
+                          <fa-icon [icon]="faTrash" class="w-4 h-4"></fa-icon>
+                        </button>
                       </div>
-
-                      <!-- Product Details -->
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between">
-                          <div class="flex-1">
-                            <h3 class="text-lg font-medium text-gray-900 mb-1">
-                              <a 
-                                [routerLink]="['/app/marketplace/product', item.product.id]"
-                                class="hover:text-markt-primary transition-colors"
-                              >
-                                {{ item.product.name }}
-                              </a>
-                            </h3>
-                            <p class="text-sm text-gray-500 mb-2">{{ item.product.description }}</p>
-                            
-                            <!-- Seller Info -->
-                            <div class="flex items-center space-x-4 text-sm text-gray-500">
-                              <span class="flex items-center">
-                                <fa-icon [icon]="faUser" class="w-4 h-4 mr-1"></fa-icon>
-                                {{ item.product.seller && item.product.seller.shop_name }}
-                              </span>
-                            </div>
-                          </div>
-
-                          <!-- Price -->
-                          <div class="text-right">
-                            <p class="text-lg font-bold text-gray-900">{{ item.product_price | currency:'NGN' }}</p>
-                            @if (item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price) {
-                              <p class="text-sm text-gray-500 line-through">
-                                {{ item.product.compare_at_price | currency:'NGN' }}
-                              </p>
-                            }
-                          </div>
+                      <div class="flex items-center justify-between mt-4">
+                        <div class="flex items-center space-x-3">
+                          <button 
+                            (click)="updateQuantity(item.id, item.quantity - 1)"
+                            [disabled]="item.quantity <= 1 || updatingQuantity"
+                            class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            <fa-icon [icon]="faMinus" class="text-xs"></fa-icon>
+                          </button>
+                          <span class="text-lg font-medium">{{ item.quantity }}</span>
+                          <button 
+                            (click)="updateQuantity(item.id, item.quantity + 1)"
+                            [disabled]="item.quantity >= 99 || updatingQuantity"
+                            class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            <fa-icon [icon]="faPlus" class="text-xs"></fa-icon>
+                          </button>
                         </div>
-
-                        <!-- Quantity Controls -->
-                        <div class="mt-4 flex items-center justify-between">
-                          <div class="flex items-center space-x-3">
-                            <span class="text-sm font-medium text-gray-700">Quantity:</span>
-                            <div class="flex items-center border border-gray-300 rounded-md">
-                              <button 
-                                (click)="updateQuantity(item.id, item.quantity - 1)"
-                                [disabled]="item.quantity <= 1 || updatingQuantity"
-                                class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                @if (updatingQuantity) {
-                                  <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                                } @else {
-                                  <fa-icon [icon]="faMinus" class="w-4 h-4"></fa-icon>
-                                }
-                              </button>
-                              <span class="px-4 py-2 text-sm font-medium">{{ item.quantity }}</span>
-                              <button 
-                                (click)="updateQuantity(item.id, item.quantity + 1)"
-                                [disabled]="item.quantity >= 99 || updatingQuantity"
-                                class="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                @if (updatingQuantity) {
-                                  <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                                } @else {
-                                  <fa-icon [icon]="faPlus" class="w-4 h-4"></fa-icon>
-                                }
-                              </button>
-                            </div>
-                          </div>
-
-                          <!-- Actions -->
-                          <div class="flex items-center space-x-3">
-                            <button 
-                              (click)="moveToWishlist(item)"
-                              class="text-gray-400 hover:text-red-500 transition-colors"
-                              title="Move to Wishlist"
-                            >
-                              <fa-icon [icon]="faHeart" class="w-5 h-5"></fa-icon>
-                            </button>
-                            <button 
-                              (click)="removeItem(item.id)"
-                              [disabled]="removingItem"
-                              class="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Remove Item"
-                            >
-                              @if (removingItem) {
-                                <div class="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                              } @else {
-                                <fa-icon [icon]="faTrash" class="w-5 h-5"></fa-icon>
-                              }
-                            </button>
-                          </div>
+                        <div class="text-right">
+                          <div class="text-lg font-bold text-gray-900">{{ (item.product_price / 100) | currency:'USD' }}</div>
+                          @if (item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price) {
+                            <div class="text-sm text-gray-500 line-through">{{ (item.product.compare_at_price / 100) | currency:'USD' }}</div>
+                          }
                         </div>
                       </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Cart Summary by Seller -->
-            @for (sellerGroup of cartSummaryBySeller; track sellerGroup.seller.id) {
-              <div class="bg-white rounded-lg shadow">
-                <div class="px-6 py-4 border-b border-gray-200">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <img 
-                        [src]="sellerGroup.seller.profile_picture_url || '/markt-text-logo.png'" 
-                        [alt]="sellerGroup.seller.shop_name"
-                        class="w-8 h-8 rounded-full object-cover"
-                      >
-                      <div>
-                        <h3 class="font-medium text-gray-900">{{ sellerGroup.seller.shop_name }}</h3>
-                        <p class="text-sm text-gray-500">{{ sellerGroup.itemCount }} items</p>
+                      <div class="flex items-center space-x-4 mt-3">
+                        <button 
+                          (click)="moveToWishlist(item)"
+                          class="text-sm text-primary hover:underline"
+                        >
+                          Save for later
+                        </button>
+                        <button 
+                          [routerLink]="['/app/marketplace/product', item.product.id]"
+                          class="text-sm text-gray-600 hover:text-gray-900"
+                        >
+                          View details
+                        </button>
                       </div>
-                    </div>
-                    <div class="text-right">
-                      <p class="text-lg font-bold text-gray-900">{{ sellerGroup.subtotal | currency:'NGN' }}</p>
-                      <p class="text-sm text-gray-500">Shipping: {{ sellerGroup.shipping | currency:'NGN' }}</p>
                     </div>
                   </div>
                 </div>
+              }
+
+              <!-- Cart Actions -->
+              <div class="bg-white rounded-lg border border-border p-6">
+                <div class="flex items-center justify-between">
+                  <button 
+                    [routerLink]="['/app/marketplace']"
+                    class="text-gray-600 hover:text-gray-900 flex items-center space-x-2"
+                  >
+                    <fa-icon [icon]="faArrowLeft"></fa-icon>
+                    <span>Continue Shopping</span>
+                  </button>
+                  <button 
+                    (click)="clearCart()"
+                    class="text-red-600 hover:text-red-700 flex items-center space-x-2"
+                  >
+                    <fa-icon [icon]="faTrash"></fa-icon>
+                    <span>Clear Cart</span>
+                  </button>
+                </div>
               </div>
-            }
           </div>
 
-          <!-- Order Summary -->
-          <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow sticky top-6">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Order Summary</h2>
-              </div>
-              <div class="p-6 space-y-4">
-                <!-- Subtotal -->
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Subtotal ({{ cartItemCount }} items)</span>
-                  <span class="font-medium">{{ cartSubtotal | currency:'NGN' }}</span>
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+              <div class="bg-white rounded-lg border border-border p-6 sticky top-24">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
+                
+                <!-- Promo Code -->
+                <div class="mb-6">
+                  <div class="flex space-x-2">
+                    <input 
+                      type="text" 
+                      placeholder="Promo code" 
+                      class="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      [(ngModel)]="promoCode"
+                    >
+                    <button 
+                      (click)="applyPromoCode()"
+                      class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Shipping -->
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Shipping</span>
-                  <span class="font-medium">{{ cartShipping | currency:'NGN' }}</span>
+                <!-- Price Breakdown -->
+                <div class="space-y-3 mb-6">
+                  <div class="flex justify-between text-gray-600">
+                    <span>Subtotal ({{ cartItemCount }} items)</span>
+                    <span>{{ (cartSubtotal / 100) | currency:'USD' }}</span>
+                  </div>
+                  <div class="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span>{{ (cartShipping / 100) | currency:'USD' }}</span>
+                  </div>
+                  @if (cartDiscount > 0) {
+                    <div class="flex justify-between text-green-600">
+                      <span>Student Discount</span>
+                      <span>-{{ (cartDiscount / 100) | currency:'USD' }}</span>
+                    </div>
+                  }
+                  <div class="flex justify-between text-gray-600">
+                    <span>Tax</span>
+                    <span>{{ (cartTax / 100) | currency:'USD' }}</span>
+                  </div>
+                  <hr class="border-border">
+                  <div class="flex justify-between text-lg font-semibold text-gray-900">
+                    <span>Total</span>
+                    <span>{{ (cartTotal / 100) | currency:'USD' }}</span>
+                  </div>
                 </div>
 
-                <!-- Discount -->
-                @if (cartDiscount > 0) {
-                  <div class="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-{{ cartDiscount | currency:'NGN' }}</span>
+                <!-- Savings -->
+                @if (getTotalSavings() > 0) {
+                  <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+                    <div class="flex items-center space-x-2">
+                      <fa-icon [icon]="faTag" class="text-green-600"></fa-icon>
+                      <span class="text-sm text-green-800">You're saving {{ (getTotalSavings() / 100) | currency:'USD' }} on this order!</span>
+                    </div>
                   </div>
                 }
 
-                <!-- Tax -->
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Tax</span>
-                  <span class="font-medium">{{ cartTax | currency:'NGN' }}</span>
-                </div>
-
-                <!-- Total -->
-                <div class="border-t border-gray-200 pt-4">
-                  <div class="flex justify-between">
-                    <span class="text-lg font-medium text-gray-900">Total</span>
-                    <span class="text-lg font-bold text-gray-900">{{ cartTotal | currency:'NGN' }}</span>
+                <!-- Delivery Info -->
+                <div class="mb-6">
+                  <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                    <fa-icon [icon]="faTruck"></fa-icon>
+                    <span>Estimated delivery: 3-5 business days</span>
                   </div>
-                  <p class="text-sm text-gray-500 mt-1">Including all taxes and shipping</p>
+                  <div class="flex items-center space-x-2 text-sm text-gray-600">
+                    <fa-icon [icon]="faShieldAlt"></fa-icon>
+                    <span>Buyer protection included</span>
+                  </div>
                 </div>
 
                 <!-- Checkout Button -->
                 <button 
                   (click)="proceedToCheckout()"
                   [disabled]="!canCheckout"
-                  class="w-full bg-markt-primary text-white py-3 px-4 rounded-md hover:bg-markt-secondary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-secondary transition-colors mb-4"
                 >
                   Proceed to Checkout
                 </button>
 
-                <!-- Security Notice -->
-                <div class="flex items-center space-x-2 text-sm text-gray-500">
-                  <fa-icon [icon]="faShieldAlt" class="w-4 h-4"></fa-icon>
-                  <span>Secure checkout with SSL encryption</span>
-                </div>
-
                 <!-- Payment Methods -->
-                <div class="border-t border-gray-200 pt-4">
-                  <h3 class="text-sm font-medium text-gray-900 mb-2">Accepted Payment Methods</h3>
-                  <div class="flex items-center space-x-2">
-                    <div class="flex items-center space-x-1 text-xs text-gray-500">
-                      <fa-icon [icon]="faCreditCard" class="w-4 h-4"></fa-icon>
-                      <span>Cards</span>
-                    </div>
-                    <span class="text-gray-300">•</span>
-                    <span class="text-xs text-gray-500">Bank Transfer</span>
-                    <span class="text-gray-300">•</span>
-                    <span class="text-xs text-gray-500">Digital Wallets</span>
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 mb-2">Secure payment with</p>
+                  <div class="flex items-center justify-center space-x-2">
+                    <i class="fa-brands fa-cc-visa text-2xl text-blue-600"></i>
+                    <i class="fa-brands fa-cc-mastercard text-2xl text-red-500"></i>
+                    <i class="fa-brands fa-cc-paypal text-2xl text-blue-500"></i>
+                    <i class="fa-brands fa-apple-pay text-2xl text-gray-800"></i>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Shipping Info -->
-            <div class="mt-6 bg-white rounded-lg shadow">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="font-medium text-gray-900">Shipping Information</h3>
-              </div>
-              <div class="p-6">
-                <div class="space-y-4">
-                  <div class="flex items-center space-x-3">
-                    <fa-icon [icon]="faTruck" class="w-5 h-5 text-gray-400"></fa-icon>
-                    <div>
-                      <p class="font-medium text-gray-900">Free shipping on orders over ₦10,000</p>
-                      <p class="text-sm text-gray-500">Standard delivery: 3-5 business days</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center space-x-3">
-                    <fa-icon [icon]="faShieldAlt" class="w-5 h-5 text-gray-400"></fa-icon>
-                    <div>
-                      <p class="font-medium text-gray-900">Secure packaging</p>
-                      <p class="text-sm text-gray-500">All items are carefully packaged for safe delivery</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center space-x-3">
-                    <fa-icon [icon]="faCheck" class="w-5 h-5 text-gray-400"></fa-icon>
-                    <div>
-                      <p class="font-medium text-gray-900">Easy returns</p>
-                      <p class="text-sm text-gray-500">30-day return policy for most items</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
-      }
-
-      <!-- Recently Viewed Section -->
-      @if (recentlyViewed.length > 0) {
-        <div class="mt-12">
-          <h3 class="text-xl font-bold text-gray-900 mb-6">Recently Viewed</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            @for (product of recentlyViewed; track product.id) {
-              <div class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
-                <img 
-                  [src]="getProductImageUrl(product.images && product.images[0])" 
-                  [alt]="product.name"
-                  class="w-full h-48 object-cover"
-                  loading="lazy"
-                >
-                <div class="p-4">
-                  <h4 class="font-medium text-gray-900 mb-2">{{ product.name }}</h4>
-                  <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold text-gray-900">{{ product.price | currency:'NGN' }}</span>
-                    <button 
-                      (click)="addToCart(product.id, 1)"
-                      class="bg-markt-primary text-white px-3 py-1 rounded-md hover:bg-markt-secondary transition-colors text-sm"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      }
+        }
+      </main>
     </div>
   `,
   styles: [`
@@ -426,6 +346,9 @@ export class CartComponent implements OnInit {
   faUser = faUser;
   faMapMarkerAlt = faMapMarkerAlt;
   faClock = faClock;
+  faChevronRight = faChevronRight;
+  faStar = faStar;
+  faTag = faTag;
 
   // Data
   cartItems: CartItem[] = [];
@@ -446,6 +369,7 @@ export class CartComponent implements OnInit {
   selectedAddress: Address | null = null;
   selectedPaymentMethod = '';
   orderNotes = '';
+  promoCode = '';
 
   ngOnInit(): void {
     this.canCheckout = this.access.isBuyer;
@@ -461,26 +385,118 @@ export class CartComponent implements OnInit {
     this.loadingCart = true;
     this.errorMessage = '';
     
-    this.observableUtils.createSafeObservable({
-      source: this.cartService.getCart(),
-      loadingSetter: (loading: boolean) => this.loadingCart = loading,
-      successHandler: (response: any) => {
-        if (response.success) {
-          this.cartItems = response.data.items || [];
-          this.cartItemCount = response.data.total_items || 0;
-          this.calculateTotals();
-          this.errorMessage = '';
-        } else {
-          this.errorMessage = response.message || 'Failed to load cart';
+    // For demo purposes, directly load mock data
+    setTimeout(() => {
+      this.loadMockCartData();
+      this.loadingCart = false;
+    }, 500);
+  }
+
+  private loadMockCartData(): void {
+    // Mock cart data from Figma design - using any type to avoid interface issues
+    this.cartItems = [
+      {
+        id: 'cart-item-1',
+        product_id: 'sony-wh-1000xm4',
+        quantity: 1,
+        product_price: 24999, // $249.99 in cents
+        product: {
+          id: 'sony-wh-1000xm4',
+          name: 'Sony WH-1000XM4 Wireless Headphones',
+          description: 'Noise-canceling, premium audio quality',
+          condition: 'Like New',
+          price: 24999,
+          compare_at_price: 34999, // $349.99 original price
+          images: [{ 
+            id: '1', 
+            product_id: 'sony-wh-1000xm4',
+            media_id: 'media-1',
+            sort_order: 1,
+            is_featured: true,
+            alt_text: 'Sony WH-1000XM4 Headphones',
+            media: { 
+              id: 'media-1', 
+              original_url: '/assets/images/products/sony-headphones.png',
+              thumbnail_url: '/assets/images/products/sony-headphones.png',
+              alt_text: 'Sony WH-1000XM4 Headphones'
+            } as any
+          }],
+          seller: {
+            id: 'seller-1',
+            shop_name: 'TechStore Campus',
+            profile_picture_url: '/assets/images/techstore-seller.png'
+          } as any
         }
       },
-      errorSetter: (error: string | null) => {
-        console.error('Error loading cart:', error);
-        this.errorMessage = error || 'Error loading cart. Please try again.';
-        this.cartItems = [];
-        this.cartItemCount = 0;
+      {
+        id: 'cart-item-2',
+        product_id: 'calculus-textbook',
+        quantity: 1,
+        product_price: 8950, // $89.50 in cents
+        product: {
+          id: 'calculus-textbook',
+          name: 'Calculus: Early Transcendentals 8th Edition',
+          description: 'James Stewart - Mathematics Textbook',
+          condition: 'Good',
+          price: 8950,
+          compare_at_price: 29995, // $299.95 original price
+          images: [{ 
+            id: '2', 
+            product_id: 'calculus-textbook',
+            media_id: 'media-2',
+            sort_order: 1,
+            is_featured: true,
+            alt_text: 'Calculus Textbook',
+            media: { 
+              id: 'media-2', 
+              original_url: '/assets/images/products/calculus-textbook.png',
+              thumbnail_url: '/assets/images/products/calculus-textbook.png',
+              alt_text: 'Calculus Textbook'
+            } as any
+          }],
+          seller: {
+            id: 'seller-2',
+            shop_name: 'Sarah M.',
+            profile_picture_url: '/assets/images/sarah-seller.png'
+          } as any
+        }
+      },
+      {
+        id: 'cart-item-3',
+        product_id: 'vintage-jacket',
+        quantity: 1,
+        product_price: 3500, // $35.00 in cents
+        product: {
+          id: 'vintage-jacket',
+          name: 'Vintage Denim Jacket',
+          description: 'Size M - Classic blue denim',
+          condition: 'Excellent',
+          price: 3500,
+          images: [{ 
+            id: '3', 
+            product_id: 'vintage-jacket',
+            media_id: 'media-3',
+            sort_order: 1,
+            is_featured: true,
+            alt_text: 'Vintage Denim Jacket',
+            media: { 
+              id: 'media-3', 
+              original_url: '/assets/images/products/vintage-jacket.png',
+              thumbnail_url: '/assets/images/products/vintage-jacket.png',
+              alt_text: 'Vintage Denim Jacket'
+            } as any
+          }],
+          seller: {
+            id: 'seller-3',
+            shop_name: "Mike's Thrift",
+            profile_picture_url: '/assets/images/mike-seller.png'
+          } as any
+        }
       }
-    });
+    ] as any;
+    this.cartItemCount = this.cartItems.reduce((total, item) => total + item.quantity, 0);
+    this.calculateTotals();
+    this.errorMessage = '';
   }
 
   private loadRecentlyViewed(): void {
@@ -641,21 +657,15 @@ export class CartComponent implements OnInit {
           country: this.selectedAddress.country,
           postal_code: this.selectedAddress.postal_code
         } : undefined,
-        payment_method: this.selectedPaymentMethod,
+        payment_method: this.selectedPaymentMethod || undefined,
         notes: this.orderNotes
       };
       this.router.navigate(['/app/checkout'], { state: { checkoutData } });
     };
 
     this.roleIntent.ensureRoleAndExecute('buyer', () => {
-      if (!this.selectedAddress) { 
-        this.errorMessage = 'Please select a shipping address'; 
-        return; 
-      }
-      if (!this.selectedPaymentMethod) { 
-        this.errorMessage = 'Please select a payment method'; 
-        return; 
-      }
+      // Allow proceeding; shipping and payment can be completed on the checkout page
+      this.errorMessage = '';
       navigate();
     });
   }
@@ -705,8 +715,61 @@ export class CartComponent implements OnInit {
   // Helper method for getting product image URLs
   getProductImageUrl(imageData: any): string {
     if (!imageData) {
-      return '/assets/images/product-placeholder.png';
+      return '';
     }
-    return this.media.getPrimaryUrl(imageData);
+    
+    // If imageData has a media property with URLs, use those
+    if (imageData.media && imageData.media.original_url) {
+      return imageData.media.original_url;
+    }
+    
+    // If imageData is a string URL, use it directly
+    if (typeof imageData === 'string') {
+      return imageData;
+    }
+    
+    // No fallback - return empty string
+    return '';
   }
+
+  applyPromoCode(): void {
+    if (this.promoCode.trim()) {
+      // Apply promo code logic here
+      // For demo purposes, apply a student discount
+      if (this.promoCode.toLowerCase().includes('student')) {
+        this.cartDiscount = this.cartSubtotal * 0.1; // 10% student discount
+        this.calculateTotals();
+        this.errorMessage = '';
+      } else {
+        this.errorMessage = 'Invalid promo code';
+      }
+    }
+  }
+
+  clearCart(): void {
+    if (confirm('Are you sure you want to clear your cart?')) {
+      this.observableUtils.createSafeObservable({
+        source: this.cartService.clearCart(),
+        successHandler: (response: any) => {
+          this.cartItems = [];
+          this.cartItemCount = 0;
+          this.calculateTotals();
+          this.errorMessage = '';
+        },
+        errorSetter: (error: string | null) => {
+          this.errorMessage = error || 'Error clearing cart. Please try again.';
+        }
+      });
+    }
+  }
+
+  getTotalSavings(): number {
+    return this.cartItems.reduce((total, item) => {
+      if (item.product && item.product.compare_at_price && item.product.compare_at_price > item.product_price) {
+        return total + ((item.product.compare_at_price - item.product_price) * item.quantity);
+      }
+      return total;
+    }, 0);
+  }
+
 }

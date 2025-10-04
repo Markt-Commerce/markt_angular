@@ -45,7 +45,6 @@ export interface AppState {
   
   // Navigation
   currentRoute: string;
-  breadcrumbs: Array<{ label: string; path: string }>;
   
   // Modals & Overlays
   activeModal: string | null;
@@ -95,7 +94,6 @@ const initialState: AppState = {
   
   // Navigation
   currentRoute: '',
-  breadcrumbs: [],
   
   // Modals & Overlays
   activeModal: null,
@@ -431,12 +429,6 @@ export class AppStateService {
     this.updateState({ currentRoute: route });
   }
 
-  /**
-   * Set breadcrumbs
-   */
-  setBreadcrumbs(breadcrumbs: Array<{ label: string; path: string }>): void {
-    this.updateState({ breadcrumbs });
-  }
 
   /**
    * Open modal

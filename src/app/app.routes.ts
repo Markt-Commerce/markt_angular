@@ -39,6 +39,10 @@ export const routes: Routes = [
     data: { hideBreadcrumbs: true }
   },
   {
+    path: 'order-confirmation',
+    loadComponent: () => import('./features/checkout/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+  },
+  {
     path: 'auth',
     canActivate: [GuestGuard],
     children: [
@@ -71,37 +75,33 @@ export const routes: Routes = [
   },
   {
     path: 'app',
-    loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     canActivate: [AuthGuard],
+    loadComponent: () => import('./shared/components/app-layout/app-layout.component').then(m => m.AppLayoutComponent),
     children: [
       {
         path: '',
-        redirectTo: 'marketplace',
+        redirectTo: 'dashboard',
         pathMatch: 'full'
       },
       {
         path: 'feed',
-        redirectTo: 'community/feed',
+        redirectTo: 'community/social-feed',
         pathMatch: 'full'
       },
       {
         path: 'marketplace',
-        data: { breadcrumb: 'Marketplace' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/marketplace/marketplace.component').then(m => m.MarketplaceComponent),
-            data: { breadcrumb: 'Marketplace' }
+            loadComponent: () => import('./features/marketplace/marketplace.component').then(m => m.MarketplaceComponent)
           },
           {
             path: 'search',
-            loadComponent: () => import('./features/marketplace/search/search.component').then(m => m.SearchComponent),
-            data: { breadcrumb: 'Search' }
+            loadComponent: () => import('./features/marketplace/search/search.component').then(m => m.SearchComponent)
           },
           {
             path: 'product/:id',
-            loadComponent: () => import('./features/marketplace/product-detail/product-detail.component').then(m => m.ProductDetailComponent),
-            data: { breadcrumb: { type: 'product' } }
+            loadComponent: () => import('./features/marketplace/product-detail/product-detail.component').then(m => m.ProductDetailComponent)
           }
         ]
       },
@@ -109,224 +109,208 @@ export const routes: Routes = [
         path: 'cart',
         loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent),
         canActivate: [RoleGuard],
-        data: { breadcrumb: 'Cart', requiredRole: 'buyer' }
+        data: { requiredRole: 'buyer' }
       },
       {
         path: 'checkout',
         loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
         canActivate: [RoleGuard],
-        data: { breadcrumb: 'Checkout', requiredRole: 'buyer' }
+        data: { requiredRole: 'buyer' }
+      },
+      {
+        path: 'checkout/confirmation/:id',
+        loadComponent: () => import('./features/checkout/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+      },
+      {
+        path: 'checkout/confirmation',
+        loadComponent: () => import('./features/checkout/order-confirmation.component').then(m => m.OrderConfirmationComponent)
       },
       {
         path: 'community',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Community' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/community/community.component').then(m => m.CommunityComponent),
-            data: { breadcrumb: 'Community' }
+            loadComponent: () => import('./features/community/community.component').then(m => m.CommunityComponent)
           },
           {
             path: 'feed',
-            loadComponent: () => import('./features/community/feed/feed.component').then(m => m.FeedComponent),
-            data: { breadcrumb: 'Feed' }
+            loadComponent: () => import('./features/community/feed/feed.component').then(m => m.FeedComponent)
+          },
+          {
+            path: 'social-feed',
+            loadComponent: () => import('./features/community/social-feed/social-feed.component').then(m => m.SocialFeedComponent)
           },
           {
             path: 'post/:id',
-            loadComponent: () => import('./features/community/post-detail/post-detail.component').then(m => m.PostDetailComponent),
-            data: { breadcrumb: { type: 'post' } }
+            loadComponent: () => import('./features/community/post-detail/post-detail.component').then(m => m.PostDetailComponent)
           }
         ]
       },
       {
         path: 'profile',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Profile' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
-            data: { breadcrumb: 'Profile' }
+            loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
           },
           {
             path: 'edit',
-            loadComponent: () => import('./features/profile/edit-profile/edit-profile.component').then(m => m.EditProfileComponent),
-            data: { breadcrumb: 'Edit Profile' }
+            loadComponent: () => import('./features/profile/edit-profile/edit-profile.component').then(m => m.EditProfileComponent)
           },
           {
             path: 'user/:id',
-            loadComponent: () => import('./features/profile/user-profile/user-profile.component').then(m => m.UserProfileComponent),
-            data: { breadcrumb: { type: 'user' } }
+            loadComponent: () => import('./features/profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
           }
         ]
       },
       {
         path: 'orders',
         canActivate: [RoleGuard],
-        data: { breadcrumb: 'Orders', requiredRole: 'buyer' },
+        data: { requiredRole: 'buyer' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/orders/orders.component').then(m => m.OrdersComponent),
-            data: { breadcrumb: 'Orders' }
+            loadComponent: () => import('./features/orders/orders.component').then(m => m.OrdersComponent)
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/orders/order-detail/order-detail.component').then(m => m.OrderDetailComponent),
-            data: { breadcrumb: { type: 'order' } }
+            loadComponent: () => import('./features/orders/order-detail/order-detail.component').then(m => m.OrderDetailComponent)
+          },
+          {
+            path: ':id/track',
+            loadComponent: () => import('./features/orders/order-tracking.component').then(m => m.OrderTrackingComponent)
           }
         ]
       },
       {
         path: 'offers',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Offers' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/offers/offers.component').then(m => m.OffersComponent),
-            data: { breadcrumb: 'Offers' }
+            loadComponent: () => import('./features/offers/offers.component').then(m => m.OffersComponent)
           },
           {
             path: 'create',
             loadComponent: () => import('./features/offers/create-offer/create-offer.component').then(m => m.CreateOfferComponent),
             canActivate: [RoleGuard],
-            data: { breadcrumb: 'Create Offer', requiredRole: 'buyer' }
+            data: { requiredRole: 'buyer' }
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/offers/offer-detail/offer-detail.component').then(m => m.OfferDetailComponent),
-            data: { breadcrumb: 'Offer' }
+            loadComponent: () => import('./features/offers/offer-detail/offer-detail.component').then(m => m.OfferDetailComponent)
           }
         ]
       },
       {
         path: 'requests',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Requests' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/requests/requests.component').then(m => m.RequestsComponent),
-            data: { breadcrumb: 'Requests' }
+            loadComponent: () => import('./features/requests/requests.component').then(m => m.RequestsComponent)
           },
           {
             path: 'create',
             loadComponent: () => import('./features/requests/create-request/create-request.component').then(m => m.CreateRequestComponent),
             canActivate: [RoleGuard],
-            data: { breadcrumb: 'Create Request', requiredRole: 'buyer' }
+            data: { requiredRole: 'buyer' }
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/requests/request-detail/request-detail.component').then(m => m.RequestDetailComponent),
-            data: { breadcrumb: { type: 'request' } }
+            loadComponent: () => import('./features/requests/request-detail/request-detail.component').then(m => m.RequestDetailComponent)
           }
         ]
       },
       {
         path: 'chat',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Messages' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/chat/chat-list/chat-list.component').then(m => m.ChatListComponent),
-            data: { breadcrumb: 'Messages' }
+            loadComponent: () => import('./features/chat/chat-list/chat-list.component').then(m => m.ChatListComponent)
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/chat/chat-detail/chat-detail.component').then(m => m.ChatDetailComponent),
-            data: { breadcrumb: 'Conversation' }
+            loadComponent: () => import('./features/chat/chat-detail/chat-detail.component').then(m => m.ChatDetailComponent)
           }
         ]
       },
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent),
-        canActivate: [AuthGuard],
-        data: { breadcrumb: 'Notifications' }
+        canActivate: [AuthGuard]
       },
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
-        canActivate: [AuthGuard],
-        data: { breadcrumb: 'Dashboard' }
+        canActivate: [AuthGuard]
       },
       {
         path: 'settings',
         canActivate: [AuthGuard],
-        data: { breadcrumb: 'Settings' },
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
-            data: { breadcrumb: 'Settings' }
+            loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
           },
           {
             path: 'account',
-            loadComponent: () => import('./features/settings/account/account.component').then(m => m.AccountComponent),
-            data: { breadcrumb: 'Account' }
+            loadComponent: () => import('./features/settings/account/account.component').then(m => m.AccountComponent)
           },
           {
             path: 'notifications',
-            loadComponent: () => import('./features/settings/notifications/notifications.component').then(m => m.NotificationsComponent),
-            data: { breadcrumb: 'Notifications' }
+            loadComponent: () => import('./features/settings/notifications/notifications.component').then(m => m.NotificationsComponent)
           },
           {
             path: 'privacy',
-            loadComponent: () => import('./features/settings/privacy/privacy.component').then(m => m.PrivacyComponent),
-            data: { breadcrumb: 'Privacy' }
+            loadComponent: () => import('./features/settings/privacy/privacy.component').then(m => m.PrivacyComponent)
           },
           {
             path: 'shipping',
-            loadComponent: () => import('./features/settings/shipping/shipping.component').then(m => m.ShippingComponent),
-            data: { breadcrumb: 'Shipping' }
+            loadComponent: () => import('./features/settings/shipping/shipping.component').then(m => m.ShippingComponent)
           },
           {
             path: 'preferences',
-            loadComponent: () => import('./features/settings/preferences/preferences.component').then(m => m.PreferencesComponent),
-            data: { breadcrumb: 'Preferences' }
+            loadComponent: () => import('./features/settings/preferences/preferences.component').then(m => m.PreferencesComponent)
           }
         ]
       },
       {
         path: 'seller',
         canActivate: [RoleGuard],
-        data: { breadcrumb: 'Seller', requiredRole: 'seller' },
+        data: { requiredRole: 'seller' },
         children: [
           {
             path: 'dashboard',
-            loadComponent: () => import('./features/seller/dashboard/dashboard.component').then(m => m.DashboardComponent),
-            data: { breadcrumb: 'Dashboard' }
+            loadComponent: () => import('./features/seller/dashboard/dashboard.component').then(m => m.DashboardComponent)
           },
           {
             path: 'listings',
-            data: { breadcrumb: 'Listings' },
             children: [
               {
                 path: '',
-                loadComponent: () => import('./features/seller/listings/listings.component').then(m => m.ListingsComponent),
-                data: { breadcrumb: 'Listings' }
+                loadComponent: () => import('./features/seller/listings/listings.component').then(m => m.ListingsComponent)
               },
-                        {
-            path: 'create',
-            loadComponent: () => import('./features/seller/listings/create-listing/create-listing.component').then(m => m.CreateListingComponent),
-            canActivate: [RoleGuard],
-            data: { breadcrumb: 'Create Listing', requiredRole: 'seller' }
-          },
+              {
+                path: 'create',
+                loadComponent: () => import('./features/seller/listings/create-listing/create-listing.component').then(m => m.CreateListingComponent),
+                canActivate: [RoleGuard],
+                data: { requiredRole: 'seller' }
+              },
               {
                 path: 'edit/:id',
                 loadComponent: () => import('./features/seller/listings/edit-listing/edit-listing.component').then(m => m.EditListingComponent),
                 canActivate: [RoleGuard],
-                data: { breadcrumb: 'Edit Listing', requiredRole: 'seller' }
+                data: { requiredRole: 'seller' }
               }
             ]
           },
           {
             path: 'analytics',
-            loadComponent: () => import('./features/seller/analytics/analytics.component').then(m => m.AnalyticsComponent),
-            data: { breadcrumb: 'Analytics' }
+            loadComponent: () => import('./features/seller/analytics/analytics.component').then(m => m.AnalyticsComponent)
           }
         ]
       }
