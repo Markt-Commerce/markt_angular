@@ -1,0 +1,182 @@
+<!-- Hero Section with Background -->
+<section class="hero-section">
+  <img 
+    class="hero-background" 
+    src="https://storage.googleapis.com/uxpilot-auth.appspot.com/876cf50384-a62902d3f968f4334b9a.png" 
+    alt="modern business analytics dashboard workspace with multiple screens showing charts and data visualizations, professional lighting, clean office environment" 
+  />
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h2 class="hero-title">Performance Metrics Dashboard</h2>
+    <p class="hero-subtitle">Track your sales, optimize performance, and grow your business with actionable insights</p>
+  </div>
+</section>
+
+<!-- Main Content -->
+<div class="main-container">
+  
+  <!-- Key Metrics Cards -->
+  <section class="metrics-overview">
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon primary">
+          <fa-icon [icon]="faDollarSign"></fa-icon>
+        </div>
+        <span class="growth-badge positive">+{{ revenueGrowth() }}%</span>
+      </div>
+      <h3 class="metric-value">{{ formatCurrency(metrics().totalRevenue) }}</h3>
+      <p class="metric-label">Total Revenue</p>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon accent">
+          <fa-icon [icon]="faShoppingCart"></fa-icon>
+        </div>
+        <span class="growth-badge positive">+{{ ordersGrowth() }}%</span>
+      </div>
+      <h3 class="metric-value">{{ metrics().totalOrders.toLocaleString() }}</h3>
+      <p class="metric-label">Total Orders</p>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon blue">
+          <fa-icon [icon]="faUsers"></fa-icon>
+        </div>
+        <span class="growth-badge positive">+{{ customersGrowth() }}%</span>
+      </div>
+      <h3 class="metric-value">{{ metrics().newCustomers.toLocaleString() }}</h3>
+      <p class="metric-label">New Customers</p>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon purple">
+          <fa-icon [icon]="faPercentage"></fa-icon>
+        </div>
+        <span class="growth-badge" [class]="getGrowthClass(conversionGrowth())">
+          {{ getGrowthIcon(conversionGrowth()) }}{{ Math.abs(conversionGrowth()) }}%
+        </span>
+      </div>
+      <h3 class="metric-value">{{ metrics().conversionRate }}%</h3>
+      <p class="metric-label">Conversion Rate</p>
+    </div>
+  </section>
+
+  <!-- Charts Section -->
+  <div class="charts-section">
+    <!-- Revenue Chart -->
+    <section class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">Revenue Trends</h3>
+        <div class="time-range-buttons">
+          <button 
+            class="time-btn" 
+            [class.active]="selectedTimeRange === '30D'"
+            (click)="setTimeRange('30D')"
+          >
+            30D
+          </button>
+          <button 
+            class="time-btn" 
+            [class.active]="selectedTimeRange === '7D'"
+            (click)="setTimeRange('7D')"
+          >
+            7D
+          </button>
+          <button 
+            class="time-btn" 
+            [class.active]="selectedTimeRange === '90D'"
+            (click)="setTimeRange('90D')"
+          >
+            90D
+          </button>
+        </div>
+      </div>
+      <div id="revenue-chart" class="chart-container"></div>
+    </section>
+
+    <!-- Top Products -->
+    <section class="chart-card">
+      <h3 class="chart-title">Top Performing Products</h3>
+      <div class="products-list">
+        <div class="product-item" *ngFor="let product of topProducts()">
+          <div class="product-info">
+            <div class="product-icon" [class]="product.name === 'MacBook Pro 16&quot;' ? 'primary' : product.name === 'Vintage T-Shirt' ? 'accent' : 'blue'">
+              <fa-icon [icon]="product.icon"></fa-icon>
+            </div>
+            <div class="product-details">
+              <p class="product-name">{{ product.name }}</p>
+              <p class="product-category">{{ product.category }}</p>
+            </div>
+          </div>
+          <div class="product-stats">
+            <p class="product-price">{{ formatCurrency(product.price) }}</p>
+            <p class="product-growth positive">+{{ product.growth }}%</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Analytics Tables -->
+  <div class="analytics-section">
+    <!-- Customer Demographics -->
+    <section class="analytics-card">
+      <h3 class="analytics-title">Customer Demographics</h3>
+      <div id="demographics-chart" class="demographics-chart"></div>
+      <div class="demographics-list">
+        <div class="demographic-item" *ngFor="let demo of demographicsData()">
+          <span class="age-group">{{ demo.ageGroup }}</span>
+          <span class="percentage">{{ demo.percentage }}%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Traffic Sources -->
+    <section class="analytics-card">
+      <h3 class="analytics-title">Traffic Sources</h3>
+      <div class="traffic-list">
+        <div class="traffic-item" *ngFor="let source of trafficSources()">
+          <div class="traffic-info">
+            <fa-icon [icon]="source.icon" [style.color]="source.color"></fa-icon>
+            <span class="traffic-name">{{ source.name }}</span>
+          </div>
+          <div class="traffic-stats">
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width]="getProgressBarWidth(source.percentage)"
+                [style.backgroundColor]="source.color"
+              ></div>
+            </div>
+            <span class="traffic-percentage">{{ source.percentage }}%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventory Status -->
+    <section class="analytics-card">
+      <h3 class="analytics-title">Inventory Status</h3>
+      <div class="inventory-list">
+        <div 
+          class="inventory-item" 
+          *ngFor="let item of inventoryStatus()"
+          [style.backgroundColor]="item.bgColor"
+          [style.borderColor]="item.borderColor"
+        >
+          <div class="inventory-info">
+            <div class="status-dot" [style.backgroundColor]="item.color"></div>
+            <span class="status-name">{{ item.status }}</span>
+          </div>
+          <span class="item-count" [style.color]="item.color">{{ item.count }} items</span>
+        </div>
+      </div>
+      <button class="inventory-btn">
+        View Inventory Details
+      </button>
+    </section>
+  </div>
+</div>

@@ -34,6 +34,11 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'seller-verification',
+    loadComponent: () => import('./features/seller/verification/seller-verification.component').then(m => m.SellerVerificationComponent),
+    data: { hideBreadcrumbs: true }
+  },
+  {
     path: 'landing',
     loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
     data: { hideBreadcrumbs: true }

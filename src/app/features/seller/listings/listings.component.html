@@ -1,0 +1,271 @@
+<!-- Hero Section -->
+<section class="hero-section">
+  <img 
+    class="hero-background" 
+    src="https://storage.googleapis.com/uxpilot-auth.appspot.com/c5cc8fa02f-113a021f5fc5e18bdc22.png" 
+    alt="professional product management workspace with organized desk and product samples, modern e-commerce business environment" 
+  />
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">Product Listings Dashboard</h1>
+    <p class="hero-subtitle">Manage all your marketplace listings efficiently</p>
+  </div>
+</section>
+
+<!-- Main Content -->
+<div class="main-container">
+  <div class="content-layout">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      
+      <!-- Status Overview -->
+      <div class="sidebar-card">
+        <h3 class="card-title">Listing Overview</h3>
+        <div class="overview-list">
+          <div class="overview-item active">
+            <div class="status-indicator">
+              <div class="status-dot green"></div>
+              <span class="status-label">Active</span>
+            </div>
+            <span class="status-count">{{ listingOverview().active }}</span>
+          </div>
+          <div class="overview-item draft">
+            <div class="status-indicator">
+              <div class="status-dot yellow"></div>
+              <span class="status-label">Draft</span>
+            </div>
+            <span class="status-count">{{ listingOverview().draft }}</span>
+          </div>
+          <div class="overview-item paused">
+            <div class="status-indicator">
+              <div class="status-dot gray"></div>
+              <span class="status-label">Paused</span>
+            </div>
+            <span class="status-count">{{ listingOverview().paused }}</span>
+          </div>
+          <div class="overview-item attention">
+            <div class="status-indicator">
+              <div class="status-dot red"></div>
+              <span class="status-label">Needs Attention</span>
+            </div>
+            <span class="status-count">{{ listingOverview().attention }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Filters -->
+      <div class="sidebar-card">
+        <h3 class="card-title">Quick Filters</h3>
+        <div class="filter-list">
+          <button class="filter-item" (click)="setCategoryFilter('')">
+            <span class="filter-name">All Categories</span>
+            <fa-icon [icon]="faChevronRight" class="filter-icon"></fa-icon>
+          </button>
+          <button class="filter-item" (click)="setCategoryFilter('Electronics')">
+            <span class="filter-name">Electronics</span>
+            <span class="filter-count">{{ categoryCounts().Electronics }}</span>
+          </button>
+          <button class="filter-item" (click)="setCategoryFilter('Textbooks')">
+            <span class="filter-name">Textbooks</span>
+            <span class="filter-count">{{ categoryCounts().Textbooks }}</span>
+          </button>
+          <button class="filter-item" (click)="setCategoryFilter('Furniture')">
+            <span class="filter-name">Furniture</span>
+            <span class="filter-count">{{ categoryCounts().Furniture }}</span>
+          </button>
+          <button class="filter-item" (click)="setCategoryFilter('Clothing')">
+            <span class="filter-name">Clothing</span>
+            <span class="filter-count">{{ categoryCounts().Clothing }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Saved Filters -->
+      <div class="sidebar-card">
+        <h3 class="card-title">Saved Filters</h3>
+        <div class="saved-filters">
+          <button class="saved-filter active" (click)="applySavedFilter('high-performance')">
+            High Performance Items
+          </button>
+          <button class="saved-filter" (click)="applySavedFilter('recently-updated')">
+            Recently Updated
+          </button>
+          <button class="saved-filter" (click)="applySavedFilter('expiring-soon')">
+            Expiring Soon
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Search and Filter Bar -->
+      <div class="search-filter-bar">
+        <div class="search-filters">
+          <div class="search-input-container">
+            <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+            <input 
+              type="text" 
+              placeholder="Search listings..." 
+              [(ngModel)]="searchQuery"
+              (input)="onSearch()"
+              class="search-input"
+            >
+          </div>
+          <select [(ngModel)]="statusFilter" (change)="onFilter()" class="filter-select">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="draft">Draft</option>
+            <option value="paused">Paused</option>
+          </select>
+          <select [(ngModel)]="sortBy" (change)="onSort()" class="filter-select">
+            <option value="date">Sort by Date</option>
+            <option value="performance">Sort by Performance</option>
+            <option value="price">Sort by Price</option>
+            <option value="views">Sort by Views</option>
+          </select>
+        </div>
+        <button class="advanced-filters-btn">
+          <fa-icon [icon]="faSliders" class="mr-2"></fa-icon>
+          Advanced Filters
+        </button>
+      </div>
+
+      <!-- Bulk Actions Bar -->
+      <div class="bulk-actions" *ngIf="selectedProducts().length > 0">
+        <div class="bulk-content">
+          <span class="bulk-count">{{ selectedProducts().length }} items selected</span>
+          <button class="bulk-btn pause" (click)="bulkPause()">
+            Pause Selected
+          </button>
+          <button class="bulk-btn activate" (click)="bulkActivate()">
+            Activate Selected
+          </button>
+          <button class="bulk-btn edit" (click)="bulkEditPrice()">
+            Bulk Edit Price
+          </button>
+        </div>
+        <button class="bulk-close" (click)="clearSelection()">
+          <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+        </button>
+      </div>
+
+      <!-- Listings Grid -->
+      <div class="listings-grid">
+        <div class="listing-card" *ngFor="let product of paginatedProducts()">
+          <div class="card-header">
+            <input 
+              type="checkbox" 
+              class="listing-checkbox"
+              [checked]="isSelected(product.id)"
+              (change)="toggleSelection(product.id)"
+            >
+            <div class="status-badge" [class]="getStatusClass(product)">
+              {{ getStatusLabel(product) }}
+            </div>
+          </div>
+          
+          <div class="card-image">
+            <img 
+              [src]="getProductImage(product)" 
+              [alt]="product.name"
+              class="product-image"
+            >
+          </div>
+          
+          <div class="card-content">
+            <h3 class="product-title">{{ product.name }}</h3>
+            <p class="product-meta">{{ getProductMeta(product) }}</p>
+            <div class="product-stats">
+              <span class="product-price">${{ product.price }}</span>
+              <div class="product-views" [class]="getViewsClass(product)">
+                <fa-icon [icon]="getViewsIcon(product)" class="views-icon"></fa-icon>
+                <span>{{ getViewsText(product) }}</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="action-btn primary" (click)="handlePrimaryAction(product)">
+                <fa-icon [icon]="getPrimaryActionIcon(product)" class="mr-1"></fa-icon>
+                {{ getPrimaryActionText(product) }}
+              </button>
+              <button class="action-btn secondary" (click)="showAnalytics(product)">
+                <fa-icon [icon]="faChartLine"></fa-icon>
+              </button>
+              <button class="action-btn secondary" (click)="showMoreOptions(product)">
+                <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ getPaginationStart() }}-{{ getPaginationEnd() }} of {{ filteredProducts().length }} listings
+        </div>
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()"
+          >
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+          </button>
+          <button 
+            class="pagination-btn active" 
+            *ngIf="currentPage() === 1"
+          >
+            1
+          </button>
+          <button 
+            class="pagination-btn" 
+            *ngIf="currentPage() !== 1"
+            (click)="goToPage(1)"
+          >
+            1
+          </button>
+          <button 
+            class="pagination-btn" 
+            *ngIf="currentPage() > 3"
+            (click)="goToPage(currentPage() - 1)"
+          >
+            {{ currentPage() - 1 }}
+          </button>
+          <button 
+            class="pagination-btn active" 
+            *ngIf="currentPage() > 1 && currentPage() < totalPages()"
+          >
+            {{ currentPage() }}
+          </button>
+          <button 
+            class="pagination-btn" 
+            *ngIf="currentPage() < totalPages() - 2"
+            (click)="goToPage(currentPage() + 1)"
+          >
+            {{ currentPage() + 1 }}
+          </button>
+          <span class="pagination-ellipsis" *ngIf="totalPages() > 7">...</span>
+          <button 
+            class="pagination-btn" 
+            *ngIf="totalPages() > 1"
+            (click)="goToPage(totalPages())"
+          >
+            {{ totalPages() }}
+          </button>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()"
+          >
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>

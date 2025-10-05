@@ -1,622 +1,304 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '../../shared/components/button/button.component';
-import { InputComponent } from '../../shared/components/input/input.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ApiService } from '../../core/services/api.service';
 
-interface Offer {
+interface OfferCard {
   id: string;
-  request_id: string;
-  request_title: string;
-  buyer_name: string;
-  product_name: string;
-  price: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
-  created_at: string;
-  expires_at: string;
-  message: string;
-  _processing?: boolean;
+  title: string;
+  context: string;
+  meta: string;
+  status: 'Pending' | 'Accepted' | 'Counter Offer' | 'Urgent';
+  statusTone: 'yellow' | 'green' | 'blue' | 'red';
+  offeredText: string;
+  avatarAlt: string;
+  imageUrl: string;
 }
 
 @Component({
   selector: 'app-offers',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, NgOptimizedImage],
   template: `
-    <div class="offers-container">
-      <div class="offers-header">
-        <div class="header-content">
-          <h1>My Offers</h1>
-          <p>Manage your offers to buyer requests</p>
+    <div class="bg-gray-50">
+      <!-- Hero Banner -->
+      <section class="relative h-64 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+        <img ngSrc="/assets/images/sony-headphones.png" width="1200" height="400" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="background" />
+        <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
+        <div class="relative mx-auto px-6 h-full flex items-center">
+          <div class="text-white">
+            <h1 class="text-4xl font-bold mb-4">Manage Your Offers</h1>
+            <p class="text-lg text-gray-200 mb-6">Track negotiations, respond to offers, and close deals</p>
+            <button class="bg-[#E94C2A] hover:bg-[#FF6B47] text-white px-6 py-3 rounded-lg font-semibold" (click)="createNewOffer()">
+              <span class="mr-2">＋</span> Create New Offer
+            </button>
+          </div>
         </div>
-        <div class="header-actions">
-          <app-button
-            variant="primary"
-            size="md"
-            (click)="createNewOffer()"
-          >
-            Create New Offer
-          </app-button>
-        </div>
-      </div>
+      </section>
 
-      <div class="offers-filters">
-        <div class="filter-group">
-          <app-input
-            type="text"
-            placeholder="Search offers..."
-            [(ngModel)]="searchQuery"
-            (input)="filterOffers()"
-            [fullWidth]="false"
-          ></app-input>
+      <!-- Stats -->
+      <section class="mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <p class="text-sm font-medium text-gray-600">Active Offers</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ sentOffers.length + receivedOffers.length }}</p>
+          </div>
+          <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <p class="text-sm font-medium text-gray-600">Pending Responses</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ pendingCount }}</p>
+          </div>
+          <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <p class="text-sm font-medium text-gray-600">Accepted Deals</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ acceptedCount }}</p>
+          </div>
+          <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <p class="text-sm font-medium text-gray-600">Total Value</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ totalValue | currency }}</p>
+          </div>
         </div>
-        
-        <div class="filter-group">
-          <select [(ngModel)]="statusFilter" (change)="filterOffers()" class="filter-select">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="withdrawn">Withdrawn</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <select [(ngModel)]="sortBy" (change)="filterOffers()" class="filter-select">
-            <option value="created_at">Date Created</option>
-            <option value="price">Price</option>
-            <option value="status">Status</option>
-          </select>
-        </div>
-      </div>
+      </section>
 
-      <div class="offers-stats">
-        <div class="stat-card">
-          <div class="stat-number">{{ totalOffers }}</div>
-          <div class="stat-label">Total Offers</div>
+      <!-- Controls -->
+      <section class=" mx-auto px-6 pb-6">
+        <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="flex-1 max-w-lg">
+              <input class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E94C2A]" type="text" placeholder="Search offers by product or user..." [(ngModel)]="searchQuery" />
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <select class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E94C2A]" [(ngModel)]="statusFilter">
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Counter Offer">Counter Offer</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+              <select class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E94C2A]" [(ngModel)]="sortBy">
+                <option value="date">Sort by Date</option>
+                <option value="amount">Sort by Amount</option>
+                <option value="status">Sort by Status</option>
+              </select>
+              <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">Filters</button>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-number">{{ pendingOffers }}</div>
-          <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number">{{ acceptedOffers }}</div>
-          <div class="stat-label">Accepted</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number">{{ totalValue | currency }}</div>
-          <div class="stat-label">Total Value</div>
-        </div>
-      </div>
+      </section>
 
-      <!-- Loading Skeleton -->
-      <div *ngIf="loading" class="offers-list">
-        <div *ngFor="let s of [0,1,2]" class="offer-card">
-          <div class="offer-header">
-            <div class="offer-info">
-              <div class="h-5 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div class="h-3 w-24 bg-gray-100 rounded animate-pulse"></div>
+      <!-- Content -->
+      <section class="mx-auto px-6 pb-12">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <!-- Sent -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+              <h2 class="text-xl font-semibold text-gray-900">Offers Sent ({{ filteredSent.length }})</h2>
             </div>
-            <div class="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+            <div class="p-6 space-y-4">
+              <ng-container *ngFor="let card of filteredSent">
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div class="flex items-start gap-4">
+                    <img [ngSrc]="card.imageUrl" width="64" height="64" class="w-16 h-16 rounded-lg object-cover" [alt]="card.avatarAlt" />
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-medium text-gray-900 truncate">{{ card.title }}</h3>
+                        <span class="text-xs px-2 py-1 rounded-full" [ngClass]="statusBadge(card.statusTone)">{{ card.status }}</span>
+                      </div>
+                      <p class="text-sm text-gray-600 mb-2">{{ card.offeredText }}</p>
+                      <p class="text-xs text-gray-500 mb-3">{{ card.meta }}</p>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="text-xs bg-[#E94C2A] text-white px-3 py-1 rounded hover:bg-[#FF6B47]">Message</button>
+                        <button class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200">Modify</button>
+                        <button class="text-xs text-red-600 hover:text-red-800">Withdraw</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
           </div>
-          <div class="offer-details">
-            <div class="detail-row">
-              <span class="detail-label">Product:</span>
-              <span class="h-3 w-40 bg-gray-100 rounded animate-pulse"></span>
+
+          <!-- Received -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+              <h2 class="text-xl font-semibold text-gray-900">Offers Received ({{ filteredReceived.length }})</h2>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">Price:</span>
-              <span class="h-3 w-24 bg-gray-100 rounded animate-pulse"></span>
+            <div class="p-6 space-y-4">
+              <ng-container *ngFor="let card of filteredReceived; let i = index">
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow" [ngClass]="i === 0 ? 'bg-blue-50 border-blue-200' : 'border-gray-200'">
+                  <div class="flex items-start gap-4">
+                    <img [ngSrc]="card.imageUrl" width="64" height="64" class="w-16 h-16 rounded-lg object-cover" [alt]="card.avatarAlt" />
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-medium text-gray-900 truncate">{{ card.title }}</h3>
+                        <span class="text-xs px-2 py-1 rounded-full" [ngClass]="statusBadge(card.statusTone)">{{ card.status }}</span>
+                      </div>
+                      <p class="text-sm text-gray-600 mb-2">{{ card.offeredText }}</p>
+                      <p class="text-xs text-gray-500 mb-3">{{ card.meta }}</p>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Accept</button>
+                        <button class="text-xs bg-[#E94C2A] text-white px-3 py-1 rounded hover:bg-[#FF6B47]">Counter</button>
+                        <button class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200">Message</button>
+                        <button class="text-xs text-red-600 hover:text-red-800">Decline</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">Created:</span>
-              <span class="h-3 w-28 bg-gray-100 rounded animate-pulse"></span>
-            </div>
-          </div>
-          <div class="offer-actions">
-            <div class="h-8 w-28 bg-gray-200 rounded animate-pulse"></div>
-            <div class="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
-      </div>
-
-      <div class="offers-list" *ngIf="!loading">
-        <div *ngIf="filteredOffers.length === 0" class="empty-state">
-          <i class="fas fa-box text-gray-400 text-4xl"></i>
-          <h3>No offers found</h3>
-          <p>You haven't made any offers yet, or no offers match your current filters.</p>
-          <app-button
-            variant="primary"
-            size="md"
-            (click)="createNewOffer()"
-          >
-            Create Your First Offer
-          </app-button>
-        </div>
-
-        <div *ngFor="let offer of filteredOffers" class="offer-card">
-          <div class="offer-header">
-            <div class="offer-info">
-              <h3 class="offer-title">{{ offer.request_title }}</h3>
-              <p class="offer-buyer">Buyer: {{ offer.buyer_name }}</p>
-            </div>
-            <div class="offer-status" [class]="'status-' + offer.status">
-              {{ offer.status | titlecase }}
-            </div>
-          </div>
-          
-          <div class="offer-details">
-            <div class="detail-row">
-              <span class="detail-label">Product:</span>
-              <span class="detail-value">{{ offer.product_name }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Price:</span>
-              <span class="detail-value price">{{ offer.price | currency }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created:</span>
-              <span class="detail-value">{{ offer.created_at | date:'short' }}</span>
-            </div>
-            <div class="detail-row" *ngIf="offer.expires_at">
-              <span class="detail-label">Expires:</span>
-              <span class="detail-value">{{ offer.expires_at | date:'short' }}</span>
-            </div>
-          </div>
-          
-          <div class="offer-message" *ngIf="offer.message">
-            <strong>Message:</strong>
-            <p>{{ offer.message }}</p>
-          </div>
-          
-          <div class="offer-actions">
-            <app-button
-              variant="secondary"
-              size="sm"
-              [outline]="true"
-              (click)="viewOffer(offer.id)"
-            >
-              View Details
-            </app-button>
-            <app-button
-              *ngIf="offer.status === 'pending'"
-              variant="danger"
-              size="sm"
-              [outline]="true"
-              [disabled]="!!offer._processing"
-              (click)="withdrawOffer(offer.id)"
-            >
-              {{ offer._processing ? 'Withdrawing...' : 'Withdraw' }}
-            </app-button>
-            <app-button
-              variant="secondary"
-              size="sm"
-              [outline]="true"
-              (click)="viewRequest(offer.request_id)"
-            >
-              View Request
-            </app-button>
-          </div>
-        </div>
-      </div>
-
-      <div class="pagination" *ngIf="filteredOffers.length > 0 && !loading">
-        <app-button
-          variant="secondary"
-          size="sm"
-          [outline]="true"
-          [disabled]="currentPage === 1"
-          (click)="previousPage()"
-        >
-          Previous
-        </app-button>
-        
-        <span class="page-info">
-          Page {{ currentPage }} of {{ totalPages }}
-        </span>
-        
-        <app-button
-          variant="secondary"
-          size="sm"
-          [outline]="true"
-          [disabled]="currentPage === totalPages"
-          (click)="nextPage()"
-        >
-          Next
-        </app-button>
-      </div>
+      </section>
     </div>
   `,
-  styles: [`
-    .offers-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    .offers-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .header-content h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1a202c;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .header-content p {
-      color: #718096;
-      margin: 0;
-    }
-
-    .offers-filters {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-    }
-
-    .filter-group {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .filter-select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      background: white;
-      font-size: 0.875rem;
-    }
-
-    .offers-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 0.75rem;
-      border: 1px solid #e2e8f0;
-      text-align: center;
-    }
-
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      color: #718096;
-      font-size: 0.875rem;
-    }
-
-    .offers-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .offer-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      transition: all 0.2s ease;
-    }
-
-    .offer-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .offer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-    }
-
-    .offer-title {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #2d3748;
-      margin: 0 0 0.25rem 0;
-    }
-
-    .offer-buyer {
-      color: #718096;
-      font-size: 0.875rem;
-      margin: 0;
-    }
-
-    .offer-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .status-pending {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .status-accepted {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .status-rejected {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .status-withdrawn {
-      background: #f3f4f6;
-      color: #374151;
-    }
-
-    .offer-details {
-      margin-bottom: 1rem;
-    }
-
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-
-    .detail-label {
-      font-weight: 500;
-      color: #4a5568;
-    }
-
-    .detail-value {
-      color: #2d3748;
-    }
-
-    .detail-value.price {
-      font-weight: 600;
-      color: #059669;
-    }
-
-    .offer-message {
-      background: #f7fafc;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .offer-message strong {
-      color: #4a5568;
-      font-size: 0.875rem;
-    }
-
-    .offer-message p {
-      margin: 0.5rem 0 0 0;
-      color: #2d3748;
-      font-size: 0.875rem;
-    }
-
-    .offer-actions {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-    }
-
-    .empty-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h3 {
-      font-size: 1.5rem;
-      color: #2d3748;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .empty-state p {
-      color: #718096;
-      margin: 0 0 1.5rem 0;
-    }
-
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .page-info {
-      color: #718096;
-      font-size: 0.875rem;
-    }
-
-    @media (max-width: 768px) {
-      .offers-container {
-        padding: 1rem;
-      }
-
-      .offers-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
-
-      .offers-filters {
-        flex-direction: column;
-      }
-
-      .offer-header {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .offer-actions {
-        flex-direction: column;
-      }
-
-      .offers-stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-  `]
+  styles: [``]
 })
 export class OffersComponent implements OnInit {
   private router = inject(Router);
   private apiService = inject(ApiService);
 
-  offers: Offer[] = [];
-  filteredOffers: Offer[] = [];
   searchQuery = '';
-  statusFilter = '';
-  sortBy = 'created_at';
-  currentPage = 1;
-  itemsPerPage = 10;
-  loading = false;
+  statusFilter: OfferCard['status'] | '' = '';
+  sortBy: 'date' | 'amount' | 'status' = 'date';
 
-  get totalOffers(): number {
-    return this.offers.length;
+  sentOffers: OfferCard[] = [];
+  receivedOffers: OfferCard[] = [];
+
+  filteredSent: OfferCard[] = [];
+  filteredReceived: OfferCard[] = [];
+
+  get pendingCount(): number {
+    return [...this.sentOffers, ...this.receivedOffers].filter(o => o.status === 'Pending').length;
   }
 
-  get pendingOffers(): number {
-    return this.offers.filter(offer => offer.status === 'pending').length;
-  }
-
-  get acceptedOffers(): number {
-    return this.offers.filter(offer => offer.status === 'accepted').length;
+  get acceptedCount(): number {
+    return [...this.sentOffers, ...this.receivedOffers].filter(o => o.status === 'Accepted').length;
   }
 
   get totalValue(): number {
-    return this.offers
-      .filter(offer => offer.status === 'accepted')
-      .reduce((sum, offer) => sum + offer.price, 0);
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.filteredOffers.length / this.itemsPerPage);
+    return this.receivedOffers
+      .filter(o => o.status === 'Accepted')
+      .reduce((acc, _o) => acc + 100, 0);
   }
 
   ngOnInit(): void {
-    this.loadOffers();
-  }
-
-  private loadOffers(): void {
-    this.loading = true;
-    
-    this.apiService.getMyOffers().subscribe({
-      next: (response) => {
-        this.offers = response.data || [];
-        this.filterOffers();
-        this.loading = false;
+    // Static demo content to match the design; integrate API later
+    this.sentOffers = [
+      {
+        id: '1',
+        title: 'MacBook Pro 2021',
+        context: 'Offered: $1,200',
+        meta: 'To: Sarah Chen • 2 days ago',
+        status: 'Pending',
+        statusTone: 'yellow',
+        offeredText: 'Offered: $1,200 • Original: $1,400',
+        avatarAlt: 'modern laptop',
+        imageUrl: '/assets/images/products/sony-headphones.png'
       },
-      error: (error) => {
-        console.error('Error loading offers:', error);
-        this.offers = [];
-        this.loading = false;
+      {
+        id: '2',
+        title: 'Chemistry Textbook Bundle',
+        context: 'Counter: $95',
+        meta: 'To: Mike Johnson • 1 day ago',
+        status: 'Counter Offer',
+        statusTone: 'blue',
+        offeredText: 'Offered: $80 • Counter: $95',
+        avatarAlt: 'textbook stack',
+        imageUrl: '/assets/images/products/calculus-textbook.png'
+      },
+      {
+        id: '3',
+        title: 'Ergonomic Desk Chair',
+        context: 'Agreed: $150',
+        meta: 'To: Emma Davis • 3 hours ago',
+        status: 'Accepted',
+        statusTone: 'green',
+        offeredText: 'Agreed: $150',
+        avatarAlt: 'desk chair',
+        imageUrl: '/assets/images/products/premium-yoga-mat.jpg'
       }
-    });
+    ];
+
+    this.receivedOffers = [
+      {
+        id: '4',
+        title: 'Gaming Headset',
+        context: 'Offered: $85',
+        meta: 'From: Alex Rodriguez • 30 min ago',
+        status: 'Urgent',
+        statusTone: 'red',
+        offeredText: 'Offered: $85 • Your price: $100',
+        avatarAlt: 'gaming headset',
+        imageUrl: '/assets/images/sony-headphones.png'
+      },
+      {
+        id: '5',
+        title: 'Campus Bike',
+        context: 'Offered: $180',
+        meta: 'From: Jessica Kim • 2 hours ago',
+        status: 'Pending',
+        statusTone: 'yellow',
+        offeredText: 'Offered: $180 • Your price: $220',
+        avatarAlt: 'bicycle',
+        imageUrl: '/assets/images/products/vintage-jacket.png'
+      },
+      {
+        id: '6',
+        title: 'Scientific Calculator',
+        context: 'Offered: $45',
+        meta: 'From: David Park • 5 hours ago',
+        status: 'Pending',
+        statusTone: 'yellow',
+        offeredText: 'Offered: $45 • Your price: $60',
+        avatarAlt: 'calculator',
+        imageUrl: '/assets/images/products/protective-phone-case.jpg'
+      }
+    ];
+
+    this.applyFilters();
   }
 
-  filterOffers(): void {
-    let filtered = [...this.offers];
-
-    // Search filter
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(offer =>
-        offer.request_title.toLowerCase().includes(query) ||
-        offer.buyer_name.toLowerCase().includes(query) ||
-        offer.product_name.toLowerCase().includes(query)
-      );
+  statusBadge(tone: OfferCard['statusTone']): string {
+    switch (tone) {
+      case 'yellow':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'green':
+        return 'bg-green-100 text-green-800';
+      case 'blue':
+        return 'bg-blue-100 text-blue-800';
+      case 'red':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-
-    // Status filter
-    if (this.statusFilter) {
-      filtered = filtered.filter(offer => offer.status === this.statusFilter);
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      switch (this.sortBy) {
-        case 'price':
-          return b.price - a.price;
-        case 'status':
-          return a.status.localeCompare(b.status);
-        case 'created_at':
-        default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-    });
-
-    this.filteredOffers = filtered;
-    this.currentPage = 1;
   }
 
   createNewOffer(): void {
     this.router.navigate(['/app/offers/create']);
   }
 
-  viewOffer(offerId: string): void {
-    this.router.navigate(['/app/offers', offerId]);
-  }
-
-  viewRequest(requestId: string): void {
-    this.router.navigate(['/app/requests', requestId]);
-  }
-
-  withdrawOffer(offerId: string): void {
-    if (confirm('Are you sure you want to withdraw this offer?')) {
-      const local = this.offers.find(o => o.id === offerId);
-      if (local) local._processing = true;
-      this.apiService.withdrawOffer(offerId).subscribe({
-        next: () => {
-      const offer = this.offers.find(o => o.id === offerId);
-      if (offer) {
-        offer.status = 'withdrawn';
-            offer._processing = false;
-          }
-        this.filterOffers();
-        },
-        error: () => {
-          const offer = this.offers.find(o => o.id === offerId);
-          if (offer) offer._processing = false;
-          // no-op; keep UI unchanged on failure
+  applyFilters(): void {
+    const apply = (items: OfferCard[]): OfferCard[] => {
+      let list = items;
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        list = list.filter(i => i.title.toLowerCase().includes(q));
       }
-      });
-    }
-  }
+      if (this.statusFilter) {
+        list = list.filter(i => i.status === this.statusFilter);
+      }
+      switch (this.sortBy) {
+        case 'amount':
+          return list; // demo only
+        case 'status':
+          return [...list].sort((a, b) => a.status.localeCompare(b.status));
+        case 'date':
+        default:
+          return list;
+      }
+    };
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
+    this.filteredSent = apply(this.sentOffers);
+    this.filteredReceived = apply(this.receivedOffers);
   }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-    }
-  }
-} 
+}

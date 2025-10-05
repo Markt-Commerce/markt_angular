@@ -425,6 +425,14 @@ export class DevNavigationComponent {
       category: 'public',
       requiresAuth: false
     },
+      {
+        path: '/seller-verification',
+        title: 'Seller Verification',
+        description: 'Standalone verification flow (no app layout)',
+        icon: faCheckCircle,
+        category: 'public',
+        requiresAuth: false
+      },
     {
       path: '/order-confirmation',
       title: 'Order Confirmation',
