@@ -1,513 +1,266 @@
 import { Injectable, inject } from '@angular/core';
-import { TypeSafetyService } from './type-safety.service';
-import { Observable, BehaviorSubject, interval } from 'rxjs';
-import { tap, switchMap } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { 
-  Notification, 
-  NotificationPagination, 
-  UnreadCount, 
-  MarkAsReadRequest, 
-  MarkAsReadResponse 
-} from '../models';
-import { map } from 'rxjs/operators';
-import { RealtimeService } from './realtime.service';
-import { BackgroundNotificationService } from './background-notification.service';
+import { Observable, of, BehaviorSubject } from 'rxjs';
+import { NavigationService } from './navigation.service';
 
-export interface NotificationState {
-  notifications: Notification[];
-  unreadCount: number;
-  isLoading: boolean;
-  lastUpdate: Date;
-}
-
+/**
+ * Notification service for managing notifications
+ * This service demonstrates how to include navigation links in notifications
+ * and emails that can direct users to specific pages like request details
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
-  private typeSafety = inject(TypeSafetyService);
-  private apiService = inject(ApiService);
-  private realtime = inject(RealtimeService);
-  private backgroundService = inject(BackgroundNotificationService);
-  
-  private notificationStateSubject = new BehaviorSubject<NotificationState>({
-    notifications: [],
-    unreadCount: 0,
-    isLoading: false,
-    lastUpdate: new Date()
-  });
-
-  public notificationState$ = this.notificationStateSubject.asObservable();
-
-  // Auto-refresh interval (5 minutes)
-  private readonly REFRESH_INTERVAL = 5 * 60 * 1000;
-
-  constructor() {
-    this.initializeNotifications();
-    this.startAutoRefresh();
-    this.setupRealtime();
-    this.setupBackgroundNotifications();
-  }
-
-  // ============================================================================
-  // NOTIFICATION OPERATIONS
-  // ============================================================================
+  private navigationService = inject(NavigationService);
+  private notificationsSubject = new BehaviorSubject<any[]>([]);
+  private unreadCountSubject = new BehaviorSubject<number>(0);
 
   /**
-   * Get all notifications
+   * Get all notifications as Observable
+   * @returns Observable of notifications array
    */
-  getNotifications(params?: any): Observable<any> {
-    this.setLoading(true);
-    
-    return this.apiService.getNotifications(params).pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
-            this.updateNotificationState({
-              notifications: response.data.items,
-              unreadCount: response.data.pagination.unread_count || 0,
-              isLoading: false,
-              lastUpdate: new Date()
-            });
-          }
-        },
-        error: (error: any) => {
-          console.error('Error fetching notifications:', error);
-          this.setLoading(false);
-        }
-      })
-    );
+  getNotifications$(): Observable<any[]> {
+    return this.notificationsSubject.asObservable();
   }
 
   /**
-   * Get unread count
+   * Get notifications (for backward compatibility)
+   * @returns Observable of notifications array
    */
-  getUnreadCount(): Observable<any> {
-    return this.apiService.getUnreadCount().pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
-            this.updateUnreadCount(response.data.count);
-          }
-        },
-        error: (error: any) => {
-          console.error('Error fetching unread count:', error);
-        }
-      })
-    );
+  getNotifications(): Observable<any[]> {
+    return this.getNotifications$();
   }
 
   /**
-   * Mark notifications as read
+   * Get unread count as Observable
+   * @returns Observable of unread count
    */
-  markAsRead(notificationId: string): Observable<any> {
-    return this.apiService.markAsRead([parseInt(notificationId)]).pipe(
-      tap({
-        next: () => {
-          const currentNotifications = this.getNotificationState().notifications;
-          const updatedNotifications = currentNotifications.filter(n => n.id !== notificationId);
-          this.updateNotificationState({ notifications: updatedNotifications });
-        },
-        error: (error: any) => {
-          console.error('Error marking notification as read:', error);
-        }
-      })
-    );
+  getUnreadCount$(): Observable<number> {
+    return this.unreadCountSubject.asObservable();
   }
 
   /**
-   * Mark single notification as read
+   * Get unread count (for backward compatibility)
+   * @returns Observable of unread count
    */
-  markAsReadSingle(notificationId: string): Observable<MarkAsReadResponse> {
-    const request: MarkAsReadRequest = { notification_ids: [notificationId] };
-    return this.markAsRead(notificationId);
+  getUnreadCount(): Observable<number> {
+    return this.getUnreadCount$();
   }
 
   /**
    * Mark all notifications as read
+   * @returns Observable of success response
    */
   markAllAsRead(): Observable<any> {
-    const unreadIds = this.getUnreadNotificationIds();
-    const request: MarkAsReadRequest = { notification_ids: unreadIds };
-    return this.apiService.markAsRead(unreadIds.map(id => parseInt(id)));
-  }
-
-  /**
-   * Refresh notifications
-   */
-  refreshNotifications(): void {
-    this.getNotifications().subscribe();
-  }
-
-  // ============================================================================
-  // NOTIFICATION UTILITIES
-  // ============================================================================
-
-  /**
-   * Get current notification state
-   */
-  getNotificationState(): NotificationState {
-    return this.notificationStateSubject.value;
-  }
-
-  /**
-   * Get current notifications
-   */
-  getCurrentNotifications(): Notification[] {
-    return this.getNotificationState().notifications;
-  }
-
-  /**
-   * Get current unread count
-   */
-  getCurrentUnreadCount(): number {
-    return this.getNotificationState().unreadCount;
-  }
-
-  /**
-   * Get unread count observable
-   */
-  getUnreadCount$(): Observable<number> {
-    return this.notificationState$.pipe(
-      map(state => state.unreadCount)
-    );
-  }
-
-  /**
-   * Get notifications observable
-   */
-  getNotifications$(): Observable<Notification[]> {
-    return this.notificationState$.pipe(
-      map(state => state.notifications)
-    );
-  }
-
-  /**
-   * Get loading state observable
-   */
-  getLoading$(): Observable<boolean> {
-    return this.notificationState$.pipe(
-      map(state => state.isLoading)
-    );
-  }
-
-  /**
-   * Update notification state
-   */
-  private updateNotificationState(partial: Partial<NotificationState>): void {
-    const currentState = this.getNotificationState();
-    const newState = { ...currentState, ...partial };
-    this.notificationStateSubject.next(newState);
-  }
-
-  /**
-   * Set loading state
-   */
-  private setLoading(isLoading: boolean): void {
-    this.updateNotificationState({ isLoading });
-  }
-
-  /**
-   * Update unread count
-   */
-  private updateUnreadCount(count: number): void {
-    this.updateNotificationState({ unreadCount: count });
-  }
-
-  /**
-   * Update notifications as read
-   */
-  private updateNotificationsAsRead(notificationIds: string[]): void {
-    const currentNotifications = this.getNotificationState().notifications;
-    const updatedNotifications = currentNotifications.map(notification => ({
-      ...notification,
-      is_read: notificationIds.includes(notification.id) || notification.is_read
-    }));
-    
-    this.updateNotificationState({ notifications: updatedNotifications });
-  }
-
-  /**
-   * Initialize notifications
-   */
-  private initializeNotifications(): void {
-    this.getNotifications().subscribe();
-    this.getUnreadCount().subscribe();
-  }
-
-  /**
-   * Start auto-refresh
-   */
-  private startAutoRefresh(): void {
-    interval(this.REFRESH_INTERVAL).pipe(
-      switchMap(() => this.getUnreadCount())
-    ).subscribe();
-  }
-
-  /**
-   * Add notification to state (for real-time updates)
-   */
-  addNotification(notification: Notification): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const updatedNotifications = [notification, ...currentNotifications];
-    
-    this.updateNotificationState({
-      notifications: updatedNotifications,
-      unreadCount: this.getCurrentUnreadCount() + 1
-    });
-  }
-
-  /**
-   * Remove notification from state
-   */
-  removeNotification(notificationId: string): void {
-    const currentNotifications = this.getCurrentNotifications();
-    const updatedNotifications = currentNotifications.filter(n => n.id !== notificationId);
-    
-    this.updateNotificationState({ notifications: updatedNotifications });
-  }
-
-  /**
-   * Get notification by ID
-   */
-  getNotificationById(notificationId: string): Notification | null {
-    const notifications = this.getNotificationState().notifications;
-    return notifications.find(n => n.id === notificationId) || null;
-  }
-
-  /**
-   * Get unread notifications
-   */
-  getUnreadNotifications(): Notification[] {
-    const notifications = this.getCurrentNotifications();
-    return notifications.filter(n => !n.is_read);
-  }
-
-  /**
-   * Get notifications by type
-   */
-  getNotificationsByType(type: string): Notification[] {
-    const notifications = this.getCurrentNotifications();
-    return notifications.filter(n => n.type === type);
-  }
-
-  /**
-   * Get notifications by reference
-   */
-  getNotificationsByReference(referenceType: string, referenceId: string): Notification[] {
-    const notifications = this.getCurrentNotifications();
-    return notifications.filter(n => 
-      n.reference_type === referenceType && n.reference_id === referenceId
-    );
-  }
-
-  /**
-   * Format notification timestamp
-   */
-  formatNotificationTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'Just now';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}m ago`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h ago`;
-    } else if (diffInSeconds < 2592000) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}d ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  }
-
-  /**
-   * Get notification icon
-   */
-  getNotificationIcon(type: string): string {
-    const iconMap: Record<string, string> = {
-      'order': 'shopping-bag',
-      'message': 'message-circle',
-      'like': 'heart',
-      'comment': 'message-square',
-      'follow': 'user-plus',
-      'product': 'package',
-      'payment': 'credit-card',
-      'system': 'bell',
-      'offer': 'tag',
-      'request': 'file-text'
-    };
-    
-    return iconMap[type] || 'bell';
-  }
-
-  /**
-   * Get notification color
-   */
-  getNotificationColor(type: string): string {
-    const colorMap: Record<string, string> = {
-      'order': 'text-blue-600',
-      'message': 'text-green-600',
-      'like': 'text-red-600',
-      'comment': 'text-purple-600',
-      'follow': 'text-indigo-600',
-      'product': 'text-orange-600',
-      'payment': 'text-emerald-600',
-      'system': 'text-gray-600',
-      'offer': 'text-yellow-600',
-      'request': 'text-cyan-600'
-    };
-    
-    return colorMap[type] || 'text-gray-600';
-  }
-
-  /**
-   * Get notification priority
-   */
-  getNotificationPriority(type: string): 'high' | 'medium' | 'low' {
-    const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
-      'order': 'high',
-      'payment': 'high',
-      'message': 'medium',
-      'offer': 'medium',
-      'request': 'medium',
-      'like': 'low',
-      'comment': 'low',
-      'follow': 'low',
-      'product': 'low',
-      'system': 'low'
-    };
-    
-    return priorityMap[type] || 'low';
-  }
-
-  /**
-   * Check if notification is actionable
-   */
-  isNotificationActionable(notification: Notification): boolean {
-    const actionableTypes = ['order', 'message', 'offer', 'request', 'payment'];
-    return actionableTypes.includes(notification.type);
+    // Mock implementation - in real app, this would call the API
+    const notifications = this.notificationsSubject.value.map(n => ({ ...n, read: true }));
+    this.notificationsSubject.next(notifications);
+    this.unreadCountSubject.next(0);
+    return of({ success: true });
   }
 
   /**
    * Get notification action URL
+   * @param notification - The notification object
+   * @returns The action URL for the notification
    */
-  getNotificationActionUrl(notification: Notification): string {
-    switch (notification.type) {
-      case 'order':
-        return `/app/orders/${notification.reference_id}`;
-      case 'message':
-        return `/app/chat/${notification.reference_id}`;
-      case 'offer':
-        return `/app/requests/${notification.reference_id}`;
-      case 'request':
-        return `/app/requests/${notification.reference_id}`;
-      case 'payment':
-        return `/app/orders/${notification.reference_id}`;
-      case 'product':
-        return `/app/marketplace/products/${notification.reference_id}`;
-      case 'follow':
-        return `/app/profile/${notification.reference_id}`;
-      default:
-        return '/app/notifications';
-    }
+  getNotificationActionUrl(notification: any): string {
+    return notification.actionUrl || '/app/notifications';
   }
 
   /**
-   * Clear all notifications
+   * Generate notification data for new request responses
+   * @param requestId - The ID of the request
+   * @param requestTitle - The title of the request
+   * @param responseCount - Number of new responses
+   * @returns Notification data with navigation link
    */
-  clearAllNotifications(): void {
-    this.updateNotificationState({
-      notifications: [],
-      unreadCount: 0
-    });
-  }
-
-  /**
-   * Get notification summary
-   */
-  getNotificationSummary(): {
-    total: number;
-    unread: number;
-    byType: Record<string, number>;
-  } {
-    const notifications = this.getCurrentNotifications();
-    const unread = notifications.filter(n => !n.is_read).length;
-    
-    const byType: Record<string, number> = {};
-    notifications.forEach(notification => {
-      byType[notification.type] = (byType[notification.type] || 0) + 1;
-    });
+  generateRequestResponseNotification(
+    requestId: string, 
+    requestTitle: string, 
+    responseCount: number
+  ) {
+    const requestDetailUrl = this.navigationService.getRequestDetailUrl(requestId);
     
     return {
-      total: notifications.length,
-      unread,
-      byType
+      id: `request-response-${requestId}-${Date.now()}`,
+      type: 'request_response',
+      title: 'New Request Responses',
+      message: `You have ${responseCount} new response${responseCount > 1 ? 's' : ''} on your request "${requestTitle}"`,
+      actionUrl: requestDetailUrl,
+      actionText: 'View Responses',
+      timestamp: new Date(),
+      read: false,
+      priority: 'medium'
     };
   }
 
-  private getUnreadNotificationIds(): string[] {
-    const notifications = this.getNotificationState().notifications;
-    return notifications.filter(n => !n.is_read).map(n => n.id);
-  }
-
-  private findNotificationById(notificationId: string): Notification | null {
-    const notifications = this.getNotificationState().notifications;
-    return notifications.find(n => n.id === notificationId) || null;
-  }
-
-  private setupRealtime(): void {
-    this.realtime.connect('/notification');
-    this.realtime.notification$.subscribe(({ event, data }) => {
-      switch (event) {
-        case 'connected':
-          // Optionally fetch latest unread count on connect
-          this.getUnreadCount().subscribe();
-          break;
-        case 'notification':
-        case 'new_notification':
-          if (data) {
-            this.addNotification(data as Notification);
-          }
-          break;
-        case 'unread_count':
-              if (data && this.typeSafety.isNumber(this.typeSafety.getProperty(data, 'count'))) {
-      this.updateUnreadCount(this.typeSafety.toNumber(this.typeSafety.getProperty(data, 'count')));
-          }
-          break;
-        case 'mark_read':
-          // Backend might push mark_read acknowledgements
-              const notificationIds = this.typeSafety.getProperty(data, 'notification_ids');
-    if (data && this.typeSafety.isArray(notificationIds)) {
-      const ids = this.typeSafety.toArray<string>(notificationIds);
-            this.updateNotificationsAsRead(ids);
-          }
-          break;
-        default:
-          break;
-      }
-    });
+  /**
+   * Generate notification data for offer acceptance
+   * @param requestId - The ID of the request
+   * @param requestTitle - The title of the request
+   * @param sellerName - Name of the seller
+   * @returns Notification data with navigation link
+   */
+  generateOfferAcceptedNotification(
+    requestId: string,
+    requestTitle: string,
+    sellerName: string
+  ) {
+    const requestDetailUrl = this.navigationService.getRequestDetailUrl(requestId);
+    
+    return {
+      id: `offer-accepted-${requestId}-${Date.now()}`,
+      type: 'offer_accepted',
+      title: 'Offer Accepted!',
+      message: `${sellerName} accepted your offer for "${requestTitle}"`,
+      actionUrl: requestDetailUrl,
+      actionText: 'View Request',
+      timestamp: new Date(),
+      read: false,
+      priority: 'high'
+    };
   }
 
   /**
-   * Setup background notification capabilities
+   * Generate notification data for new offers on user's listings
+   * @param offerId - The ID of the offer
+   * @param productTitle - The title of the product
+   * @param buyerName - Name of the buyer
+   * @returns Notification data with navigation link
    */
-  private setupBackgroundNotifications(): void {
-    // Check if background notifications are supported
-    if (this.backgroundService.isSupported()) {
-      // Request permission if not already granted
-      if (!this.backgroundService.isEnabled()) {
-        this.backgroundService.requestPermission();
-      }
-      
-      // Subscribe to background notification state changes
-      this.backgroundService.state$.subscribe((state) => {
-        console.log('Background notification state:', state);
-      });
-    }
+  generateNewOfferNotification(
+    offerId: string,
+    productTitle: string,
+    buyerName: string
+  ) {
+    const offerDetailUrl = this.navigationService.getOfferDetailUrl(offerId);
+    
+    return {
+      id: `new-offer-${offerId}-${Date.now()}`,
+      type: 'new_offer',
+      title: 'New Offer Received',
+      message: `${buyerName} made an offer on your "${productTitle}"`,
+      actionUrl: offerDetailUrl,
+      actionText: 'View Offer',
+      timestamp: new Date(),
+      read: false,
+      priority: 'high'
+    };
   }
-} 
+
+  /**
+   * Generate email content for request responses
+   * This shows how to include navigation links in emails
+   * @param requestId - The ID of the request
+   * @param requestTitle - The title of the request
+   * @param responseCount - Number of responses
+   * @param baseUrl - Base URL of the application
+   * @returns Email content with navigation link
+   */
+  generateRequestResponseEmail(
+    requestId: string,
+    requestTitle: string,
+    responseCount: number,
+    baseUrl: string = 'https://markt.app'
+  ) {
+    const requestDetailUrl = `${baseUrl}${this.navigationService.getRequestDetailUrl(requestId)}`;
+    
+    return {
+      subject: `You have ${responseCount} new response${responseCount > 1 ? 's' : ''} on your request`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #E94C2A;">New Responses on Your Request</h2>
+          <p>Hello!</p>
+          <p>You have <strong>${responseCount}</strong> new response${responseCount > 1 ? 's' : ''} on your request:</p>
+          <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0; color: #333;">${requestTitle}</h3>
+          </div>
+          <p>Check out the responses and manage your request:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${requestDetailUrl}" 
+               style="background: #E94C2A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              View Request & Responses
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, you can copy and paste this link into your browser:<br>
+            <a href="${requestDetailUrl}" style="color: #E94C2A;">${requestDetailUrl}</a>
+          </p>
+        </div>
+      `,
+      textContent: `
+        New Responses on Your Request
+        
+        Hello!
+        
+        You have ${responseCount} new response${responseCount > 1 ? 's' : ''} on your request:
+        
+        ${requestTitle}
+        
+        Check out the responses and manage your request:
+        ${requestDetailUrl}
+        
+        Best regards,
+        The Markt Team
+      `
+    };
+  }
+
+  /**
+   * Generate email content for offer acceptance
+   * @param requestId - The ID of the request
+   * @param requestTitle - The title of the request
+   * @param sellerName - Name of the seller
+   * @param baseUrl - Base URL of the application
+   * @returns Email content with navigation link
+   */
+  generateOfferAcceptedEmail(
+    requestId: string,
+    requestTitle: string,
+    sellerName: string,
+    baseUrl: string = 'https://markt.app'
+  ) {
+    const requestDetailUrl = `${baseUrl}${this.navigationService.getRequestDetailUrl(requestId)}`;
+    
+    return {
+      subject: `Great news! Your offer was accepted`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #E94C2A;">🎉 Offer Accepted!</h2>
+          <p>Hello!</p>
+          <p>Great news! <strong>${sellerName}</strong> has accepted your offer for:</p>
+          <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0; color: #333;">${requestTitle}</h3>
+          </div>
+          <p>You can now proceed with the transaction:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${requestDetailUrl}" 
+               style="background: #E94C2A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              View Request Details
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, you can copy and paste this link into your browser:<br>
+            <a href="${requestDetailUrl}" style="color: #E94C2A;">${requestDetailUrl}</a>
+          </p>
+        </div>
+      `,
+      textContent: `
+        🎉 Offer Accepted!
+        
+        Hello!
+        
+        Great news! ${sellerName} has accepted your offer for:
+        
+        ${requestTitle}
+        
+        You can now proceed with the transaction:
+        ${requestDetailUrl}
+        
+        Best regards,
+        The Markt Team
+      `
+    };
+  }
+}

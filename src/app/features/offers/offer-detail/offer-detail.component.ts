@@ -200,6 +200,14 @@ interface Request {
           <div class="offer-actions" *ngIf="canTakeAction()">
             <div class="action-buttons">
               <app-button
+                variant="secondary"
+                size="lg"
+                [outline]="true"
+                (click)="openNegotiation()"
+              >
+                Open Negotiation
+              </app-button>
+              <app-button
                 variant="success"
                 size="lg"
                 (click)="acceptOffer()"
@@ -1065,5 +1073,11 @@ export class OfferDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/app/requests', this.request?.id]);
+  }
+
+  openNegotiation(): void {
+    if (this.offer?.id) {
+      this.router.navigate(['/app/offers/negotiation', this.offer.id]);
+    }
   }
 } 

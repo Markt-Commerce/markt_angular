@@ -28,7 +28,9 @@ import {
   faTimes, 
   faChevronRight, 
   faStream,
-  faCode
+  faCode,
+  faQuestionCircle,
+  faEnvelope
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
@@ -136,6 +138,13 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                     (click)="closeUserMenu()"
                   >
                     Settings
+                  </a>
+                  <a 
+                    routerLink="/app/support"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
+                    (click)="closeUserMenu()"
+                  >
+                    Help & Support
                   </a>
                   <hr class="my-1 border-border">
                   <a 
@@ -274,6 +283,16 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                 <span>Requests</span>
               </a>
 
+              <!-- My Requests (Buy) -->
+              <a 
+                routerLink="/app/requests/my" 
+                routerLinkActive="bg-primary text-white"
+                class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+              >
+                <fa-icon [icon]="faClipboard" class="w-4 h-4"></fa-icon>
+                <span>My Buy Requests</span>
+              </a>
+
               <!-- Cart -->
               <a 
                 routerLink="/app/cart" 
@@ -334,7 +353,36 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </div>
 
               <!-- Account Section -->
-              <!-- User Settings removed from sidebar - available in user dropdown menu -->
+              <div class="pt-4 mt-4 border-t border-border">
+                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Account</h3>
+                
+                <a 
+                  routerLink="/app/support" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faQuestionCircle" class="w-4 h-4"></fa-icon>
+                  <span>Help & Support</span>
+                </a>
+
+                <a 
+                  routerLink="/app/contact" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faEnvelope" class="w-4 h-4"></fa-icon>
+                  <span>Contact Us</span>
+                </a>
+
+                <a 
+                  routerLink="/app/settings" 
+                  routerLinkActive="bg-primary text-white"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
+                >
+                  <fa-icon [icon]="faCog" class="w-4 h-4"></fa-icon>
+                  <span>Settings</span>
+                </a>
+              </div>
             </nav>
           </div>
         </aside>
@@ -465,6 +513,8 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   faChevronRight = faChevronRight;
   faStream = faStream;
   faCode = faCode;
+  faQuestionCircle = faQuestionCircle;
+  faEnvelope = faEnvelope;
 
   // State
   user: any = null;

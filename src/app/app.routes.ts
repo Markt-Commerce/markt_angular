@@ -34,6 +34,17 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'legal/terms',
+    loadComponent: () => import('./features/support/terms/terms.component').then(m => m.TermsComponent),
+    data: { hideBreadcrumbs: true }
+  },
+  {
+    path: 'offers/negotiation/:id',
+    canActivate: [AuthGuard],
+    loadComponent: () => import('./features/offers/negotiation/negotiation.component').then(m => m.NegotiationComponent),
+    data: { hideBreadcrumbs: true }
+  },
+  {
     path: 'seller-verification',
     loadComponent: () => import('./features/seller/verification/seller-verification.component').then(m => m.SellerVerificationComponent),
     data: { hideBreadcrumbs: true }
@@ -211,6 +222,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/offers/offers.component').then(m => m.OffersComponent)
           },
           {
+            path: 'negotiation/:id',
+            loadComponent: () => import('./features/offers/negotiation/negotiation.component').then(m => m.NegotiationComponent)
+          },
+          {
             path: 'create',
             loadComponent: () => import('./features/offers/create-offer/create-offer.component').then(m => m.CreateOfferComponent),
             canActivate: [RoleGuard],
@@ -235,6 +250,10 @@ export const routes: Routes = [
           {
             path: '',
             loadComponent: () => import('./features/requests/requests.component').then(m => m.RequestsComponent)
+          },
+          {
+            path: 'my',
+            loadComponent: () => import('./features/requests/my-requests/my-requests.component').then(m => m.MyRequestsComponent)
           },
           {
             path: 'create',
@@ -361,6 +380,16 @@ export const routes: Routes = [
             loadComponent: () => import('./features/seller/analytics/analytics.component').then(m => m.AnalyticsComponent)
           }
         ]
+      },
+      {
+        path: 'support',
+        loadComponent: () => import('./features/support/support.component').then(m => m.SupportComponent),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'contact',
+        loadComponent: () => import('./features/support/contact/contact.component').then(m => m.ContactComponent),
+        canActivate: [AuthGuard]
       }
     ]
   },

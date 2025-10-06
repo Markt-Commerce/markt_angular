@@ -28,7 +28,11 @@ import {
   faCheckCircle,
   faArrowLeft,
   faToggleOn,
-  faToggleOff
+  faToggleOff,
+  faFileContract,
+  faQuestionCircle,
+  faHandshake,
+  faGavel
 } from '@fortawesome/free-solid-svg-icons';
 import { AccessControlService } from '../../../core/services/access-control.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -410,6 +414,10 @@ export class DevNavigationComponent {
   faArrowLeft = faArrowLeft;
   faToggleOn = faToggleOn;
   faToggleOff = faToggleOff;
+  faFileContract = faFileContract;
+  faQuestionCircle = faQuestionCircle;
+  faHandshake = faHandshake;
+  faGavel = faGavel;
 
   // State
   isRoleToggleVisible = signal(false);
@@ -425,19 +433,35 @@ export class DevNavigationComponent {
       category: 'public',
       requiresAuth: false
     },
-      {
-        path: '/seller-verification',
-        title: 'Seller Verification',
-        description: 'Standalone verification flow (no app layout)',
-        icon: faCheckCircle,
-        category: 'public',
-        requiresAuth: false
-      },
+    {
+      path: '/legal/terms',
+      title: 'Terms & Conditions',
+      description: 'Legal terms and user agreement (no app layout)',
+      icon: faFileContract,
+      category: 'public',
+      requiresAuth: false
+    },
+    {
+      path: '/seller-verification',
+      title: 'Seller Verification',
+      description: 'Standalone verification flow (no app layout)',
+      icon: faCheckCircle,
+      category: 'public',
+      requiresAuth: false
+    },
     {
       path: '/order-confirmation',
       title: 'Order Confirmation',
       description: 'Order confirmation page (public)',
       icon: faCheckCircle,
+      category: 'public',
+      requiresAuth: false
+    },
+    {
+      path: '/dev-navigation',
+      title: 'Dev Navigation',
+      description: 'Development navigation helper',
+      icon: faCode,
       category: 'public',
       requiresAuth: false
     },
@@ -574,6 +598,14 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
+      path: '/app/requests/my',
+      title: 'My Requests',
+      description: 'View and manage your own requests',
+      icon: faClipboard,
+      category: 'main',
+      requiresAuth: true
+    },
+    {
       path: '/app/profile',
       title: 'Profile',
       description: 'User profile page',
@@ -626,6 +658,30 @@ export class DevNavigationComponent {
       title: 'Product Detail',
       description: 'Detailed product view (demo ID: 1)',
       icon: faStore,
+      category: 'main',
+      requiresAuth: true
+    },
+    {
+      path: '/app/support',
+      title: 'Support',
+      description: 'Help and support center',
+      icon: faQuestionCircle,
+      category: 'main',
+      requiresAuth: true
+    },
+    {
+      path: '/app/contact',
+      title: 'Contact Us',
+      description: 'Contact form and support tickets',
+      icon: faEnvelope,
+      category: 'main',
+      requiresAuth: true
+    },
+    {
+      path: '/app/community/post/1',
+      title: 'Post Detail',
+      description: 'Individual community post view (demo ID: 1)',
+      icon: faUsers,
       category: 'main',
       requiresAuth: true
     },
@@ -733,11 +789,36 @@ export class DevNavigationComponent {
     {
       path: '/app/requests/1',
       title: 'Request Detail',
-      description: 'View request details (demo ID: 1)',
+      description: 'Request Management - View responses and manage offers (demo ID: 1)',
       icon: faClipboard,
       category: 'buyer',
       requiresAuth: true,
       requiredRole: 'buyer'
+    },
+    {
+      path: '/app/checkout/confirmation/1',
+      title: 'Order Confirmation (Auth)',
+      description: 'Order confirmation page (authenticated, demo ID: 1)',
+      icon: faCheckCircle,
+      category: 'buyer',
+      requiresAuth: true,
+      requiredRole: 'buyer'
+    },
+    {
+      path: '/offers/negotiation/1',
+      title: 'Negotiation (Public)',
+      description: 'Offer negotiation page (public access, demo ID: 1)',
+      icon: faHandshake,
+      category: 'buyer',
+      requiresAuth: true
+    },
+    {
+      path: '/app/offers/negotiation/1',
+      title: 'Negotiation (App)',
+      description: 'Offer negotiation page (app layout, demo ID: 1)',
+      icon: faHandshake,
+      category: 'buyer',
+      requiresAuth: true
     },
 
     // Seller Routes
@@ -785,6 +866,14 @@ export class DevNavigationComponent {
       category: 'seller',
       requiresAuth: true,
       requiredRole: 'seller'
+    },
+    {
+      path: '/seller-verification',
+      title: 'Seller Verification (Public)',
+      description: 'Seller verification flow (standalone, no app layout)',
+      icon: faGavel,
+      category: 'seller',
+      requiresAuth: false
     },
 
     // Settings Routes
