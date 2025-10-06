@@ -1,0 +1,35 @@
+/* Custom styles to match Figma design exactly */
+:host {
+  --markt-primary: #E94C2A;
+  --markt-primary-hover: #D63E26;
+  --markt-gray-50: #F9FAFB;
+  --markt-gray-200: #E5DDDC;
+}
+
+.bg-gray-50 {
+  background-color: var(--markt-gray-50);
+}
+
+.border-gray-200 {
+  border-color: var(--markt-gray-200);
+}
+
+.text-orange-600 {
+  color: var(--markt-primary);
+}
+
+.bg-orange-600 {
+  background-color: var(--markt-primary);
+}
+
+.hover\:bg-orange-700:hover {
+  background-color: var(--markt-primary-hover);
+}
+
+.focus\:ring-orange-500:focus {
+  --tw-ring-color: var(--markt-primary);
+}
+
+.focus\:border-orange-500:focus {
+  border-color: var(--markt-primary);
+}

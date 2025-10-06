@@ -173,7 +173,7 @@ import { AccessControlService } from '../../core/services/access-control.service
             </button>
             <button routerLink="/app/offers/create" class="w-full bg-purple-50 text-purple-600 px-4 py-3 rounded-lg font-medium hover:bg-purple-100 transition-colors">
               <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>
-              Make an Offer
+              Create Offer
             </button>
           </div>
         </section>

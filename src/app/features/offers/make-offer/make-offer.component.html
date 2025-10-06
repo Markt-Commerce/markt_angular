@@ -1,0 +1,360 @@
+<div class="min-h-screen bg-gray-50">
+ 
+
+  <!-- Main Content -->
+  <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Left Column - Main Content -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Product Information -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex gap-6">
+            <!-- Product Image -->
+            <div class="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+              <img [ngSrc]="product.imageUrl" width="128" height="128" class="w-full h-full object-cover" [alt]="product.name" />
+            </div>
+            
+            <!-- Product Details -->
+            <div class="flex-1">
+              <h1 class="text-xl font-semibold text-gray-900 mb-3">{{ product.name }}</h1>
+              
+              <!-- Pricing -->
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl font-bold text-orange-600">${{ product.price | number:'1.2-2' }}</span>
+                <span *ngIf="product.originalPrice" class="text-sm text-gray-600 line-through">${{ product.originalPrice | number:'1.2-2' }}</span>
+                <span *ngIf="product.discount" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">{{ product.discount }}% off</span>
+              </div>
+              
+              <!-- Seller Info -->
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
+                  </svg>
+                  <span class="text-sm text-gray-600">Sold by {{ product.seller.name }}</span>
+                  <!-- Star Rating -->
+                  <div class="flex items-center gap-1">
+                    <div class="flex">
+                      <svg *ngFor="let star of [1,2,3,4,5]" class="w-3 h-3" [class]="star <= Math.floor(product.seller.rating) ? 'text-yellow-400' : 'text-gray-300'" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                      </svg>
+                    </div>
+                    <span class="text-xs text-gray-600">({{ product.seller.rating }})</span>
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span class="text-sm text-gray-600">Condition: {{ product.condition }}</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1V8z"></path>
+                  </svg>
+                  <span class="text-sm text-gray-600">Quantity Available: {{ product.quantity }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Your Offer Form -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">Make Your Offer</h2>
+          
+          <form [formGroup]="offerForm" (ngSubmit)="onSubmit()">
+            <!-- Current Price and Offer Amount -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-sm text-gray-600">Current Price</span>
+                <span class="text-lg font-semibold text-gray-900">${{ product.price | number:'1.2-2' }}</span>
+              </div>
+              
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Your Offer Amount</label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">$</span>
+                    <input 
+                      type="number" 
+                      formControlName="offerAmount"
+                      class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      placeholder="1100"
+                    />
+                  </div>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">You save:</span>
+                  <span class="text-sm font-semibold text-green-600">${{ getSavings() | number:'1.2-2' }} ({{ getSavingsPercentage() | number:'1.0-1' }}%)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Fields Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <!-- Offer Expires -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Offer Expires</label>
+                <div class="relative">
+                  <input 
+                    type="date" 
+                    formControlName="expiryDate"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                  <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Payment Method -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <select 
+                  formControlName="paymentMethod"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="paypal">PayPal</option>
+                  <option value="credit-card">Credit Card</option>
+                  <option value="bank-transfer">Bank Transfer</option>
+                </select>
+              </div>
+
+              <!-- Delivery Preference -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Preference</label>
+                <select 
+                  formControlName="deliveryPreference"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="campus-pickup">Campus Pickup</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="shipping">Shipping</option>
+                </select>
+              </div>
+
+              <!-- Quantity -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                <input 
+                  type="number" 
+                  formControlName="quantity"
+                  min="1"
+                  [max]="product.quantity"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="1"
+                />
+              </div>
+            </div>
+
+            <!-- Message to Seller -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Message to Seller (Optional)</label>
+              <textarea 
+                formControlName="message"
+                rows="4"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Hi Sarah! I'm a fellow student interested in your MacBook. Would you consider my offer? I can pick it up on campus at your convenience. Thanks!"
+              ></textarea>
+              <p class="text-xs text-gray-500 mt-2">
+                Tip: Be polite and explain why you're interested. Sellers are more likely to accept offers with friendly messages!
+              </p>
+            </div>
+          </form>
+        </div>
+
+        <!-- Offer Summary -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">Offer Summary</h2>
+          
+          <div class="space-y-3 mb-6">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Item:</span>
+              <span class="text-gray-900">{{ product.name }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Your Offer:</span>
+              <span class="font-semibold text-orange-600">${{ offerForm.get('offerAmount')?.value | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Savings:</span>
+              <span class="font-semibold text-green-600">${{ getSavings() | number:'1.2-2' }} ({{ getSavingsPercentage() | number:'1.0-1' }}%)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Expires:</span>
+              <span class="text-gray-900">{{ getFormattedDate(offerForm.get('expiryDate')?.value) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Delivery:</span>
+              <span class="text-gray-900">{{ getDeliveryLabel(offerForm.get('deliveryPreference')?.value) }}</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="border-t border-gray-200 pt-6">
+            <div class="flex gap-4">
+              <button 
+                type="button"
+                (click)="saveDraft()"
+                class="flex-1 flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
+                  <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                </svg>
+                Save Draft
+              </button>
+              <button 
+                type="button"
+                (click)="submitOffer()"
+                class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                </svg>
+                Send Offer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Sidebar -->
+      <div class="space-y-6">
+        
+        <!-- Negotiation Tips -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900">Negotiation Tips</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 mb-1">Be Reasonable</h4>
+                <p class="text-sm text-gray-600">Offers within 10-20% of asking price are more likely to be accepted.</p>
+              </div>
+            </div>
+            
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 mb-1">Add a Message</h4>
+                <p class="text-sm text-gray-600">Personal messages increase acceptance rates by 40%.</p>
+              </div>
+            </div>
+            
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900 mb-1">Set Expiry Date</h4>
+                <p class="text-sm text-gray-600">Creates urgency and shows you're serious about buying.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Offer Terms -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900">Offer Terms</h3>
+          </div>
+          
+          <div class="space-y-3 mb-4">
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <p class="text-sm text-gray-600">Offers are binding once accepted</p>
+            </div>
+            
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <p class="text-sm text-gray-600">Sellers have 48 hours to respond</p>
+            </div>
+            
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <p class="text-sm text-gray-600">Counter offers reset the timer</p>
+            </div>
+            
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div class="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <p class="text-sm text-gray-600">Payment due within 24 hours</p>
+            </div>
+          </div>
+          
+          <a href="#" class="text-sm text-orange-600 hover:text-orange-700">Read full terms & conditions</a>
+        </div>
+
+        <!-- About the Seller -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">About the Seller</h3>
+          
+          <div class="flex gap-4 mb-4">
+            <img [ngSrc]="product.seller.avatar" width="48" height="48" class="w-12 h-12 rounded-full object-cover" [alt]="product.seller.name" />
+            <div>
+              <h4 class="font-medium text-gray-900">{{ product.seller.name }}</h4>
+              <p class="text-sm text-gray-600">{{ product.seller.university }}</p>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Rating:</span>
+              <div class="flex items-center gap-2">
+                <div class="flex">
+                  <svg *ngFor="let star of [1,2,3,4,5]" class="w-3 h-3" [class]="star <= Math.floor(product.seller.rating) ? 'text-yellow-400' : 'text-gray-300'" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-900">{{ product.seller.rating }}</span>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Sales:</span>
+              <span class="text-sm font-medium text-gray-900">{{ product.seller.sales }} items sold</span>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Response time:</span>
+              <span class="text-sm font-medium text-gray-900">{{ product.seller.responseTime }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

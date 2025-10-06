@@ -68,7 +68,7 @@ interface Offer {
             size="md"
             [routerLink]="['/app/offers/new', request.id]"
           >
-            Make Offer
+            Create Offer
           </app-button>
         </div>
       </div>
@@ -264,7 +264,7 @@ interface Offer {
           <div class="no-offers" *ngIf="filteredOffers.length === 0">
             <div class="no-offers-icon"><fa-icon [icon]="faCommentDots"></fa-icon></div>
             <h3>No offers yet</h3>
-            <p *ngIf="!request.isOwner">Be the first to make an offer!</p>
+            <p *ngIf="!request.isOwner">Be the first to create an offer!</p>
             <p *ngIf="request.isOwner">No offers have been made yet. Check back later!</p>
             <app-button 
               *ngIf="!request.isOwner"
@@ -272,7 +272,7 @@ interface Offer {
               size="lg"
               [routerLink]="['/app/offers/new', request.id]"
             >
-              Make First Offer
+              Create First Offer
             </app-button>
           </div>
         </div>

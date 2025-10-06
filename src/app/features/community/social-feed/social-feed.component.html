@@ -94,12 +94,16 @@
                     </div>
                   </div>
                 </div>
-                <div class="flex space-x-3">
+                <div class="flex space-x-2">
                   <button class="flex-1 bg-primary text-white py-2 rounded-lg font-medium hover:bg-secondary">
                     Buy Now
                   </button>
-                  <button class="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white">
-                    Message
+                  <button 
+                    class="flex-1 border border-orange-600 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-600 hover:text-white transition-colors"
+                    (click)="makeOffer(post.productInfo.id, $event)"
+                  >
+                    <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>
+                    Make Offer
                   </button>
                   <button class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100">
                     <fa-icon [icon]="faShoppingCart"></fa-icon>

@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs/operators';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { SmartBreadcrumbComponent } from '../smart-breadcrumb/smart-breadcrumb.component';
 import { 
   faBars, 
   faSearch, 
@@ -40,7 +41,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 @Component({
   selector: 'app-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, RouterLink, RouterOutlet, FormsModule, FontAwesomeModule, SmartBreadcrumbComponent],
   template: `
     <div class="bg-gray-50 min-h-screen">
       <!-- Header -->
@@ -342,6 +343,9 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
         <!-- Main Content Area -->
         <main class="flex-1 lg:ml-64">
+          <!-- Smart Breadcrumb Navigation -->
+          <app-smart-breadcrumb></app-smart-breadcrumb>
+          
           <!-- Page Content -->
           <router-outlet></router-outlet>
         </main>

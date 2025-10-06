@@ -217,6 +217,12 @@ export const routes: Routes = [
             data: { requiredRole: 'buyer' }
           },
           {
+            path: 'make/:id',
+            loadComponent: () => import('./features/offers/make-offer/make-offer.component').then(m => m.MakeOfferComponent),
+            canActivate: [RoleGuard],
+            data: { requiredRole: 'buyer' }
+          },
+          {
             path: ':id',
             loadComponent: () => import('./features/offers/offer-detail/offer-detail.component').then(m => m.OfferDetailComponent)
           }

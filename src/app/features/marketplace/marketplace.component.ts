@@ -197,7 +197,7 @@ import { SocialService } from '../../core/services/social.service';
                     </div>
                   </div>
                   <div class="flex space-x-2">
-                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="makeOffer('macbook-pro-13-2021', $event)">
                     Make Offer
                   </button>
                   <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
@@ -233,7 +233,7 @@ import { SocialService } from '../../core/services/social.service';
                     </div>
                   </div>
                   <div class="flex space-x-2">
-                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="makeOffer('sony-wh-1000xm4-headphones', $event)">
                     Make Offer
                   </button>
                   <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
@@ -269,7 +269,7 @@ import { SocialService } from '../../core/services/social.service';
                     </div>
                   </div>
                   <div class="flex space-x-2">
-                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="makeOffer('vintage-denim-jacket', $event)">
                     Make Offer
                   </button>
                   <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
@@ -305,7 +305,7 @@ import { SocialService } from '../../core/services/social.service';
                     </div>
                   </div>
                   <div class="flex space-x-2">
-                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="$event.stopPropagation()">
+                  <button class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90" (click)="makeOffer('study-desk-with-drawers', $event)">
                     Make Offer
                   </button>
                   <button class="px-3 py-2 border border-border rounded-lg hover:bg-gray-50" (click)="$event.stopPropagation()">
@@ -1143,6 +1143,11 @@ export class MarketplaceComponent implements OnInit {
 
   navigateToProduct(productId: string): void {
     this.router.navigate(['/app/marketplace/product', productId]);
+  }
+
+  makeOffer(productId: string, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/app/offers/make', productId]);
   }
 
 }

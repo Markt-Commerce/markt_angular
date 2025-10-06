@@ -697,8 +697,17 @@ export class DevNavigationComponent {
     {
       path: '/app/offers/create',
       title: 'Create Offer',
-      description: 'Create new offer',
+      description: 'Respond to buyer requests with offers',
       icon: faPlusCircle,
+      category: 'buyer',
+      requiresAuth: true,
+      requiredRole: 'buyer'
+    },
+    {
+      path: '/app/offers/make/macbook-pro-13-2021',
+      title: 'Make Offer',
+      description: 'Make offer on existing product listings',
+      icon: faTag,
       category: 'buyer',
       requiresAuth: true,
       requiredRole: 'buyer'

@@ -226,7 +226,7 @@ interface Request {
                 [outline]="true"
                 (click)="showCounterOffer = true"
               >
-                Make Counter Offer
+                Create Counter Offer
               </app-button>
             </div>
           </div>
@@ -286,7 +286,7 @@ interface Request {
       <div *ngIf="showCounterOffer" class="modal-overlay" (click)="closeCounterOffer()">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Make Counter Offer</h2>
+            <h2>Create Counter Offer</h2>
             <button class="close-button" (click)="closeCounterOffer()">×</button>
           </div>
 

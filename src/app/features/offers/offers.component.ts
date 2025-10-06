@@ -32,7 +32,7 @@ interface OfferCard {
             <h1 class="text-4xl font-bold mb-4">Manage Your Offers</h1>
             <p class="text-lg text-gray-200 mb-6">Track negotiations, respond to offers, and close deals</p>
             <button class="bg-[#E94C2A] hover:bg-[#FF6B47] text-white px-6 py-3 rounded-lg font-semibold" (click)="createNewOffer()">
-              <span class="mr-2">＋</span> Create New Offer
+              <span class="mr-2">＋</span> Create Offer
             </button>
           </div>
         </div>

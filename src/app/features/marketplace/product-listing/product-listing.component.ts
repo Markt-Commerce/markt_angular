@@ -279,10 +279,8 @@ Price is firm but negotiable for fellow Bruins! 🐻 DM me if interested or have
   }
 
   makeOffer(): void {
-    // Navigate to offer creation
-    this.router.navigate(['/offers/create'], { 
-      queryParams: { productId: this.productId } 
-    });
+    // Navigate to make offer page for this specific product
+    this.router.navigate(['/app/offers/make', this.productId]);
   }
 
   postComment(): void {

@@ -15,7 +15,8 @@ import {
   faComment, 
   faShare, 
   faBookmark,
-  faShoppingCart
+  faShoppingCart,
+  faHandshake
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -57,6 +58,7 @@ interface Post {
   isLiked: boolean;
   type: 'social' | 'product' | 'event';
   productInfo?: {
+    id: string;
     title: string;
     price: number;
     originalPrice?: number;
@@ -111,6 +113,7 @@ export class SocialFeedComponent implements OnInit {
   faShare = faShare;
   faBookmark = faBookmark;
   faShoppingCart = faShoppingCart;
+  faHandshake = faHandshake;
 
   // Component state
   newPostContent = '';
@@ -161,6 +164,7 @@ export class SocialFeedComponent implements OnInit {
       isLiked: false,
       type: 'product',
       productInfo: {
+        id: 'calculus-textbook-bundle',
         title: 'Calculus Textbook',
         price: 45,
         originalPrice: 120,
@@ -297,6 +301,11 @@ export class SocialFeedComponent implements OnInit {
 
   trackByUserId(index: number, user: SuggestedUser): string {
     return user.id;
+  }
+
+  makeOffer(productId: string, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/app/offers/make', productId]);
   }
 }
 

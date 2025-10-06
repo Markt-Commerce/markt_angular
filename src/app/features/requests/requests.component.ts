@@ -370,10 +370,10 @@ import { AccessControlService } from '../../core/services/access-control.service
               <div class="flex items-center space-x-3">
                 <button 
                   *ngIf="isSeller && request.status === 'OPEN'"
-                  (click)="makeOffer(request)"
+                  (click)="createOffer(request)"
                   class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors text-sm font-medium"
                 >
-                  Make Offer
+                  Create Offer
                 </button>
                 <button 
                   [routerLink]="['/app/requests', request.id]"
@@ -719,7 +719,7 @@ export class RequestsComponent implements OnInit {
     this.router.navigate(['/app/requests', request.id, 'offers']);
   }
 
-  makeOffer(request: any): void {
+  createOffer(request: any): void {
     this.router.navigate(['/app/requests', request.id, 'offer']);
   }
 

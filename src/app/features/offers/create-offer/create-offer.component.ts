@@ -42,7 +42,7 @@ interface Product {
   template: `
     <div class="create-offer-container">
       <div class="create-offer-header">
-        <h1>Make an Offer</h1>
+        <h1>Create Offer</h1>
         <p>Submit your product offer to the buyer</p>
       </div>
 
@@ -223,7 +223,7 @@ interface Product {
       <div *ngIf="!loading && !request" class="error-state">
         <div class="error-icon">❌</div>
         <h3>Request Not Found</h3>
-        <p>The request you're trying to make an offer on doesn't exist.</p>
+        <p>The request you're trying to create an offer for doesn't exist.</p>
         <app-button 
           variant="primary" 
           size="lg"

@@ -198,7 +198,10 @@ import { MediaOptimizationService } from '../../../core/services/media-optimizat
                   <fa-icon [icon]="faBolt" class="mr-2"></fa-icon>
               Buy Now
             </button>
-                <button class="w-full border border-primary text-primary py-3 rounded-lg font-medium hover:bg-primary hover:text-white transition-colors">
+                <button 
+                  (click)="makeOffer()"
+                  class="w-full border border-primary text-primary py-3 rounded-lg font-medium hover:bg-primary hover:text-white transition-colors"
+                >
                   <fa-icon [icon]="faHandshake" class="mr-2"></fa-icon>
                   Make Offer
                 </button>
@@ -651,6 +654,12 @@ export class ProductDetailComponent implements OnInit {
         console.error('Error toggling wishlist:', error);
       }
     });
+  }
+
+  makeOffer(): void {
+    if (!this.product) return;
+    
+    this.router.navigate(['/app/offers/make', this.product.id]);
   }
 
   shareProduct(): void {
