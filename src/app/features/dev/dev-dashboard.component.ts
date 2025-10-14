@@ -37,7 +37,7 @@ interface RouteInfo {
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div class="flex items-center justify-between">
             <div>
               <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -63,7 +63,7 @@ interface RouteInfo {
       </header>
 
       <!-- Stats Overview -->
-      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <section class=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Total Routes -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -175,7 +175,7 @@ interface RouteInfo {
       </section>
 
       <!-- Routes List -->
-      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <section class=" mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
             <h2 class="text-lg font-semibold text-gray-900">
@@ -381,7 +381,14 @@ export class DevDashboardComponent implements OnInit {
   }
 
   openDocs(): void {
-    window.open('/docs/architecture.md', '_blank');
+    // Try to open docs in separate server, fallback to helpful message
+    const docsUrl = 'http://localhost:8080/architecture.md';
+    const newWindow = window.open(docsUrl, '_blank');
+    
+    // If window failed to open (server not running), show helpful message
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      alert(`Documentation not accessible.\n\nTo view docs:\n1. Run: python3 -m http.server 8080 --directory docs\n2. Then visit: ${docsUrl}\n\nOr view directly in your IDE: docs/architecture.md`);
+    }
   }
 }
 
