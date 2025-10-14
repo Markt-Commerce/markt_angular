@@ -8,7 +8,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { CartService } from '../../../core/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 
 interface Offer {
   id: string;
@@ -1078,7 +1078,7 @@ export class OfferDetailComponent implements OnInit {
 
   openNegotiation(): void {
     if (this.offer?.id) {
-      this.router.navigate(['/app/offers/negotiation', this.offer.id]);
+      this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'negotiation', this.offer.id)]);
     }
   }
 } 

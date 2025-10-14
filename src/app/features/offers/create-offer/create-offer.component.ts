@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ApiService } from '../../../core/services/api.service';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 
 interface BuyerRequest {
   id: string;
@@ -110,7 +110,7 @@ interface Product {
                 <app-button 
                   variant="primary" 
                   size="md"
-                  [routerLink]="['/app/seller/listings/new']"
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.SELLER.LISTINGS_CREATE]"
                 >
                   Create New Product
                 </app-button>

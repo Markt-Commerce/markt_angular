@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ApiService } from '../../core/services/api.service';
@@ -107,7 +108,7 @@ interface OfferCard {
                       <p class="text-sm text-gray-600 mb-2">{{ card.offeredText }}</p>
                       <p class="text-xs text-gray-500 mb-3">{{ card.meta }}</p>
                       <div class="flex flex-wrap gap-2">
-                        <a class="text-xs bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 inline-flex items-center" [routerLink]="['/app/offers/negotiation', card.id]">Open negotiation</a>
+                        <a class="text-xs bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 inline-flex items-center" [routerLink]="[buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'negotiation', card.id)]">Open negotiation</a>
                         <button class="text-xs bg-[#E94C2A] text-white px-3 py-1 rounded hover:bg-[#FF6B47]">Message</button>
                         <button class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200">Modify</button>
                         <button class="text-xs text-red-600 hover:text-red-800">Withdraw</button>
@@ -137,7 +138,7 @@ interface OfferCard {
                       <p class="text-sm text-gray-600 mb-2">{{ card.offeredText }}</p>
                       <p class="text-xs text-gray-500 mb-3">{{ card.meta }}</p>
                       <div class="flex flex-wrap gap-2">
-                        <a class="text-xs bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 inline-flex items-center" [routerLink]="['/app/offers/negotiation', card.id]">Open negotiation</a>
+                        <a class="text-xs bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 inline-flex items-center" [routerLink]="[buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'negotiation', card.id)]">Open negotiation</a>
                         <button class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Accept</button>
                         <button class="text-xs bg-[#E94C2A] text-white px-3 py-1 rounded hover:bg-[#FF6B47]">Counter</button>
                         <button class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200">Message</button>
@@ -156,6 +157,10 @@ interface OfferCard {
   styles: [``]
 })
 export class OffersComponent implements OnInit {
+  // Expose route constants to template
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  readonly buildPath = buildPath;
+  
   private router = inject(Router);
   private apiService = inject(ApiService);
 
@@ -276,7 +281,7 @@ export class OffersComponent implements OnInit {
   }
 
   createNewOffer(): void {
-    this.router.navigate(['/app/offers/create']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'create')]);
   }
 
   // Navigation moved to template via [routerLink] for simplicity
