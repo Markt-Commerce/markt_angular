@@ -96,6 +96,11 @@ export const routes: Routes = [
     data: { hideBreadcrumbs: true }
   },
   {
+    path: 'dev-dashboard',
+    loadComponent: () => import('./features/dev/dev-dashboard.component').then(m => m.DevDashboardComponent),
+    data: { hideBreadcrumbs: true }
+  },
+  {
     path: 'app',
     canActivate: [AuthGuard],
     loadComponent: () => import('./shared/components/app-layout/app-layout.component').then(m => m.AppLayoutComponent),
