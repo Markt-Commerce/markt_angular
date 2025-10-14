@@ -116,7 +116,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                         <div>
                           <h3 class="text-lg font-semibold text-gray-900 mb-1">
                             <a 
-                              [routerLink]="['/app/marketplace/product', item.product.id]"
+                              [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', item.product.id]"
                               class="hover:text-primary transition-colors"
                             >
                               {{ item.product.name }}
@@ -182,7 +182,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                           Save for later
                         </button>
                         <button 
-                          [routerLink]="['/app/marketplace/product', item.product.id]"
+                          [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', item.product.id]"
                           class="text-sm text-gray-600 hover:text-gray-900"
                         >
                           View details
