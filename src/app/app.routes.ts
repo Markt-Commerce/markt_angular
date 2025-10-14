@@ -273,7 +273,15 @@ export const routes: Routes = [
         children: [
           {
             path: '',
+            loadComponent: () => import('./features/chat/chat-overview/chat-overview.component').then(m => m.ChatOverviewComponent)
+          },
+          {
+            path: 'list',
             loadComponent: () => import('./features/chat/chat-list/chat-list.component').then(m => m.ChatListComponent)
+          },
+          {
+            path: 'start',
+            loadComponent: () => import('./features/chat/start-chat/start-chat.component').then(m => m.StartChatComponent)
           },
           {
             path: ':id',

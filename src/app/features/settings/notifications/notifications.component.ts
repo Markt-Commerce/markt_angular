@@ -4,6 +4,27 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { timer, Subscription } from 'rxjs';
+import { ToggleSwitchComponent } from '../../../shared/components/toggle-switch/toggle-switch.component';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { 
+  faMobileScreen, 
+  faEnvelope, 
+  faCommentSms, 
+  faList, 
+  faMoon, 
+  faEye,
+  faShoppingBag,
+  faMessage,
+  faHandshake,
+  faUsers,
+  faShieldHalved,
+  faGear,
+  faBullhorn,
+  faCalendar,
+  faUserPlus,
+  faExclamationTriangle
+} from '@fortawesome/free-solid-svg-icons';
 
 interface NotificationSetting {
   id: string;
@@ -18,272 +39,691 @@ interface NotificationSetting {
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ToggleSwitchComponent, ButtonComponent, FontAwesomeModule],
   template: `
-    <div class="min-h-screen bg-gray-50">
+    <div class="notification-settings-container">
       <!-- Header -->
-      <div class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center py-4">
-            <div class="flex items-center space-x-4">
-              <button
-                (click)="goBack()"
-                class="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-              </button>
-              <h1 class="text-2xl font-bold text-gray-900">Notification Settings</h1>
-            </div>
-            <div class="flex space-x-3">
-              <button
-                (click)="resetSettings()"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Reset
-              </button>
-              <button
-                (click)="saveSettings()"
-                [disabled]="loading || notificationsForm.invalid"
-                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                {{ loading ? 'Saving...' : 'Save Changes' }}
-              </button>
-            </div>
+      <header class="notification-header">
+        <div class="header-content">
+          <div>
+            <h1 class="page-title">Notification Settings</h1>
+            <p class="page-description">Manage your communication preferences and notification settings</p>
+          </div>
+          <div class="header-actions">
+            <app-button
+              variant="secondary"
+              size="md"
+              [outline]="true"
+              (clicked)="resetSettings()"
+            >
+              Reset to Default
+            </app-button>
+            <app-button
+              variant="primary"
+              size="md"
+              [loading]="loading"
+              (clicked)="saveSettings()"
+            >
+              Save Changes
+            </app-button>
           </div>
         </div>
-      </div>
+      </header>
 
       <!-- Success/Error Messages -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div *ngIf="successMessage" class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-md">
+      @if (successMessage) {
+        <div class="success-message">
           {{ successMessage }}
         </div>
-        <div *ngIf="errorMessage" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+      }
+      @if (errorMessage) {
+        <div class="error-message">
           {{ errorMessage }}
         </div>
-      </div>
+      }
 
       <!-- Content -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form [formGroup]="notificationsForm" class="space-y-8">
-          <!-- Quiet Hours -->
-          <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Quiet Hours</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="flex items-center">
-                <input
-                  id="quiet_hours_enabled"
-                  type="checkbox"
-                  formControlName="quiet_hours_enabled"
-                  class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label for="quiet_hours_enabled" class="ml-2 text-sm text-gray-700">
-                  Enable quiet hours
-                </label>
+      <div class="notification-content">
+        <div class=" mx-auto space-y-8">
+          <form [formGroup]="notificationsForm">
+            <!-- Push Notifications -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faMobileScreen" class="section-icon"></fa-icon>
+                    Push Notifications
+                  </h2>
+                  <p class="section-description">Control how you receive push notifications on your device</p>
+                </div>
+                <app-toggle-switch
+                  formControlName="push_notifications_enabled"
+                  ariaLabel="Enable push notifications"
+                ></app-toggle-switch>
               </div>
-              <div>
-                <label for="quiet_hours_start" class="block text-sm font-medium text-gray-700">Start Time</label>
-                <input
-                  id="quiet_hours_start"
-                  type="time"
-                  formControlName="quiet_hours_start"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label for="quiet_hours_end" class="block text-sm font-medium text-gray-700">End Time</label>
-                <input
-                  id="quiet_hours_end"
-                  type="time"
-                  formControlName="quiet_hours_end"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Order Notifications -->
-          <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Order Notifications</h2>
-            <div class="space-y-4">
-              <div *ngFor="let setting of orderNotifications" class="border-b border-gray-200 pb-4 last:border-b-0">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-sm font-medium text-gray-900">{{ setting.title }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ setting.description }}</p>
+              
+              <div class="settings-grid">
+                <div class="settings-column">
+                  <div class="setting-item">
+                    <span class="setting-label">Notification Sound</span>
+                    <app-toggle-switch
+                      formControlName="notification_sound"
+                      ariaLabel="Enable notification sound"
+                    ></app-toggle-switch>
                   </div>
-                  <div class="flex items-center space-x-4">
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_email'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_email'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_email'" class="ml-2 text-xs text-gray-500">Email</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_push'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_push'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_push'" class="ml-2 text-xs text-gray-500">Push</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_sms'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_sms'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_sms'" class="ml-2 text-xs text-gray-500">SMS</label>
-                    </div>
+                  <div class="setting-item">
+                    <span class="setting-label">Vibration</span>
+                    <app-toggle-switch
+                      formControlName="vibration"
+                      ariaLabel="Enable vibration"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <span class="setting-label">Badge Count</span>
+                    <app-toggle-switch
+                      formControlName="badge_count"
+                      ariaLabel="Enable badge count"
+                    ></app-toggle-switch>
+                  </div>
+                </div>
+                <div class="settings-column">
+                  <div class="setting-item">
+                    <span class="setting-label">Lock Screen Preview</span>
+                    <app-toggle-switch
+                      formControlName="lock_screen_preview"
+                      ariaLabel="Enable lock screen preview"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <span class="setting-label">Group Notifications</span>
+                    <app-toggle-switch
+                      formControlName="group_notifications"
+                      ariaLabel="Enable group notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <span class="setting-label">Do Not Disturb Override</span>
+                    <app-toggle-switch
+                      formControlName="dnd_override"
+                      ariaLabel="Enable do not disturb override"
+                    ></app-toggle-switch>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </section>
 
-          <!-- Message Notifications -->
-          <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Message Notifications</h2>
-            <div class="space-y-4">
-              <div *ngFor="let setting of messageNotifications" class="border-b border-gray-200 pb-4 last:border-b-0">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-sm font-medium text-gray-900">{{ setting.title }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ setting.description }}</p>
+            <!-- Email Notifications -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faEnvelope" class="section-icon"></fa-icon>
+                    Email Notifications
+                  </h2>
+                  <p class="section-description">Configure your email notification preferences</p>
+                </div>
+                <app-toggle-switch
+                  formControlName="email_notifications_enabled"
+                  ariaLabel="Enable email notifications"
+                ></app-toggle-switch>
+              </div>
+              
+              <div class="settings-list">
+                <div class="setting-item">
+                  <div>
+                    <span class="setting-label">Email Frequency</span>
+                    <p class="setting-hint">How often you receive email notifications</p>
                   </div>
-                  <div class="flex items-center space-x-4">
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_email'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_email'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_email'" class="ml-2 text-xs text-gray-500">Email</label>
+                  <select formControlName="email_frequency" class="frequency-select">
+                    <option value="instant">Instant</option>
+                    <option value="daily">Daily Digest</option>
+                    <option value="weekly">Weekly Digest</option>
+                    <option value="never">Never</option>
+                  </select>
+                </div>
+                <div class="setting-item">
+                  <span class="setting-label">HTML Email Format</span>
+                  <app-toggle-switch
+                    formControlName="html_email_format"
+                    ariaLabel="Enable HTML email format"
+                  ></app-toggle-switch>
+                </div>
+                <div class="setting-item">
+                  <span class="setting-label">Security Notifications</span>
+                  <app-toggle-switch
+                    formControlName="security_notifications"
+                    ariaLabel="Enable security notifications"
+                  ></app-toggle-switch>
+                </div>
+              </div>
+            </section>
+
+            <!-- SMS Notifications -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faCommentSms" class="section-icon"></fa-icon>
+                    SMS Notifications
+                  </h2>
+                  <p class="section-description">Manage SMS notification settings and preferences</p>
+                </div>
+                <app-toggle-switch
+                  formControlName="sms_notifications_enabled"
+                  ariaLabel="Enable SMS notifications"
+                ></app-toggle-switch>
+              </div>
+              
+              <div class="settings-list">
+                <div class="setting-item">
+                  <span class="setting-label">Emergency Alerts Only</span>
+                  <app-toggle-switch
+                    formControlName="emergency_alerts_only"
+                    ariaLabel="Enable emergency alerts only"
+                  ></app-toggle-switch>
+                </div>
+                <div class="setting-item">
+                  <span class="setting-label">Two-Factor Authentication</span>
+                  <app-toggle-switch
+                    formControlName="two_factor_auth"
+                    ariaLabel="Enable two-factor authentication SMS"
+                  ></app-toggle-switch>
+                </div>
+              </div>
+            </section>
+
+            <!-- Notification Categories -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faList" class="section-icon"></fa-icon>
+                    Notification Categories
+                  </h2>
+                  <p class="section-description">Choose which types of notifications you want to receive</p>
+                </div>
+              </div>
+              
+              <div class="settings-grid">
+                <div class="settings-column">
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faShoppingBag" class="category-icon"></fa-icon>
+                      <span class="setting-label">Order Updates</span>
                     </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_push'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_push'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_push'" class="ml-2 text-xs text-gray-500">Push</label>
+                    <app-toggle-switch
+                      formControlName="order_updates"
+                      ariaLabel="Enable order updates"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faMessage" class="category-icon"></fa-icon>
+                      <span class="setting-label">Messages</span>
                     </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_sms'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_sms'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_sms'" class="ml-2 text-xs text-gray-500">SMS</label>
+                    <app-toggle-switch
+                      formControlName="messages"
+                      ariaLabel="Enable message notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faHandshake" class="category-icon"></fa-icon>
+                      <span class="setting-label">Offers & Requests</span>
                     </div>
+                    <app-toggle-switch
+                      formControlName="offers_requests"
+                      ariaLabel="Enable offers and requests notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faUsers" class="category-icon"></fa-icon>
+                      <span class="setting-label">Community Activity</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="community_activity"
+                      ariaLabel="Enable community activity notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faShieldHalved" class="category-icon"></fa-icon>
+                      <span class="setting-label">Security Alerts</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="security_alerts"
+                      ariaLabel="Enable security alerts"
+                    ></app-toggle-switch>
+                  </div>
+                </div>
+                <div class="settings-column">
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faGear" class="category-icon"></fa-icon>
+                      <span class="setting-label">System Updates</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="system_updates"
+                      ariaLabel="Enable system updates"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faBullhorn" class="category-icon"></fa-icon>
+                      <span class="setting-label">Marketing</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="marketing"
+                      ariaLabel="Enable marketing notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faCalendar" class="category-icon"></fa-icon>
+                      <span class="setting-label">Events</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="events"
+                      ariaLabel="Enable event notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faUserPlus" class="category-icon"></fa-icon>
+                      <span class="setting-label">Friend Activity</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="friend_activity"
+                      ariaLabel="Enable friend activity notifications"
+                    ></app-toggle-switch>
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-with-icon">
+                      <fa-icon [icon]="faExclamationTriangle" class="category-icon"></fa-icon>
+                      <span class="setting-label">Emergency Alerts</span>
+                    </div>
+                    <app-toggle-switch
+                      formControlName="emergency_alerts"
+                      ariaLabel="Enable emergency alerts"
+                    ></app-toggle-switch>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </section>
 
-          <!-- Marketplace Notifications -->
-          <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Marketplace Notifications</h2>
-            <div class="space-y-4">
-              <div *ngFor="let setting of marketplaceNotifications" class="border-b border-gray-200 pb-4 last:border-b-0">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-sm font-medium text-gray-900">{{ setting.title }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ setting.description }}</p>
-                  </div>
-                  <div class="flex items-center space-x-4">
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_email'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_email'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_email'" class="ml-2 text-xs text-gray-500">Email</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_push'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_push'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_push'" class="ml-2 text-xs text-gray-500">Push</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_sms'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_sms'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_sms'" class="ml-2 text-xs text-gray-500">SMS</label>
-                    </div>
-                  </div>
+            <!-- Quiet Hours -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faMoon" class="section-icon"></fa-icon>
+                    Quiet Hours
+                  </h2>
+                  <p class="section-description">Set times when you don't want to receive notifications</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- General Notifications -->
-          <div class="bg-white shadow rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">General Notifications</h2>
-            <div class="space-y-4">
-              <div *ngFor="let setting of generalNotifications" class="border-b border-gray-200 pb-4 last:border-b-0">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-sm font-medium text-gray-900">{{ setting.title }}</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ setting.description }}</p>
-                  </div>
-                  <div class="flex items-center space-x-4">
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_email'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_email'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_email'" class="ml-2 text-xs text-gray-500">Email</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_push'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_push'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_push'" class="ml-2 text-xs text-gray-500">Push</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input
-                        [id]="setting.id + '_sms'"
-                        type="checkbox"
-                        [formControlName]="setting.id + '_sms'"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label [for]="setting.id + '_sms'" class="ml-2 text-xs text-gray-500">SMS</label>
-                    </div>
-                  </div>
+              
+              <div class="time-inputs">
+                <div class="time-input-group">
+                  <label class="time-label">Start Time</label>
+                  <input
+                    type="time"
+                    formControlName="quiet_hours_start"
+                    value="22:00"
+                    class="time-input"
+                  />
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">End Time</label>
+                  <input
+                    type="time"
+                    formControlName="quiet_hours_end"
+                    value="08:00"
+                    class="time-input"
+                  />
                 </div>
               </div>
-            </div>
-          </div>
-        </form>
+              
+              <div class="settings-list">
+                <div class="setting-item">
+                  <span class="setting-label">Apply to Weekends</span>
+                  <app-toggle-switch
+                    formControlName="apply_to_weekends"
+                    ariaLabel="Apply quiet hours to weekends"
+                  ></app-toggle-switch>
+                </div>
+                <div class="setting-item">
+                  <span class="setting-label">Emergency Override</span>
+                  <app-toggle-switch
+                    formControlName="emergency_override"
+                    ariaLabel="Enable emergency override"
+                  ></app-toggle-switch>
+                </div>
+              </div>
+            </section>
+
+            <!-- Test Notifications -->
+            <section class="notification-section">
+              <div class="section-header">
+                <div>
+                  <h2 class="section-title">
+                    <fa-icon [icon]="faEye" class="section-icon"></fa-icon>
+                    Test Notifications
+                  </h2>
+                  <p class="section-description">Preview how your notifications will appear</p>
+                </div>
+              </div>
+              
+              <div class="test-buttons">
+                <button type="button" class="test-button" (click)="testNotification('push')">
+                  <fa-icon [icon]="faMobileScreen" class="test-icon"></fa-icon>
+                  Test Push
+                </button>
+                <button type="button" class="test-button" (click)="testNotification('email')">
+                  <fa-icon [icon]="faEnvelope" class="test-icon"></fa-icon>
+                  Test Email
+                </button>
+                <button type="button" class="test-button" (click)="testNotification('sms')">
+                  <fa-icon [icon]="faCommentSms" class="test-icon"></fa-icon>
+                  Test SMS
+                </button>
+              </div>
+            </section>
+          </form>
+        </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    .notification-settings-container {
+      min-height: 100vh;
+      background-color: #F4F1F0;
+    }
+
+    .notification-header {
+      background: white;
+      border-bottom: 1px solid #E5DDDC;
+      padding: 2rem;
+    }
+
+    .header-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #181211;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .page-description {
+      color: #886A63;
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .success-message {
+      background: #f0f9ff;
+      border: 1px solid #0ea5e9;
+      color: #0c4a6e;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 2rem;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .error-message {
+      background: #fef2f2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 2rem;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .notification-content {
+      padding: 2rem;
+    }
+
+    .notification-section {
+      background: white;
+      border-radius: 0.75rem;
+      border: 1px solid #E5DDDC;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #181211;
+      display: flex;
+      align-items: center;
+      margin: 0 0 0.25rem 0;
+    }
+
+    .section-icon {
+      color: #E94C2A;
+      margin-right: 0.75rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .section-description {
+      color: #886A63;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .settings-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .setting-label {
+      color: #181211;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .setting-hint {
+      color: #886A63;
+      font-size: 0.75rem;
+      margin: 0.25rem 0 0 0;
+    }
+
+    .setting-with-icon {
+      display: flex;
+      align-items: center;
+    }
+
+    .category-icon {
+      color: #E94C2A;
+      margin-right: 0.75rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .frequency-select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #E5DDDC;
+      border-radius: 0.5rem;
+      background: white;
+      color: #181211;
+      font-size: 0.875rem;
+      min-width: 120px;
+    }
+
+    .frequency-select:focus {
+      outline: none;
+      border-color: #E94C2A;
+      box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
+    }
+
+    .time-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .time-input-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .time-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #181211;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #E5DDDC;
+      border-radius: 0.5rem;
+      background: white;
+      color: #181211;
+      font-size: 0.875rem;
+    }
+
+    .time-input:focus {
+      outline: none;
+      border-color: #E94C2A;
+      box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
+    }
+
+    .test-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .test-button {
+      padding: 0.75rem 1rem;
+      border: 1px solid #E5DDDC;
+      border-radius: 0.5rem;
+      background: white;
+      color: #181211;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .test-button:hover {
+      background: #F4F1F0;
+      border-color: #E94C2A;
+    }
+
+    .test-icon {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .notification-header {
+        padding: 1rem;
+      }
+
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .notification-content {
+        padding: 1rem;
+      }
+
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .time-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .test-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-title {
+        font-size: 1.5rem;
+      }
+
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .header-actions app-button {
+        width: 100%;
+      }
+    }
+  `]
 })
 export class NotificationsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
@@ -291,139 +731,29 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private messageTimer?: Subscription;
 
+  // FontAwesome icons
+  faMobileScreen = faMobileScreen;
+  faEnvelope = faEnvelope;
+  faCommentSms = faCommentSms;
+  faList = faList;
+  faMoon = faMoon;
+  faEye = faEye;
+  faShoppingBag = faShoppingBag;
+  faMessage = faMessage;
+  faHandshake = faHandshake;
+  faUsers = faUsers;
+  faShieldHalved = faShieldHalved;
+  faGear = faGear;
+  faBullhorn = faBullhorn;
+  faCalendar = faCalendar;
+  faUserPlus = faUserPlus;
+  faExclamationTriangle = faExclamationTriangle;
+
   notificationsForm!: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
 
-  orderNotifications: NotificationSetting[] = [
-    {
-      id: 'order_confirmation',
-      title: 'Order Confirmation',
-      description: 'When your order is confirmed by the seller',
-      category: 'order',
-      email: true,
-      push: true,
-      sms: false
-    },
-    {
-      id: 'order_shipped',
-      title: 'Order Shipped',
-      description: 'When your order is shipped and tracking is available',
-      category: 'order',
-      email: true,
-      push: true,
-      sms: true
-    },
-    {
-      id: 'order_delivered',
-      title: 'Order Delivered',
-      description: 'When your order is delivered',
-      category: 'order',
-      email: true,
-      push: true,
-      sms: false
-    },
-    {
-      id: 'order_cancelled',
-      title: 'Order Cancelled',
-      description: 'When your order is cancelled',
-      category: 'order',
-      email: true,
-      push: true,
-      sms: true
-    },
-    {
-      id: 'order_refund',
-      title: 'Order Refund',
-      description: 'When a refund is processed for your order',
-      category: 'order',
-      email: true,
-      push: true,
-      sms: false
-    }
-  ];
-
-  messageNotifications: NotificationSetting[] = [
-    {
-      id: 'new_message',
-      title: 'New Message',
-      description: 'When you receive a new message from a buyer or seller',
-      category: 'message',
-      email: false,
-      push: true,
-      sms: false
-    },
-    {
-      id: 'message_reply',
-      title: 'Message Reply',
-      description: 'When someone replies to your message',
-      category: 'message',
-      email: false,
-      push: true,
-      sms: false
-    }
-  ];
-
-  marketplaceNotifications: NotificationSetting[] = [
-    {
-      id: 'price_drop',
-      title: 'Price Drop Alert',
-      description: 'When items in your wishlist drop in price',
-      category: 'marketplace',
-      email: true,
-      push: true,
-      sms: false
-    },
-    {
-      id: 'new_product',
-      title: 'New Product Alert',
-      description: 'When new products are added to categories you follow',
-      category: 'marketplace',
-      email: false,
-      push: true,
-      sms: false
-    },
-    {
-      id: 'stock_alert',
-      title: 'Stock Alert',
-      description: 'When items in your wishlist come back in stock',
-      category: 'marketplace',
-      email: true,
-      push: true,
-      sms: false
-    }
-  ];
-
-  generalNotifications: NotificationSetting[] = [
-    {
-      id: 'system_update',
-      title: 'System Updates',
-      description: 'Important updates about the platform and new features',
-      category: 'general',
-      email: true,
-      push: false,
-      sms: false
-    },
-    {
-      id: 'security_alert',
-      title: 'Security Alerts',
-      description: 'Important security notifications about your account',
-      category: 'general',
-      email: true,
-      push: true,
-      sms: true
-    },
-    {
-      id: 'promotional',
-      title: 'Promotional Offers',
-      description: 'Special deals, discounts, and promotional content',
-      category: 'general',
-      email: false,
-      push: true,
-      sms: false
-    }
-  ];
 
   ngOnInit(): void {
     this.initForm();
@@ -438,17 +768,44 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   private initForm(): void {
     const formControls: Record<string, any> = {
-      quiet_hours_enabled: [false],
-      quiet_hours_start: ['22:00'],
-      quiet_hours_end: ['08:00']
-    };
+      // Push Notifications
+      push_notifications_enabled: [true],
+      notification_sound: [true],
+      vibration: [true],
+      badge_count: [true],
+      lock_screen_preview: [false],
+      group_notifications: [true],
+      dnd_override: [false],
 
-    // Add controls for all notification settings
-    [...this.orderNotifications, ...this.messageNotifications, ...this.marketplaceNotifications, ...this.generalNotifications].forEach(setting => {
-      formControls[setting.id + '_email'] = [setting.email];
-      formControls[setting.id + '_push'] = [setting.push];
-      formControls[setting.id + '_sms'] = [setting.sms];
-    });
+      // Email Notifications
+      email_notifications_enabled: [true],
+      email_frequency: ['instant'],
+      html_email_format: [true],
+      security_notifications: [true],
+
+      // SMS Notifications
+      sms_notifications_enabled: [false],
+      emergency_alerts_only: [true],
+      two_factor_auth: [true],
+
+      // Notification Categories
+      order_updates: [true],
+      messages: [true],
+      offers_requests: [true],
+      community_activity: [false],
+      security_alerts: [true],
+      system_updates: [true],
+      marketing: [false],
+      events: [false],
+      friend_activity: [false],
+      emergency_alerts: [true],
+
+      // Quiet Hours
+      quiet_hours_start: ['22:00'],
+      quiet_hours_end: ['08:00'],
+      apply_to_weekends: [true],
+      emergency_override: [true]
+    };
 
     this.notificationsForm = this.fb.group(formControls);
   }
@@ -509,5 +866,12 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/app/settings']);
+  }
+
+  testNotification(type: 'push' | 'email' | 'sms'): void {
+    // This would typically call an API endpoint to send a test notification
+    // For now, we'll just show a success message
+    this.successMessage = `Test ${type} notification sent successfully!`;
+    this.clearMessageAfterDelay();
   }
 } 

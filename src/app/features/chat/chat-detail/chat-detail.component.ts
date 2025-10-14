@@ -1,8 +1,30 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import {
+  faPenToSquare,
+  faSearch,
+  faPhone,
+  faVideo,
+  faEllipsisVertical,
+  faHandshake,
+  faCalendar,
+  faShield,
+  faPaperclip,
+  faImage,
+  faMicrophone,
+  faFaceSmile,
+  faPaperPlane,
+  faUser,
+  faBell,
+  faDownload,
+  faFlag,
+  faBan,
+  faStar,
+  faCheckDouble
+} from '@fortawesome/free-solid-svg-icons';
 import { ChatService } from '../../../core/services/chat.service';
 import { CartService } from '../../../core/services/cart.service';
 
@@ -29,570 +51,416 @@ interface ChatParticipant {
   avatar: string;
   isOnline: boolean;
   lastSeen?: string;
+  occupation?: string;
+  rating?: number;
+  reviewCount?: number;
+  isVerified?: boolean;
+}
+
+interface ChatRoom {
+  id: string;
+  name: string;
+  avatar: string;
+  lastMessage?: string;
+  timestamp?: string;
+  isOnline?: boolean;
+  unreadCount?: number;
 }
 
 @Component({
   selector: 'app-chat-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule],
   template: `
-    <div class="chat-detail-container">
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <div class="header-left">
-          <app-button 
-            variant="secondary" 
-            size="sm"
-            [outline]="true"
-            [routerLink]="['/app/chat']"
-          >
-            ← Back
-          </app-button>
+    <!-- Main Chat Container -->
+    <div class="flex h-screen bg-gray-50">
+      
+      <!-- Chat Sidebar -->
+      <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+        
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-center justify-between mb-3">
+            <h1 class="text-xl font-semibold text-gray-900">Messages</h1>
+            <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors" (click)="startNewChat()">
+              <fa-icon [icon]="faPenToSquare" class="text-gray-600"></fa-icon>
+            </button>
+          </div>
           
-          <div class="participant-info" *ngIf="participant">
-            <img [src]="participant.avatar" [alt]="participant.name" class="participant-avatar">
-            <div class="participant-details">
-              <h3>{{ participant.name }}</h3>
-              <span class="status" [class.online]="participant.isOnline">
-                {{ participant.isOnline ? 'Online' : 'Last seen ' + formatTime(participant.lastSeen || '') }}
-              </span>
-            </div>
+          <!-- Search Bar -->
+          <div class="relative">
+            <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></fa-icon>
+            <input 
+              type="text" 
+              placeholder="Search conversations..." 
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput()"
+              class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            >
           </div>
         </div>
         
-        <div class="header-actions">
-          <app-button 
-            variant="secondary" 
-            size="sm"
-            [outline]="true"
-            (clicked)="toggleInfo()"
+        <!-- Chat List -->
+        <div class="flex-1 overflow-y-auto">
+          
+          <!-- Active Chat -->
+          <div 
+            *ngFor="let chat of filteredChatRooms" 
+            (click)="selectChat(chat)"
+            class="p-4 border-b border-gray-200 cursor-pointer transition-colors"
+            [class.bg-red-50]="selectedChatId === chat.id"
+            [class.hover:bg-gray-50]="selectedChatId !== chat.id"
           >
-            ℹ️ Info
-          </app-button>
-          <app-button 
-            *ngIf="pendingProductId"
-            variant="primary" 
-            size="sm"
-            (clicked)="addPendingProductToCart()"
-          >
-            Add to cart → Checkout
-          </app-button>
+            <div class="flex items-center space-x-3">
+              <div class="relative">
+                <img [src]="chat.avatar" [alt]="chat.name" class="w-12 h-12 rounded-full object-cover">
+                <div 
+                  class="absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full"
+                  [class.bg-green-500]="chat.isOnline"
+                  [class.bg-gray-400]="!chat.isOnline"
+                ></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-medium text-gray-900 truncate">{{ chat.name }}</h3>
+                  <span class="text-xs text-gray-500">{{ chat.timestamp }}</span>
+                </div>
+                <p class="text-sm text-gray-500 truncate">{{ chat.lastMessage }}</p>
+              </div>
+              <div 
+                *ngIf="chat.unreadCount && chat.unreadCount > 0"
+                class="w-2 h-2 bg-red-500 rounded-full"
+              ></div>
+            </div>
+          </div>
+          
         </div>
       </div>
-
-      <!-- Messages Container -->
-      <div class="messages-container" #messagesContainer>
-        <div class="messages-list">
-          <div class="message-group" *ngFor="let group of messageGroups">
-            <div class="date-separator">
-              <span>{{ formatDate(group.date) }}</span>
-            </div>
-            
-            <div class="message-item" 
-                 *ngFor="let message of group.messages"
-                 [class.sent]="message.sender_id === 'currentUser'"
-                 [class.received]="message.sender_id !== 'currentUser'">
-              
-              <div class="message-avatar" *ngIf="message.sender_id !== 'currentUser'">
-                <img [src]="message.senderAvatar" [alt]="message.senderName">
-              </div>
-              
-              <div class="message-content">
-                <div class="message-bubble">
-                  <div class="message-text" *ngIf="message.message_type === 'text'">
-                    {{ message.content }}
-                  </div>
-                  
-                  <div class="message-attachment" *ngIf="message.message_type === 'image'">
-                    <img [src]="message.attachmentUrl" [alt]="message.attachmentName">
-                  </div>
-                  
-                  <div class="message-file" *ngIf="message.message_type === 'file'">
-                    <div class="file-info">
-                      <span class="file-icon">📎</span>
-                      <span class="file-name">{{ message.attachmentName }}</span>
-                    </div>
-                    <app-button 
-                      variant="secondary" 
-                      size="sm"
-                      [outline]="true"
-                      (clicked)="downloadFile(message.attachmentUrl || '')"
-                    >
-                      Download
-                    </app-button>
-                  </div>
-                  
-                  <div class="message-cta" *ngIf="message.message_data?.['product_id'] || message.message_data?.['offer_id']">
-                    <app-button 
-                      *ngIf="message.message_data?.['product_id']"
-                      variant="primary" 
-                      size="sm"
-                      (clicked)="addMessageProductToCart(message)"
-                    >
-                      Add to cart
-                    </app-button>
-                    <app-button 
-                      *ngIf="!message.message_data?.['product_id'] && message.message_data?.['offer_id']"
-                      variant="secondary" 
-                      size="sm"
-                      [outline]="true"
-                      (clicked)="viewOfferFromMessage(message)"
-                    >
-                      View offer
-                    </app-button>
-                  </div>
-                  
-                  <div class="message-meta">
-                    <span class="message-time">{{ formatTime(message.created_at) }}</span>
-                    <span class="message-status" *ngIf="message.sender_id === 'currentUser'">
-                      {{ message.is_read ? '✓✓' : '✓' }}
-                    </span>
-                  </div>
+      
+      <!-- Main Chat Area -->
+      <div class="flex-1 flex flex-col">
+        
+        <!-- Chat Header -->
+        <div class="bg-white border-b border-gray-200 p-4" *ngIf="participant">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <img [src]="participant.avatar" [alt]="participant.name" class="w-10 h-10 rounded-full object-cover">
+              <div>
+                <h2 class="font-semibold text-gray-900">{{ participant.name }}</h2>
+                <div class="text-sm flex items-center" [class.text-green-500]="participant.isOnline" [class.text-gray-500]="!participant.isOnline">
+                  <div 
+                    class="w-2 h-2 rounded-full mr-2"
+                    [class.bg-green-500]="participant.isOnline"
+                    [class.bg-gray-400]="!participant.isOnline"
+                  ></div>
+                  {{ participant.isOnline ? 'Online' : 'Offline' }}
                 </div>
               </div>
             </div>
-          </div>
-          
-          <!-- Typing Indicator -->
-          <div class="typing-indicator" *ngIf="isTyping">
-            <div class="typing-avatar">
-              <img [src]="participant?.avatar" [alt]="participant?.name">
+            <div class="flex items-center space-x-2">
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faPhone" class="text-gray-600"></fa-icon>
+              </button>
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faVideo" class="text-gray-600"></fa-icon>
+              </button>
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faEllipsisVertical" class="text-gray-600"></fa-icon>
+              </button>
             </div>
-            <div class="typing-bubble">
-              <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+          </div>
+        </div>
+        
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto p-4 bg-gray-50">
+          
+          <!-- Product Context Card -->
+          <div class="mb-6 bg-white rounded-lg border border-gray-200 p-4 mx-auto max-w-md" *ngIf="productContext">
+            <div class="flex items-center space-x-3">
+              <img [src]="productContext.image" [alt]="productContext.title" class="w-16 h-16 rounded-lg object-cover" />
+              <div class="flex-1">
+                <h3 class="font-medium text-gray-900">{{ productContext.title }}</h3>
+                <p class="text-sm text-gray-500">{{ productContext.subtitle }}</p>
+                <p class="text-lg font-semibold text-red-500">{{ productContext.price }}</p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Message Input -->
-      <div class="message-input-container">
-        <div class="input-actions">
-          <button type="button" class="action-btn" (click)="attachFile()">
-            📎
-          </button>
-          <button type="button" class="action-btn" (click)="attachImage()">
-            🖼️
-          </button>
+          
+          <!-- Messages -->
+          <div class="space-y-4">
+            
+            <!-- Received Message -->
+            <div 
+              *ngFor="let message of messages" 
+              class="flex items-start space-x-3"
+              [class.justify-end]="message.sender_id === 'currentUser'"
+              [class.flex-row-reverse]="message.sender_id === 'currentUser'"
+            >
+              <img 
+                [src]="message.senderAvatar || '/Logo.png'" 
+                [alt]="message.senderName || 'User'" 
+                class="w-8 h-8 rounded-full object-cover"
+              >
+              <div class="flex-1" [class.text-right]="message.sender_id === 'currentUser'">
+                <div 
+                  class="rounded-lg p-3 shadow-sm max-w-xs"
+                  [class.bg-white]="message.sender_id !== 'currentUser'"
+                  [class.bg-red-500]="message.sender_id === 'currentUser'"
+                  [class.text-gray-900]="message.sender_id !== 'currentUser'"
+                  [class.text-white]="message.sender_id === 'currentUser'"
+                  [class.ml-auto]="message.sender_id === 'currentUser'"
+                  [class.border]="message.sender_id !== 'currentUser'"
+                  [class.border-gray-200]="message.sender_id !== 'currentUser'"
+                >
+                  <div *ngIf="message.message_type === 'text'">
+                    <p>{{ message.content }}</p>
+                  </div>
+                  
+                  <div *ngIf="message.message_type === 'image'">
+                    <img [src]="message.attachmentUrl" [alt]="message.attachmentName" class="w-full h-32 rounded-lg object-cover mb-2" />
+                    <p *ngIf="message.content">{{ message.content }}</p>
+                  </div>
+                </div>
+                <p 
+                  class="text-xs text-gray-500 mt-1"
+                  [class.flex]="message.sender_id === 'currentUser'"
+                  [class.items-center]="message.sender_id === 'currentUser'"
+                  [class.justify-end]="message.sender_id === 'currentUser'"
+                >
+                  {{ formatTime(message.created_at) }}
+                  <fa-icon 
+                    *ngIf="message.sender_id === 'currentUser' && message.is_read"
+                    [icon]="faCheckDouble" 
+                    class="text-blue-500 ml-1"
+                  ></fa-icon>
+                </p>
+              </div>
+            </div>
+            
+            <!-- Typing Indicator -->
+            <div class="flex items-start space-x-3" *ngIf="isTyping">
+              <img [src]="participant?.avatar || '/Logo.png'" [alt]="participant?.name" class="w-8 h-8 rounded-full object-cover">
+              <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
         </div>
         
-        <div class="input-wrapper">
-          <textarea
-            [(ngModel)]="newMessage"
-            (keydown.enter)="sendMessage($event)"
-            (input)="onTyping()"
-            placeholder="Type a message..."
-            class="message-input"
-            rows="1"
-            #messageInput
-          ></textarea>
-        </div>
-        
-        <app-button 
-          variant="primary" 
-          size="md"
-          (clicked)="sendMessage()"
-          [disabled]="!newMessage.trim()"
-        >
-          Send
-        </app-button>
-      </div>
-
-      <!-- Chat Info Sidebar -->
-      <div class="chat-info" *ngIf="showInfo">
-        <div class="info-header">
-          <h3>Chat Info</h3>
-          <button type="button" class="close-btn" (click)="toggleInfo()">×</button>
-        </div>
-        
-        <div class="info-content" *ngIf="participant">
-          <div class="participant-card">
-            <img [src]="participant.avatar" [alt]="participant.name" class="large-avatar">
-            <h4>{{ participant.name }}</h4>
-            <p class="status" [class.online]="participant.isOnline">
-              {{ participant.isOnline ? 'Online' : 'Offline' }}
-            </p>
+        <!-- Message Input -->
+        <div class="bg-white border-t border-gray-200 p-4">
+          
+          <!-- Quick Actions -->
+          <div class="flex items-center space-x-2 mb-3">
+            <button class="flex items-center space-x-2 px-3 py-1 bg-gray-100 text-gray-900 rounded-full text-sm hover:bg-gray-200 transition-colors">
+              <fa-icon [icon]="faHandshake" class="text-red-500"></fa-icon>
+              <span>Make Offer</span>
+            </button>
+            <button class="flex items-center space-x-2 px-3 py-1 bg-gray-100 text-gray-900 rounded-full text-sm hover:bg-gray-200 transition-colors">
+              <fa-icon [icon]="faCalendar" class="text-red-500"></fa-icon>
+              <span>Schedule Meetup</span>
+            </button>
+            <button class="flex items-center space-x-2 px-3 py-1 bg-gray-100 text-gray-900 rounded-full text-sm hover:bg-gray-200 transition-colors">
+              <fa-icon [icon]="faShield" class="text-red-500"></fa-icon>
+              <span>Safe Exchange</span>
+            </button>
           </div>
           
-          <div class="info-actions">
-            <app-button 
-              variant="secondary" 
-              size="md"
-              [outline]="true"
-              (clicked)="viewProfile()"
+          <!-- Input Area -->
+          <div class="flex items-end space-x-3">
+            <div class="flex items-center space-x-2">
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors" (click)="attachFile()">
+                <fa-icon [icon]="faPaperclip" class="text-gray-600"></fa-icon>
+              </button>
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors" (click)="attachImage()">
+                <fa-icon [icon]="faImage" class="text-gray-600"></fa-icon>
+              </button>
+              <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <fa-icon [icon]="faMicrophone" class="text-gray-600"></fa-icon>
+              </button>
+            </div>
+            
+            <div class="flex-1 relative">
+              <textarea 
+                placeholder="Type a message..." 
+                [(ngModel)]="newMessage"
+                (keydown.enter)="sendMessage($event)"
+                (input)="onTyping()"
+                class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" 
+                rows="1"
+                #messageInput
+              ></textarea>
+              <button class="absolute right-2 bottom-2 p-1 hover:bg-gray-200 rounded">
+                <fa-icon [icon]="faFaceSmile" class="text-gray-600"></fa-icon>
+              </button>
+            </div>
+            
+            <button 
+              class="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              (click)="sendMessage()"
+              [disabled]="!newMessage.trim()"
             >
-              View Profile
-            </app-button>
-            <app-button 
-              variant="danger" 
-              size="md"
-              [outline]="true"
-              (clicked)="blockUser()"
-            >
-              Block User
-            </app-button>
+              <fa-icon [icon]="faPaperPlane"></fa-icon>
+            </button>
           </div>
         </div>
       </div>
+      
+      <!-- Chat Info Sidebar -->
+      <div class="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto" *ngIf="showInfo && participant">
+        
+        <!-- User Profile -->
+        <div class="text-center mb-6">
+          <img [src]="participant.avatar" [alt]="participant.name" class="w-20 h-20 rounded-full object-cover mx-auto mb-3">
+          <h3 class="font-semibold text-gray-900">{{ participant.name }}</h3>
+          <p class="text-sm text-gray-500" *ngIf="participant.occupation">{{ participant.occupation }}</p>
+          <div class="flex items-center justify-center space-x-1 mt-2" *ngIf="participant.rating">
+            <fa-icon [icon]="faStar" class="text-yellow-400"></fa-icon>
+            <span class="text-sm font-medium">{{ participant.rating }}</span>
+            <span class="text-sm text-gray-500">({{ participant.reviewCount }} reviews)</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1 mt-1" *ngIf="participant.isVerified">
+            <fa-icon [icon]="faShield" class="text-green-500"></fa-icon>
+            <span class="text-sm text-green-600">Verified Student</span>
+          </div>
+        </div>
+        
+        <!-- Shared Media -->
+        <div class="mb-6">
+          <h4 class="font-medium text-gray-900 mb-3">Shared Media</h4>
+          <div class="grid grid-cols-3 gap-2">
+            <img 
+              *ngFor="let media of sharedMedia" 
+              [src]="media.url" 
+              [alt]="media.name" 
+              class="w-full h-16 rounded-lg object-cover" 
+            />
+          </div>
+        </div>
+        
+        <!-- Conversation Actions -->
+        <div class="space-y-2">
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition-colors" (click)="viewProfile()">
+            <fa-icon [icon]="faUser" class="text-gray-600"></fa-icon>
+            <span class="text-gray-900">View Profile</span>
+          </button>
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition-colors">
+            <fa-icon [icon]="faBell" class="text-gray-600"></fa-icon>
+            <span class="text-gray-900">Mute Notifications</span>
+          </button>
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition-colors">
+            <fa-icon [icon]="faSearch" class="text-gray-600"></fa-icon>
+            <span class="text-gray-900">Search Messages</span>
+          </button>
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition-colors">
+            <fa-icon [icon]="faDownload" class="text-gray-600"></fa-icon>
+            <span class="text-gray-900">Export Chat</span>
+          </button>
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-red-50 text-red-600 rounded-lg transition-colors" (click)="reportUser()">
+            <fa-icon [icon]="faFlag"></fa-icon>
+            <span>Report User</span>
+          </button>
+          <button class="w-full flex items-center space-x-3 p-3 hover:bg-red-50 text-red-600 rounded-lg transition-colors" (click)="blockUser()">
+            <fa-icon [icon]="faBan"></fa-icon>
+            <span>Block User</span>
+          </button>
+        </div>
+        
+      </div>
+      
     </div>
   `,
   styles: [`
-    .chat-detail-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: #f8f9fa;
+    /* Hide scrollbars but keep functionality */
+    ::-webkit-scrollbar {
+      display: none;
     }
-
-    .chat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background: white;
-      border-bottom: 1px solid #e9ecef;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    
+    html, body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .participant-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .participant-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .participant-details h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: #2c3e50;
-    }
-
-    .status {
-      font-size: 0.9rem;
-      color: #6c757d;
-    }
-
-    .status.online {
-      color: #28a745;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem 2rem;
-      position: relative;
-    }
-
-    .messages-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .date-separator {
-      text-align: center;
-      margin: 1rem 0;
-    }
-
-    .date-separator span {
-      background: #e9ecef;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      color: #6c757d;
-    }
-
-    .message-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .message-item {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-end;
-    }
-
-    .message-item.sent {
-      flex-direction: row-reverse;
-    }
-
-    .message-avatar {
-      flex-shrink: 0;
-    }
-
-    .message-avatar img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .message-content {
-      max-width: 70%;
-    }
-
-    .message-bubble {
-      background: white;
-      border-radius: 18px;
-      padding: 0.75rem 1rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      position: relative;
-    }
-
-    .message-item.sent .message-bubble {
-      background: #007bff;
-      color: white;
-    }
-
-    .message-text {
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-
-    .message-attachment img {
-      max-width: 100%;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-    }
-
-    .message-file {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.5rem;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-    }
-
-    .file-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 1;
-    }
-
-    .file-icon {
-      font-size: 1.2rem;
-    }
-
-    .file-name {
-      font-size: 0.9rem;
-      color: #495057;
-    }
-
-    .message-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 0.25rem;
-      font-size: 0.8rem;
-      color: #6c757d;
-    }
-
-    .message-item.sent .message-meta {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .message-status {
-      font-size: 0.9rem;
-    }
-
-    .typing-indicator {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-end;
-      padding: 0.5rem 0;
-    }
-
-    .typing-avatar img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .typing-bubble {
-      background: white;
-      border-radius: 18px;
-      padding: 0.75rem 1rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .typing-dots {
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .typing-dots span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #6c757d;
-      animation: typing 1.4s infinite ease-in-out;
-    }
-
-    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-    @keyframes typing {
-      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-      40% { transform: scale(1); opacity: 1; }
-    }
-
-    .message-input-container {
-      display: flex;
-      align-items: flex-end;
-      gap: 1rem;
-      padding: 1rem 2rem;
-      background: white;
-      border-top: 1px solid #e9ecef;
-    }
-
-    .input-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .action-btn {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 8px;
-      transition: background-color 0.2s ease;
-    }
-
-    .action-btn:hover {
-      background: #f8f9fa;
-    }
-
-    .input-wrapper {
-      flex: 1;
-    }
-
-    .message-input {
-      width: 100%;
-      border: 1px solid #e9ecef;
-      border-radius: 20px;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      outline: none;
+    
+    /* Auto-resize textarea */
+    textarea {
       resize: none;
-      max-height: 120px;
-      transition: border-color 0.2s ease;
+      overflow: hidden;
     }
-
-    .message-input:focus {
-      border-color: #007bff;
+    
+    /* Typing animation */
+    @keyframes bounce {
+      0%, 80%, 100% { 
+        transform: scale(0.8); 
+        opacity: 0.5; 
+      }
+      40% { 
+        transform: scale(1); 
+        opacity: 1; 
+      }
     }
-
-    .chat-info {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 300px;
-      height: 100vh;
-      background: white;
-      border-left: 1px solid #e9ecef;
-      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-      z-index: 1000;
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
+    
+    .animate-bounce {
+      animation: bounce 1.4s infinite ease-in-out;
     }
-
-    .chat-info.show {
-      transform: translateX(0);
-    }
-
-    .info-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid #e9ecef;
-    }
-
-    .info-header h3 {
-      margin: 0;
-      color: #2c3e50;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6c757d;
-    }
-
-    .info-content {
-      padding: 1rem;
-    }
-
-    .participant-card {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .large-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 1rem;
-    }
-
-    .participant-card h4 {
-      margin: 0 0 0.5rem 0;
-      color: #2c3e50;
-    }
-
-    .info-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
+    
+    /* Mobile responsiveness */
     @media (max-width: 768px) {
-      .chat-header {
-        padding: 1rem;
-      }
-
-      .messages-container {
-        padding: 1rem;
-      }
-
-      .message-input-container {
-        padding: 1rem;
-      }
-
-      .chat-info {
+      .w-80 {
         width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      
+      .w-80.show {
+        transform: translateX(0);
+      }
+      
+      .flex.h-screen {
+        flex-direction: column;
+      }
+      
+      .flex-1 {
+        min-height: 0;
+      }
+      
+      .p-4 {
+        padding: 1rem;
+      }
+      
+      .space-x-3 > * + * {
+        margin-left: 0.5rem;
+      }
+      
+      .max-w-xs {
+        max-width: 80%;
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .w-80 {
+        width: 100vw;
+      }
+      
+      .p-4 {
+        padding: 0.75rem;
+      }
+      
+      .text-xl {
+        font-size: 1.125rem;
+      }
+      
+      .text-lg {
+        font-size: 1rem;
       }
     }
   `]
@@ -603,42 +471,76 @@ export class ChatDetailComponent implements OnInit {
   private chatService = inject(ChatService);
   private cartService = inject(CartService);
   
+  @ViewChild('messageInput') messageInput!: ElementRef<HTMLTextAreaElement>;
+  
+  // Icons
+  faPenToSquare = faPenToSquare;
+  faSearch = faSearch;
+  faPhone = faPhone;
+  faVideo = faVideo;
+  faEllipsisVertical = faEllipsisVertical;
+  faHandshake = faHandshake;
+  faCalendar = faCalendar;
+  faShield = faShield;
+  faPaperclip = faPaperclip;
+  faImage = faImage;
+  faMicrophone = faMicrophone;
+  faFaceSmile = faFaceSmile;
+  faPaperPlane = faPaperPlane;
+  faUser = faUser;
+  faBell = faBell;
+  faDownload = faDownload;
+  faFlag = faFlag;
+  faBan = faBan;
+  faStar = faStar;
+  faCheckDouble = faCheckDouble;
+  
+  // Data properties
   participant: ChatParticipant | null = null;
   messages: ChatMessage[] = [];
-  messageGroups: { date: string; messages: ChatMessage[] }[] = [];
+  chatRooms: ChatRoom[] = [];
+  filteredChatRooms: ChatRoom[] = [];
   newMessage = '';
+  searchQuery = '';
   isTyping = false;
-  showInfo = false;
+  showInfo = true; // Show info sidebar by default
   loading = false;
   roomId: string = '';
-  pendingProductId: string | null = null;
+  selectedChatId: string | null = null;
+  
+  // Product context
+  productContext: { title: string; subtitle: string; price: string; image: string } | null = null;
+  
+  // Shared media
+  sharedMedia: { url: string; name: string }[] = [];
   
   ngOnInit(): void {
+    this.loadChatRooms();
+    
     const conversationId = this.route.snapshot.paramMap.get('id');
     if (conversationId) {
       this.roomId = conversationId;
+      this.selectedChatId = conversationId;
       this.loading = true;
+      
+      // Load chat room data
       this.chatService.getChatRooms().subscribe({
         next: () => {
           this.chatService.selectRoom(this.roomId);
-          // Placeholder participant until a dedicated participant endpoint exists
-          this.participant = {
-            id: '',
-            name: 'Chat Participant',
-            avatar: '/assets/default-avatar.png',
-            isOnline: false
-          };
+          this.loadParticipantData();
+          this.loadProductContext();
+          this.loadSharedMedia();
           this.loading = false;
         },
         error: () => { this.loading = false; }
       });
       
+      // Subscribe to messages
       this.chatService.getMessages$().subscribe(msgs => {
         this.messages = msgs as any;
-        this.groupMessages();
       });
 
-      // Subscribe to typing events for this room
+      // Subscribe to typing events
       this.chatService.typing$.subscribe(evt => {
         if (evt.roomId === this.roomId) {
           this.isTyping = evt.isTyping;
@@ -647,26 +549,120 @@ export class ChatDetailComponent implements OnInit {
 
       // Load initial messages
       this.chatService.loadMessages(this.roomId);
-      // Mark as read for this room
+      // Mark as read
       this.chatService.markMessagesAsRead(this.roomId).subscribe();
     }
+    
+    // Auto-resize textarea
+    this.setupTextareaAutoResize();
   }
 
-  private groupMessages(): void {
-    const groups: Record<string, ChatMessage[]> = {};
-    
-    this.messages.forEach(message => {
-      const date = new Date(message.created_at).toDateString();
-      if (!groups[date]) {
-        groups[date] = [];
+  private loadChatRooms(): void {
+    // Mock data for chat rooms - replace with actual API call
+    this.chatRooms = [
+      {
+        id: '1',
+        name: 'Sarah Chen',
+        avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
+        lastMessage: 'That textbook looks perfect! Is it still available?',
+        timestamp: '2m',
+        isOnline: true,
+        unreadCount: 1
+      },
+      {
+        id: '2',
+        name: 'Mike Rodriguez',
+        avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg',
+        lastMessage: 'Thanks for the quick delivery!',
+        timestamp: '1h',
+        isOnline: false,
+        unreadCount: 0
+      },
+      {
+        id: '3',
+        name: 'Emma Wilson',
+        avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg',
+        lastMessage: 'Would you consider $15 for the calculator?',
+        timestamp: '3h',
+        isOnline: true,
+        unreadCount: 1
       }
-      groups[date].push(message);
-    });
+    ];
+    this.filteredChatRooms = [...this.chatRooms];
+  }
 
-    this.messageGroups = Object.keys(groups).map(date => ({
-      date,
-      messages: groups[date]
-    }));
+  private loadParticipantData(): void {
+    // Mock participant data - replace with actual API call
+    this.participant = {
+      id: '1',
+      name: 'Sarah Chen',
+      avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
+      isOnline: true,
+      occupation: 'Computer Science Student',
+      rating: 4.9,
+      reviewCount: 127,
+      isVerified: true
+    };
+  }
+
+  private loadProductContext(): void {
+    // Mock product context - replace with actual API call
+    this.productContext = {
+      title: 'Calculus: Early Transcendentals',
+      subtitle: '8th Edition - James Stewart',
+      price: '$45',
+      image: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/e0d401247f-9997e01609a3ea0e2343.png'
+    };
+  }
+
+  private loadSharedMedia(): void {
+    // Mock shared media - replace with actual API call
+    this.sharedMedia = [
+      {
+        url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/89e16caafb-653f6fec79323304f79e.png',
+        name: 'textbook photo'
+      },
+      {
+        url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/d291e441ba-330f182d534cb1f3ebef.png',
+        name: 'calculator photo'
+      },
+      {
+        url: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/3ace164e2c-f79ce894a24478e560a8.png',
+        name: 'notebook photo'
+      }
+    ];
+  }
+
+  private setupTextareaAutoResize(): void {
+    setTimeout(() => {
+      if (this.messageInput) {
+        this.messageInput.nativeElement.addEventListener('input', () => {
+          this.messageInput.nativeElement.style.height = 'auto';
+          this.messageInput.nativeElement.style.height = Math.min(this.messageInput.nativeElement.scrollHeight, 120) + 'px';
+        });
+      }
+    }, 100);
+  }
+
+  onSearchInput(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredChatRooms = [...this.chatRooms];
+      return;
+    }
+    
+    this.filteredChatRooms = this.chatRooms.filter(chat =>
+      chat.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+      chat.lastMessage?.toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+  }
+
+  selectChat(chat: ChatRoom): void {
+    this.selectedChatId = chat.id;
+    this.router.navigate(['/app/chat', chat.id]);
+  }
+
+  startNewChat(): void {
+    this.router.navigate(['/app/chat/start']);
   }
 
   sendMessage(event?: Event): void {
@@ -693,32 +689,31 @@ export class ChatDetailComponent implements OnInit {
 
   attachFile(): void {
     // TODO: Implement file attachment
-    
+    console.log('Attach file clicked');
   }
 
   attachImage(): void {
     // TODO: Implement image attachment
-    
-  }
-
-  downloadFile(url: string): void {
-    // TODO: Implement file download
-    
-  }
-
-  toggleInfo(): void {
-    this.showInfo = !this.showInfo;
+    console.log('Attach image clicked');
   }
 
   viewProfile(): void {
-    // TODO: Navigate to user profile
-    
+    if (this.participant) {
+      this.router.navigate(['/app/profile', this.participant.id]);
+    }
+  }
+
+  reportUser(): void {
+    if (confirm('Are you sure you want to report this user?')) {
+      // TODO: Implement report user
+      console.log('Report user clicked');
+    }
   }
 
   blockUser(): void {
     if (confirm('Are you sure you want to block this user?')) {
       // TODO: Implement block user
-      
+      console.log('Block user clicked');
     }
   }
 
@@ -730,89 +725,13 @@ export class ChatDetailComponent implements OnInit {
     });
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric'
-      });
-    }
-  }
-
   private scrollToBottom(): void {
-    // TODO: Implement scroll to bottom
+    // Auto-scroll to bottom of messages
     setTimeout(() => {
-      const container = document.querySelector('.messages-container');
+      const container = document.querySelector('.overflow-y-auto');
       if (container) {
         (container as HTMLElement).scrollTop = (container as HTMLElement).scrollHeight;
       }
     }, 100);
-  }
-
-  // Chat room actions using ChatService
-  deleteChatRoom(roomId: string): void {
-    this.chatService.deleteChat(roomId).subscribe({
-      next: () => {
-        this.router.navigate(['/app/chat']);
-      },
-      error: (error) => {
-        console.error('Error deleting chat room:', error);
-      }
-    });
-  }
-
-  muteChatRoom(roomId: string): void {
-    this.chatService.muteChat(roomId).subscribe({
-      next: () => {},
-      error: (error) => {
-        console.error('Error muting chat room:', error);
-      }
-    });
-  }
-
-  pinChatRoom(roomId: string): void {
-    this.chatService.pinChat(roomId).subscribe({
-      next: () => {},
-      error: (error) => {
-        console.error('Error pinning chat room:', error);
-      }
-    });
-  }
-
-  addMessageProductToCart(message: ChatMessage): void {
-    const productId = message.message_data?.['product_id'];
-    if (productId) {
-      this.cartService.addToCart(String(productId), 1).subscribe({
-        next: () => this.router.navigate(['/app/checkout']),
-        error: (_err: any) => this.router.navigate(['/app/checkout'])
-      });
-    }
-  }
-
-  viewOfferFromMessage(message: ChatMessage): void {
-    const offerId = message.message_data?.['offer_id'];
-    if (offerId) {
-      this.router.navigate(['/app/offers', offerId]);
-    }
-  }
-
-  addPendingProductToCart(): void {
-    if (this.pendingProductId) {
-      const pid = this.pendingProductId;
-      this.cartService.addToCart(String(pid), 1).subscribe({
-        next: () => { this.pendingProductId = null; this.router.navigate(['/app/checkout']); },
-        error: (_err: any) => { this.pendingProductId = null; this.router.navigate(['/app/checkout']); }
-      });
-    }
   }
 } 

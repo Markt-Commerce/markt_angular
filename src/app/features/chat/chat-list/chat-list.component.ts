@@ -376,7 +376,7 @@ export class ChatListComponent implements OnInit {
   }
 
   startNewChat(): void {
-    this.router.navigate(['/app/chat']);
+    this.router.navigate(['/app/chat/start']);
   }
 
   // Helpers adapted to Ife's response shape
