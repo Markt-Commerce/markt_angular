@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -473,28 +474,28 @@ export class AccountComponent implements OnInit {
       id: 'account',
       title: 'Account Settings',
       icon: faUser,
-      route: '/app/settings/account',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'account'),
       isActive: true
     },
     {
       id: 'security',
       title: 'Security Settings',
       icon: faShieldHalved,
-      route: '/app/settings/security',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'security'),
       isActive: false
     },
     {
       id: 'notifications',
       title: 'Notifications',
       icon: faBell,
-      route: '/app/settings/notifications',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'notifications'),
       isActive: false
     },
     {
       id: 'privacy',
       title: 'Privacy Settings',
       icon: faLock,
-      route: '/app/settings/privacy',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'privacy'),
       isActive: false
     }
   ];
@@ -504,21 +505,21 @@ export class AccountComponent implements OnInit {
       id: 'payments',
       title: 'Payment Methods',
       icon: faCreditCard,
-      route: '/app/settings/payments',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'payments'),
       isActive: false
     },
     {
       id: 'shipping',
       title: 'Shipping Info',
       icon: faTruck,
-      route: '/app/settings/shipping',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'shipping'),
       isActive: false
     },
     {
       id: 'roles',
       title: 'Role Management',
       icon: faUserTag,
-      route: '/app/settings/roles',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'roles'),
       isActive: false
     }
   ];
@@ -528,21 +529,21 @@ export class AccountComponent implements OnInit {
       id: 'preferences',
       title: 'Preferences',
       icon: faPalette,
-      route: '/app/settings/preferences',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'preferences'),
       isActive: false
     },
     {
       id: 'support',
       title: 'Help & Support',
       icon: faQuestionCircle,
-      route: '/app/settings/support',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'support'),
       isActive: false
     },
     {
       id: 'about',
       title: 'About Markt',
       icon: faInfoCircle,
-      route: '/app/settings/about',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'about'),
       isActive: false
     }
   ];
@@ -732,7 +733,7 @@ export class AccountComponent implements OnInit {
    */
   openChangePassword(): void {
     // This could open a modal or navigate to a dedicated password change page
-    this.router.navigate(['/app/settings/account'], { 
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'account')], { 
       fragment: 'change-password' 
     });
   }
@@ -743,7 +744,7 @@ export class AccountComponent implements OnInit {
    */
   openUpdateEmail(): void {
     // This could open a modal or navigate to email settings
-    this.router.navigate(['/app/settings/account'], { 
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'account')], { 
       fragment: 'update-email' 
     });
   }
@@ -753,7 +754,7 @@ export class AccountComponent implements OnInit {
    * Provides quick access to notification management
    */
   openNotifications(): void {
-    this.router.navigate(['/app/settings/notifications']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'notifications')]);
   }
 
   /**
@@ -761,7 +762,7 @@ export class AccountComponent implements OnInit {
    * Provides quick access to privacy controls
    */
   openPrivacy(): void {
-    this.router.navigate(['/app/settings/privacy']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'privacy')]);
   }
 
   /**
@@ -770,7 +771,7 @@ export class AccountComponent implements OnInit {
    */
   completeProfile(): void {
     // This could open a profile completion wizard or modal
-    this.router.navigate(['/app/settings/account'], { 
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'account')], { 
       fragment: 'complete-profile' 
     });
   }

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ApiService } from '../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -268,14 +269,14 @@ export class SettingsComponent implements OnInit {
       title: 'Account Settings',
       description: 'Manage your personal information, password, and account preferences.',
       icon: faUser,
-      route: '/app/settings/account'
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'account')
     },
     {
       id: 'notifications',
       title: 'Notifications',
       description: 'Control how and when you receive notifications about orders, messages, and updates.',
       icon: faBell,
-      route: '/app/settings/notifications',
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'notifications'),
       badge: 'New'
     },
     {
@@ -283,28 +284,28 @@ export class SettingsComponent implements OnInit {
       title: 'Privacy & Security',
       description: 'Manage your privacy settings, data sharing preferences, and security options.',
       icon: faLock,
-      route: '/app/settings/privacy'
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'privacy')
     },
     {
       id: 'payment',
       title: 'Payment Methods',
       description: 'Add, edit, or remove your payment methods and billing information.',
       icon: faCreditCard,
-      route: '/app/settings/payment'
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'payment')
     },
     {
       id: 'shipping',
       title: 'Shipping Addresses',
       description: 'Manage your shipping addresses for faster checkout and delivery.',
       icon: faBox,
-      route: '/app/settings/shipping'
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'shipping')
     },
     {
       id: 'preferences',
       title: 'Preferences',
       description: 'Customize your marketplace experience, language, and display options.',
       icon: faGear,
-      route: '/app/settings/preferences'
+      route: buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'preferences')
     }
   ];
 
