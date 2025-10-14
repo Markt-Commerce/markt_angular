@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBell,
@@ -266,15 +266,15 @@ export class DashboardComponent implements OnInit {
    * Navigation methods
    */
   navigateToCreateListing(): void {
-    this.router.navigate(['/app/seller/listings/create']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS_CREATE]);
   }
 
   navigateToAnalytics(): void {
-    this.router.navigate(['/app/seller/analytics']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.ANALYTICS]);
   }
 
   navigateToInventory(): void {
-    this.router.navigate(['/app/seller/listings']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]);
   }
 
   navigateToOrders(): void {

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE, buildPath, RouteParams } from '../../../core/config/routes.config';
 import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
@@ -428,19 +429,19 @@ export class ListingsComponent implements OnInit {
 
   handlePrimaryAction(product: Product): void {
     if (product.status === 'draft') {
-      this.router.navigate(['/app/seller/listings/edit', product.id]);
+      this.router.navigate([RouteParams.sellerListingEdit(product.id)]);
     } else if (product.status === 'inactive') {
       this.resumeProduct(product.id);
     } else if (this.needsAttention(product)) {
       this.renewProduct(product.id);
     } else {
-      this.router.navigate(['/app/seller/listings/edit', product.id]);
+      this.router.navigate([RouteParams.sellerListingEdit(product.id)]);
     }
   }
 
   showAnalytics(product: Product): void {
     // Navigate to analytics or show analytics modal
-    this.router.navigate(['/app/seller/analytics'], { queryParams: { product: product.id } });
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.ANALYTICS], { queryParams: { product: product.id } });
   }
 
   showMoreOptions(product: Product): void {
@@ -619,10 +620,10 @@ export class ListingsComponent implements OnInit {
   }
 
   goToCreate(): void {
-    this.roleIntent.switchAndNavigate('seller', '/app/seller/listings/create');
+    this.roleIntent.switchAndNavigate('seller', ROUTES_ABSOLUTE.APP.SELLER.LISTINGS_CREATE);
   }
 
   goToEdit(id: string): void {
-    this.roleIntent.switchAndNavigate('seller', `/app/seller/listings/edit/${id}`);
+    this.roleIntent.switchAndNavigate('seller', RouteParams.sellerListingEdit(id));
   }
 } 

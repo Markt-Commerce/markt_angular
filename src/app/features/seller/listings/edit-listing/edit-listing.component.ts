@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../../../core/config/routes.config';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
@@ -272,7 +273,7 @@ import { Product } from '../../../../core/models';
             type="button"
             variant="secondary"
             size="lg"
-            [routerLink]="['/app/seller/listings']"
+            [routerLink]="[ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]"
           >
             Cancel
           </app-button>
@@ -457,6 +458,9 @@ import { Product } from '../../../../core/models';
   `]
 })
 export class EditListingComponent implements OnInit {
+  // Expose route constants to template
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -609,7 +613,7 @@ export class EditListingComponent implements OnInit {
     this.apiService.updateProduct(this.product!.id, productData).subscribe({
       next: (response) => {
         this.saving = false;
-        this.router.navigate(['/app/seller/listings']);
+        this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]);
       },
       error: (error) => {
         console.error('Error updating product:', error);

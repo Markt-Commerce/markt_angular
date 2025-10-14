@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../../../core/config/routes.config';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faClock, faCloudUploadAlt, faPlus, faLightbulb, faChartLine, faBook, faLaptop, faHome, faInfoCircle, faCamera, faDollarSign, faTags, faTruck, faSave, faEye } from '@fortawesome/free-solid-svg-icons';
@@ -819,7 +820,7 @@ export class CreateListingComponent implements OnInit {
       // Simulate API call
       setTimeout(() => {
         this.loading.set(false);
-        this.router.navigate(['/app/seller/listings']);
+        this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]);
       }, 2000);
     } else {
       // Mark all fields as touched to show validation errors
