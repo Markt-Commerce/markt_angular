@@ -274,6 +274,6 @@ export class UserProfileComponent implements OnInit {
   }
 
   viewProduct(productId: string): void {
-    this.router.navigate(['/app/marketplace/product', productId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', productId]);
   }
 } 

@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -385,7 +386,7 @@ interface Listing {
                 @if (listings.length > 0) {
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     @for (listing of listings; track listing.id) {
-                      <a [routerLink]="['/app/marketplace/product', listing.id]" class="rounded-2xl border border-markt-border/30 overflow-hidden hover:shadow-xl transition-all">
+                      <a [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', listing.id]" class="rounded-2xl border border-markt-border/30 overflow-hidden hover:shadow-xl transition-all">
                         <img [src]="listing.images[0] || '/markt-text-logo.png'" [alt]="listing.title" class="h-48 w-full object-cover" />
                         <div class="p-4">
                           <h4 class="font-semibold text-markt-dark">{{ listing.title }}</h4>
@@ -409,6 +410,9 @@ interface Listing {
   `]
 })
 export class ProfileComponent implements OnInit {
+  // Expose route constants to template
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
