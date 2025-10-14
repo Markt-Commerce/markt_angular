@@ -1,0 +1,48 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit validations..."
+
+# Check for hardcoded route strings
+echo "Checking for hardcoded routes..."
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|html)$' || true)
+
+if [ ! -z "$STAGED_TS_FILES" ]; then
+  HARDCODED=$(echo "$STAGED_TS_FILES" | xargs grep -l "navigate(\['\/" 2>/dev/null || true)
+  HARDCODED_LINKS=$(echo "$STAGED_TS_FILES" | xargs grep -l 'routerLink="\/' 2>/dev/null || true)
+  
+  if [ ! -z "$HARDCODED" ] || [ ! -z "$HARDCODED_LINKS" ]; then
+    echo "❌ ERROR: Found hardcoded route strings in staged files:"
+    echo "$HARDCODED"
+    echo "$HARDCODED_LINKS"
+    echo ""
+    echo "Please use ROUTES_ABSOLUTE constants from '@core/config/routes.config'"
+    echo "Example: this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD])"
+    exit 1
+  fi
+fi
+
+echo "✅ No hardcoded routes found"
+
+# Run route validators if route config files changed
+ROUTE_CONFIG_CHANGED=$(git diff --cached --name-only | grep "core/config/routes.config.ts" || true)
+ROUTE_MAP_CHANGED=$(git diff --cached --name-only | grep "core/config/route-state-map.ts" || true)
+
+if [ ! -z "$ROUTE_CONFIG_CHANGED" ] || [ ! -z "$ROUTE_MAP_CHANGED" ]; then
+  echo "Route config changed, running validators..."
+  
+  if ! node scripts/validate-routes-simple.js; then
+    echo "❌ Route validation failed"
+    exit 1
+  fi
+  
+  if ! node scripts/validate-state-map-simple.js; then
+    echo "❌ Route-state map validation failed"
+    exit 1
+  fi
+  
+  echo "✅ Route validation passed"
+fi
+
+echo "✅ Pre-commit checks passed!"
+
