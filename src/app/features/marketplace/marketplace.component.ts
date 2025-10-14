@@ -43,6 +43,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 import { SocialService } from '../../core/services/social.service';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core-next/config/routes.config';
 
 @Component({
   selector: 'app-marketplace',
@@ -1142,12 +1143,12 @@ export class MarketplaceComponent implements OnInit {
   }
 
   navigateToProduct(productId: string): void {
-    this.router.navigate(['/app/marketplace/product', productId]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', productId)]);
   }
 
   makeOffer(productId: string, event: Event): void {
     event.stopPropagation();
-    this.router.navigate(['/app/offers/make', productId]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'make', productId)]);
   }
 
 }

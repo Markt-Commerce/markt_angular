@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../../core-next/config/routes.config';
 import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { SearchService } from '../../../core/services/search.service';
 import { Product } from '../../../core/models';
@@ -53,7 +54,7 @@ import { ApiService } from '../../../core/services/api.service';
                   [alt]="product.name"
                   loading="lazy"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  [routerLink]="['/marketplace/product', product.id]"
+                  [routerLink]="[buildPath(ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', product.id)]"
                 >
                 
                 <!-- Badges -->
@@ -84,7 +85,7 @@ import { ApiService } from '../../../core/services/api.service';
               
               <!-- Product Info -->
               <div class="p-4">
-                <h3 class="product-title font-semibold text-gray-900 mb-2 line-clamp-2" [routerLink]="['/marketplace/product', product.id]">
+                <h3 class="product-title font-semibold text-gray-900 mb-2 line-clamp-2" [routerLink]="[buildPath(ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', product.id)]">
                   {{ product.name }}
                 </h3>
                 
@@ -136,7 +137,7 @@ import { ApiService } from '../../../core/services/api.service';
                     {{ cartService.isProductInCart(product.id) ? 'In Cart' : 'Add to Cart' }}
                   </button>
                   <button
-                    [routerLink]="['/marketplace/product', product.id]"
+                    [routerLink]="[buildPath(ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', product.id)]"
                     class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                   >
                     View
@@ -154,7 +155,7 @@ import { ApiService } from '../../../core/services/api.service';
             <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p class="text-gray-600">Try adjusting your search terms or filters</p>
             <button 
-              routerLink="/marketplace"
+              [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
               class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Browse All Products
@@ -229,6 +230,10 @@ import { ApiService } from '../../../core/services/api.service';
 })
 export class SearchComponent implements OnInit {
   private destroy$ = new Subject<void>();
+  
+  // Expose route constants to template
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  readonly buildPath = buildPath;
   
   marketplaceService = inject(MarketplaceService);
   searchService = inject(SearchService);

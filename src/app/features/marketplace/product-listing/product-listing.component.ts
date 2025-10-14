@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../../core-next/config/routes.config';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
@@ -275,12 +276,12 @@ Price is firm but negotiable for fellow Bruins! 🐻 DM me if interested or have
 
   messageSeller(): void {
     // Navigate to chat with seller
-    this.router.navigate(['/chat', this.seller?.id]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHAT, this.seller?.id)]);
   }
 
   makeOffer(): void {
     // Navigate to make offer page for this specific product
-    this.router.navigate(['/app/offers/make', this.productId]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.OFFERS.ROOT, 'make', this.productId)]);
   }
 
   postComment(): void {
@@ -312,11 +313,11 @@ Price is firm but negotiable for fellow Bruins! 🐻 DM me if interested or have
   }
 
   viewProfile(): void {
-    this.router.navigate(['/profile', this.seller?.id]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.PROFILE, 'user', this.seller?.id)]);
   }
 
   viewSimilarProduct(product: SimilarProduct): void {
-    this.router.navigate(['/product', product.id]);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.MARKETPLACE, 'product', product.id)]);
   }
 
   // TrackBy functions for performance optimization

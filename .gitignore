@@ -82,7 +82,7 @@ docs/updates.log
 !eslint.config.js
 !postcss.config.js
 !tailwind.config.js
-!README.md
+!src/README.md
 !CHANGELOG.md
 !LICENSE.md
 !CONTRIBUTING.md
@@ -97,3 +97,14 @@ docs/transcripts/
 all_endpoints.txt
 PR_FIXES_TRACKING.md
 /docs
+
+# Session documentation (temporary working notes)
+VALIDATION_*.md
+MARKETPLACE_*.md
+FOUNDATION_*.md
+PHASE_*.md
+SESSION_*.md
+CHECKPOINT_*.md
+PLAN_COMPLIANCE_*.md
+FINAL_STATUS.md
+TEST_FIX_LOG.md

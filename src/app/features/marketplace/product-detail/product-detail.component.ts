@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../../../core-next/config/routes.config';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
@@ -618,7 +619,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(this.product.id, this.quantity).subscribe({
       next: (response) => {
         if (response.success) {
-          this.router.navigate(['/app/cart'], { queryParams: { source: 'product', productId: this.product.id } });
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CART], { queryParams: { source: 'product', productId: this.product.id } });
         }
       },
       error: (error) => {
@@ -633,7 +634,7 @@ export class ProductDetailComponent implements OnInit {
     this.cartService.addToCart(this.product.id, this.quantity).subscribe({
       next: (response) => {
         if (response.success) {
-          this.router.navigate(['/app/checkout'], { queryParams: { source: 'buynow', productId: this.product.id } });
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'buynow', productId: this.product.id } });
         }
       },
       error: (error) => {
@@ -659,7 +660,7 @@ export class ProductDetailComponent implements OnInit {
   makeOffer(): void {
     if (!this.product) return;
     
-    this.router.navigate(['/app/offers/make', this.product.id]);
+    this.router.navigate([`${ROUTES_ABSOLUTE.APP.OFFERS.ROOT}/make`, this.product.id]);
   }
 
   shareProduct(): void {

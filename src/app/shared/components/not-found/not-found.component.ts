@@ -18,7 +18,7 @@ import { ButtonComponent } from '../button/button.component';
           <app-button 
             variant="primary" 
             size="lg"
-            [routerLink]="['/home']"
+            [routerLink]="['/landing']"
           >
             Go Home
           </app-button>
