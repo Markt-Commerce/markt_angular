@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSearch,
@@ -713,7 +713,7 @@ export class StartChatComponent implements OnInit {
    * Navigates to support page
    */
   private handleGetSupport(): void {
-    this.router.navigate(['/app/support']);
+    this.router.navigate([ROUTES_ABSOLUTE.SUPPORT.ROOT]);
   }
 
   /**

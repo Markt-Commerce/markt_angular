@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faComments,
@@ -377,7 +377,7 @@ export class ChatListComponent implements OnInit {
   }
 
   startNewChat(): void {
-    this.router.navigate(['/app/chat/start']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHAT, 'start')]);
   }
 
   // Helpers adapted to Ife's response shape

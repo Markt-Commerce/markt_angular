@@ -2,7 +2,7 @@ import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faPenToSquare,
@@ -663,7 +663,7 @@ export class ChatDetailComponent implements OnInit {
   }
 
   startNewChat(): void {
-    this.router.navigate(['/app/chat/start']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHAT, 'start')]);
   }
 
   sendMessage(event?: Event): void {
