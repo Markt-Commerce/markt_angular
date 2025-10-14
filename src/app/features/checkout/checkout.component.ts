@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { NgOptimizedImage } from '@angular/common';
@@ -1068,7 +1069,7 @@ export class CheckoutComponent implements OnInit {
           this.cartService.clearCart().subscribe();
           
           // Navigate to order confirmation
-          this.router.navigate(['/app/checkout/confirmation', response.data.id]);
+          this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHECKOUT, 'confirmation', response.data.id)]);
         } else {
           this.errorMessage = response.message || 'Failed to place order';
         }

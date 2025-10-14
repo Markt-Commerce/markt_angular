@@ -481,7 +481,7 @@ export class OrderConfirmationComponent implements OnInit {
 
   contactSellers(): void {
     // Navigate to messages/chat with sellers
-    this.router.navigate(['/app/messages']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
   }
 
   continueShopping(): void {
