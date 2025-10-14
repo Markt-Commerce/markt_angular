@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 import { 
   faCopy, 
   faTruck, 
@@ -509,16 +509,16 @@ export class OrderTrackingComponent implements OnInit {
 
   contactSellers(): void {
     // Navigate to messages/chat with sellers
-    this.router.navigate(['/app/messages']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
   }
 
   getDeliveryUpdates(): void {
     // Open delivery updates modal or navigate to notifications settings
-    this.router.navigate(['/app/settings/notifications']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.SETTINGS, 'notifications')]);
   }
 
   reportIssue(): void {
     // Navigate to issue reporting page or open modal
-    this.router.navigate(['/app/support/report-issue']);
+    this.router.navigate([buildPath(ROUTES_ABSOLUTE.SUPPORT.ROOT, 'report-issue')]);
   }
 }
