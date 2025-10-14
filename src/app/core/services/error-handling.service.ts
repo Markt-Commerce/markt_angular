@@ -7,13 +7,9 @@ export class ErrorHandlingService {
 
   notify(error: unknown, fallback: string = 'Something went wrong. Please try again.') {
     const message = this.toMessage(error) || fallback;
-    this.app.addNotification({
-      id: Date.now().toString(),
+    this.app.showNotification({
       type: 'error',
-      title: 'Error',
-      message,
-      is_read: false,
-      created_at: new Date().toISOString()
+      message
     });
   }
 

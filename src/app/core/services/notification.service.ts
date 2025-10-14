@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { NavigationService } from './navigation.service';
+import { ROUTES_ABSOLUTE } from '../config/routes.config';
 
 /**
  * Notification service for managing notifications
@@ -65,7 +66,7 @@ export class NotificationService {
    * @returns The action URL for the notification
    */
   getNotificationActionUrl(notification: any): string {
-    return notification.actionUrl || '/app/notifications';
+    return notification.actionUrl || ROUTES_ABSOLUTE.APP.NOTIFICATIONS;
   }
 
   /**

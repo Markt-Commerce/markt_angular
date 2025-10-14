@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ROUTES_ABSOLUTE, buildPath } from '../../../../core-next/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 

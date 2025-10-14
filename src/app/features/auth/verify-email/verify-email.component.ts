@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faEnvelope, faCheckCircle, faExclamationTriangle, faSpinner } from '@fortawesome/free-solid-svg-icons';
@@ -22,7 +23,7 @@ import { faEnvelope, faCheckCircle, faExclamationTriangle, faSpinner } from '@fo
           </div>
           <button
             class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f4f1f0] text-[#181211] text-sm font-bold leading-normal tracking-[0.015em]"
-            [routerLink]="['/auth/login']"
+            [routerLink]="[ROUTES_ABSOLUTE.AUTH.LOGIN]"
           >
             <span class="truncate">Back to Login</span>
           </button>
@@ -115,6 +116,9 @@ import { faEnvelope, faCheckCircle, faExclamationTriangle, faSpinner } from '@fo
   `]
 })
 export class VerifyEmailComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -335,14 +339,14 @@ export class VerifyEmailComponent implements OnInit {
   handlePrimaryAction(): void {
     if (this.verificationStatus === 'success') {
       // Navigate to login or main app
-      this.router.navigate(['/auth/login']);
+      this.router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
     } else if (this.verificationStatus === 'error') {
       // Retry verification if we have the code
       if (this.verificationCode && this.email) {
         this.verifyEmailWithCode(this.email, this.verificationCode);
       } else {
         // Navigate to login to start over
-        this.router.navigate(['/auth/login']);
+        this.router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
       }
     } else {
       // Pending state - resend email
@@ -352,7 +356,7 @@ export class VerifyEmailComponent implements OnInit {
 
   handleSecondaryAction(): void {
     // Always navigate to login
-    this.router.navigate(['/auth/login']);
+    this.router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
   }
 
   getResendButtonText(): string {

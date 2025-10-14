@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faCode, 
@@ -426,7 +427,7 @@ export class DevNavigationComponent {
   devRoutes: DevRoute[] = [
     // Public Routes
     {
-      path: '/landing',
+      path: ROUTES_ABSOLUTE.LANDING,
       title: 'Landing Page',
       description: 'Main landing page with hero section',
       icon: faHome,
@@ -468,7 +469,7 @@ export class DevNavigationComponent {
 
     // Auth Routes
     {
-      path: '/auth/login',
+      path: ROUTES_ABSOLUTE.AUTH.LOGIN,
       title: 'Login',
       description: 'User login page',
       icon: faSignInAlt,
@@ -476,7 +477,7 @@ export class DevNavigationComponent {
       requiresAuth: false
     },
     {
-      path: '/auth/register',
+      path: ROUTES_ABSOLUTE.AUTH.REGISTER,
       title: 'Register',
       description: 'User registration page',
       icon: faUserPlus,
@@ -484,7 +485,7 @@ export class DevNavigationComponent {
       requiresAuth: false
     },
     {
-      path: '/auth/forgot-password',
+      path: ROUTES_ABSOLUTE.AUTH.FORGOT_PASSWORD,
       title: 'Forgot Password',
       description: 'Password reset request',
       icon: faKey,
@@ -510,7 +511,7 @@ export class DevNavigationComponent {
 
     // Main App Routes
     {
-      path: '/app/dashboard',
+      path: ROUTES_ABSOLUTE.APP.DASHBOARD,
       title: 'Dashboard',
       description: 'Main user dashboard',
       icon: faHome,
@@ -526,7 +527,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/community',
+      path: ROUTES_ABSOLUTE.APP.COMMUNITY,
       title: 'Community',
       description: 'Community hub',
       icon: faUsers,
@@ -542,7 +543,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/marketplace',
+      path: ROUTES_ABSOLUTE.APP.MARKETPLACE,
       title: 'Marketplace',
       description: 'Browse all products',
       icon: faStore,
@@ -566,7 +567,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/chat',
+      path: ROUTES_ABSOLUTE.APP.CHAT,
       title: 'Messages',
       description: 'Chat and messaging',
       icon: faComments,
@@ -574,7 +575,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/notifications',
+      path: ROUTES_ABSOLUTE.APP.NOTIFICATIONS,
       title: 'Notifications',
       description: 'User notifications',
       icon: faBell,
@@ -582,7 +583,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/offers',
+      path: ROUTES_ABSOLUTE.APP.OFFERS.ROOT,
       title: 'Offers',
       description: 'Browse and manage offers',
       icon: faTag,
@@ -590,7 +591,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/requests',
+      path: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
       title: 'Requests',
       description: 'Browse and manage requests',
       icon: faClipboard,
@@ -606,7 +607,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/profile',
+      path: ROUTES_ABSOLUTE.APP.PROFILE,
       title: 'Profile',
       description: 'User profile page',
       icon: faUser,
@@ -630,7 +631,7 @@ export class DevNavigationComponent {
       requiresAuth: true
     },
     {
-      path: '/app/shops',
+      path: ROUTES_ABSOLUTE.APP.SHOPS.ROOT,
       title: 'Shops',
       description: 'Browse and discover shops',
       icon: faStore,
@@ -688,7 +689,7 @@ export class DevNavigationComponent {
 
     // Buyer Routes
     {
-      path: '/app/cart',
+      path: ROUTES_ABSOLUTE.APP.CART,
       title: 'Shopping Cart',
       description: 'View cart items',
       icon: faShoppingCart,
@@ -697,7 +698,7 @@ export class DevNavigationComponent {
       requiredRole: 'buyer'
     },
     {
-      path: '/app/checkout',
+      path: ROUTES_ABSOLUTE.APP.CHECKOUT,
       title: 'Checkout',
       description: 'Complete purchase',
       icon: faShoppingCart,
@@ -715,7 +716,7 @@ export class DevNavigationComponent {
       requiredRole: 'buyer'
     },
     {
-      path: '/app/orders',
+      path: ROUTES_ABSOLUTE.APP.ORDERS.ROOT,
       title: 'My Orders',
       description: 'View order history',
       icon: faReceipt,
@@ -878,7 +879,7 @@ export class DevNavigationComponent {
 
     // Settings Routes
     {
-      path: '/app/settings',
+      path: ROUTES_ABSOLUTE.APP.SETTINGS,
       title: 'Settings',
       description: 'Main settings page',
       icon: faCog,
@@ -928,7 +929,7 @@ export class DevNavigationComponent {
 
     // Admin Routes
     {
-      path: '/app/admin',
+      path: ROUTES_ABSOLUTE.APP.ADMIN.ROOT,
       title: 'Admin Panel',
       description: 'Administrative dashboard and controls',
       icon: faCog,
@@ -952,7 +953,7 @@ export class DevNavigationComponent {
    * This provides a quick way to return to the main app from the dev navigation
    */
   goBack(): void {
-    this.router.navigate(['/app/dashboard']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
   }
 
   /**

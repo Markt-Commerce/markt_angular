@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 
 @Component({
   selector: 'app-onboarding',
@@ -474,7 +475,7 @@ export class OnboardingComponent implements OnInit {
       this.apiService.completeOnboarding(onboardingData).subscribe({
         next: (response) => {
           this.submitting = false;
-          this.router.navigate(['/app/dashboard']);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
         },
         error: (error) => {
           console.error('Onboarding error:', error);
@@ -487,6 +488,6 @@ export class OnboardingComponent implements OnInit {
 
   goCreate(type: 'buyer' | 'seller'): void {
     const query = type === 'buyer' ? { createBuyer: '1' } : { createSeller: '1' };
-    this.router.navigate(['/app/profile'], { queryParams: query });
+    this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE], { queryParams: query });
   }
 } 

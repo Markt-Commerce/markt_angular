@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface Product {
   id: string;
@@ -156,7 +157,7 @@ export class MakeOfferComponent implements OnInit {
       // this.apiService.createOffer(offerData).subscribe({
       //   next: (response) => {
       //     // Navigate to offers page or show success message
-      //     this.router.navigate(['/app/offers']);
+      //     this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT]);
       //   },
       //   error: (error) => {
       //     console.error('Error submitting offer:', error);
@@ -164,7 +165,7 @@ export class MakeOfferComponent implements OnInit {
       // });
       
       // For now, just navigate back
-      this.router.navigate(['/app/offers']);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT]);
     }
   }
 

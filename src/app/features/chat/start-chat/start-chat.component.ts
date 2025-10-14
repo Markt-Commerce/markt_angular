@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSearch,
@@ -620,7 +621,7 @@ export class StartChatComponent implements OnInit {
       next: (response) => {
         const roomId = response?.data?.id || response?.id;
         if (roomId) {
-          this.router.navigate(['/app/chat', roomId]);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
         }
       },
       error: (error) => {
@@ -662,7 +663,7 @@ export class StartChatComponent implements OnInit {
           const roomId = response?.data?.id || response?.id;
           if (roomId) {
             this.resetGroupForm();
-            this.router.navigate(['/app/chat', roomId]);
+            this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
           }
         }
         this.isCreatingGroup = false;
@@ -696,7 +697,7 @@ export class StartChatComponent implements OnInit {
    * Navigates to marketplace to find sellers
    */
   private handleChatWithSeller(): void {
-    this.router.navigate(['/app/marketplace']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE]);
   }
 
   /**
@@ -704,7 +705,7 @@ export class StartChatComponent implements OnInit {
    * Navigates to offers page for negotiations
    */
   private handleNegotiateOffer(): void {
-    this.router.navigate(['/app/offers']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT]);
   }
 
   /**
@@ -720,7 +721,7 @@ export class StartChatComponent implements OnInit {
    * Navigates to community page for campus groups
    */
   private handleCampusGroup(): void {
-    this.router.navigate(['/app/community']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.COMMUNITY]);
   }
 
   /**
@@ -737,6 +738,6 @@ export class StartChatComponent implements OnInit {
    * Opens product browser or navigates to marketplace
    */
   browseProducts(): void {
-    this.router.navigate(['/app/marketplace']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE]);
   }
 }

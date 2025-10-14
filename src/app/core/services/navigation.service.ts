@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BreadcrumbItem } from './breadcrumb.service';
+import { ROUTES_ABSOLUTE } from '../config/routes.config';
 
 /**
  * Navigation service for generating links and handling navigation
@@ -63,7 +64,7 @@ export class NavigationService {
    * @param requestId - The ID of the request
    */
   navigateToRequestDetail(requestId: string): void {
-    this.router.navigate(['/app/requests', requestId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, requestId]);
   }
 
   /**
@@ -71,7 +72,7 @@ export class NavigationService {
    * @param offerId - The ID of the offer
    */
   navigateToOfferDetail(offerId: string): void {
-    this.router.navigate(['/app/offers', offerId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, offerId]);
   }
 
   /**
@@ -95,7 +96,7 @@ export class NavigationService {
    * @param orderId - The ID of the order
    */
   navigateToOrderDetail(orderId: string): void {
-    this.router.navigate(['/app/orders', orderId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, orderId]);
   }
 
   /**
@@ -108,7 +109,7 @@ export class NavigationService {
     return [
       { 
         label: 'Dashboard', 
-        url: '/app/dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
         icon: 'home',
         isClickable: true,
         isCurrentPage: false,
@@ -116,7 +117,7 @@ export class NavigationService {
       },
       { 
         label: 'Requests', 
-        url: '/app/requests',
+        url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
         icon: 'clipboard',
         isClickable: true,
         isCurrentPage: false,
@@ -146,7 +147,7 @@ export class NavigationService {
     return [
       { 
         label: 'Dashboard', 
-        url: '/app/dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
         icon: 'home',
         isClickable: true,
         isCurrentPage: false,
@@ -154,7 +155,7 @@ export class NavigationService {
       },
       { 
         label: 'Offers', 
-        url: '/app/offers',
+        url: ROUTES_ABSOLUTE.APP.OFFERS.ROOT,
         icon: 'tag',
         isClickable: true,
         isCurrentPage: false,
@@ -184,7 +185,7 @@ export class NavigationService {
     return [
       { 
         label: 'Dashboard', 
-        url: '/app/dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
         icon: 'home',
         isClickable: true,
         isCurrentPage: false,
@@ -192,7 +193,7 @@ export class NavigationService {
       },
       { 
         label: 'Marketplace', 
-        url: '/app/marketplace',
+        url: ROUTES_ABSOLUTE.APP.MARKETPLACE,
         icon: 'store',
         isClickable: true,
         isCurrentPage: false,

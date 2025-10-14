@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface BuyerRequest {
   id: string;
@@ -201,7 +202,7 @@ interface Product {
               type="button"
               variant="secondary"
               size="lg"
-              [routerLink]="['/app/requests', request.id]"
+              [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, request.id]"
             >
               Cancel
             </app-button>
@@ -227,7 +228,7 @@ interface Product {
         <app-button 
           variant="primary" 
           size="lg"
-          [routerLink]="['/app/requests']"
+          [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT]"
         >
           Back to Requests
         </app-button>
@@ -572,6 +573,9 @@ interface Product {
   `]
 })
 export class CreateOfferComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -749,7 +753,7 @@ export class CreateOfferComponent implements OnInit {
     this.apiService.createOffer(offerData.request_id, offerData).subscribe({
       next: (response) => {
         this.submitting = false;
-        this.router.navigate(['/app/offers', response.data.id]);
+        this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
       },
       error: (error) => {
         console.error('Error creating offer:', error);

@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-shipping',
@@ -53,6 +54,6 @@ export class ShippingComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/app/settings']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SETTINGS]);
   }
 } 

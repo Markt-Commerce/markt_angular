@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ROUTES_ABSOLUTE, buildPath } from '../../../../core-next/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { SearchService } from '../../../core/services/search.service';
 import { Product } from '../../../core/models';

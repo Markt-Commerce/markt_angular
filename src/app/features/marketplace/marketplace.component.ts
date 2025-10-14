@@ -43,7 +43,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 import { SocialService } from '../../core/services/social.service';
-import { ROUTES_ABSOLUTE, buildPath } from '../../../core-next/config/routes.config';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 
 @Component({
   selector: 'app-marketplace',

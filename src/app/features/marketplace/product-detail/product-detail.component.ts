@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ROUTES_ABSOLUTE } from '../../../../core-next/config/routes.config';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 

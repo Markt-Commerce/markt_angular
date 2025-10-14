@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-preferences',
@@ -136,6 +137,6 @@ export class PreferencesComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/app/settings']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SETTINGS]);
   }
 } 

@@ -163,11 +163,11 @@ import { AccessControlService } from '../../core/services/access-control.service
               <fa-icon [icon]="faPlus" class="mr-2"></fa-icon>
               Create New Listing
             </button>
-            <button routerLink="/app/marketplace" class="w-full bg-blue-50 text-blue-600 px-4 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+            <button routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE class="w-full bg-blue-50 text-blue-600 px-4 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors">
               <fa-icon [icon]="faSearch" class="mr-2"></fa-icon>
               Browse Marketplace
             </button>
-            <button routerLink="/app/community" class="w-full bg-green-50 text-green-600 px-4 py-3 rounded-lg font-medium hover:bg-green-100 transition-colors">
+            <button routerLink=ROUTES_ABSOLUTE.APP.COMMUNITY class="w-full bg-green-50 text-green-600 px-4 py-3 rounded-lg font-medium hover:bg-green-100 transition-colors">
               <fa-icon [icon]="faUsers" class="mr-2"></fa-icon>
               Join Community
             </button>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 
 @Component({
   selector: 'app-shops',
@@ -261,6 +262,6 @@ export class ShopsComponent implements OnInit {
   }
 
   viewShop(shopId: number): void {
-    this.router.navigate(['/app/shops', shopId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SHOPS.ROOT, shopId]);
   }
 } 

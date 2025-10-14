@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { combineLatest } from 'rxjs';
 import { 
@@ -88,7 +89,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
             <h2 class="text-xl font-medium text-gray-900 mb-2">Your cart is empty</h2>
             <p class="text-gray-500 mb-6">Looks like you haven't added any items to your cart yet.</p>
             <button 
-              [routerLink]="['/app/marketplace']"
+              [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
               class="bg-primary text-white px-6 py-3 rounded-md hover:bg-secondary transition-colors font-medium"
             >
               Start Shopping
@@ -196,7 +197,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
               <div class="bg-white rounded-lg border border-border p-6">
                 <div class="flex items-center justify-between">
                   <button 
-                    [routerLink]="['/app/marketplace']"
+                    [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
                     class="text-gray-600 hover:text-gray-900 flex items-center space-x-2"
                   >
                     <fa-icon [icon]="faArrowLeft"></fa-icon>
@@ -319,6 +320,9 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
   `]
 })
 export class CartComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private cartService = inject(CartService);
   private marketplaceService = inject(MarketplaceService);
   private authService = inject(AuthService);
@@ -660,7 +664,7 @@ export class CartComponent implements OnInit {
         payment_method: this.selectedPaymentMethod || undefined,
         notes: this.orderNotes
       };
-      this.router.navigate(['/app/checkout'], { state: { checkoutData } });
+      this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { state: { checkoutData } });
     };
 
     this.roleIntent.ensureRoleAndExecute('buyer', () => {
@@ -699,7 +703,7 @@ export class CartComponent implements OnInit {
   validateCart(): void {
     const validation = this.cartService.validateCartForCheckout();
     if (validation.isValid) {
-      this.router.navigate(['/app/checkout']);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT]);
     } else {
       this.errorMessage = validation.errors.join(', ');
     }

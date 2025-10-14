@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,7 +21,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
           <button
             class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e85530] text-white text-sm font-bold leading-normal tracking-[0.015em]"
-            [routerLink]="['/auth/login']"
+            [routerLink]="[ROUTES_ABSOLUTE.AUTH.LOGIN]"
           >
             <span class="truncate">Back to sign in</span>
           </button>
@@ -71,7 +72,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </form>
               
               <p class="text-[#886a63] text-sm font-normal leading-normal pb-3 pt-1 px-4 text-center">
-                <a [routerLink]="['/auth/login']" class="underline hover:no-underline">Remember your password? Sign in</a>
+                <a [routerLink]="[ROUTES_ABSOLUTE.AUTH.LOGIN]" class="underline hover:no-underline">Remember your password? Sign in</a>
               </p>
         </div>
         
@@ -112,6 +113,8 @@ import { AuthService } from '../../../core/services/auth.service';
   styles: []
 })
 export class ForgotPasswordComponent implements OnInit {
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -182,7 +185,7 @@ export class ForgotPasswordComponent implements OnInit {
   }
 
   backToLogin(): void {
-    this.router.navigate(['/auth/login']);
+    this.router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
   }
 
   getErrorMessage(field: string): string {

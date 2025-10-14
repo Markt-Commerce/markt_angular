@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBell,
@@ -277,10 +278,10 @@ export class DashboardComponent implements OnInit {
   }
 
   navigateToOrders(): void {
-    this.router.navigate(['/app/orders']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT]);
   }
 
   navigateToMessages(): void {
-    this.router.navigate(['/app/chat']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
   }
 }

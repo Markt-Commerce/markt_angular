@@ -145,7 +145,7 @@ interface Listing {
                 <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white text-markt-primary font-semibold shadow-lg hover:shadow-xl transition-all" routerLink="/app/profile/edit" aria-label="Edit profile">
                   Edit Profile
                 </a>
-                <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white/20 text-white font-semibold border-2 border-white/40 hover:bg-white/30 transition-all" routerLink="/app/chat" aria-label="Send message">
+                <a class="group flex items-center justify-center rounded-xl h-11 px-6 bg-white/20 text-white font-semibold border-2 border-white/40 hover:bg-white/30 transition-all" routerLink=ROUTES_ABSOLUTE.APP.CHAT aria-label="Send message">
                   Send Message
                 </a>
               </div>

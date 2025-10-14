@@ -15,6 +15,7 @@ import {
   faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-login',
@@ -146,7 +147,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 <span class="ml-2 text-sm text-muted">Remember me</span>
               </label>
               <a 
-                routerLink="/auth/forgot-password"
+                routerLink=ROUTES_ABSOLUTE.AUTH.FORGOT_PASSWORD
                 class="text-sm text-primary hover:text-secondary transition-colors cursor-pointer">
                 Forgot password?
               </a>
@@ -206,7 +207,7 @@ import { AuthService } from '../../../core/services/auth.service';
               <p class="text-sm text-muted">
                 Don't have an account? 
                 <a 
-                  routerLink="/auth/register"
+                  routerLink=ROUTES_ABSOLUTE.AUTH.REGISTER
                   class="text-primary hover:text-secondary font-medium transition-colors cursor-pointer">
                   Sign up here
                 </a>
@@ -318,7 +319,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     // Check if user is already logged in
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/app/dashboard']);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
     }
   }
 
@@ -344,7 +345,7 @@ export class LoginComponent implements OnInit {
         next: (response: any) => {
           if (response.success) {
             // Navigate to dashboard on successful login
-            this.router.navigate(['/app/dashboard']);
+            this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
           } else {
             // Handle login error (show error message)
             console.error('Login failed:', response.message);
@@ -375,7 +376,7 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithGoogle().subscribe({
       next: (response: any) => {
         if (response.success) {
-          this.router.navigate(['/app/dashboard']);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
           console.error('Google login failed:', response.message);
           this.isSubmitting.set(false);
@@ -398,7 +399,7 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithFacebook().subscribe({
       next: (response: any) => {
         if (response.success) {
-          this.router.navigate(['/app/dashboard']);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
           console.error('Facebook login failed:', response.message);
           this.isSubmitting.set(false);

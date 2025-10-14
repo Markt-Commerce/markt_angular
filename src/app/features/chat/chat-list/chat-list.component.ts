@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faComments,
@@ -323,12 +324,12 @@ export class ChatListComponent implements OnInit {
         next: (response) => {
           const roomId = response?.data?.id || response?.id;
           if (roomId) {
-            this.router.navigate(['/app/chat', roomId]);
+            this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
           }
         },
         error: () => {
           // Fallback to chat list
-          this.router.navigate(['/app/chat']);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
         }
       });
     });
@@ -372,7 +373,7 @@ export class ChatListComponent implements OnInit {
 
   selectChat(chat: any): void {
     this.selectedChatId = chat.id;
-    this.router.navigate(['/app/chat', chat.id]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, chat.id]);
   }
 
   startNewChat(): void {

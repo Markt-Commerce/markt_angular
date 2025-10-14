@@ -3,6 +3,7 @@ import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { filter, map, distinctUntilChanged } from 'rxjs/operators';
+import { ROUTES_ABSOLUTE } from '../config/routes.config';
 
 export interface BreadcrumbItem {
   label: string;
@@ -154,7 +155,7 @@ export class BreadcrumbService {
     if (reversedBreadcrumbs.length === 0) {
       reversedBreadcrumbs.push({
         label: 'Dashboard',
-        url: '/app/dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
         icon: 'home',
         isClickable: false,
         isCurrentPage: true,

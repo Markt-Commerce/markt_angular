@@ -6,6 +6,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-edit-profile',
@@ -522,7 +523,7 @@ export class EditProfileComponent implements OnInit {
         next: (response) => {
           this.loading = false;
           this.successMessage = 'Profile updated successfully!';
-          this.router.navigate(['/app/profile']);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE]);
           
           // Clear success message after 3 seconds
           setTimeout(() => {
@@ -567,6 +568,6 @@ export class EditProfileComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/app/profile']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE]);
   }
 } 

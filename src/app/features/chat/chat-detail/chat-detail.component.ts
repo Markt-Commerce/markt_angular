@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faPenToSquare,
@@ -658,7 +659,7 @@ export class ChatDetailComponent implements OnInit {
 
   selectChat(chat: ChatRoom): void {
     this.selectedChatId = chat.id;
-    this.router.navigate(['/app/chat', chat.id]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, chat.id]);
   }
 
   startNewChat(): void {
@@ -699,7 +700,7 @@ export class ChatDetailComponent implements OnInit {
 
   viewProfile(): void {
     if (this.participant) {
-      this.router.navigate(['/app/profile', this.participant.id]);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE, this.participant.id]);
     }
   }
 

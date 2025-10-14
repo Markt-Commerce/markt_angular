@@ -8,6 +8,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { CartService } from '../../../core/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface Offer {
   id: string;
@@ -71,7 +72,7 @@ interface Request {
       <div class="offer-header">
         <div class="header-content">
           <div class="breadcrumb">
-            <a routerLink="/app/requests">Requests</a>
+            <a routerLink=ROUTES_ABSOLUTE.APP.REQUESTS.ROOT>Requests</a>
             <span class="separator">/</span>
             <a routerLink="/app/requests/{{ request?.id }}">{{ request?.title }}</a>
             <span class="separator">/</span>
@@ -984,11 +985,11 @@ export class OfferDetailComponent implements OnInit {
             const productId = (response?.data?.product_id) || (this.offer as any)?.productId || (this.offer as any)?.product_id;
             if (productId) {
               this.cartService.addToCart(String(productId), 1).subscribe({
-                next: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } }),
-                error: () => this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } })
+                next: () => this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } }),
+                error: () => this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } })
               });
             } else {
-              this.router.navigate(['/app/checkout'], { queryParams: { source: 'offer', offerId: this.offer!.id } });
+              this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } });
             }
           },
           error: (error) => {
@@ -1010,7 +1011,7 @@ export class OfferDetailComponent implements OnInit {
             this.rejecting = false;
             this.offer!.status = 'rejected';
             // Optionally navigate back to requests
-            this.router.navigate(['/app/requests', this.request?.id]);
+            this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, this.request?.id]);
           },
           error: (error) => {
             console.error('Error rejecting offer:', error);
@@ -1039,7 +1040,7 @@ export class OfferDetailComponent implements OnInit {
             this.submittingCounter = false;
             this.closeCounterOffer();
             // Optionally navigate to the new offer
-            this.router.navigate(['/app/offers', response.data.id]);
+            this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
           },
           error: (error) => {
             console.error('Error submitting counter offer:', error);
@@ -1052,13 +1053,13 @@ export class OfferDetailComponent implements OnInit {
 
   viewSellerProfile(sellerId?: string): void {
     if (sellerId) {
-      this.router.navigate(['/app/profile', sellerId]);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE, sellerId]);
     }
   }
 
   sendMessage(sellerId?: string): void {
     if (sellerId) {
-      this.router.navigate(['/app/chat', sellerId]);
+      this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, sellerId]);
     }
   }
 
@@ -1068,11 +1069,11 @@ export class OfferDetailComponent implements OnInit {
   }
 
   viewOffer(offerId: string): void {
-    this.router.navigate(['/app/offers', offerId]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, offerId]);
   }
 
   goBack(): void {
-    this.router.navigate(['/app/requests', this.request?.id]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, this.request?.id]);
   }
 
   openNegotiation(): void {

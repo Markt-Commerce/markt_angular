@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSearch,
@@ -226,7 +227,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             {{ viewMode==='seller' ? 'You have not received any orders.' : 'You have not placed any orders yet.' }}
           </p>
           <div class="flex items-center justify-center gap-3">
-            <app-button *ngIf="viewMode==='buyer'" routerLink="/app/marketplace" variant="primary" size="md">Start Shopping</app-button>
+            <app-button *ngIf="viewMode==='buyer'" routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE variant="primary" size="md">Start Shopping</app-button>
             <app-button *ngIf="viewMode==='seller'" routerLink="/app/seller/listings" variant="primary" size="md">View Listings</app-button>
           </div>
         </div>
@@ -251,7 +252,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 </span>
                 <div class="flex items-center space-x-2">
                   <button
-                    [routerLink]="['/app/orders', order.id]"
+                    [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id]"
                     class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                     title="View Details"
                   >
@@ -333,7 +334,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 >
                   Cancel Order
                 </button>
-                <app-button [routerLink]="['/app/orders', order.id]" variant="primary" size="sm">View Details</app-button>
+                <app-button [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id]" variant="primary" size="sm">View Details</app-button>
               </div>
             </div>
           </div>
@@ -380,6 +381,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
   `]
 })
 export class OrdersComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -613,7 +617,7 @@ export class OrdersComponent implements OnInit {
   }
 
   navigateToReview(order: any): void {
-    this.router.navigate(['/app/orders', order.id, 'review']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id, 'review']);
   }
 
   cancelOrder(order: any): void {

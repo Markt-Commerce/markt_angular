@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSearch,
@@ -1152,14 +1153,14 @@ export class OrderHistoryComponent implements OnInit {
    * View order details
    */
   viewOrderDetails(order: Order): void {
-    this.router.navigate(['/app/orders', order.id]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id]);
   }
 
   /**
    * Review order
    */
   reviewOrder(order: Order): void {
-    this.router.navigate(['/app/orders', order.id, 'review']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id, 'review']);
   }
 
   /**
@@ -1167,14 +1168,14 @@ export class OrderHistoryComponent implements OnInit {
    */
   reorderItems(order: Order): void {
     // Add items to cart and navigate to cart
-    this.router.navigate(['/app/cart']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CART]);
   }
 
   /**
    * Track order
    */
   trackOrder(order: Order): void {
-    this.router.navigate(['/app/orders', order.id, 'track']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id, 'track']);
   }
 
   /**
@@ -1183,7 +1184,7 @@ export class OrderHistoryComponent implements OnInit {
   contactSeller(order: Order): void {
     const sellerId = order.items[0].product.seller.id;
     if (sellerId) {
-      this.router.navigate(['/app/chat'], { queryParams: { seller: sellerId } });
+      this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT], { queryParams: { seller: sellerId } });
     }
   }
 
@@ -1217,7 +1218,7 @@ export class OrderHistoryComponent implements OnInit {
    * Create new order (navigate to marketplace)
    */
   createNewOrder(): void {
-    this.router.navigate(['/app/marketplace']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE]);
   }
 
   /**

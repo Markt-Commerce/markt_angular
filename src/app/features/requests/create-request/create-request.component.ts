@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface Category {
   id: number;
@@ -216,7 +217,7 @@ interface MediaFile {
             type="button"
             variant="secondary"
             size="lg"
-            [routerLink]="['/app/requests']"
+            [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT]"
           >
             Cancel
           </app-button>
@@ -433,6 +434,9 @@ interface MediaFile {
   `]
 })
 export class CreateRequestComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private apiService = inject(ApiService);
@@ -570,7 +574,7 @@ export class CreateRequestComponent implements OnInit {
       this.apiService.createRequest(requestData).subscribe({
         next: (response) => {
           this.submitting = false;
-          this.router.navigate(['/app/requests', response.data.id]);
+          this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, response.data.id]);
         },
         error: (error) => {
           console.error('Error creating request:', error);

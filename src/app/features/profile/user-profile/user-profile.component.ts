@@ -7,6 +7,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar, faUserPlus, faEnvelope, faShare, faCheckCircle, faGraduationCap, faCalendar, faMapMarkerAlt, faBook, faClock, faHandshake, faFlag, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface UserProfile {
   id: string;
@@ -248,7 +249,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   sendMessage(): void {
-    this.router.navigate(['/app/chat'], { queryParams: { user: this.profile?.id } });
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT], { queryParams: { user: this.profile?.id } });
   }
 
   toggleFollow(): void {
@@ -269,7 +270,7 @@ export class UserProfileComponent implements OnInit {
 
   viewAllListings(): void {
     // Navigate to user's full listings page or show all products
-    this.router.navigate(['/app/marketplace'], { queryParams: { seller: this.profile?.id } });
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE], { queryParams: { seller: this.profile?.id } });
   }
 
   viewProduct(productId: string): void {

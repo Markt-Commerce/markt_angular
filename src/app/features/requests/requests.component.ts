@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faSearch, 
@@ -278,7 +279,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                   {{ getRequestStatusDisplay(request.status) }}
                 </span>
                 <button 
-                  [routerLink]="['/app/requests', request.id]"
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, request.id]"
                   class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                   title="View Details"
                 >
@@ -376,7 +377,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                   Create Offer
                 </button>
                 <button 
-                  [routerLink]="['/app/requests', request.id]"
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, request.id]"
                   class="text-markt-primary hover:text-markt-secondary font-medium text-sm"
                 >
                   View Details
@@ -428,6 +429,9 @@ import { AccessControlService } from '../../core/services/access-control.service
   `]
 })
 export class RequestsComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private requestService = inject(RequestService);
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
@@ -716,11 +720,11 @@ export class RequestsComponent implements OnInit {
   }
 
   viewOffers(request: any): void {
-    this.router.navigate(['/app/requests', request.id, 'offers']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, request.id, 'offers']);
   }
 
   createOffer(request: any): void {
-    this.router.navigate(['/app/requests', request.id, 'offer']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, request.id, 'offer']);
   }
 
   get isSeller(): boolean {

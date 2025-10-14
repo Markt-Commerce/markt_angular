@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 // HeaderComponent removed - no longer needed
 import { 
@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -62,14 +63,14 @@ import { map } from 'rxjs/operators';
                     <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
                       <button
                         class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                        [routerLink]="['/auth/register']"
+                        [routerLink]="[ROUTES_ABSOLUTE.AUTH.REGISTER]"
                       >
                         <span class="truncate">Get Started</span>
                         <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                       </button>
                       <button
                         class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                        [routerLink]="['/auth/login']"
+                        [routerLink]="[ROUTES_ABSOLUTE.AUTH.LOGIN]"
                       >
                         <span class="truncate">Sign In</span>
                         <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
@@ -82,14 +83,14 @@ import { map } from 'rxjs/operators';
                     <div class="flex flex-wrap gap-4 justify-center animate-fade-in-up delay-300">
                       <button
                         class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-white text-markt-primary text-base lg:text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                        [routerLink]="['/app/dashboard']"
+                        [routerLink]="[ROUTES_ABSOLUTE.APP.DASHBOARD]"
                       >
                         <span class="truncate">Go to Dashboard</span>
                         <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                       </button>
                       <button
                         class="group flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 lg:h-14 px-6 lg:px-8 bg-markt-light/90 text-markt-dark text-base lg:text-lg font-bold leading-normal tracking-[0.015em] border-2 border-white/50 hover:bg-white hover:text-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                        [routerLink]="['/app/marketplace']"
+                        [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
                       >
                         <span class="truncate">Browse Marketplace</span>
                         <fa-icon [icon]="faArrowRight" class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
@@ -357,14 +358,14 @@ import { map } from 'rxjs/operators';
                 <div class="flex flex-wrap gap-4 justify-center">
                   <button
                     class="group flex min-w-[180px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-8 bg-gradient-to-r from-markt-primary to-markt-secondary text-white text-lg font-bold leading-normal tracking-[0.015em] shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-                    [routerLink]="['/auth/register']"
+                    [routerLink]="[ROUTES_ABSOLUTE.AUTH.REGISTER]"
                   >
                     <span class="truncate">I'm a Buyer</span>
                     <fa-icon [icon]="faArrowRight" class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
                   </button>
                   <button
                     class="group flex min-w-[180px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-8 bg-markt-light text-markt-dark text-lg font-bold leading-normal tracking-[0.015em] border-2 border-markt-border hover:bg-white hover:border-markt-primary shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
-            [routerLink]="['/auth/register']"
+            [routerLink]="[ROUTES_ABSOLUTE.AUTH.REGISTER]"
           >
                     <span class="truncate">I'm a Seller</span>
                     <fa-icon [icon]="faArrowRight" class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-200"></fa-icon>
@@ -455,8 +456,12 @@ import { map } from 'rxjs/operators';
   `]
 })
 export class LandingComponent implements OnInit {
+  // Expose to template
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   get isAuthenticated$() {
     return this.authService.authState$.pipe(

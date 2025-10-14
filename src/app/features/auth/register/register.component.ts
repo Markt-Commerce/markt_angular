@@ -192,7 +192,7 @@ import { ErrorHandlerService } from '../../../core/services/error-handler.servic
           <div class="text-center">
             <p class="text-sm text-gray-600">
               Already have an account? 
-              <a routerLink="/auth/login" class="font-medium text-[#E94C2A] hover:underline">
+              <a routerLink=ROUTES_ABSOLUTE.AUTH.LOGIN class="font-medium text-[#E94C2A] hover:underline">
                 Sign in
               </a>
             </p>

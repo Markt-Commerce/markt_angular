@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faMessage,
@@ -556,7 +557,7 @@ export class ChatOverviewComponent implements OnInit {
   }
 
   openConversation(conversation: Conversation): void {
-    this.router.navigate(['/app/chat', conversation.id]);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, conversation.id]);
   }
 
   startNewConversation(): void {

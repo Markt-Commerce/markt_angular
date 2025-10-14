@@ -280,7 +280,6 @@ export class AppStateService {
   
   /**
    * Show toast notification
-   * Alias: showNotification for backwards compatibility
    */
   showToast(
     message: string, 
@@ -353,14 +352,6 @@ export class AppStateService {
    */
   toggleQuickActions(): void {
     this.quickActionsOpen.set(!this.quickActionsOpen());
-  }
-  
-  /**
-   * Backwards compatibility alias for showToast
-   * Accepts old notification format: { type, message }
-   */
-  showNotification(notification: { type: 'success' | 'error' | 'warning' | 'info'; message: string }): void {
-    this.showToast(notification.message, notification.type);
   }
   
   // ============================================

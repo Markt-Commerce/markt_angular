@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faClock, faComments, faEllipsisH, faEye, faMapMarkerAlt, faPlus, faRedo, faSearch, faShoppingBag, faStar, faTrash, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { NgOptimizedImage } from '@angular/common';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface RequestCard {
   id: string;
@@ -173,14 +174,14 @@ interface RequestCard {
               <button 
                 class="flex-1 bg-markt-primary text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-markt-secondary transition-colors" 
                 *ngIf="card.status!=='Fulfilled' && card.status!=='Closed'"
-                [routerLink]="['/app/requests', card.id]"
+                [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, card.id]"
               >
                 View Responses
               </button>
               <button 
                 class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" 
                 *ngIf="card.status==='Fulfilled'"
-                [routerLink]="['/app/requests', card.id]"
+                [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, card.id]"
               >
                 View Details
               </button>
@@ -199,6 +200,9 @@ interface RequestCard {
   `,
 })
 export class MyRequestsComponent {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   faPlus = faPlus; // kept for parity if needed in future
   faSearch = faSearch;
   faComments = faComments;

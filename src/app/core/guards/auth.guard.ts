@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { AccessControlService } from '../services/access-control.service';
 import { AppStateService } from '../services/app-state.service';
 import { ErrorHandlerService } from '../services/error-handler.service';
+import { ROUTES_ABSOLUTE } from '../config/routes.config';
 
 export const AuthGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -19,13 +20,13 @@ export const AuthGuard: CanActivateFn = (route, state) => {
 
     // Store the intended destination for redirect after login
     const returnUrl = state.url;
-    router.navigate(['/auth/login'], { 
-      queryParams: { returnUrl: returnUrl !== '/auth/login' ? returnUrl : undefined }
+    router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN], { 
+      queryParams: { returnUrl: returnUrl !== ROUTES_ABSOLUTE.AUTH.LOGIN ? returnUrl : undefined }
     });
     return false;
   } catch (error) {
     errorHandler.logError(error, 'AuthGuard error');
-    router.navigate(['/auth/login']);
+    router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
     return false;
   }
 };
@@ -44,8 +45,8 @@ export const RoleGuard: CanActivateFn = (route, state) => {
     // First check if user is authenticated
     if (!auth.isAuthenticated()) {
       const returnUrl = state.url;
-      router.navigate(['/auth/login'], { 
-        queryParams: { returnUrl: returnUrl !== '/auth/login' ? returnUrl : undefined }
+      router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN], { 
+        queryParams: { returnUrl: returnUrl !== ROUTES_ABSOLUTE.AUTH.LOGIN ? returnUrl : undefined }
       });
       return false;
     }
@@ -63,7 +64,7 @@ export const RoleGuard: CanActivateFn = (route, state) => {
         type: 'warning', 
         message: `This feature requires a ${required} account. Please create or switch to a ${required} account.` 
       });
-      return router.createUrlTree(['/app/dashboard'], { 
+      return router.createUrlTree([ROUTES_ABSOLUTE.APP.DASHBOARD], { 
         queryParams: { suggestRole: required, redirect: state.url } 
       });
     }
@@ -81,14 +82,14 @@ export const RoleGuard: CanActivateFn = (route, state) => {
           type: 'error', 
           message: 'Failed to switch roles. Please try again.' 
         });
-        return of(router.createUrlTree(['/app/dashboard'], { 
+        return of(router.createUrlTree([ROUTES_ABSOLUTE.APP.DASHBOARD], { 
           queryParams: { suggestRole: required } 
         }));
       })
     );
   } catch (error) {
     errorHandler.logError(error, 'RoleGuard error');
-    router.navigate(['/auth/login']);
+    router.navigate([ROUTES_ABSOLUTE.AUTH.LOGIN]);
     return false;
   }
 };
@@ -107,7 +108,7 @@ export const GuestGuard: CanActivateFn = (route, state) => {
     
     // User is already authenticated, redirect to dashboard
     // This prevents authenticated users from accessing login/register pages
-    router.navigate(['/app/dashboard']);
+    router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
     return false;
   } catch (error) {
     errorHandler.logError(error, 'GuestGuard error - allowing access to auth route');

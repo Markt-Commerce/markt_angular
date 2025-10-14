@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface PrivacySetting {
   id: string;
@@ -722,6 +723,6 @@ export class PrivacyComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/app/settings']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SETTINGS]);
   }
 } 

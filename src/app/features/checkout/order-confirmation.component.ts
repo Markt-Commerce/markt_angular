@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faCheck, 
@@ -470,12 +471,12 @@ export class OrderConfirmationComponent implements OnInit {
 
   trackOrder(): void {
     // Navigate to order tracking page
-    this.router.navigate(['/app/orders', this.orderData?.id, 'track']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, this.orderData?.id, 'track']);
   }
 
   viewOrderHistory(): void {
     // Navigate to order history page
-    this.router.navigate(['/app/orders']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT]);
   }
 
   contactSellers(): void {
@@ -485,6 +486,6 @@ export class OrderConfirmationComponent implements OnInit {
 
   continueShopping(): void {
     // Navigate back to marketplace
-    this.router.navigate(['/app/marketplace']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.MARKETPLACE]);
   }
 }

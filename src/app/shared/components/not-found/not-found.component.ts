@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
   selector: 'app-not-found',
@@ -18,14 +19,14 @@ import { ButtonComponent } from '../button/button.component';
           <app-button 
             variant="primary" 
             size="lg"
-            [routerLink]="['/landing']"
+            [routerLink]="[ROUTES_ABSOLUTE.LANDING]"
           >
             Go Home
           </app-button>
           <app-button 
             variant="secondary" 
             size="lg"
-            [routerLink]="['/app/marketplace']"
+            [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
           >
             Browse Marketplace
           </app-button>
@@ -34,14 +35,14 @@ import { ButtonComponent } from '../button/button.component';
         <div class="helpful-links">
           <h3>Popular Pages</h3>
           <div class="links-grid">
-            <a routerLink="/app/marketplace" class="helpful-link">
+            <a routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE class="helpful-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9,22 9,12 15,12 15,22"></polyline>
               </svg>
               Marketplace
             </a>
-            <a routerLink="/app/community" class="helpful-link">
+            <a routerLink=ROUTES_ABSOLUTE.APP.COMMUNITY class="helpful-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -50,7 +51,7 @@ import { ButtonComponent } from '../button/button.component';
               </svg>
               Community
             </a>
-            <a routerLink="/auth/login" class="helpful-link">
+            <a routerLink=ROUTES_ABSOLUTE.AUTH.LOGIN class="helpful-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                 <polyline points="10,17 15,12 10,7"></polyline>
@@ -58,7 +59,7 @@ import { ButtonComponent } from '../button/button.component';
               </svg>
               Sign In
             </a>
-            <a routerLink="/auth/register" class="helpful-link">
+            <a routerLink=ROUTES_ABSOLUTE.AUTH.REGISTER class="helpful-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="8.5" cy="7" r="4"></circle>
@@ -191,5 +192,5 @@ import { ButtonComponent } from '../button/button.component';
   `]
 })
 export class NotFoundComponent {
-  // 404 page component
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
 } 

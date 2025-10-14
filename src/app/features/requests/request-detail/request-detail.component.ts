@@ -7,6 +7,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { CartService } from '../../../core/services/cart.service';
 import { NavigationService } from '../../../core/services/navigation.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faEdit, 
@@ -231,7 +232,7 @@ export class RequestDetailComponent implements OnInit {
     this.breadcrumbService.setBreadcrumbs([
       {
         label: 'Dashboard',
-        url: '/app/dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
         icon: 'home',
         isClickable: true,
         isCurrentPage: false,
@@ -239,7 +240,7 @@ export class RequestDetailComponent implements OnInit {
       },
       {
         label: 'Requests',
-        url: '/app/requests',
+        url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
         icon: 'clipboard',
         isClickable: true,
         isCurrentPage: false,
@@ -348,7 +349,7 @@ export class RequestDetailComponent implements OnInit {
         response._processing = false;
         
         // Navigate to checkout or show success message
-        this.router.navigate(['/app/checkout'], { 
+        this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { 
           queryParams: { source: 'offer', offerId: response.id } 
         });
       }, 1000);

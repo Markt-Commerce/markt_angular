@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface OrderItem {
   id: string;
@@ -68,7 +69,7 @@ interface Order {
           variant="secondary" 
           size="lg"
           [outline]="true"
-          [routerLink]="['/app/orders']"
+          [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]"
         >
           ← Back to Orders
         </app-button>
@@ -310,7 +311,7 @@ interface Order {
         <app-button 
           variant="primary" 
           size="lg"
-          [routerLink]="['/app/orders']"
+          [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]"
         >
           Back to Orders
         </app-button>
@@ -790,6 +791,9 @@ interface Order {
   `]
 })
 export class OrderDetailComponent implements OnInit {
+  // Expose routes for template access
+  protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+  
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private apiService = inject(ApiService);

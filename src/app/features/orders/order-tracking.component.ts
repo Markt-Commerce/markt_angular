@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { 
   faCopy, 
   faTruck, 
@@ -503,7 +504,7 @@ export class OrderTrackingComponent implements OnInit {
 
   changeDeliveryInstructions(): void {
     // Navigate to delivery instructions page or open modal
-    this.router.navigate(['/app/orders', this.route.snapshot.paramMap.get('id'), 'delivery-instructions']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, this.route.snapshot.paramMap.get('id'), 'delivery-instructions']);
   }
 
   contactSellers(): void {

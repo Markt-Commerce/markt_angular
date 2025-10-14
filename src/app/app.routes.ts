@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard, GuestGuard, RoleGuard } from './core/guards/auth.guard';
+import { ROUTES_ABSOLUTE } from './core/config/routes.config';
 
 /**
  * Route Guard Strategy:
@@ -30,7 +31,7 @@ import { AuthGuard, GuestGuard, RoleGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/landing',
+    redirectTo: ROUTES_ABSOLUTE.LANDING,
     pathMatch: 'full'
   },
   {

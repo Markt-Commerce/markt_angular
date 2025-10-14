@@ -10,8 +10,8 @@ import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { ROUTES_ABSOLUTE, buildPath } from '../../../core-next/config/routes.config';
-import { getRouteStateMeta } from '../../../core-next/config/route-state-map';
+import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
+import { getRouteStateMeta } from '../../core/config/route-state-map';
 
 describe('Marketplace Pilot - Route Constants Integration', () => {
   

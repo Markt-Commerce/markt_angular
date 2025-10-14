@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { timer, Subscription } from 'rxjs';
 import { ToggleSwitchComponent } from '../../../shared/components/toggle-switch/toggle-switch.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faMobileScreen, 
@@ -865,7 +866,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/app/settings']);
+    this.router.navigate([ROUTES_ABSOLUTE.APP.SETTINGS]);
   }
 
   testNotification(type: 'push' | 'email' | 'sms'): void {
