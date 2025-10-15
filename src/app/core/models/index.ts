@@ -116,7 +116,7 @@ export interface UserProfile extends User {
 export interface UserLogin {
   email: string;
   password: string;
-  account_type: UserRole;
+  account_type?: UserRole; // Optional - backend determines role from user's registration data
 }
 
 export interface UserRegister {

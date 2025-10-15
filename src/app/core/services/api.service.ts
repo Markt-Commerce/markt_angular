@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -62,7 +63,7 @@ export interface UserData {
 export interface LoginCredentials {
   email: string;
   password: string;
-  account_type: UserRole;
+  account_type?: UserRole; // Optional - backend determines role from user's registration data
 }
 
 export interface ProfileData {
@@ -379,7 +380,7 @@ export interface CouponData {
 export class ApiService {
   private http = inject(HttpClient);
   private typeSafety = inject(TypeSafetyService);
-  private readonly API_BASE_URL = '/api/v1';
+  private readonly API_BASE_URL = environment.apiBaseUrl;
   
   // Configure HTTP options to include credentials (cookies)
   private readonly httpOptions = {

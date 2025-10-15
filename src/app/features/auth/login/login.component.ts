@@ -147,10 +147,20 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
                 <span class="ml-2 text-sm text-muted">Remember me</span>
               </label>
               <a 
-                routerLink=ROUTES_ABSOLUTE.AUTH.FORGOT_PASSWORD
+                [routerLink]="[ROUTES_ABSOLUTE.AUTH.FORGOT_PASSWORD]"
                 class="text-sm text-primary hover:text-secondary transition-colors cursor-pointer">
                 Forgot password?
               </a>
+            </div>
+
+            <!-- Error Message Display -->
+            <div *ngIf="errorMessage()" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div class="flex items-start">
+                <svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <span>{{ errorMessage() }}</span>
+              </div>
             </div>
 
             <!-- Login Button -->
@@ -207,7 +217,7 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
               <p class="text-sm text-muted">
                 Don't have an account? 
                 <a 
-                  routerLink=ROUTES_ABSOLUTE.AUTH.REGISTER
+                  [routerLink]="[ROUTES_ABSOLUTE.AUTH.REGISTER]"
                   class="text-primary hover:text-secondary font-medium transition-colors cursor-pointer">
                   Sign up here
                 </a>
@@ -290,6 +300,9 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
 
+  // Routes for template access
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
+
   // Font Awesome Icons
   faEnvelope = faEnvelope;
   faLock = faLock;
@@ -304,6 +317,7 @@ export class LoginComponent implements OnInit {
   // Signals for reactive state management
   showPassword = signal<boolean>(false);
   isSubmitting = signal<boolean>(false);
+  errorMessage = signal<string | null>(null);
 
   // Form definition
   loginForm: FormGroup;
@@ -334,28 +348,35 @@ export class LoginComponent implements OnInit {
   /**
    * Handle form submission
    * Validates the form and attempts to authenticate the user
+   * Note: account_type is removed from login - backend determines user's role capabilities
+   * and default role based on their registration data
    */
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isSubmitting.set(true);
+      this.errorMessage.set(null); // Clear any previous errors
       
       const { email, password, rememberMe } = this.loginForm.value;
       
-      this.authService.login({ email, password, account_type: 'buyer' }).subscribe({
+      this.authService.login({ email, password }).subscribe({
         next: (response: any) => {
           if (response.success) {
             // Navigate to dashboard on successful login
+            // User's role (buyer/seller) is determined by backend and stored in User object
             this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
           } else {
             // Handle login error (show error message)
-            console.error('Login failed:', response.message);
+            const errorMsg = response.message || 'Login failed. Please check your credentials.';
+            this.errorMessage.set(errorMsg);
             this.isSubmitting.set(false);
           }
         },
         error: (error: any) => {
-          console.error('Login error:', error);
-          this.isSubmitting.set(false);
           // Handle network or server errors
+          // The error message from the API interceptor is in error.message
+          const errorMsg = error?.message || 'Unable to connect. Please try again later.';
+          this.errorMessage.set(errorMsg);
+          this.isSubmitting.set(false);
         }
       });
     } else {
