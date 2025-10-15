@@ -381,6 +381,21 @@ export class ApiService {
   private http = inject(HttpClient);
   private typeSafety = inject(TypeSafetyService);
   private readonly API_BASE_URL = environment.apiBaseUrl;
+
+  /**
+   * Resolve an absolute API base URL safely at runtime.
+   * - If env base is absolute (http/https), use it as-is
+   * - If env base is relative:
+   *   - In development: keep relative to use dev proxy
+   *   - In production: fall back to the known API origin
+   */
+  private resolveApiBaseUrl(): string {
+    const isAbsolute = /^https?:\/\//i.test(this.API_BASE_URL);
+    if (isAbsolute) return this.API_BASE_URL;
+    if (!environment.production) return this.API_BASE_URL; // dev proxy
+    // production safety fallback
+    return 'https://test.api.marktcommerce.com/api/v1';
+  }
   
   // Configure HTTP options to include credentials (cookies)
   private readonly httpOptions = {
@@ -1371,7 +1386,7 @@ export class ApiService {
    * Get full URL for endpoint
    */
   private getUrl(endpoint: string): string {
-    return `${this.API_BASE_URL}${endpoint}`;
+    return `${this.resolveApiBaseUrl()}${endpoint}`;
   }
 
   /**
