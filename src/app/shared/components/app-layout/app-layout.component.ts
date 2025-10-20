@@ -127,14 +127,14 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-border"
                 >
                   <a 
-                    routerLink=ROUTES_ABSOLUTE.APP.PROFILE
+                    [routerLink]="[ROUTES_ABSOLUTE.APP.PROFILE]"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
                     (click)="closeUserMenu()"
                   >
                     Profile
                   </a>
                   <a 
-                    routerLink=ROUTES_ABSOLUTE.APP.SETTINGS
+                    [routerLink]="[ROUTES_ABSOLUTE.APP.SETTINGS]"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
                     (click)="closeUserMenu()"
                   >
@@ -200,7 +200,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
             <nav class="space-y-2">
               <!-- Dashboard -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.DASHBOARD 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.DASHBOARD]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -220,7 +220,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Marketplace -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -230,7 +230,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Community -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.COMMUNITY 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.COMMUNITY]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -240,7 +240,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Messages -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.CHAT 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -256,7 +256,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Orders -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.ORDERS.ROOT 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -266,7 +266,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Offers -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.OFFERS.ROOT 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.OFFERS.ROOT]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -276,7 +276,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Requests -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.REQUESTS.ROOT 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -296,7 +296,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Cart -->
               <a 
-                routerLink=ROUTES_ABSOLUTE.APP.CART 
+                [routerLink]="[ROUTES_ABSOLUTE.APP.CART]" 
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -376,7 +376,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                 </a>
 
                 <a 
-                  routerLink=ROUTES_ABSOLUTE.APP.SETTINGS 
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.SETTINGS]" 
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -413,7 +413,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
           </a>
           
           <a 
-            routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE 
+            [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]" 
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
           >
@@ -422,7 +422,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
           </a>
           
           <a 
-            routerLink=ROUTES_ABSOLUTE.APP.CART 
+            [routerLink]="[ROUTES_ABSOLUTE.APP.CART]" 
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
           >
@@ -437,7 +437,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
           </a>
           
           <a 
-            routerLink=ROUTES_ABSOLUTE.APP.CHAT 
+            [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]" 
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
           >
@@ -452,7 +452,7 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
           </a>
           
           <a 
-            routerLink=ROUTES_ABSOLUTE.APP.ORDERS.ROOT 
+            [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]" 
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
           >
@@ -489,6 +489,9 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   private chatService = inject(ChatService);
   private observableUtils = inject(ObservableUtilsService);
   public access = inject(AccessControlService);
+
+  // Routes for template access
+  readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
 
   // FontAwesome Icons
   faBars = faBars;
@@ -602,7 +605,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   }
 
   goToNotifications(): void {
-    this.router.navigate([ROUTES_ABSOLUTE.APP.NOTIFICATIONS]);
+    this.router.navigate([this.ROUTES_ABSOLUTE.APP.NOTIFICATIONS]);
   }
 
   getUserDisplayName(): string {
@@ -619,10 +622,10 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   logout(): void {
     this.observableUtils.createSafeObservable({
       source: this.authService.logout(),
-      successHandler: () => this.router.navigate([ROUTES_ABSOLUTE.LANDING]),
+      successHandler: () => this.router.navigate([this.ROUTES_ABSOLUTE.LANDING]),
       errorSetter: (error: string | null) => {
         console.error('Logout error:', error);
-        this.router.navigate([ROUTES_ABSOLUTE.LANDING]);
+        this.router.navigate([this.ROUTES_ABSOLUTE.LANDING]);
       }
     });
   }

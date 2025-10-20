@@ -333,7 +333,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     // Check if user is already logged in
     if (this.authService.isAuthenticated()) {
-      this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
+      this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
     }
   }
 
@@ -363,7 +363,7 @@ export class LoginComponent implements OnInit {
           if (response.success) {
             // Navigate to dashboard on successful login
             // User's role (buyer/seller) is determined by backend and stored in User object
-            this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
+            this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
           } else {
             // Handle login error (show error message)
             const errorMsg = response.message || 'Login failed. Please check your credentials.';
@@ -397,7 +397,7 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithGoogle().subscribe({
       next: (response: any) => {
         if (response.success) {
-          this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
+          this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
           console.error('Google login failed:', response.message);
           this.isSubmitting.set(false);
@@ -420,7 +420,7 @@ export class LoginComponent implements OnInit {
     this.authService.loginWithFacebook().subscribe({
       next: (response: any) => {
         if (response.success) {
-          this.router.navigate([ROUTES_ABSOLUTE.APP.DASHBOARD]);
+          this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
           console.error('Facebook login failed:', response.message);
           this.isSubmitting.set(false);
