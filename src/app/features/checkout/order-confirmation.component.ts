@@ -465,7 +465,6 @@ export class OrderConfirmationComponent implements OnInit {
       }, 2000);
     }).catch(() => {
       // Fallback for older browsers
-      console.log('Copy to clipboard not supported');
     });
   }
 

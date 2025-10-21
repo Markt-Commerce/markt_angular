@@ -764,7 +764,6 @@ export class FeedComponent implements OnInit {
   addSocialPostMedia(postId: string, mediaFile: File): void {
     this.apiService.addSocialPostMedia(postId, mediaFile).subscribe({
       next: (response) => {
-        console.log('Social post media added:', response.data);
       },
       error: (error) => {
         console.error('Error adding social post media:', error);
@@ -775,7 +774,6 @@ export class FeedComponent implements OnInit {
   deleteSocialPostMedia(postId: string, mediaId: string): void {
     this.apiService.deleteSocialPostMedia(postId, Number(mediaId)).subscribe({
       next: (response) => {
-        console.log('Social post media deleted:', response.data);
       },
       error: (error) => {
         console.error('Error deleting social post media:', error);
@@ -786,7 +784,6 @@ export class FeedComponent implements OnInit {
   getSocialPostMedia(postId: string): void {
     this.apiService.getSocialPostMedia(postId).subscribe({
       next: (response) => {
-        console.log('Social post media loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading social post media:', error);
@@ -798,7 +795,6 @@ export class FeedComponent implements OnInit {
   addCommentViaApi(postId: string, commentData: any): void {
     this.apiService.addComment(postId, commentData).subscribe({
       next: (response) => {
-        console.log('Comment added:', response.data);
         this.loadComments({ id: postId }); // Refresh comments
       },
       error: (error) => {
@@ -810,7 +806,6 @@ export class FeedComponent implements OnInit {
   addCommentReaction(commentId: string, reactionData: any): void {
     this.apiService.addCommentReaction(commentId, reactionData).subscribe({
       next: (response) => {
-        console.log('Comment reaction added:', response.data);
       },
       error: (error) => {
         console.error('Error adding comment reaction:', error);
@@ -821,7 +816,6 @@ export class FeedComponent implements OnInit {
   addMessageReaction(messageId: string, reactionData: any): void {
     this.apiService.addMessageReaction(messageId, reactionData).subscribe({
       next: (response) => {
-        console.log('Message reaction added:', response.data);
       },
       error: (error) => {
         console.error('Error adding message reaction:', error);
@@ -832,7 +826,6 @@ export class FeedComponent implements OnInit {
   approveNichePost(nichePostId: string, approvalData: any): void {
     this.apiService.approveNichePost(nichePostId, approvalData).subscribe({
       next: (response) => {
-        console.log('Niche post approved:', response.data);
       },
       error: (error) => {
         console.error('Error approving niche post:', error);
@@ -843,7 +836,6 @@ export class FeedComponent implements OnInit {
   archiveChatRoom(roomId: string): void {
     this.apiService.archiveChatRoom(roomId).subscribe({
       next: (response) => {
-        console.log('Chat room archived:', response.data);
       },
       error: (error) => {
         console.error('Error archiving chat room:', error);
@@ -854,7 +846,6 @@ export class FeedComponent implements OnInit {
   bookmarkPost(postId: string): void {
     this.apiService.bookmarkPost(postId).subscribe({
       next: (response) => {
-        console.log('Post bookmarked:', response.data);
       },
       error: (error) => {
         console.error('Error bookmarking post:', error);
@@ -865,7 +856,6 @@ export class FeedComponent implements OnInit {
   canPostInNiche(nicheId: string): void {
     this.apiService.canPostInNiche(nicheId).subscribe({
       next: (response) => {
-        console.log('Can post in niche:', response.data);
       },
       error: (error) => {
         console.error('Error checking niche posting permission:', error);
@@ -876,7 +866,6 @@ export class FeedComponent implements OnInit {
   createNiche(nicheData: any): void {
     this.apiService.createNiche(nicheData).subscribe({
       next: (response) => {
-        console.log('Niche created:', response.data);
       },
       error: (error) => {
         console.error('Error creating niche:', error);
@@ -887,7 +876,6 @@ export class FeedComponent implements OnInit {
   createNichePost(nicheId: string, postData: any): void {
     this.apiService.createNichePost(nicheId, postData).subscribe({
       next: (response) => {
-        console.log('Niche post created:', response.data);
       },
       error: (error) => {
         console.error('Error creating niche post:', error);
@@ -898,7 +886,6 @@ export class FeedComponent implements OnInit {
   deletePostViaApi(postId: string): void {
     this.apiService.deletePost(postId).subscribe({
       next: (response) => {
-        console.log('Post deleted:', response.data);
         this.loadFeed(); // Refresh feed
       },
       error: (error) => {
@@ -910,7 +897,6 @@ export class FeedComponent implements OnInit {
   followUser(followeeId: string): void {
     this.apiService.followUser(followeeId).subscribe({
       next: (response) => {
-        console.log('User followed:', response.data);
       },
       error: (error) => {
         console.error('Error following user:', error);
@@ -921,7 +907,6 @@ export class FeedComponent implements OnInit {
   getFollowers(userId: string): void {
     this.apiService.getFollowers(userId).subscribe({
       next: (response) => {
-        console.log('Followers loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading followers:', error);
@@ -932,7 +917,6 @@ export class FeedComponent implements OnInit {
   getFollowing(userId: string): void {
     this.apiService.getFollowing(userId).subscribe({
       next: (response) => {
-        console.log('Following loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading following:', error);
@@ -943,7 +927,6 @@ export class FeedComponent implements OnInit {
   getMyNiches(): void {
     this.apiService.getMyNiches().subscribe({
       next: (response) => {
-        console.log('My niches loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading my niches:', error);
@@ -954,7 +937,6 @@ export class FeedComponent implements OnInit {
   getNiche(nicheId: string): void {
     this.apiService.getNiche(nicheId).subscribe({
       next: (response) => {
-        console.log('Niche loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading niche:', error);
@@ -965,7 +947,6 @@ export class FeedComponent implements OnInit {
   getNicheFeed(nicheId: string): void {
     this.apiService.getNicheFeed(nicheId).subscribe({
       next: (response) => {
-        console.log('Niche feed loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading niche feed:', error);
@@ -976,7 +957,6 @@ export class FeedComponent implements OnInit {
   getNicheMembers(nicheId: string): void {
     this.apiService.getNicheMembers(nicheId).subscribe({
       next: (response) => {
-        console.log('Niche members loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading niche members:', error);
@@ -987,7 +967,6 @@ export class FeedComponent implements OnInit {
   getNichePosts(nicheId: string): void {
     this.apiService.getNichePosts(nicheId).subscribe({
       next: (response) => {
-        console.log('Niche posts loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading niche posts:', error);
@@ -998,7 +977,6 @@ export class FeedComponent implements OnInit {
   getNiches(): void {
     this.apiService.getNiches().subscribe({
       next: (response) => {
-        console.log('Niches loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading niches:', error);
@@ -1009,7 +987,6 @@ export class FeedComponent implements OnInit {
   joinNiche(nicheId: string): void {
     this.apiService.joinNiche(nicheId).subscribe({
       next: (response) => {
-        console.log('Joined niche:', response.data);
       },
       error: (error) => {
         console.error('Error joining niche:', error);
@@ -1020,7 +997,6 @@ export class FeedComponent implements OnInit {
   leaveNiche(nicheId: string): void {
     this.apiService.leaveNiche(nicheId).subscribe({
       next: (response) => {
-        console.log('Left niche:', response.data);
       },
       error: (error) => {
         console.error('Error leaving niche:', error);
@@ -1031,7 +1007,6 @@ export class FeedComponent implements OnInit {
   moderateNiche(nicheId: string, moderationData: any): void {
     this.apiService.moderateNiche(nicheId, moderationData).subscribe({
       next: (response) => {
-        console.log('Niche moderated:', response.data);
       },
       error: (error) => {
         console.error('Error moderating niche:', error);
@@ -1042,7 +1017,6 @@ export class FeedComponent implements OnInit {
   unfollowUser(followeeId: string): void {
     this.apiService.unfollowUser(followeeId).subscribe({
       next: (response) => {
-        console.log('User unfollowed:', response.data);
       },
       error: (error) => {
         console.error('Error unfollowing user:', error);
@@ -1053,7 +1027,6 @@ export class FeedComponent implements OnInit {
   unlikePost(postId: string): void {
     this.apiService.unlikePost(postId).subscribe({
       next: (response) => {
-        console.log('Post unliked:', response.data);
       },
       error: (error) => {
         console.error('Error unliking post:', error);
@@ -1064,7 +1037,6 @@ export class FeedComponent implements OnInit {
   updatePost(postId: string, postData: any): void {
     this.apiService.updatePost(postId, postData).subscribe({
       next: (response) => {
-        console.log('Post updated:', response.data);
         this.loadFeed(); // Refresh feed
       },
       error: (error) => {
@@ -1077,7 +1049,6 @@ export class FeedComponent implements OnInit {
   getArchivedPosts(): void {
     this.apiService.getArchivedPosts().subscribe({
       next: (response) => {
-        console.log('Archived posts loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading archived posts:', error);
@@ -1088,7 +1059,6 @@ export class FeedComponent implements OnInit {
   getDraftPosts(): void {
     this.apiService.getDraftPosts().subscribe({
       next: (response) => {
-        console.log('Draft posts loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading draft posts:', error);
@@ -1099,7 +1069,6 @@ export class FeedComponent implements OnInit {
   getDiscoveryFeed(): void {
     this.apiService.getDiscoveryFeed().subscribe({
       next: (response) => {
-        console.log('Discovery feed loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading discovery feed:', error);
@@ -1110,7 +1079,6 @@ export class FeedComponent implements OnInit {
   getFollowingFeed(): void {
     this.apiService.getFollowingFeed().subscribe({
       next: (response) => {
-        console.log('Following feed loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading following feed:', error);
@@ -1121,7 +1089,6 @@ export class FeedComponent implements OnInit {
   getTrendingFeed(): void {
     this.apiService.getTrendingFeed().subscribe({
       next: (response) => {
-        console.log('Trending feed loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading trending feed:', error);
@@ -1132,7 +1099,6 @@ export class FeedComponent implements OnInit {
   deleteComment(commentId: string): void {
     this.apiService.deleteComment(commentId).subscribe({
       next: (response) => {
-        console.log('Comment deleted:', response.data);
       },
       error: (error) => {
         console.error('Error deleting comment:', error);
@@ -1143,7 +1109,6 @@ export class FeedComponent implements OnInit {
   updateComment(commentId: string, commentData: any): void {
     this.apiService.updateComment(commentId, commentData).subscribe({
       next: (response) => {
-        console.log('Comment updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating comment:', error);
@@ -1154,7 +1119,6 @@ export class FeedComponent implements OnInit {
   updateNiche(nicheId: string, nicheData: any): void {
     this.apiService.updateNiche(nicheId, nicheData).subscribe({
       next: (response) => {
-        console.log('Niche updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating niche:', error);

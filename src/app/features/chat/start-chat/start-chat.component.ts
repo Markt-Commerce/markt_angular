@@ -730,7 +730,6 @@ export class StartChatComponent implements OnInit {
    */
   selectTemplate(template: MessageTemplate): void {
     // TODO: Implement template selection logic
-    console.log('Selected template:', template);
   }
 
   /**

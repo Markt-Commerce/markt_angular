@@ -246,7 +246,6 @@ export class SocialFeedComponent implements OnInit {
   private loadFeedData(): void {
     // In a real app, this would load from API
     // For now, we're using mock data defined above
-    console.log('Loading social feed data...');
   }
 
 

@@ -704,7 +704,6 @@ export class AccountComponent implements OnInit {
     setTimeout(() => {
       this.loading = false;
       // In a real implementation, this would trigger a file download
-      console.log('Exporting user data...');
       alert('Data export initiated. You will receive an email when ready.');
     }, 1000);
   }
@@ -722,7 +721,6 @@ export class AccountComponent implements OnInit {
     // For now, we'll simulate the save process
     setTimeout(() => {
       this.loading = false;
-      console.log('Saving changes...');
       alert('Changes saved successfully!');
     }, 1000);
   }
@@ -794,7 +792,6 @@ export class AccountComponent implements OnInit {
         this.userProfile.current_role = newRole;
       }
       this.loading = false;
-      console.log(`Switched to ${newRole} role`);
       alert(`Successfully switched to ${newRole} role!`);
     }, 1000);
   }

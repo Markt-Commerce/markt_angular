@@ -1059,7 +1059,6 @@ export class MarketplaceComponent implements OnInit {
     this.observableUtils.createSafeObservable({
       source: this.apiService.trackProductView(productId),
       successHandler: (response: any) => {
-        console.log('Product view tracked:', response.data);
       },
       errorSetter: (error: string | null) => {
         console.error('Error tracking product view:', error);
@@ -1071,7 +1070,6 @@ export class MarketplaceComponent implements OnInit {
     this.observableUtils.createSafeObservable({
       source: this.apiService.upvoteReview(reviewId),
       successHandler: (response: any) => {
-        console.log('Review upvoted:', response.data);
       },
       errorSetter: (error: string | null) => {
         console.error('Error upvoting review:', error);

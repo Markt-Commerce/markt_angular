@@ -566,12 +566,10 @@ export class ChatOverviewComponent implements OnInit {
 
   markAllAsRead(): void {
     // TODO: Implement mark all as read
-    console.log('Mark all as read');
   }
 
   archiveSelected(): void {
     // TODO: Implement archive
-    console.log('Archive selected');
   }
 }
 

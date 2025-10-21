@@ -377,7 +377,6 @@ export class SmartBreadcrumbComponent implements OnInit, OnDestroy {
    */
   onBreadcrumbClick(breadcrumb: BreadcrumbItem): void {
     // This could be used for analytics tracking
-    console.log('Breadcrumb navigation:', breadcrumb.label, breadcrumb.url);
   }
 
   /**

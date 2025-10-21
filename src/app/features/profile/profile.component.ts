@@ -564,7 +564,6 @@ export class ProfileComponent implements OnInit {
   createBuyerAccount(buyerData: any): void {
     this.apiService.createBuyerAccount(buyerData).subscribe({
       next: (response) => {
-        console.log('Buyer account created:', response.data);
       },
       error: (error) => {
         console.error('Error creating buyer account:', error);
@@ -575,7 +574,6 @@ export class ProfileComponent implements OnInit {
   createSellerAccount(sellerData: any): void {
     this.apiService.createSellerAccount(sellerData).subscribe({
       next: (response) => {
-        console.log('Seller account created:', response.data);
       },
       error: (error) => {
         console.error('Error creating seller account:', error);
@@ -586,7 +584,6 @@ export class ProfileComponent implements OnInit {
   updateBuyerProfile(buyerData: any): void {
     this.apiService.updateBuyerProfile(buyerData).subscribe({
       next: (response) => {
-        console.log('Buyer profile updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating buyer profile:', error);
@@ -597,7 +594,6 @@ export class ProfileComponent implements OnInit {
   updateSellerProfile(sellerData: any): void {
     this.apiService.updateSellerProfile(sellerData).subscribe({
       next: (response) => {
-        console.log('Seller profile updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating seller profile:', error);
@@ -621,7 +617,6 @@ export class ProfileComponent implements OnInit {
   getUsers(): void {
     this.apiService.getUsers().subscribe({
       next: (response) => {
-        console.log('Users loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading users:', error);
@@ -632,7 +627,6 @@ export class ProfileComponent implements OnInit {
   getPublicProfile(userId: string): void {
     this.apiService.getPublicProfile(userId).subscribe({
       next: (response) => {
-        console.log('Public profile loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading public profile:', error);
@@ -643,7 +637,6 @@ export class ProfileComponent implements OnInit {
   loadUserSettings(): void {
     this.apiService.getUserSettings().subscribe({
       next: (response) => {
-        console.log('User settings loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading user settings:', error);
@@ -654,7 +647,6 @@ export class ProfileComponent implements OnInit {
   updateUserSettings(settings: any): void {
     this.apiService.updateUserSettings(settings).subscribe({
       next: (response) => {
-        console.log('User settings updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating user settings:', error);
@@ -665,7 +657,6 @@ export class ProfileComponent implements OnInit {
   passwordReset(email: string): void {
     this.apiService.passwordReset(email).subscribe({
       next: (response) => {
-        console.log('Password reset email sent:', response.data);
       },
       error: (error) => {
         console.error('Error sending password reset:', error);
@@ -676,7 +667,6 @@ export class ProfileComponent implements OnInit {
   passwordResetConfirm(resetData: any): void {
     this.apiService.passwordResetConfirm(resetData).subscribe({
       next: (response) => {
-        console.log('Password reset confirmed:', response.data);
       },
       error: (error) => {
         console.error('Error confirming password reset:', error);
@@ -687,7 +677,6 @@ export class ProfileComponent implements OnInit {
   sendEmailVerification(email: string): void {
     this.apiService.sendEmailVerification(email).subscribe({
       next: (response) => {
-        console.log('Email verification sent:', response.data);
       },
       error: (error) => {
         console.error('Error sending email verification:', error);
@@ -698,7 +687,6 @@ export class ProfileComponent implements OnInit {
   verifyEmail(verificationData: any): void {
     this.apiService.verifyEmail(verificationData).subscribe({
       next: (response) => {
-        console.log('Email verified:', response.data);
       },
       error: (error) => {
         console.error('Error verifying email:', error);
@@ -709,7 +697,6 @@ export class ProfileComponent implements OnInit {
   logout(): void {
     this.apiService.logout().subscribe({
       next: (response) => {
-        console.log('Logged out successfully:', response.data);
       },
       error: (error) => {
         console.error('Error logging out:', error);

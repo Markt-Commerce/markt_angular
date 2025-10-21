@@ -690,12 +690,10 @@ export class ChatDetailComponent implements OnInit {
 
   attachFile(): void {
     // TODO: Implement file attachment
-    console.log('Attach file clicked');
   }
 
   attachImage(): void {
     // TODO: Implement image attachment
-    console.log('Attach image clicked');
   }
 
   viewProfile(): void {
@@ -707,14 +705,12 @@ export class ChatDetailComponent implements OnInit {
   reportUser(): void {
     if (confirm('Are you sure you want to report this user?')) {
       // TODO: Implement report user
-      console.log('Report user clicked');
     }
   }
 
   blockUser(): void {
     if (confirm('Are you sure you want to block this user?')) {
       // TODO: Implement block user
-      console.log('Block user clicked');
     }
   }
 

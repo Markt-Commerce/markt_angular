@@ -1225,7 +1225,6 @@ export class CommunityComponent implements OnInit {
   }
 
   subscribeToEvents(): void {
-    console.log('Subscribing to community events');
   }
 
   formatTime(dateString: string): string {

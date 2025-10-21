@@ -801,12 +801,10 @@ export class CreateListingComponent implements OnInit {
     // Save as draft logic
     setTimeout(() => {
       this.loading.set(false);
-      console.log('Saved as draft');
     }, 1000);
   }
 
   previewListing(): void {
-    console.log('Preview listing');
     // Navigate to preview or open modal
   }
 
@@ -815,7 +813,6 @@ export class CreateListingComponent implements OnInit {
       this.loading.set(true);
       
       const formData = this.listingForm.value;
-      console.log('Form submitted:', formData);
       
       // Simulate API call
       setTimeout(() => {

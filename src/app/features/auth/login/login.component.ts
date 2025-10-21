@@ -360,14 +360,13 @@ export class LoginComponent implements OnInit {
       
       this.authService.login({ email, password }).subscribe({
         next: (response: any) => {
-          if (response.success) {
-            // Navigate to dashboard on successful login
-            // User's role (buyer/seller) is determined by backend and stored in User object
+          // The AuthService handles the response and updates auth state
+          // If we reach here, login was successful (AuthService would have thrown error otherwise)
+          // Check if user is now authenticated
+          if (this.authService.isAuthenticated()) {
             this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
           } else {
-            // Handle login error (show error message)
-            const errorMsg = response.message || 'Login failed. Please check your credentials.';
-            this.errorMessage.set(errorMsg);
+            this.errorMessage.set('Login failed. Please check your credentials.');
             this.isSubmitting.set(false);
           }
         },
@@ -399,12 +398,10 @@ export class LoginComponent implements OnInit {
         if (response.success) {
           this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
-          console.error('Google login failed:', response.message);
           this.isSubmitting.set(false);
         }
       },
       error: (error: any) => {
-        console.error('Google login error:', error);
         this.isSubmitting.set(false);
       }
     });
@@ -422,12 +419,10 @@ export class LoginComponent implements OnInit {
         if (response.success) {
           this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
         } else {
-          console.error('Facebook login failed:', response.message);
           this.isSubmitting.set(false);
         }
       },
       error: (error: any) => {
-        console.error('Facebook login error:', error);
         this.isSubmitting.set(false);
       }
     });

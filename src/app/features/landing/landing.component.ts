@@ -466,7 +466,6 @@ export class LandingComponent implements OnInit {
   get isAuthenticated$() {
     return this.authService.authState$.pipe(
       map(state => {
-        console.log('🔍 Landing: Auth state changed:', state);
         return state.isAuthenticated;
       })
     );

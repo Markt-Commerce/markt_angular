@@ -446,7 +446,6 @@ export class ListingsComponent implements OnInit {
 
   showMoreOptions(product: Product): void {
     // Show more options menu or modal
-    console.log('Show more options for product:', product.id);
   }
 
   private resumeProduct(productId: string): void {
@@ -468,7 +467,6 @@ export class ListingsComponent implements OnInit {
 
   private renewProduct(productId: string): void {
     // Implement product renewal logic
-    console.log('Renew product:', productId);
   }
 
   getStockClass(stock: number): string {
@@ -567,7 +565,6 @@ export class ListingsComponent implements OnInit {
     const selected = this.selectedProducts();
     if (selected.length > 0) {
       // Show bulk edit price modal or navigate to bulk edit page
-      console.log('Bulk edit price for products:', selected);
       // Implement bulk price editing logic
     }
   }

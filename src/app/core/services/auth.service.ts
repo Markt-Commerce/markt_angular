@@ -61,14 +61,9 @@ export class AuthService {
     const userData = localStorage.getItem('markt_user');
     const token = localStorage.getItem('markt_token');
     
-    console.log('🔍 AuthService: Initializing auth...');
-    console.log('🔍 AuthService: User data exists:', !!userData);
-    console.log('🔍 AuthService: Token exists:', !!token);
-    
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        console.log('🔍 AuthService: User parsed successfully:', user);
         
         // If we have user data, consider user authenticated even without token
         // (some APIs might not return tokens or use different auth mechanisms)
@@ -78,13 +73,10 @@ export class AuthService {
           isLoading: false,
           error: null
         });
-        console.log('🔍 AuthService: Auth state set to authenticated (with or without token)');
       } catch (error) {
         this.errorHandler.logError(error, 'Error parsing user data');
         this.clearAuth();
       }
-    } else {
-      console.log('🔍 AuthService: No user data found, staying unauthenticated');
     }
   }
 
@@ -171,11 +163,6 @@ export class AuthService {
     return this.apiService.login(credentials).pipe(
       tap({
         next: (response: any) => {
-          console.log('Login response:', response);
-          console.log('Response data:', response?.data);
-          console.log('Response data keys:', response?.data ? Object.keys(response.data) : 'No data');
-          console.log('Response keys:', response ? Object.keys(response) : 'No response');
-          
           // Handle both ApiResponse wrapper and direct data response
           const userData = response?.data || response;
           
@@ -191,18 +178,16 @@ export class AuthService {
             
             if (token) {
               localStorage.setItem('markt_token', token);
-              console.log('Token stored:', token);
-            } else {
-              console.log('No token found in response - this might be normal for this API');
             }
             
             // Set user regardless of token (some APIs don't return tokens)
             this.setUser(userData);
+          } else {
+            this.setError('Invalid response from server');
           }
           this.setLoading(false);
         },
         error: (error: any) => {
-          console.error('Login error:', error);
           // Use the formatted error message from the interceptor
           const errorMessage = error?.message || 'Login failed. Please try again.';
           this.setError(errorMessage);
@@ -212,10 +197,12 @@ export class AuthService {
           try {
             this.errorHandler.logError(error, 'Login error in auth service');
           } catch (logError) {
-            console.error('Failed to log error:', logError);
+            // Silent error logging failure
           }
         }
-      })
+      }),
+      // Return the original response so the component can access it
+      map((response: any) => response)
     );
   }
 
@@ -509,33 +496,27 @@ export class AuthService {
    * Set user and update auth state
    */
   private setUser(user: User): void {
-    console.log('🔍 AuthService: Setting user:', user);
     localStorage.setItem('markt_user', JSON.stringify(user));
-    console.log('🔍 AuthService: User stored in localStorage');
     this.authStateSubject.next({
       user,
       isAuthenticated: true,
       isLoading: false,
       error: null
     });
-    console.log('🔍 AuthService: Auth state updated with user');
   }
 
   /**
    * Clear authentication state
    */
   private clearAuth(): void {
-    console.log('🔍 AuthService: Clearing auth...');
     localStorage.removeItem('markt_user');
     localStorage.removeItem('markt_token');
-    console.log('🔍 AuthService: Auth data removed from localStorage');
     this.authStateSubject.next({
       user: null,
       isAuthenticated: false,
       isLoading: false,
       error: null
     });
-    console.log('🔍 AuthService: Auth state cleared');
   }
 
   /**

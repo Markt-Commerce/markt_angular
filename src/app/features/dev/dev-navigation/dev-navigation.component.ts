@@ -973,7 +973,6 @@ export class DevNavigationComponent {
     if (role) {
       this.authService.switchRole(role).subscribe({
         next: (response) => {
-          console.log(`Role switched to: ${role}`, response);
           this.isRoleToggleVisible.set(false);
         },
         error: (error) => {
@@ -983,7 +982,6 @@ export class DevNavigationComponent {
       });
     } else {
       // For demo purposes, we'll just log that no role is set
-      console.log('No role set (demo mode)');
       this.isRoleToggleVisible.set(false);
     }
   }

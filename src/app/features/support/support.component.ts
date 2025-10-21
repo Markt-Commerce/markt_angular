@@ -982,7 +982,6 @@ export class SupportComponent implements OnInit {
 
   ngOnInit(): void {
     // Initialize component
-    console.log('Support component initialized');
   }
 
   /**
@@ -991,7 +990,6 @@ export class SupportComponent implements OnInit {
    */
   performSearch(): void {
     if (this.searchQuery.trim()) {
-      console.log('Searching for:', this.searchQuery);
       // TODO: Implement actual search functionality
       // this.searchService.searchArticles(this.searchQuery);
     }
@@ -1012,7 +1010,6 @@ export class SupportComponent implements OnInit {
    */
   selectCategory(categoryId: string): void {
     this.selectedCategory = this.selectedCategory === categoryId ? '' : categoryId;
-    console.log('Selected category:', this.selectedCategory);
     // TODO: Implement category filtering
     // this.filterArticlesByCategory(this.selectedCategory);
   }
@@ -1033,7 +1030,6 @@ export class SupportComponent implements OnInit {
    * In a real implementation, this would integrate with a chat service
    */
   startLiveChat(): void {
-    console.log('Starting live chat');
     // TODO: Implement live chat functionality
     // this.chatService.openLiveChat();
   }
@@ -1043,7 +1039,6 @@ export class SupportComponent implements OnInit {
    * In a real implementation, this would navigate to ticket creation
    */
   submitTicket(): void {
-    console.log('Opening ticket submission');
     // TODO: Navigate to ticket creation form
     // this.router.navigate(['/support/tickets/create']);
   }
@@ -1053,7 +1048,6 @@ export class SupportComponent implements OnInit {
    * In a real implementation, this would open email client or contact form
    */
   emailSupport(): void {
-    console.log('Opening email support');
     // TODO: Open email client or contact form
     // window.location.href = 'mailto:support@markt.com';
   }

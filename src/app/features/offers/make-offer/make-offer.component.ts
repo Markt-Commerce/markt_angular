@@ -138,7 +138,6 @@ export class MakeOfferComponent implements OnInit {
   saveDraft(): void {
     if (this.offerForm.valid) {
       // TODO: Save draft to API
-      console.log('Saving draft:', this.offerForm.value);
       // Show success message
     }
   }
@@ -152,7 +151,6 @@ export class MakeOfferComponent implements OnInit {
       };
 
       // TODO: Submit offer to API
-      console.log('Submitting offer:', offerData);
       
       // this.apiService.createOffer(offerData).subscribe({
       //   next: (response) => {

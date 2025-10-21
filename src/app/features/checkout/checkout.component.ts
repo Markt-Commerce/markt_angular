@@ -1101,7 +1101,6 @@ export class CheckoutComponent implements OnInit {
     
     this.apiService.getPayment(id).subscribe({
       next: (response) => {
-        console.log('Payment details:', response.data);
       },
       error: (error) => {
         console.error('Error getting payment:', error);
@@ -1115,7 +1114,6 @@ export class CheckoutComponent implements OnInit {
     const paymentData = this.getPaymentDetails();
     this.apiService.payOrder(this.order.id, paymentData).subscribe({
       next: (response) => {
-        console.log('Order paid:', response.data);
       },
       error: (error) => {
         console.error('Error paying order:', error);
@@ -1126,7 +1124,6 @@ export class CheckoutComponent implements OnInit {
   handlePaystackWebhook(webhookData: any): void {
     this.apiService.handlePaystackWebhook(webhookData).subscribe({
       next: (response) => {
-        console.log('Webhook handled:', response.data);
       },
       error: (error) => {
         console.error('Error handling webhook:', error);
@@ -1140,7 +1137,6 @@ export class CheckoutComponent implements OnInit {
     
     this.apiService.handlePaymentCallback(id).subscribe({
       next: (response) => {
-        console.log('Payment callback handled:', response.data);
       },
       error: (error) => {
         console.error('Error handling payment callback:', error);
@@ -1152,7 +1148,6 @@ export class CheckoutComponent implements OnInit {
   createPayment(paymentData: any): void {
     this.apiService.createPayment(paymentData).subscribe({
       next: (response) => {
-        console.log('Payment created:', response.data);
       },
       error: (error) => {
         console.error('Error creating payment:', error);
@@ -1163,7 +1158,6 @@ export class CheckoutComponent implements OnInit {
   processPayment(paymentId: string, paymentData: any): void {
     this.apiService.processPayment(paymentId, paymentData).subscribe({
       next: (response) => {
-        console.log('Payment processed:', response.data);
       },
       error: (error) => {
         console.error('Error processing payment:', error);
@@ -1174,7 +1168,6 @@ export class CheckoutComponent implements OnInit {
   verifyPayment(paymentId: string): void {
     this.apiService.verifyPayment(paymentId).subscribe({
       next: (response) => {
-        console.log('Payment verified:', response.data);
       },
       error: (error) => {
         console.error('Error verifying payment:', error);
@@ -1185,7 +1178,6 @@ export class CheckoutComponent implements OnInit {
   getPayments(): void {
     this.apiService.getPayments().subscribe({
       next: (response) => {
-        console.log('Payments loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading payments:', error);

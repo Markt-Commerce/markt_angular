@@ -588,7 +588,6 @@ export class CreateRequestComponent implements OnInit {
   addRequestImage(requestId: string, imageFile: File): void {
     this.apiService.addRequestImage(requestId, imageFile).subscribe({
       next: (response) => {
-        console.log('Request image added:', response.data);
       },
       error: (error) => {
         console.error('Error adding request image:', error);
@@ -599,7 +598,6 @@ export class CreateRequestComponent implements OnInit {
   deleteRequestImage(requestId: string, imageId: string): void {
     this.apiService.deleteRequestImage(requestId, parseInt(imageId)).subscribe({
       next: (response) => {
-        console.log('Request image deleted:', response.data);
       },
       error: (error) => {
         console.error('Error deleting request image:', error);
@@ -610,7 +608,6 @@ export class CreateRequestComponent implements OnInit {
   getRequestImages(requestId: string): void {
     this.apiService.getRequestImages(requestId).subscribe({
       next: (response) => {
-        console.log('Request images loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading request images:', error);

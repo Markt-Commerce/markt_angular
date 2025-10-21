@@ -71,7 +71,6 @@ export class AppInitializerService {
     }
     
     const startTime = performance.now();
-    console.log('[AppInitializer] Starting application initialization...');
     
     this.initPromise = this.performInitialization(startTime);
     return this.initPromise;
@@ -88,13 +87,11 @@ export class AppInitializerService {
       // ============================================
       // Phase 1: UI State Layer
       // ============================================
-      console.log('[AppInitializer] Phase 1: Initializing UI state...');
       this.appState.initUIState();
       
       // ============================================
       // Phase 2: Core Services (Auth, Config)
       // ============================================
-      console.log('[AppInitializer] Phase 2: Initializing core services...');
       
       // TODO: Uncomment once services are migrated
       /*
@@ -109,7 +106,6 @@ export class AppInitializerService {
       // ============================================
       // Phase 3: Domain Services (depends on auth)
       // ============================================
-      console.log('[AppInitializer] Phase 3: Initializing domain services...');
       
       // These can run in parallel since they don't depend on each other
       const domainInitPromises: Promise<void>[] = [
@@ -131,7 +127,6 @@ export class AppInitializerService {
       // ============================================
       // Phase 4: Real-time Connections (optional)
       // ============================================
-      console.log('[AppInitializer] Phase 4: Initializing real-time connections...');
       
       // Only connect if user is authenticated
       // TODO: Uncomment once services are available
@@ -161,7 +156,6 @@ export class AppInitializerService {
       };
       
       if (result.success) {
-        console.log(`[AppInitializer] ✅ Initialization complete in ${duration.toFixed(2)}ms`);
       } else {
         console.error(`[AppInitializer] ❌ Initialization completed with ${errors.length} error(s)`);
         errors.forEach(error => console.error(`  - ${error}`));
@@ -192,7 +186,6 @@ export class AppInitializerService {
    * Reset all services (used on logout)
    */
   async reset(): Promise<void> {
-    console.log('[AppInitializer] Resetting application state...');
     
     try {
       // Reset UI state
@@ -212,7 +205,6 @@ export class AppInitializerService {
       this.isInitialized = false;
       this.initPromise = null;
       
-      console.log('[AppInitializer] ✅ Reset complete');
     } catch (error) {
       console.error('[AppInitializer] ❌ Reset error:', error);
       throw error;

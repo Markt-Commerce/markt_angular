@@ -956,7 +956,6 @@ export class ContactComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('Contact component initialized');
   }
 
   /**
@@ -973,7 +972,6 @@ export class ContactComponent implements OnInit {
         timestamp: new Date().toISOString()
       };
 
-      console.log('Submitting support request:', formData);
       
       // Simulate API call
       setTimeout(() => {
@@ -1059,7 +1057,6 @@ export class ContactComponent implements OnInit {
    * Starts live chat support
    */
   startLiveChat(): void {
-    console.log('Starting live chat');
     // TODO: Implement live chat functionality
     alert('Live chat feature coming soon!');
   }
@@ -1068,7 +1065,6 @@ export class ContactComponent implements OnInit {
    * Opens community forum
    */
   openCommunityForum(): void {
-    console.log('Opening community forum');
     // TODO: Navigate to community forum
     alert('Community forum feature coming soon!');
   }
@@ -1077,7 +1073,6 @@ export class ContactComponent implements OnInit {
    * Opens help center
    */
   openHelpCenter(): void {
-    console.log('Opening help center');
     // TODO: Navigate to help center
     alert('Help center feature coming soon!');
   }
@@ -1086,7 +1081,6 @@ export class ContactComponent implements OnInit {
    * Views all tickets
    */
   viewAllTickets(): void {
-    console.log('Viewing all tickets');
     // TODO: Navigate to tickets page
     alert('Ticket management feature coming soon!');
   }

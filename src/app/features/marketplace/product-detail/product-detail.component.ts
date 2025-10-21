@@ -540,7 +540,6 @@ export class ProductDetailComponent implements OnInit {
   createProductReview(reviewData: any): void {
     this.apiService.addProductReview(this.product.id, reviewData).subscribe({
       next: (response: any) => {
-        console.log('Product review created:', response.data);
         this.loadReviews(); // Refresh reviews
       },
       error: (error: any) => {
@@ -552,7 +551,6 @@ export class ProductDetailComponent implements OnInit {
   upvoteReview(reviewId: string): void {
     this.apiService.upvoteReview(reviewId).subscribe({
       next: (response) => {
-        console.log('Review upvoted:', response.data);
         this.loadReviews(); // Refresh reviews
       },
       error: (error) => {
@@ -564,7 +562,6 @@ export class ProductDetailComponent implements OnInit {
   trackProductView(): void {
     this.apiService.trackProductView(this.product.id).subscribe({
       next: (response) => {
-        console.log('Product view tracked:', response.data);
       },
       error: (error) => {
         console.error('Error tracking product view:', error);

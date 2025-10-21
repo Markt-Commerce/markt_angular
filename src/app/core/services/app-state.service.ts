@@ -206,7 +206,6 @@ export class AppStateService {
     // Setup network status listener
     this.setupNetworkListeners();
     
-    console.log('[AppState] UI state initialized');
   }
   
   /**
@@ -225,7 +224,6 @@ export class AppStateService {
     
     // Don't reset theme, sidebar, layoutMode (user preferences persist)
     
-    console.log('[AppState] UI state reset');
   }
   
   /**

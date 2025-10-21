@@ -286,12 +286,10 @@ export class AnalyticsComponent implements OnInit {
   setTimeRange(range: string): void {
     this.selectedTimeRange = range;
     // Here you would typically reload data based on the selected time range
-    console.log('Time range changed to:', range);
   }
 
   exportData(): void {
     // Implement data export functionality
-    console.log('Exporting analytics data...');
   }
 
   getGrowthClass(growth: number): string {

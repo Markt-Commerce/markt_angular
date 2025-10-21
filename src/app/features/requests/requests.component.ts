@@ -652,7 +652,6 @@ export class RequestsComponent implements OnInit {
   deleteRequest(requestId: string): void {
     this.apiService.deleteRequest(requestId).subscribe({
       next: (response) => {
-        console.log('Request deleted:', response.data);
         this.loadRequests(); // Refresh requests list
       },
       error: (error) => {
@@ -664,7 +663,6 @@ export class RequestsComponent implements OnInit {
   updateRequest(requestId: string, requestData: any): void {
     this.apiService.updateRequest(requestId, requestData).subscribe({
       next: (response) => {
-        console.log('Request updated:', response.data);
         this.loadRequests(); // Refresh requests list
       },
       error: (error) => {
@@ -677,7 +675,6 @@ export class RequestsComponent implements OnInit {
     const statusData = { status };
     this.apiService.updateRequestStatus(requestId, statusData).subscribe({
       next: (response) => {
-        console.log('Request status updated:', response.data);
         this.loadRequests(); // Refresh requests list
       },
       error: (error) => {
@@ -695,7 +692,6 @@ export class RequestsComponent implements OnInit {
     this.upvotingRequest = true;
     this.apiService.upvoteRequest(requestId).subscribe({
       next: (response) => {
-        console.log('Request upvoted:', response.data);
         this.loadRequests(); // Refresh requests list
         this.upvotingRequest = false;
       },
@@ -710,7 +706,6 @@ export class RequestsComponent implements OnInit {
   withdrawOffer(offerId: string): void {
     this.apiService.withdrawOffer(offerId).subscribe({
       next: (response) => {
-        console.log('Offer withdrawn:', response.data);
         this.loadRequests(); // Refresh requests list
       },
       error: (error) => {

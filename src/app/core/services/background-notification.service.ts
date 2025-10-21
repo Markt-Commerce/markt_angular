@@ -153,7 +153,6 @@ export class BackgroundNotificationService {
       // Send to your API endpoint
       this.apiService.updatePushSubscription(subscriptionData).subscribe({
         next: (response) => {
-          console.log('Push subscription sent to server:', response);
         },
         error: (error) => {
           console.error('Failed to send subscription to server:', error);
@@ -202,7 +201,6 @@ export class BackgroundNotificationService {
     this.swUpdate.versionUpdates.subscribe((event) => {
       switch (event.type) {
         case 'VERSION_READY':
-          console.log('New version available');
           // You can show a notification to the user
           break;
         case 'VERSION_INSTALLATION_FAILED':
@@ -262,7 +260,6 @@ export class BackgroundNotificationService {
   private updateNotificationState(notification: any): void {
     // This would typically update your main notification service
     // For now, we'll just log it
-    console.log('Background notification received:', notification);
   }
 
   /**

@@ -1211,7 +1211,6 @@ export class OrderHistoryComponent implements OnInit {
    */
   exportOrders(): void {
     // TODO: Implement export functionality
-    console.log('Export orders functionality coming soon');
   }
 
   /**
@@ -1226,7 +1225,6 @@ export class OrderHistoryComponent implements OnInit {
    */
   showAdvancedFilters(): void {
     // TODO: Implement advanced filters modal
-    console.log('Advanced filters coming soon');
   }
 
   /**
@@ -1234,7 +1232,6 @@ export class OrderHistoryComponent implements OnInit {
    */
   showHelp(): void {
     // TODO: Implement help modal or navigate to help page
-    console.log('Help functionality coming soon');
   }
 
   /**

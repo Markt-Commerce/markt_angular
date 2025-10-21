@@ -643,7 +643,6 @@ export class OrdersComponent implements OnInit {
 
     // TODO: Implement invoice download when backend endpoint is available
     // For now, show a message that this feature is coming soon
-    console.log('Invoice download feature coming soon for order:', order.id);
     
     // You can show a toast notification here instead
     // this.notificationService.show('Invoice download feature coming soon!');
@@ -653,7 +652,6 @@ export class OrdersComponent implements OnInit {
   getOrders(): void {
     this.apiService.getOrders().subscribe({
       next: (response) => {
-        console.log('Orders loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading orders:', error);
@@ -664,7 +662,6 @@ export class OrdersComponent implements OnInit {
   getSellerOrders(): void {
     this.apiService.getSellerOrders().subscribe({
       next: (response) => {
-        console.log('Seller orders loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading seller orders:', error);
@@ -675,7 +672,6 @@ export class OrdersComponent implements OnInit {
   getSellerOrderStats(): void {
     this.apiService.getSellerOrderStats().subscribe({
       next: (response) => {
-        console.log('Seller order stats loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading seller order stats:', error);
@@ -686,7 +682,6 @@ export class OrdersComponent implements OnInit {
   reviewOrder(orderId: string, reviewData: any): void {
     this.apiService.reviewOrder(orderId, reviewData).subscribe({
       next: (response) => {
-        console.log('Order reviewed:', response.data);
       },
       error: (error) => {
         console.error('Error reviewing order:', error);
@@ -697,7 +692,6 @@ export class OrdersComponent implements OnInit {
   trackOrder(orderId: string): void {
     this.apiService.trackOrder(orderId).subscribe({
       next: (response) => {
-        console.log('Order tracking loaded:', response.data);
       },
       error: (error) => {
         console.error('Error tracking order:', error);

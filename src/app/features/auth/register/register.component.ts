@@ -450,7 +450,6 @@ export class RegisterComponent implements OnInit {
 
       this.apiService.register(registerData).subscribe({
         next: (response) => {
-          console.log('Register response:', response);
           if (response.success) {
             const userData = this.typeSafety.extractUserData(response);
             const token = userData.token;

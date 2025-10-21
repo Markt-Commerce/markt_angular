@@ -469,7 +469,6 @@ export class OrderTrackingComponent implements OnInit {
       }, 2000);
     }).catch(() => {
       // Fallback for older browsers
-      console.log('Copy to clipboard not supported');
     });
   }
 
@@ -477,9 +476,7 @@ export class OrderTrackingComponent implements OnInit {
     const trackingNumber = this.trackingData?.trackingNumber ?? '1Z999AA1234567890';
     navigator.clipboard.writeText(trackingNumber).then(() => {
       // Could show a toast notification here
-      console.log('Tracking number copied to clipboard');
     }).catch(() => {
-      console.log('Copy to clipboard not supported');
     });
   }
 

@@ -554,7 +554,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   createCollection(collectionData: any): void {
     this.apiService.createCollection(collectionData).subscribe({
       next: (response) => {
-        console.log('Collection created:', response.data);
       },
       error: (error) => {
         console.error('Error creating collection:', error);
@@ -565,7 +564,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   deleteCollection(collectionId: string): void {
     this.apiService.deleteCollection(collectionId).subscribe({
       next: (response) => {
-        console.log('Collection deleted:', response.data);
       },
       error: (error) => {
         console.error('Error deleting collection:', error);
@@ -576,7 +574,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   getCollection(collectionId: string): void {
     this.apiService.getCollection(collectionId).subscribe({
       next: (response) => {
-        console.log('Collection loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading collection:', error);
@@ -587,7 +584,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   getCollections(): void {
     this.apiService.getCollections().subscribe({
       next: (response) => {
-        console.log('Collections loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading collections:', error);
@@ -598,7 +594,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   createStoryViaApi(storyData: any): void {
     this.apiService.createStory(storyData).subscribe({
       next: (response) => {
-        console.log('Story created:', response.data);
       },
       error: (error) => {
         console.error('Error creating story:', error);
@@ -609,7 +604,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   deleteStoryViaApi(storyId: string): void {
     this.apiService.deleteStory(storyId).subscribe({
       next: (response) => {
-        console.log('Story deleted:', response.data);
       },
       error: (error) => {
         console.error('Error deleting story:', error);
@@ -620,7 +614,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   getStory(storyId: string): void {
     this.apiService.getStory(storyId).subscribe({
       next: (response) => {
-        console.log('Story loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading story:', error);
@@ -631,7 +624,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   removeBookmark(postId: string): void {
     this.apiService.removeBookmark(postId).subscribe({
       next: (response) => {
-        console.log('Bookmark removed:', response.data);
       },
       error: (error) => {
         console.error('Error removing bookmark:', error);
@@ -642,7 +634,6 @@ export class StoriesComponent implements OnInit, OnDestroy {
   updateCollection(collectionId: string, collectionData: any): void {
     this.apiService.updateCollection(collectionId, collectionData).subscribe({
       next: (response) => {
-        console.log('Collection updated:', response.data);
       },
       error: (error) => {
         console.error('Error updating collection:', error);

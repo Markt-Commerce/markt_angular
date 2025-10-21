@@ -442,7 +442,6 @@ export class AdminPanelComponent implements OnInit {
   getPaymentStats(): void {
     this.apiService.getPaymentStats().subscribe({
       next: (response) => {
-        console.log('Payment stats loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading payment stats:', error);
@@ -453,7 +452,6 @@ export class AdminPanelComponent implements OnInit {
   healthCheck(): void {
     this.apiService.healthCheck().subscribe({
       next: (response) => {
-        console.log('Health check result:', response.data);
       },
       error: (error) => {
         console.error('Health check failed:', error);
@@ -465,7 +463,6 @@ export class AdminPanelComponent implements OnInit {
   detailedHealthCheck(): void {
     this.apiService.detailedHealthCheck().subscribe({
       next: (response) => {
-        console.log('Detailed health check result:', response.data);
       },
       error: (error) => {
         console.error('Detailed health check failed:', error);
@@ -476,7 +473,6 @@ export class AdminPanelComponent implements OnInit {
   getMetrics(): void {
     this.apiService.getMetrics().subscribe({
       next: (response) => {
-        console.log('Metrics loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading metrics:', error);
@@ -487,7 +483,6 @@ export class AdminPanelComponent implements OnInit {
   getStatus(): void {
     this.apiService.getStatus().subscribe({
       next: (response) => {
-        console.log('Status loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading status:', error);
@@ -498,7 +493,6 @@ export class AdminPanelComponent implements OnInit {
   livenessCheck(): void {
     this.apiService.livenessCheck().subscribe({
       next: (response) => {
-        console.log('Liveness check result:', response.data);
       },
       error: (error) => {
         console.error('Liveness check failed:', error);
@@ -509,7 +503,6 @@ export class AdminPanelComponent implements OnInit {
   readinessCheck(): void {
     this.apiService.readinessCheck().subscribe({
       next: (response) => {
-        console.log('Readiness check result:', response.data);
       },
       error: (error) => {
         console.error('Readiness check failed:', error);
@@ -520,7 +513,6 @@ export class AdminPanelComponent implements OnInit {
   getShopDetails(shopId: number): void {
     this.apiService.getShopDetails(shopId).subscribe({
       next: (response) => {
-        console.log('Shop details loaded:', response.data);
       },
       error: (error) => {
         console.error('Error loading shop details:', error);
