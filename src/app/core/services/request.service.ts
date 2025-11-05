@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { ApiService } from './api.service';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { RequestRepository } from '../../domains/requests/repositories/request.repository';
+import { BuyerRequest as DomainBuyerRequest, SellerOffer as DomainSellerOffer } from '../../domains/requests/models/request.model';
+import { BuyerRequestCreateDto, SellerOfferCreateDto, BuyerRequestUpdateDto, StatusUpdateDto } from '../../domains/requests/models/request.dto';
 import { 
   BuyerRequest, 
   BuyerRequestCreate, 
@@ -11,7 +13,7 @@ import {
   ApiResponse,
   PaginatedResponse
 } from '../models';
-import { tap, map } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
 export interface RequestState {
   requests: BuyerRequest[];
@@ -63,7 +65,7 @@ export interface RequestStatistics {
   providedIn: 'root'
 })
 export class RequestService {
-  private apiService = inject(ApiService);
+  private requestRepository = inject(RequestRepository);
   
   private requestStateSubject = new BehaviorSubject<RequestState>({
     requests: [],
@@ -75,47 +77,121 @@ export class RequestService {
 
   public requestState$ = this.requestStateSubject.asObservable();
 
+  /**
+   * Convert domain BuyerRequest to old BuyerRequest interface (for backward compatibility)
+   */
+  private domainToOldFormat(domainRequest: DomainBuyerRequest): BuyerRequest {
+    return {
+      id: domainRequest.id,
+      user_id: domainRequest.userId,
+      title: domainRequest.title,
+      description: domainRequest.description,
+      budget: domainRequest.budget,
+      expires_at: domainRequest.expiresAt,
+      status: domainRequest.status,
+      category_ids: domainRequest.categoryIds,
+      media_ids: [],
+      images: [],
+      categories: [],
+      offers: [],
+      views: domainRequest.views,
+      upvotes: domainRequest.upvotes,
+      created_at: domainRequest.createdAt,
+      updated_at: domainRequest.updatedAt
+    } as BuyerRequest;
+  }
+
+  /**
+   * Convert old BuyerRequestCreate to BuyerRequestCreateDto
+   */
+  private oldToDomainCreate(oldCreate: BuyerRequestCreate): BuyerRequestCreateDto {
+    return {
+      title: oldCreate.title,
+      description: oldCreate.description,
+      budget: oldCreate.budget,
+      expires_at: oldCreate.expires_at,
+      category_ids: oldCreate.category_ids || [],
+      media_ids: oldCreate.media_ids,
+      metadata: oldCreate.metadata
+    };
+  }
+
   // ============================================================================
   // REQUEST OPERATIONS
   // ============================================================================
 
   /**
    * Get all requests
+   * Uses RequestRepository (DDD pattern)
    */
   getRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
     this.setLoading(true);
     
-    return this.apiService.getRequests(params).pipe(
-      tap({
-        next: (response: ApiResponse<PaginatedResponse<BuyerRequest>>) => {
-          if (response.success) {
+    return this.requestRepository.findAll(params).pipe(
+      map((domainRequests: DomainBuyerRequest[]) => {
+        const requests = domainRequests.map(r => this.domainToOldFormat(r));
             this.updateRequestState({
-              requests: response.data.items,
+          requests,
               isLoading: false,
               error: null
             });
+        return {
+          success: true,
+          data: {
+            items: requests,
+            pagination: {
+              page: 1,
+              per_page: 10,
+              total_items: requests.length,
+              total_pages: 1,
+              first_page: 1,
+              last_page: 1,
+              previous_page: null,
+              next_page: null,
+              has_next: false,
+              has_prev: false
+            }
           }
-        },
-        error: (error: Error) => {
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error fetching requests:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        return of({
+          success: false,
+          data: {
+            items: [],
+            pagination: {
+              page: 1,
+              per_page: 10,
+              total_items: 0,
+              total_pages: 0,
+              first_page: 1,
+              last_page: 1,
+              previous_page: null,
+              next_page: null,
+              has_next: false,
+              has_prev: false
+            }
+          }
+        });
       })
     );
   }
 
   /**
    * Create new request
+   * Uses RequestRepository (DDD pattern)
    */
   createRequest(requestData: BuyerRequestCreate): Observable<ApiResponse<BuyerRequest>> {
     this.setLoading(true);
     
-    return this.apiService.createRequest(requestData).pipe(
-      tap({
-        next: (response: ApiResponse<BuyerRequest>) => {
-          if (response.success) {
-            const newRequest = response.data;
+    const createDto = this.oldToDomainCreate(requestData);
+    
+    return this.requestRepository.create(createDto).pipe(
+      map((domainRequest: DomainBuyerRequest) => {
+        const newRequest = this.domainToOldFormat(domainRequest);
             const currentRequests = this.getRequestState().requests;
             const currentMyRequests = this.getRequestState().myRequests;
             
@@ -126,262 +202,391 @@ export class RequestService {
               isLoading: false,
               error: null
             });
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: newRequest
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error creating request:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Get my requests
+   * Uses RequestRepository (DDD pattern) - same as getRequests for now
    */
   getMyRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
     this.setLoading(true);
     
-    return this.apiService.getMyRequests(params).pipe(
-      tap({
-        next: (response: ApiResponse<PaginatedResponse<BuyerRequest>>) => {
-          if (response.success) {
+    return this.requestRepository.findAll({ ...params, my_requests: true }).pipe(
+      map((domainRequests: DomainBuyerRequest[]) => {
+        const requests = domainRequests.map(r => this.domainToOldFormat(r));
             this.updateRequestState({
-              myRequests: response.data.items,
+          myRequests: requests,
               isLoading: false,
               error: null
             });
+        return {
+          success: true,
+          data: {
+            items: requests,
+            pagination: {
+              page: 1,
+              per_page: 10,
+              total_items: requests.length,
+              total_pages: 1,
+              first_page: 1,
+              last_page: 1,
+              previous_page: null,
+              next_page: null,
+              has_next: false,
+              has_prev: false
+            }
           }
-        },
-        error: (error: Error) => {
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error fetching my requests:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        return of({
+          success: false,
+          data: {
+            items: [],
+            pagination: {
+              page: 1,
+              per_page: 10,
+              total_items: 0,
+              total_pages: 0,
+              first_page: 1,
+              last_page: 1,
+              previous_page: null,
+              next_page: null,
+              has_next: false,
+              has_prev: false
+            }
+          }
+        });
       })
     );
   }
 
   /**
    * Get single request
+   * Uses RequestRepository (DDD pattern)
    */
   getRequest(requestId: string): Observable<ApiResponse<BuyerRequest>> {
     this.setLoading(true);
     
-    return this.apiService.getRequest(requestId).pipe(
-      tap({
-        next: (response: ApiResponse<BuyerRequest>) => {
-          if (response.success) {
+    return this.requestRepository.findById(requestId).pipe(
+      map((domainRequest: DomainBuyerRequest) => {
+        const request = this.domainToOldFormat(domainRequest);
             this.updateRequestState({
-              currentRequest: response.data,
+          currentRequest: request,
               isLoading: false,
               error: null
             });
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: request
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error fetching request:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Update request
+   * Uses RequestRepository (DDD pattern)
    */
   updateRequest(requestId: string, requestData: BuyerRequestUpdate): Observable<ApiResponse<BuyerRequest>> {
     this.setLoading(true);
     
-    // Convert BuyerRequestUpdate to RequestData format
-    const apiRequestData = {
-      title: requestData.title || '',
-      description: requestData.description || '',
+    const updateDto: BuyerRequestUpdateDto = {
+      title: requestData.title,
+      description: requestData.description,
       budget: requestData.budget,
       expires_at: requestData.expires_at,
-      category_ids: requestData.category_ids || [],
+      category_ids: requestData.category_ids,
       media_ids: requestData.media_ids,
       metadata: requestData.metadata
     };
     
-    return this.apiService.updateRequest(requestId, apiRequestData).pipe(
-      tap({
-        next: (response: ApiResponse<BuyerRequest>) => {
-          if (response.success) {
-            this.updateRequestInState(requestId, response.data);
+    return this.requestRepository.update(requestId, updateDto).pipe(
+      map((domainRequest: DomainBuyerRequest) => {
+        const request = this.domainToOldFormat(domainRequest);
+        this.updateRequestInState(requestId, request);
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: request
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error updating request:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Delete request
+   * Uses RequestRepository (DDD pattern)
    */
   deleteRequest(requestId: string): Observable<ApiResponse<void>> {
     this.setLoading(true);
     
-    return this.apiService.deleteRequest(requestId).pipe(
-      tap({
-        next: (response: ApiResponse<void>) => {
-          if (response.success) {
+    return this.requestRepository.delete(requestId).pipe(
+      map(() => {
             this.removeRequestFromState(requestId);
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: void 0
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error deleting request:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Update request status
+   * Uses RequestRepository (DDD pattern)
    */
   updateRequestStatus(requestId: string, statusData: StatusUpdateData): Observable<ApiResponse<BuyerRequest>> {
     this.setLoading(true);
     
-    return this.apiService.updateRequestStatus(requestId, statusData).pipe(
-      tap({
-        next: (response: ApiResponse<BuyerRequest>) => {
-          if (response.success) {
-            this.updateRequestStatusInState(requestId, response.data.status);
+    const statusDto: StatusUpdateDto = {
+      status: statusData.status,
+      reason: statusData.reason
+    };
+    
+    return this.requestRepository.updateStatus(requestId, statusDto).pipe(
+      map((domainRequest: DomainBuyerRequest) => {
+        const request = this.domainToOldFormat(domainRequest);
+        this.updateRequestStatusInState(requestId, request.status);
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: request
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error updating request status:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Upvote request
+   * Uses RequestRepository (DDD pattern)
    */
   upvoteRequest(requestId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
-    return this.apiService.upvoteRequest(requestId).pipe(
-      tap({
-        next: (response: ApiResponse<{ success: boolean; new_count: number }>) => {
-          if (response.success) {
-            this.updateRequestUpvotes(requestId, response.data.new_count);
-          }
-        },
-        error: (error: Error) => {
+    return this.requestRepository.upvote(requestId).pipe(
+      map((result) => {
+        this.updateRequestUpvotes(requestId, result.new_count);
+        return {
+          success: result.success,
+          data: result
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error upvoting request:', error);
           this.setError(error.message);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Get request offers
+   * Uses RequestRepository (DDD pattern)
    */
   getRequestOffers(requestId: string): Observable<ApiResponse<SellerOffer[]>> {
-    return this.apiService.getRequestOffers(requestId);
+    return this.requestRepository.getOffers(requestId).pipe(
+      map((domainOffers: DomainSellerOffer[]) => {
+        const offers = domainOffers.map(offer => ({
+          id: offer.id,
+          request_id: offer.requestId,
+          seller_id: offer.sellerId,
+          price: offer.price,
+          message: offer.message,
+          status: offer.status,
+          created_at: offer.createdAt
+        } as SellerOffer));
+        return {
+          success: true,
+          data: offers
+        };
+      }),
+      catchError((error: Error) => {
+        console.error('Error getting request offers:', error);
+        return of({
+          success: false,
+          data: [],
+          error: error.message
+        });
+      })
+    );
   }
 
   /**
    * Add offer to request
+   * Uses RequestRepository (DDD pattern)
    */
   addOffer(requestId: string, offerData: SellerOfferCreate): Observable<ApiResponse<SellerOffer>> {
     this.setLoading(true);
     
-    return this.apiService.createOffer(requestId, offerData).pipe(
-      tap({
-        next: (response: ApiResponse<SellerOffer>) => {
-          if (response.success) {
+    const offerDto: SellerOfferCreateDto = {
+      product_id: offerData.product_id,
+      price: offerData.price,
+      message: offerData.message || ''
+    };
+    
+    return this.requestRepository.createOffer(requestId, offerDto).pipe(
+      map((domainOffer: DomainSellerOffer) => {
+        const offer: SellerOffer = {
+          id: domainOffer.id,
+          request_id: domainOffer.requestId,
+          seller_id: domainOffer.sellerId,
+          price: domainOffer.price,
+          message: domainOffer.message,
+          status: domainOffer.status,
+          created_at: domainOffer.createdAt
+        } as SellerOffer;
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: offer
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error adding offer:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Accept offer
+   * Uses RequestRepository (DDD pattern)
    */
   acceptOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
     this.setLoading(true);
     
-    return this.apiService.acceptOffer(offerId).pipe(
-      tap({
-        next: (response: ApiResponse<SellerOffer>) => {
-          if (response.success) {
+    return this.requestRepository.acceptOffer(offerId).pipe(
+      map((domainOffer: DomainSellerOffer) => {
+        const offer: SellerOffer = {
+          id: domainOffer.id,
+          request_id: domainOffer.requestId,
+          seller_id: domainOffer.sellerId,
+          price: domainOffer.price,
+          message: domainOffer.message,
+          status: domainOffer.status,
+          created_at: domainOffer.createdAt
+        } as SellerOffer;
             this.updateOfferStatus(offerId, 'accepted');
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: offer
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error accepting offer:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Reject offer
+   * Uses RequestRepository (DDD pattern)
    */
   rejectOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
     this.setLoading(true);
     
-    return this.apiService.rejectOffer(offerId).pipe(
-      tap({
-        next: (response: ApiResponse<SellerOffer>) => {
-          if (response.success) {
+    return this.requestRepository.rejectOffer(offerId).pipe(
+      map((domainOffer: DomainSellerOffer) => {
+        const offer: SellerOffer = {
+          id: domainOffer.id,
+          request_id: domainOffer.requestId,
+          seller_id: domainOffer.sellerId,
+          price: domainOffer.price,
+          message: domainOffer.message,
+          status: domainOffer.status,
+          created_at: domainOffer.createdAt
+        } as SellerOffer;
             this.updateOfferStatus(offerId, 'rejected');
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: offer
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error rejecting offer:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Withdraw offer
+   * Uses RequestRepository (DDD pattern)
    */
   withdrawOffer(offerId: string): Observable<ApiResponse<SellerOffer>> {
     this.setLoading(true);
     
-    return this.apiService.withdrawOffer(offerId).pipe(
-      tap({
-        next: (response: ApiResponse<SellerOffer>) => {
-          if (response.success) {
+    return this.requestRepository.withdrawOffer(offerId).pipe(
+      map((domainOffer: DomainSellerOffer) => {
+        const offer: SellerOffer = {
+          id: domainOffer.id,
+          request_id: domainOffer.requestId,
+          seller_id: domainOffer.sellerId,
+          price: domainOffer.price,
+          message: domainOffer.message,
+          status: domainOffer.status,
+          created_at: domainOffer.createdAt
+        } as SellerOffer;
             this.updateOfferStatus(offerId, 'withdrawn');
             this.setLoading(false);
-          }
-        },
-        error: (error: Error) => {
+        return {
+          success: true,
+          data: offer
+        };
+      }),
+      catchError((error: Error) => {
           console.error('Error withdrawing offer:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        throw error;
       })
     );
   }
@@ -711,10 +916,38 @@ export class RequestService {
 
   /**
    * Get request statistics
+   * Note: Repository doesn't have statistics method yet
    */
   getRequestStatistics(): Observable<ApiResponse<RequestStatistics>> {
-    return this.apiService.get<RequestStatistics>('/requests/statistics').pipe(
-      map(response => response)
+    return this.requestRepository.getStatistics().pipe(
+      map((stats) => ({
+        success: true,
+        data: {
+          total_requests: stats.total_requests,
+          open_requests: stats.open_requests,
+          fulfilled_requests: stats.fulfilled_requests,
+          closed_requests: stats.closed_requests,
+          expired_requests: stats.expired_requests,
+          my_requests: stats.my_requests,
+          my_offers: stats.my_offers
+        }
+      })),
+      catchError((error: Error) => {
+        console.error('Error getting request statistics:', error);
+        return of({
+          success: false,
+          data: {
+            total_requests: 0,
+            open_requests: 0,
+            fulfilled_requests: 0,
+            closed_requests: 0,
+            expired_requests: 0,
+            my_requests: 0,
+            my_offers: 0
+          },
+          error: error.message
+        });
+      })
     );
   }
 

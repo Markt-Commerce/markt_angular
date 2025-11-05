@@ -2,7 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import { SocialService } from '../../../core/services/social.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for getUserProducts, getUserReviews (methods not migrated yet)
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar, faUserPlus, faEnvelope, faShare, faCheckCircle, faGraduationCap, faCalendar, faMapMarkerAlt, faBook, faClock, faHandshake, faFlag, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
@@ -71,7 +73,9 @@ interface Activity {
 export class UserProfileComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
+  private socialService = inject(SocialService);
+  private apiService = inject(ApiService); // Still needed for getUserProducts, getUserReviews
   private titleMeta = inject(TitleMetaService);
   public media = inject(MediaOptimizationService);
 
@@ -108,7 +112,7 @@ export class UserProfileComponent implements OnInit {
     if (userId) {
       this.loading = true;
       
-      this.apiService.getUserProfile(userId).subscribe({
+      this.profileService.getPublicProfile(userId).subscribe({
         next: (response) => {
           this.profile = response.data as any;
           const titleHandle = this.profile?.username ? `@${this.profile.username}` : (this.profile?.full_name || 'User');
@@ -256,12 +260,14 @@ export class UserProfileComponent implements OnInit {
     if (!this.profile?.id) return;
     const userId = this.profile.id;
     if (this.isFollowing) {
-      this.apiService.unfollowUser(userId).subscribe({
+      // Use SocialService (DDD pattern)
+      this.socialService.unfollowUser(userId).subscribe({
         next: () => { this.isFollowing = false; },
         error: () => { /* keep old state on error */ }
       });
     } else {
-      this.apiService.followUser(userId).subscribe({
+      // Use SocialService (DDD pattern)
+      this.socialService.followUser(userId).subscribe({
         next: () => { this.isFollowing = true; },
         error: () => { /* keep old state on error */ }
       });

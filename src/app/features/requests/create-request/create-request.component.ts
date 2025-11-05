@@ -4,7 +4,8 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
-import { ApiService } from '../../../core/services/api.service';
+import { RequestService } from '../../../core/services/request.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for image operations (addRequestImage, deleteRequestImage, getRequestImages - not yet migrated)
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface Category {
@@ -439,7 +440,8 @@ export class CreateRequestComponent implements OnInit {
   
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private requestService = inject(RequestService);
+  private apiService = inject(ApiService); // Still needed for image operations (not yet migrated)
 
   requestForm!: FormGroup;
   submitting = false;
@@ -558,23 +560,35 @@ export class CreateRequestComponent implements OnInit {
       
       const formData = this.requestForm.value;
       
-      // Prepare the request data for API
+      // Prepare the request data for RequestService
+      // RequestService.createRequest() expects BuyerRequestCreate interface:
+      // - title, description, budget (single number), expires_at, category_ids (string[]), media_ids, metadata
       const requestData = {
         title: formData.title,
         description: formData.description,
-        category_ids: [formData.category],
-        budget_min: formData.budgetMin,
-        budget_max: formData.budgetMax,
+        budget: formData.budget, // Single budget value (not min/max)
+        expires_at: formData.expiresAt, // Use expiresAt from form, not expiryDate
+        category_ids: [formData.category.toString()], // Convert to string array
+        media_ids: formData.mediaIds || [], // Media IDs will be added after request creation
+        metadata: {
         location: formData.location,
         urgency: formData.urgency,
-        tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
-        expires_at: formData.expiryDate
+          tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : []
+        }
       };
 
-      this.apiService.createRequest(requestData).subscribe({
+      // Migrated to RequestService.createRequest() - uses DDD pattern with RequestRepository
+      this.requestService.createRequest(requestData).subscribe({
         next: (response) => {
           this.submitting = false;
+          if (response.success && response.data) {
+            // Upload images if any were selected
+            if (this.selectedMedia.length > 0) {
+              // TODO: Upload images using MediaService or ApiService
+              // For now, navigate to the request detail page
+            }
           this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, response.data.id]);
+          }
         },
         error: (error) => {
           console.error('Error creating request:', error);
@@ -585,7 +599,10 @@ export class CreateRequestComponent implements OnInit {
   }
 
   // Request image endpoint integrations
+  // TODO: These methods still use ApiService - image operations may need MediaService or stay in ApiService
+  // for cross-domain operations (request images are part of media domain)
   addRequestImage(requestId: string, imageFile: File): void {
+    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
     this.apiService.addRequestImage(requestId, imageFile).subscribe({
       next: (response) => {
       },
@@ -596,6 +613,7 @@ export class CreateRequestComponent implements OnInit {
   }
 
   deleteRequestImage(requestId: string, imageId: string): void {
+    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
     this.apiService.deleteRequestImage(requestId, parseInt(imageId)).subscribe({
       next: (response) => {
       },
@@ -606,6 +624,7 @@ export class CreateRequestComponent implements OnInit {
   }
 
   getRequestImages(requestId: string): void {
+    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
     this.apiService.getRequestImages(requestId).subscribe({
       next: (response) => {
       },

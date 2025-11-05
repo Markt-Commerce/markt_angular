@@ -28,7 +28,7 @@ import {
 import { CartService } from '../../core/services/cart.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ApiService } from '../../core/services/api.service';
+import { ApiService } from '../../core/services/api.service'; // Still needed for toggleWishlist (wishlist operations not yet migrated to domain service)
 import { CartItem, Product, SellerAccount, Address } from '../../core/models';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
@@ -630,17 +630,14 @@ export class CartComponent implements OnInit {
   }
 
   addToCart(productId: string, quantity = 1): void {
-    const cartData = {
-      product_id: productId,
-      quantity: quantity
-    };
-
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.addToCart(cartData),
-      successHandler: (response: any) => {
+    // Use CartService (DDD pattern)
+    this.cartService.addToCart(productId, quantity).subscribe({
+      next: (response) => {
+        if (response.success) {
         this.loadCart(); // Refresh cart data
+        }
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         this.errorMessage = 'Error adding item to cart. Please try again.';
         console.error('Error adding item to cart:', error);
       }
@@ -674,12 +671,14 @@ export class CartComponent implements OnInit {
   }
 
   removeCartItem(itemId: string): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.removeCartItem(itemId),
-      successHandler: (response: any) => {
+    // Use CartService (DDD pattern)
+    this.cartService.removeCartItem(itemId).subscribe({
+      next: (response) => {
+        if (response.success) {
         this.loadCart(); // Refresh cart data
+        }
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         this.errorMessage = 'Error removing item from cart. Please try again.';
         console.error('Error removing item from cart:', error);
       }

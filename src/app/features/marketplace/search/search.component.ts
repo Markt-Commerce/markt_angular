@@ -11,7 +11,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { CartService } from '../../../core/services/cart.service';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for globalSearch, searchShops, searchRequests, searchNiches, searchUsers (methods not migrated yet)
 
 @Component({
   selector: 'app-search',
@@ -331,18 +331,24 @@ export class SearchComponent implements OnInit {
   }
 
   private performProductSearch(): void {
-    this.apiService.searchProducts(this.searchQuery, {
-      limit: this.limit,
-      offset: this.offset,
-      category: this.selectedCategory,
-      price_min: this.priceRange.min,
-      price_max: this.priceRange.max,
-      sort: this.sortBy
+    // Use MarketplaceService for product search (DDD pattern)
+    const page = Math.floor(this.offset / this.limit) + 1;
+    this.marketplaceService.getProducts({
+      search: this.searchQuery,
+      page: page,
+      per_page: this.limit,
+      category_ids: this.selectedCategory ? [this.selectedCategory] : undefined,
+      price_min: this.priceRange.min || undefined,
+      price_max: this.priceRange.max || undefined,
+      sort_by: this.sortBy as 'price' | 'rating' | 'created_at' | 'name'
     }).subscribe({
       next: (response) => {
-        this.products = response.data?.items || [];
-        this.totalResults = response.data?.pagination?.total || 0;
-        this.totalPages = response.data?.pagination?.total_pages || 1;
+        if (response.success && response.data) {
+          this.products = response.data.items || [];
+          const pagination = response.data.pagination || {};
+          this.totalResults = pagination.total_items || 0;
+          this.totalPages = pagination.total_pages || 1;
+        }
         this.loading = false;
       },
       error: (error) => {

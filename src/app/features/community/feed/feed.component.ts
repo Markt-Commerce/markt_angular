@@ -8,7 +8,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/social.service';
 import { Observable } from 'rxjs';
 import { User } from '../../../core/models/auth.model';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for getCommunityFeed fallback (not yet in SocialService)
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 
 interface FeedPost {
@@ -261,7 +261,7 @@ export class FeedComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading community feed:', error);
-        // Fallback to community feed
+        // Fallback to community feed - TODO: getCommunityFeed() not yet in SocialService
         this.apiService.getCommunityFeed().subscribe({
           next: (fallback) => {
             const items = fallback.data?.items || fallback.data || [];
@@ -342,12 +342,13 @@ export class FeedComponent implements OnInit {
   }
 
   likePost(postId: string): void {
-    this.apiService.likePost(postId).subscribe({
-      next: () => {
+    // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
+    this.socialService.likePost(postId).subscribe({
+      next: (updatedPost) => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
           post.isLiked = true;
-          post.likes += 1;
+          post.likes = updatedPost.like_count || post.likes + 1;
         }
       },
       error: (error) => {
@@ -357,8 +358,9 @@ export class FeedComponent implements OnInit {
   }
 
   commentOnPost(postId: string, comment: string): void {
-    this.apiService.addComment(postId, { content: comment }).subscribe({
-      next: () => {
+    // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
+    this.socialService.addComment(postId, { content: comment }).subscribe({
+      next: (newComment) => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
           post.comments += 1;

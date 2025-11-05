@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject, forkJoin } from 'rxjs';
-import { ApiService } from './api.service';
+import { Observable, BehaviorSubject, forkJoin, of } from 'rxjs';
+import { MediaRepository } from '../../domains/media/repositories/media.repository';
+import { Media as DomainMedia } from '../../domains/media/models/media.model';
+import { UploadOptionsDto, MediaUpdateDto, MediaVariantGenerateDto } from '../../domains/media/models/media.dto';
 import { 
   Media, 
   MediaUploadResponse, 
@@ -10,7 +12,7 @@ import {
   SocialMediaOptimization,
   SocialMediaOptimizationResponse
 } from '../models';
-import { tap, map } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
 export interface MediaState {
   media: Media[];
@@ -31,7 +33,7 @@ export interface UploadOptions {
   providedIn: 'root'
 })
 export class MediaService {
-  private apiService = inject(ApiService);
+  private mediaRepository = inject(MediaRepository);
   
   private mediaStateSubject = new BehaviorSubject<MediaState>({
     media: [],
@@ -50,17 +52,58 @@ export class MediaService {
   // ============================================================================
 
   /**
+   * Convert domain Media to old Media interface (for backward compatibility)
+   */
+  private domainToOldFormat(domainMedia: DomainMedia): Media {
+    return {
+      id: domainMedia.id.toString(),
+      user_id: domainMedia.userId,
+      original_filename: domainMedia.originalFilename,
+      original_url: domainMedia.originalUrl,
+      url: domainMedia.originalUrl,
+      media_type: domainMedia.mediaType,
+      width: domainMedia.width,
+      height: domainMedia.height,
+      file_size: domainMedia.fileSize,
+      mime_type: domainMedia.mimeType,
+      processing_status: domainMedia.processingStatus,
+      storage_key: domainMedia.storageKey,
+      created_at: domainMedia.createdAt,
+      updated_at: domainMedia.updatedAt,
+      thumbnail_url: domainMedia.thumbnailUrl,
+      mobile_url: domainMedia.mobileUrl,
+      tablet_url: domainMedia.tabletUrl,
+      desktop_url: domainMedia.desktopUrl,
+      social_square_url: domainMedia.socialSquareUrl,
+      social_post_url: domainMedia.socialPostUrl,
+      social_story_url: domainMedia.socialStoryUrl,
+      duration: domainMedia.duration,
+      alt_text: domainMedia.altText,
+      caption: domainMedia.caption,
+      is_public: domainMedia.isPublic,
+      background_removed: domainMedia.backgroundRemoved,
+      compression_quality: domainMedia.compressionQuality
+    } as Media;
+  }
+
+  /**
    * Upload single media file
+   * Uses MediaRepository (DDD pattern)
    */
   uploadMedia(file: File, options?: UploadOptions): Observable<any> {
     this.setLoading(true);
     this.setUploadProgress(0);
     
-    return this.apiService.uploadMedia(file).pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
-            const newMedia = response.data;
+    const uploadOptions: UploadOptionsDto = {
+      compression: options?.compression,
+      remove_background: options?.removeBackground,
+      generate_variants: options?.generateVariants,
+      is_public: options?.isPublic
+    };
+    
+    return this.mediaRepository.upload(file, uploadOptions).pipe(
+      map((domainMedia: DomainMedia) => {
+        const newMedia = this.domainToOldFormat(domainMedia);
             const currentMedia = this.getMediaState().media;
             
             this.updateMediaState({
@@ -70,14 +113,17 @@ export class MediaService {
               error: null,
               uploadProgress: 100
             });
-          }
-        },
-        error: (error: any) => {
+        return {
+          success: true,
+          data: newMedia
+        };
+      }),
+      catchError((error: any) => {
           console.error('Error uploading media:', error);
           this.setError(error.message);
           this.setLoading(false);
           this.setUploadProgress(0);
-        }
+        throw error;
       })
     );
   }
@@ -93,124 +139,156 @@ export class MediaService {
 
   /**
    * Get media by ID
+   * Uses MediaRepository (DDD pattern)
    */
   getMedia(mediaId: string): Observable<any> {
-    return this.apiService.getMedia(parseInt(mediaId)).pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
-            this.updateMediaState({ currentMedia: response.data });
-          }
-        },
-        error: (error: any) => {
+    return this.mediaRepository.findById(mediaId).pipe(
+      map((domainMedia: DomainMedia) => {
+        const media = this.domainToOldFormat(domainMedia);
+        this.updateMediaState({ currentMedia: media });
+        return {
+          success: true,
+          data: media
+        };
+      }),
+      catchError((error: any) => {
           console.error('Error fetching media:', error);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Delete media
+   * Uses MediaRepository (DDD pattern)
    */
   deleteMedia(mediaId: string): Observable<any> {
-    return this.apiService.deleteMedia(parseInt(mediaId)).pipe(
-      tap({
-        next: () => {
+    return this.mediaRepository.delete(mediaId).pipe(
+      map(() => {
           const currentMedia = this.getMediaState().media;
           const updatedMedia = currentMedia.filter((m: Media) => m.id !== mediaId);
           this.updateMediaState({ media: updatedMedia });
-        },
-        error: (error: any) => {
+        return { success: true };
+      }),
+      catchError((error: any) => {
           console.error('Error deleting media:', error);
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Get media URLs
+   * Note: Repository doesn't have this method yet
    */
   getMediaUrls(mediaId: string): Observable<any> {
-    return this.apiService.getMediaUrls(parseInt(mediaId));
+    // TODO: Add getMediaUrls method to MediaRepository
+    return this.getMedia(mediaId);
   }
 
   /**
    * Get media status
+   * Uses MediaRepository (DDD pattern)
    */
   getMediaStatus(mediaId: string): Observable<any> {
-    return this.apiService.getMediaStatus(parseInt(mediaId));
+    return this.mediaRepository.getStatus(mediaId).pipe(
+      map((status) => ({ success: true, data: status }))
+    );
   }
 
   /**
    * Optimize for social media
+   * Uses MediaRepository (DDD pattern)
    */
   optimizeForSocial(mediaId: string, optimizationData: SocialMediaOptimization): Observable<any> {
-    return this.apiService.optimizeForSocial(parseInt(mediaId), optimizationData);
+    return this.mediaRepository.optimizeForSocial(mediaId, optimizationData).pipe(
+      map((response) => ({ success: true, data: response }))
+    );
   }
 
   /**
    * Remove background
+   * Uses MediaRepository (DDD pattern)
    */
   removeBackground(mediaId: string): Observable<any> {
-    return this.apiService.removeBackground(parseInt(mediaId));
+    return this.mediaRepository.removeBackground(mediaId).pipe(
+      map((domainMedia: DomainMedia) => {
+        const media = this.domainToOldFormat(domainMedia);
+        return { success: true, data: media };
+      })
+    );
   }
 
   /**
    * Get media list
+   * Uses MediaRepository (DDD pattern)
    */
   getMediaList(params?: any): Observable<any> {
     this.setLoading(true);
     
-    return this.apiService.getMediaList(params).pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
+    return this.mediaRepository.findAll(params).pipe(
+      map((domainMediaList: DomainMedia[]) => {
+        const media = domainMediaList.map(m => this.domainToOldFormat(m));
             this.updateMediaState({
-              media: response.data.media,
+          media,
               isLoading: false,
               error: null
             });
-          }
-        },
-        error: (error: any) => {
+        return {
+          success: true,
+          data: { media }
+        };
+      }),
+      catchError((error: any) => {
           console.error('Error fetching media list:', error);
           this.setError(error.message);
           this.setLoading(false);
-        }
+        return of({ success: false, data: { media: [] } });
       })
     );
   }
 
   /**
    * Get media statistics
+   * Uses MediaRepository (DDD pattern)
    */
   getMediaStats(): Observable<any> {
-    return this.apiService.getMediaStats();
+    return this.mediaRepository.getStats().pipe(
+      map((stats) => ({ success: true, data: stats }))
+    );
   }
 
   // ============================================================================
   // PRODUCT MEDIA OPERATIONS
   // ============================================================================
+  // Note: These are cross-domain operations that may need ApiService
+  // or be handled through domain repositories (ProductRepository, PostRepository, etc.)
 
   /**
    * Get product images
+   * Note: Cross-domain operation - may need ProductRepository or stay in ApiService
    */
   getProductImages(productId: string): Observable<any> {
-    return this.apiService.getProductImages(productId);
+    // TODO: Consider using ProductRepository or keeping in ApiService for cross-domain
+    throw new Error('getProductImages: Needs repository implementation or ApiService');
   }
 
   /**
    * Add product image
+   * Note: Cross-domain operation - may need ProductRepository or stay in ApiService
    */
   addProductImage(productId: string, file: File): Observable<any> {
-    return this.apiService.addProductImage(productId, file);
+    // TODO: Consider using ProductRepository or keeping in ApiService for cross-domain
+    throw new Error('addProductImage: Needs repository implementation or ApiService');
   }
 
   /**
    * Delete product image
+   * Note: Cross-domain operation - may need ProductRepository or stay in ApiService
    */
   deleteProductImage(productId: string, imageId: number): Observable<any> {
-    return this.apiService.deleteProductImage(productId, imageId);
+    // TODO: Consider using ProductRepository or keeping in ApiService for cross-domain
+    throw new Error('deleteProductImage: Needs repository implementation or ApiService');
   }
 
   // ============================================================================
@@ -219,23 +297,29 @@ export class MediaService {
 
   /**
    * Get social post media
+   * Note: Cross-domain operation - may need PostRepository or stay in ApiService
    */
   getSocialPostMedia(postId: string): Observable<any> {
-    return this.apiService.getSocialPostMedia(postId);
+    // TODO: Consider using PostRepository or keeping in ApiService for cross-domain
+    throw new Error('getSocialPostMedia: Needs repository implementation or ApiService');
   }
 
   /**
    * Add social post media
+   * Note: Cross-domain operation - may need PostRepository or stay in ApiService
    */
   addSocialPostMedia(postId: string, file: File): Observable<any> {
-    return this.apiService.addSocialPostMedia(postId, file);
+    // TODO: Consider using PostRepository or keeping in ApiService for cross-domain
+    throw new Error('addSocialPostMedia: Needs repository implementation or ApiService');
   }
 
   /**
    * Delete social post media
+   * Note: Cross-domain operation - may need PostRepository or stay in ApiService
    */
   deleteSocialPostMedia(postId: string, mediaId: number): Observable<any> {
-    return this.apiService.deleteSocialPostMedia(postId, mediaId);
+    // TODO: Consider using PostRepository or keeping in ApiService for cross-domain
+    throw new Error('deleteSocialPostMedia: Needs repository implementation or ApiService');
   }
 
   // ============================================================================
@@ -244,23 +328,29 @@ export class MediaService {
 
   /**
    * Get request images
+   * Note: Cross-domain operation - may need RequestRepository or stay in ApiService
    */
   getRequestImages(requestId: string): Observable<any> {
-    return this.apiService.getRequestImages(requestId);
+    // TODO: Consider using RequestRepository or keeping in ApiService for cross-domain
+    throw new Error('getRequestImages: Needs repository implementation or ApiService');
   }
 
   /**
    * Add request image
+   * Note: Cross-domain operation - may need RequestRepository or stay in ApiService
    */
   addRequestImage(requestId: string, file: File): Observable<any> {
-    return this.apiService.addRequestImage(requestId, file);
+    // TODO: Consider using RequestRepository or keeping in ApiService for cross-domain
+    throw new Error('addRequestImage: Needs repository implementation or ApiService');
   }
 
   /**
    * Delete request image
+   * Note: Cross-domain operation - may need RequestRepository or stay in ApiService
    */
   deleteRequestImage(requestId: string, imageId: number): Observable<any> {
-    return this.apiService.deleteRequestImage(requestId, Number(imageId));
+    // TODO: Consider using RequestRepository or keeping in ApiService for cross-domain
+    throw new Error('deleteRequestImage: Needs repository implementation or ApiService');
   }
 
   // ============================================================================
@@ -630,38 +720,95 @@ export class MediaService {
 
   /**
    * Download media
+   * Uses MediaRepository (DDD pattern)
    */
-  downloadMedia(mediaId: number): Observable<any> {
-    return this.apiService.downloadMedia(mediaId);
+  downloadMedia(mediaId: number): Observable<Blob> {
+    return this.mediaRepository.download(mediaId.toString());
   }
 
   /**
    * Get media variants
+   * Uses MediaRepository (DDD pattern)
    */
   getMediaVariants(mediaId: number): Observable<any> {
-    return this.apiService.getMediaVariants(mediaId);
+    return this.mediaRepository.getVariants(mediaId.toString()).pipe(
+      map((variants) => {
+        // Convert domain variants to old format
+        return variants.map(variant => ({
+          id: variant.id,
+          variant_type: variant.variantType,
+          quality: variant.quality,
+          width: variant.width,
+          height: variant.height,
+          format: variant.format,
+          file_size: variant.fileSize,
+          url: variant.url,
+          storage_key: variant.storageKey,
+          processing_time: variant.processingTime
+        }));
+      })
+    );
   }
 
   /**
    * Generate media variants
+   * Uses MediaRepository (DDD pattern)
    */
   generateVariants(mediaId: number, variantData: any): Observable<any> {
-    return this.apiService.generateVariants(mediaId, variantData);
+    const variantDto: MediaVariantGenerateDto = {
+      variant_type: variantData.variant_type,
+      quality: variantData.quality,
+      width: variantData.width,
+      height: variantData.height,
+      format: variantData.format
+    };
+
+    return this.mediaRepository.generateVariants(mediaId.toString(), variantDto).pipe(
+      map((variants) => {
+        // Convert domain variants to old format
+        return variants.map(variant => ({
+          id: variant.id,
+          variant_type: variant.variantType,
+          quality: variant.quality,
+          width: variant.width,
+          height: variant.height,
+          format: variant.format,
+          file_size: variant.fileSize,
+          url: variant.url,
+          storage_key: variant.storageKey,
+          processing_time: variant.processingTime
+        }));
+      })
+    );
   }
 
+  /**
+   * Update media
+   * Uses MediaRepository (DDD pattern)
+   */
   updateMedia(mediaId: string, updateData: any): Observable<any> {
-    return this.apiService.updateMedia(parseInt(mediaId), updateData).pipe(
-      tap({
-        next: (response: any) => {
+    const updateDto: MediaUpdateDto = {
+      alt_text: updateData.alt_text,
+      caption: updateData.caption,
+      is_public: updateData.is_public
+    };
+
+    return this.mediaRepository.update(mediaId, updateDto).pipe(
+      map((domainMedia: DomainMedia) => {
+        const media = this.domainToOldFormat(domainMedia);
           const currentMedia = this.getMediaState().media;
           const updatedMedia = currentMedia.map(m => 
-            m.id === mediaId ? { ...m, ...response.data } : m
+          m.id === mediaId ? media : m
           );
           this.updateMediaState({ media: updatedMedia });
-        },
-        error: (error: any) => {
+        return {
+          success: true,
+          data: media
+        };
+      }),
+      catchError((error: any) => {
           console.error('Error updating media:', error);
-        }
+        throw error;
       })
     );
   }

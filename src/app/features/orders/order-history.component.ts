@@ -22,7 +22,6 @@ import {
   faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { OrderService } from '../../core/services/order.service';
-import { ApiService } from '../../core/services/api.service';
 import { Order, OrderStatus } from '../../core/models';
 
 interface OrderStatusTab {
@@ -402,7 +401,6 @@ interface OrderFilters {
 })
 export class OrderHistoryComponent implements OnInit {
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService);
   private router = inject(Router);
 
   // Font Awesome Icons

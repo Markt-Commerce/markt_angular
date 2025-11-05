@@ -36,7 +36,6 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
 import { CartService } from '../../core/services/cart.service';
 import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
-import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
@@ -422,7 +421,6 @@ export class MarketplaceComponent implements OnInit {
   private appStateService = inject(AppStateService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
   authService = inject(AuthService);
   access = inject(AccessControlService);
   media = inject(MediaOptimizationService);
@@ -659,20 +657,22 @@ export class MarketplaceComponent implements OnInit {
     
     // Optimized: Combined marketplace data loading with social posts
     combineLatest([
-      this.apiService.getMarketplaceProducts(),
-      this.apiService.getCategories()
+      this.marketplaceService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }),
+      this.marketplaceService.getCategories()
     ]).subscribe({
       next: ([productsResponse, categoriesResponse]) => {
         // Handle products data
-        const data = this.typeSafety.getProperty(productsResponse, 'data', productsResponse);
-        const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
-        this.products = this.typeSafety.toArray(items);
-        const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
-        this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
-        this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        if (productsResponse.success && productsResponse.data) {
+          this.products = productsResponse.data.items || [];
+          const pagination = productsResponse.data.pagination || {};
+          this.totalResults = pagination.total_items || this.products.length;
+          this.totalPages = pagination.total_pages || Math.max(1, Math.ceil(this.totalResults / 20));
+        }
         
         // Handle categories data
-        this.categories = this.typeSafety.toArray(this.typeSafety.getProperty(categoriesResponse, 'data', categoriesResponse));
+        if (categoriesResponse.success && categoriesResponse.data) {
+          this.categories = categoriesResponse.data || [];
+        }
         
         // Load social posts for content mixing
         this.loadSocialPosts();
@@ -681,20 +681,19 @@ export class MarketplaceComponent implements OnInit {
       },
       error: (error) => {
         this.errorMessage = 'Failed to load products. Please try again.';
-        // Fallback: some environments may not expose /products/marketplace; use generic /products
-        this.observableUtils.createSafeObservable({
-          source: this.apiService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }),
-          successHandler: (fallbackRes: any) => {
-            const data = this.typeSafety.getProperty(fallbackRes, 'data', fallbackRes);
-            const items = this.typeSafety.getProperty(data, 'items') || this.typeSafety.getProperty(data, 'results', []);
-            this.products = this.typeSafety.toArray(items);
-            const pagination = this.typeSafety.getProperty(data, 'pagination') || this.typeSafety.getProperty(data, 'meta', {});
-            this.totalResults = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_items') || this.typeSafety.getProperty(pagination, 'total'), this.products.length);
-            this.totalPages = this.typeSafety.toNumber(this.typeSafety.getProperty(pagination, 'total_pages'), this.totalResults ? Math.max(1, Math.ceil(this.totalResults / 20)) : 1);
+        // Fallback: try with basic parameters
+        this.marketplaceService.getProducts({ page: this.currentPage, per_page: 20, status: 'active' }).subscribe({
+          next: (fallbackRes) => {
+            if (fallbackRes.success && fallbackRes.data) {
+              this.products = fallbackRes.data.items || [];
+              const pagination = fallbackRes.data.pagination || {};
+              this.totalResults = pagination.total_items || this.products.length;
+              this.totalPages = pagination.total_pages || Math.max(1, Math.ceil(this.totalResults / 20));
             this.isLoading = false;
-            this.errorMessage = ''; // Clear error if fallback succeeds
+              this.errorMessage = '';
+            }
           },
-          errorSetter: (fallbackErr: string | null) => {
+          error: (fallbackErr) => {
             console.error('Error loading products (fallback):', fallbackErr);
             this.products = [];
             this.isLoading = false;
@@ -1017,12 +1016,13 @@ export class MarketplaceComponent implements OnInit {
 
   // Additional marketplace endpoint integrations
   getProducts(): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.getProducts(),
-      successHandler: (response: any) => {
-        this.products = response.data?.items || [];
+    this.marketplaceService.getProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.products = response.data.items || [];
+        }
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         console.error('Error loading products:', error);
         this.products = [];
       }
@@ -1030,12 +1030,13 @@ export class MarketplaceComponent implements OnInit {
   }
 
   getRecommendedProducts(): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.getRecommendedProducts(),
-      successHandler: (response: any) => {
+    this.marketplaceService.getRecommendedProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
         this.recommendedProducts = response.data || [];
+        }
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         console.error('Error loading recommended products:', error);
         this.recommendedProducts = [];
       }
@@ -1043,12 +1044,13 @@ export class MarketplaceComponent implements OnInit {
   }
 
   getTrendingProducts(): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.getTrendingProducts(),
-      successHandler: (response: any) => {
+    this.marketplaceService.getTrendingProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
         this.trendingProducts = response.data || [];
+        }
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         console.error('Error loading trending products:', error);
         this.trendingProducts = [];
       }
@@ -1056,22 +1058,22 @@ export class MarketplaceComponent implements OnInit {
   }
 
   trackProductView(productId: string): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.trackProductView(productId),
-      successHandler: (response: any) => {
+    this.marketplaceService.trackProductView(productId).subscribe({
+      next: () => {
+        // Product view tracked successfully
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         console.error('Error tracking product view:', error);
       }
     });
   }
 
   upvoteReview(reviewId: string): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.upvoteReview(reviewId),
-      successHandler: (response: any) => {
+    this.marketplaceService.upvoteReview(reviewId).subscribe({
+      next: () => {
+        // Review upvoted successfully
       },
-      errorSetter: (error: string | null) => {
+      error: (error) => {
         console.error('Error upvoting review:', error);
       }
     });

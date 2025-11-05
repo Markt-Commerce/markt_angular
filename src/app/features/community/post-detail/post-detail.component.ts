@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { SocialService } from '../../../core/services/social.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -417,7 +417,7 @@ import { ApiService } from '../../../core/services/api.service';
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private socialService = inject(SocialService);
 
   post = {
     id: 1,
@@ -468,9 +468,26 @@ export class PostDetailComponent implements OnInit {
     if (postId) {
       this.loading = true;
       
-      this.apiService.getPost(postId).subscribe({
-        next: (response) => {
-          this.post = response.data;
+      // Migrated to SocialService.getPost() - uses DDD pattern with PostRepository
+      this.socialService.getPost(postId).subscribe({
+        next: (post) => {
+          // Convert SocialService Post format to component's post format
+          this.post = {
+            id: post.id,
+            author: {
+              id: post.seller_id || '',
+              name: post.user?.username || post.seller?.shop_name || 'Unknown',
+              avatar: post.user?.profile_picture_url || post.seller?.profile_picture_url || '',
+              username: post.user?.username || post.seller?.shop_name || 'Unknown'
+            },
+            content: post.caption || post.content || '',
+            image: post.media?.[0]?.url || '',
+            likes: post.like_count || 0,
+            comments: post.comment_count || 0,
+            shares: 0,
+            createdAt: post.created_at || '',
+            isLiked: post.is_liked || false
+          };
           this.loading = false;
         },
         error: (error) => {
@@ -479,10 +496,11 @@ export class PostDetailComponent implements OnInit {
         }
       });
 
-      // Load post comments
-      this.apiService.getPostComments(postId).subscribe({
+      // Migrated to SocialService.getPostComments() - uses DDD pattern with PostRepository
+      this.socialService.getPostComments(postId).subscribe({
         next: (response) => {
-          this.comments = response.data || [];
+          // SocialService returns PaginatedResponse<PostComment>
+          this.comments = response.items || [];
         },
         error: (error) => {
           console.error('Error loading post comments:', error);
@@ -498,10 +516,11 @@ export class PostDetailComponent implements OnInit {
 
   likePost(): void {
     if (this.post) {
-      this.apiService.likePost(this.post.id.toString()).subscribe({
-        next: (response) => {
-          this.post!.isLiked = !this.post!.isLiked;
-          this.post!.likes += this.post!.isLiked ? 1 : -1;
+      // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
+      this.socialService.likePost(this.post.id.toString()).subscribe({
+        next: (updatedPost) => {
+          this.post!.isLiked = true;
+          this.post!.likes = updatedPost.like_count || this.post!.likes + 1;
         },
         error: (error) => {
           console.error('Error liking post:', error);
@@ -512,9 +531,10 @@ export class PostDetailComponent implements OnInit {
 
   addComment(): void {
     if (this.newComment.trim() && this.post) {
-      this.apiService.commentOnPost(this.post.id.toString(), { content: this.newComment }).subscribe({
-        next: (response) => {
-          this.comments.push(response.data);
+      // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
+      this.socialService.addComment(this.post.id.toString(), { content: this.newComment }).subscribe({
+        next: (newComment) => {
+          this.comments.push(newComment);
           this.post!.comments += 1;
           this.newComment = '';
         },

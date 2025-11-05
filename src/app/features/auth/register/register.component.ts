@@ -5,8 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractContro
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faSpinner, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
-import { RegisterRequest } from '../../../core/models/auth.model';
-import { ApiService } from '../../../core/services/api.service';
+import { UserRegister } from '../../../core/models';
 import { debounceTime, distinctUntilChanged, filter, switchMap, map, catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
@@ -298,7 +297,6 @@ export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
   private typeSafety = inject(TypeSafetyService);
   private errorHandler = inject(ErrorHandlerService);
 
@@ -332,8 +330,10 @@ export class RegisterComponent implements OnInit {
         switchMap((value: string) => {
           this.usernameChecking = true;
           this.usernameAvailable = null;
-          return this.apiService.checkUsername(value.trim()).pipe(
+          // Migrated to AuthService.checkUsername() - uses DDD pattern
+          return this.authService.checkUsername(value.trim()).pipe(
             map((res) => {
+              // AuthService returns ApiResponse<{ available: boolean; message?: string }>
               // Type-safe extraction of availability status
               const available = this.typeSafety.getNestedProperty(res, 'data.available') ?? this.typeSafety.getProperty(res, 'available');
               return this.typeSafety.toBoolean(available, true);
@@ -415,8 +415,8 @@ export class RegisterComponent implements OnInit {
 
       const formData = this.registerForm.value;
       
-      // Build the register data according to API structure
-      const registerData: RegisterRequest = {
+      // Build the register data according to UserRegister interface (AuthService expects this format)
+      const registerData: UserRegister = {
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -448,26 +448,13 @@ export class RegisterComponent implements OnInit {
         };
       }
 
-      this.apiService.register(registerData).subscribe({
+      // Migrated to AuthService.register() - uses DDD pattern
+      this.authService.register(registerData).subscribe({
         next: (response) => {
-          if (response.success) {
-            const userData = this.typeSafety.extractUserData(response);
-            const token = userData.token;
-            const user = userData.user;
-            if (token && user) {
-              // Store user data and token using the same keys AuthService expects
-              localStorage.setItem('markt_token', token);
-              localStorage.setItem('markt_user', JSON.stringify(user));
-            
-              // Hydrate auth state, then navigate (AuthGuard requires isAuthenticated)
-              this.authService.getProfile().subscribe({
-                next: () => this.router.navigate(['/onboarding']),
-                error: () => this.router.navigate(['/onboarding']) // fallback: still try
-              });
-            } else {
-              // Likely email verification required before session is active
-              this.router.navigate(['/auth/verify-email'], { queryParams: { email: formData.email } });
-            }
+          if (response.success && response.data) {
+            // AuthService.register() already handles token storage and user state
+            // The user is already set in AuthService, so we can navigate directly
+            this.router.navigate(['/onboarding']);
           } else {
             const msg = this.typeSafety.toString(this.typeSafety.getProperty(response, 'message') || this.typeSafety.getNestedProperty(response, 'data.message'));
             const errs = this.typeSafety.getProperty(response, 'errors') || this.typeSafety.getNestedProperty(response, 'data.errors');
@@ -552,12 +539,13 @@ export class RegisterComponent implements OnInit {
   checkUsername(): void {
     const username = this.registerForm.value.username;
     if (username && username.length >= 3) {
-      this.apiService.checkUsername(username).subscribe({
+      // Migrated to AuthService.checkUsername() - uses DDD pattern
+      this.authService.checkUsername(username).subscribe({
         next: (response) => {
-          // Assuming response.success is true if username is available
-          // You might need to adjust this based on your API response structure
-          // For now, we'll just set a flag to indicate availability
-          // this.usernameAvailable = response.success; 
+          // AuthService returns ApiResponse<{ available: boolean; message?: string }>
+          if (response.success && response.data) {
+            this.usernameAvailable = response.data.available;
+          }
           this.usernameChecking = false;
         },
         error: (error) => {

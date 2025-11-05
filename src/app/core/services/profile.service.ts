@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { ApiService } from './api.service';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { UserRepository } from '../../domains/authentication/repositories/user.repository';
+import { User as DomainUser } from '../../domains/authentication/models/user.model';
+import { ProfileUpdateDto, BuyerAccountUpdateDto, SellerAccountUpdateDto } from '../../domains/authentication/models/user.dto';
 import { 
   User, 
   UserProfile, 
@@ -10,7 +12,7 @@ import {
   BuyerUpdate,
   SellerUpdate
 } from '../models';
-import { tap, map } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
 export interface ProfileState {
   profile: UserProfile | null;
@@ -43,7 +45,7 @@ export interface ProfileSettings {
   providedIn: 'root'
 })
 export class ProfileService {
-  private apiService = inject(ApiService);
+  private userRepository = inject(UserRepository);
   
   private profileStateSubject = new BehaviorSubject<ProfileState>({
     profile: null,
@@ -61,24 +63,54 @@ export class ProfileService {
   // ============================================================================
 
   /**
+   * Convert domain User to UserProfile (for backward compatibility)
+   */
+  private domainToUserProfile(domainUser: DomainUser): UserProfile {
+    return {
+      ...domainUser as any,
+      address: domainUser.address ? {
+        latitude: domainUser.address.latitude,
+        longitude: domainUser.address.longitude,
+        street: domainUser.address.street,
+        house_number: domainUser.address.houseNumber,
+        city: domainUser.address.city,
+        state: domainUser.address.state,
+        country: domainUser.address.country,
+        postal_code: domainUser.address.postalCode
+      } : {
+        latitude: 0,
+        longitude: 0,
+        street: '',
+        house_number: '',
+        city: '',
+        state: '',
+        country: '',
+        postal_code: ''
+      }
+    } as UserProfile;
+  }
+
+  /**
    * Get user profile
+   * Uses UserRepository (DDD pattern)
    */
   getProfile(): Observable<any> {
-    return this.apiService.getProfile().pipe(
-      tap({
-        next: (response: any) => {
+    return this.userRepository.getProfile().pipe(
+      map((domainUser: DomainUser) => {
+        const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
-            profile: response.data as UserProfile,
+          profile,
             isLoading: false,
             error: null
           });
-        },
-        error: (error: any) => {
+        return { success: true, data: profile };
+      }),
+      catchError((error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to load profile'
           });
-        }
+        throw error;
       })
     );
   }
@@ -100,126 +132,199 @@ export class ProfileService {
   }
 
   updateProfile(profileData: any): Observable<any> {
-    return this.apiService.updateProfile(profileData).pipe(
-      tap({
-        next: (response: any) => {
+    const updateDto: ProfileUpdateDto = {
+      username: profileData.username,
+      email: profileData.email,
+      phone_number: profileData.phone_number,
+      profile_picture_url: profileData.profile_picture_url
+    };
+    
+    return this.userRepository.updateProfile(updateDto).pipe(
+      map((domainUser: DomainUser) => {
+        const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
-            profile: response.data as UserProfile,
+          profile,
             isLoading: false,
             error: null
           });
-        },
-        error: (error: any) => {
+        return { success: true, data: profile };
+      }),
+      catchError((error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update profile'
           });
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Update buyer profile
+   * Uses UserRepository (DDD pattern)
    */
   updateBuyerProfile(buyerData: any): Observable<any> {
     this.setLoading(true);
     
-    return this.apiService.updateBuyerProfile(buyerData).pipe(
-      tap({
-        next: (response: any) => {
+    const updateDto: BuyerAccountUpdateDto = {
+      buyername: buyerData.buyername,
+      shipping_address: buyerData.shipping_address
+    };
+    
+    return this.userRepository.updateBuyerAccount(updateDto).pipe(
+      map((domainUser: DomainUser) => {
+        const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
-            profile: response.data as UserProfile,
+          profile,
             isLoading: false,
             error: null
           });
-        },
-        error: (error: any) => {
+        return { success: true, data: profile };
+      }),
+      catchError((error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update buyer profile'
           });
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Update seller profile
+   * Uses UserRepository (DDD pattern)
    */
   updateSellerProfile(sellerData: any): Observable<any> {
-    return this.apiService.updateSellerProfile(sellerData).pipe(
-      tap({
-        next: (response: any) => {
+    const updateDto: SellerAccountUpdateDto = {
+      shop_name: sellerData.shop_name,
+      description: sellerData.description,
+      policies: sellerData.policies,
+      category_ids: sellerData.category_ids
+    };
+    
+    return this.userRepository.updateSellerAccount(updateDto).pipe(
+      map((domainUser: DomainUser) => {
+        const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
-            profile: response.data as UserProfile,
+          profile,
             isLoading: false,
             error: null
           });
-        },
-        error: (error: any) => {
+        return { success: true, data: profile };
+      }),
+      catchError((error: any) => {
           this.updateProfileState({
             isLoading: false,
             error: error.message || 'Failed to update seller profile'
           });
-        }
+        throw error;
       })
     );
   }
 
   /**
    * Upload profile picture
+   * Uses UserRepository (DDD pattern)
    */
   uploadProfilePicture(file: File): Observable<any> {
-    this.setLoading(true);
-    
-    return this.apiService.uploadProfilePicture(file).pipe(
-      tap({
-        next: (response: any) => {
-          if (response.success) {
-            this.updateProfileState({
-              profile: {
-                ...this.getProfileState().profile!,
-                profile_picture_url: response.data.original_url
+    return this.userRepository.uploadProfilePicture(file).pipe(
+      map((media) => {
+        return {
+          success: true,
+          data: {
+            profile_picture_url: media.originalUrl,
+            media: {
+              id: media.id,
+              url: media.originalUrl,
+              thumbnail_url: media.thumbnailUrl
               }
-            });
           }
-        },
-        error: (error: any) => {
+        };
+      }),
+      catchError((error: any) => {
           console.error('Error uploading profile picture:', error);
-          this.setError(error.message);
-          this.setLoading(false);
-        }
+        return of({
+          success: false,
+          error: error.message
+        });
       })
     );
   }
 
   /**
    * Get public profile
+   * Uses UserRepository (DDD pattern)
    */
   getPublicProfile(userId: string): Observable<any> {
-    return this.apiService.getPublicProfile(userId);
+    return this.userRepository.findById(userId).pipe(
+      map((domainUser: DomainUser) => {
+        const profile = this.domainToUserProfile(domainUser);
+        return { success: true, data: profile };
+      })
+    );
   }
 
   /**
    * Get user settings
+   * Uses UserRepository (DDD pattern)
    */
   getUserSettings(): Observable<any> {
-    return this.apiService.getUserSettings();
+    return this.userRepository.getUserSettings().pipe(
+      map((settings) => ({
+        success: true,
+        data: settings
+      })),
+      catchError((error: any) => {
+        console.error('Error getting user settings:', error);
+        return of({
+          success: false,
+          data: {},
+          error: error.message
+        });
+      })
+    );
   }
 
   /**
    * Update user settings
+   * Uses UserRepository (DDD pattern)
    */
   updateUserSettings(settings: any): Observable<any> {
-    return this.apiService.updateUserSettings(settings);
+    return this.userRepository.updateUserSettings(settings).pipe(
+      map((updatedSettings) => ({
+        success: true,
+        data: updatedSettings
+      })),
+      catchError((error: any) => {
+        console.error('Error updating user settings:', error);
+        return of({
+          success: false,
+          error: error.message
+        });
+      })
+    );
   }
 
   /**
    * Check username availability
+   * Uses UserRepository (DDD pattern)
    */
   checkUsername(username: string): Observable<any> {
-    return this.apiService.checkUsername(username);
+    return this.userRepository.checkUsername(username).pipe(
+      map((result) => ({
+        success: true,
+        data: result
+      })),
+      catchError((error: any) => {
+        console.error('Error checking username:', error);
+        return of({
+          success: false,
+          data: { available: false },
+          error: error.message
+        });
+      })
+    );
   }
 
   // ============================================================================

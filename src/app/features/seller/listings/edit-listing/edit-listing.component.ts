@@ -5,7 +5,7 @@ import { ROUTES_ABSOLUTE } from '../../../../core/config/routes.config';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
-import { ApiService } from '../../../../core/services/api.service';
+import { MarketplaceService } from '../../../../core/services/marketplace.service';
 import { Product } from '../../../../core/models';
 
 @Component({
@@ -464,7 +464,7 @@ export class EditListingComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private marketplaceService = inject(MarketplaceService);
 
   productForm!: FormGroup;
   loading = true;
@@ -521,7 +521,8 @@ export class EditListingComponent implements OnInit {
     if (productId) {
       this.loading = true;
       
-      this.apiService.getProduct(productId).subscribe({
+      // Migrated to MarketplaceService.getProduct() - uses DDD pattern with ProductRepository
+      this.marketplaceService.getProduct(productId).subscribe({
         next: (response) => {
           this.product = response.data;
       this.populateForm();
@@ -610,7 +611,8 @@ export class EditListingComponent implements OnInit {
   }
 
   private updateProduct(productData: any): void {
-    this.apiService.updateProduct(this.product!.id, productData).subscribe({
+    // Migrated to MarketplaceService.updateProduct() - uses DDD pattern with ProductRepository
+    this.marketplaceService.updateProduct(this.product!.id, productData).subscribe({
       next: (response) => {
         this.saving = false;
         this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]);

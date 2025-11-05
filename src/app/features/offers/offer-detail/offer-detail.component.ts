@@ -4,7 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
-import { ApiService } from '../../../core/services/api.service';
+import { RequestService } from '../../../core/services/request.service';
 import { CartService } from '../../../core/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
@@ -869,7 +869,7 @@ export class OfferDetailComponent implements OnInit {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private requestService = inject(RequestService);
   private cartService = inject(CartService);
 
   offer?: Offer;
@@ -901,13 +901,25 @@ export class OfferDetailComponent implements OnInit {
     const offerId = this.route.snapshot.paramMap.get('id');
     
     if (offerId) {
-      // Use the actual API service to get offer details
-      this.apiService.getRequestOffers(offerId).subscribe({
+      // Note: RequestService.getRequestOffers() requires requestId, not offerId
+      // We need to get the request_id first. For now, we'll need to get it from the route or use a different approach
+      // TODO: Consider adding getOffer(offerId) method to RequestService if needed
+      // For now, this will need to be handled differently - may need to keep ApiService for this specific case
+      // or we need to know the request_id from the route
+      const requestId = this.route.snapshot.queryParamMap.get('requestId');
+      
+      if (requestId) {
+        // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
+        this.requestService.getRequestOffers(requestId).subscribe({
         next: (response) => {
-          if (response.data && response.data.length > 0) {
-            this.offer = response.data[0] as any; // Get the first offer
+            if (response.success && response.data && response.data.length > 0) {
+              // Find the offer by ID
+              const foundOffer = response.data.find(o => o.id === offerId);
+              if (foundOffer) {
+                this.offer = this.mapOfferToComponentFormat(foundOffer);
             this.loadRequest();
             this.loadSimilarOffers();
+              }
           }
         },
         error: (error) => {
@@ -915,13 +927,51 @@ export class OfferDetailComponent implements OnInit {
         }
       });
     }
+    }
+  }
+
+  private mapOfferToComponentFormat(apiOffer: any): Offer {
+    // Map SellerOffer from API to component's Offer interface
+    return {
+      id: apiOffer.id,
+      request_id: apiOffer.request_id,
+      seller: {
+        id: apiOffer.seller_id,
+        name: '', // TODO: Get from seller data
+        avatar: '', // TODO: Get from seller data
+        username: '', // TODO: Get from seller data
+        rating: 0, // TODO: Get from seller data
+        review_count: 0, // TODO: Get from seller data
+        is_verified: false // TODO: Get from seller data
+      },
+      product: {
+        name: '', // TODO: Get from product data
+        description: '', // TODO: Get from product data
+        condition: '', // TODO: Get from product data
+        images: [] // TODO: Get from product data
+      },
+      price: apiOffer.price,
+      currency: 'NGN',
+      quantity: 1, // TODO: Get from offer data if available
+      delivery_time: 0, // TODO: Get from offer data if available
+      delivery_cost: 0, // TODO: Get from offer data if available
+      total_price: apiOffer.price,
+      status: apiOffer.status as 'pending' | 'accepted' | 'rejected' | 'expired',
+      created_at: apiOffer.created_at,
+      expires_at: '', // TODO: Get from offer data if available
+      message: apiOffer.message,
+      sellerId: apiOffer.seller_id
+    };
   }
 
   private loadRequest(): void {
     if (this.offer?.request_id) {
-      this.apiService.getRequest(this.offer.request_id).subscribe({
+      // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
+      this.requestService.getRequest(this.offer.request_id).subscribe({
         next: (response) => {
+          if (response.success && response.data) {
           this.request = response.data as any;
+          }
         },
         error: (error) => {
           console.error('Error loading request:', error);
@@ -932,9 +982,14 @@ export class OfferDetailComponent implements OnInit {
 
   private loadSimilarOffers(): void {
     if (this.offer?.request_id) {
-      this.apiService.getRequestOffers(this.offer.request_id).subscribe({
+      // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
+      this.requestService.getRequestOffers(this.offer.request_id).subscribe({
         next: (response) => {
-          this.similarOffers = response.data.filter(o => o.id !== this.offer?.id) as any[];
+          if (response.success && response.data) {
+            this.similarOffers = response.data
+              .filter(o => o.id !== this.offer?.id)
+              .map(o => this.mapOfferToComponentFormat(o));
+          }
         },
         error: (error) => {
           console.error('Error loading similar offers:', error);
@@ -978,11 +1033,13 @@ export class OfferDetailComponent implements OnInit {
       this.accepting = true;
       
       if (this.offer?.id) {
-        this.apiService.acceptOffer(this.offer.id).subscribe({
+        // Migrated to RequestService.acceptOffer() - uses DDD pattern with RequestRepository
+        this.requestService.acceptOffer(this.offer.id).subscribe({
           next: (response) => {
             this.accepting = false;
+            if (response.success && response.data) {
             this.offer!.status = 'accepted';
-            const productId = (response?.data?.product_id) || (this.offer as any)?.productId || (this.offer as any)?.product_id;
+              const productId = (response.data as any)?.product_id || (this.offer as any)?.productId || (this.offer as any)?.product_id;
             if (productId) {
               this.cartService.addToCart(String(productId), 1).subscribe({
                 next: () => this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } }),
@@ -990,6 +1047,7 @@ export class OfferDetailComponent implements OnInit {
               });
             } else {
               this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } });
+              }
             }
           },
           error: (error) => {
@@ -1006,12 +1064,15 @@ export class OfferDetailComponent implements OnInit {
       this.rejecting = true;
       
       if (this.offer?.id) {
-        this.apiService.rejectOffer(this.offer.id).subscribe({
+        // Migrated to RequestService.rejectOffer() - uses DDD pattern with RequestRepository
+        this.requestService.rejectOffer(this.offer.id).subscribe({
           next: (response) => {
             this.rejecting = false;
+            if (response.success && response.data) {
             this.offer!.status = 'rejected';
             // Optionally navigate back to requests
             this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, this.request?.id]);
+            }
           },
           error: (error) => {
             console.error('Error rejecting offer:', error);
@@ -1033,14 +1094,23 @@ export class OfferDetailComponent implements OnInit {
       
       const formData = this.counterOfferForm.value;
       
-      if (this.offer?.id) {
-        // Use the createOffer endpoint for counter offers
-        this.apiService.createOffer(this.offer.request_id, formData).subscribe({
+      if (this.offer?.request_id) {
+        // Migrated to RequestService.addOffer() - uses DDD pattern with RequestRepository
+        // RequestService.addOffer() expects SellerOfferCreate interface: { product_id?, price, message }
+        const sellerOfferCreate = {
+          product_id: formData.product_id || undefined,
+          price: formData.price,
+          message: formData.message || ''
+        };
+        
+        this.requestService.addOffer(this.offer.request_id, sellerOfferCreate).subscribe({
           next: (response) => {
             this.submittingCounter = false;
+            if (response.success && response.data) {
             this.closeCounterOffer();
             // Optionally navigate to the new offer
             this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
+            }
           },
           error: (error) => {
             console.error('Error submitting counter offer:', error);

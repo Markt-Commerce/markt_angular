@@ -16,7 +16,6 @@ import {
   faCreditCard
 } from '@fortawesome/free-solid-svg-icons';
 import { OrderService } from '../../core/services/order.service';
-import { ApiService } from '../../core/services/api.service';
 
 interface OrderItem {
   id: string;
@@ -292,7 +291,6 @@ export class OrderConfirmationComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService);
 
   // Icons
   faCheck = faCheck;
@@ -359,9 +357,11 @@ export class OrderConfirmationComponent implements OnInit {
     
     if (orderId) {
       this.loading = true;
-      this.apiService.getOrder(orderId).subscribe({
+      this.orderService.getOrder(orderId).subscribe({
         next: (response) => {
+          if (response.success && response.data) {
           this.orderData = this.transformOrderData(response.data);
+          }
           this.loading = false;
         },
         error: (error) => {

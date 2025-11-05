@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { TypeSafetyService } from './type-safety.service';
-import { Observable, BehaviorSubject, Subject } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { ApiService } from './api.service';
+import { Observable, BehaviorSubject, Subject, of } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
+import { ChatRepository } from '../../domains/chat/repositories/chat.repository';
+import { ChatRoom as DomainChatRoom, ChatMessage as DomainChatMessage } from '../../domains/chat/models/chat.model';
+import { CreateChatRoomDto, SendMessageDto } from '../../domains/chat/models/chat.dto';
 import { 
   ChatRoom, 
   ChatMessage, 
@@ -27,7 +29,7 @@ export interface ChatState {
 })
 export class ChatService {
   private typeSafety = inject(TypeSafetyService);
-  private apiService = inject(ApiService);
+  private chatRepository = inject(ChatRepository);
   private realtime = inject(RealtimeService);
   
   private chatStateSubject = new BehaviorSubject<ChatState>({
@@ -49,6 +51,64 @@ export class ChatService {
 
   constructor() {
     this.initializeSockets();
+  }
+
+  /**
+   * Convert domain ChatRoom to old ChatRoom interface (for backward compatibility)
+   */
+  private domainRoomToOldFormat(domainRoom: DomainChatRoom): ChatRoom {
+    return {
+      id: domainRoom.id,
+      buyer_id: domainRoom.buyerId,
+      seller_id: domainRoom.sellerId,
+      product_id: domainRoom.productId,
+      request_id: domainRoom.requestId,
+      last_message_at: domainRoom.lastMessageAt,
+      unread_count_buyer: domainRoom.unreadCountBuyer,
+      unread_count_seller: domainRoom.unreadCountSeller,
+      pinned: domainRoom.pinned,
+      muted: domainRoom.muted,
+      archived: domainRoom.archived
+    };
+  }
+
+  /**
+   * Convert domain ChatMessage to old ChatMessage interface (for backward compatibility)
+   */
+  private domainMessageToOldFormat(domainMessage: DomainChatMessage): ChatMessage {
+    return {
+      id: domainMessage.id,
+      room_id: domainMessage.roomId,
+      sender_id: domainMessage.senderId,
+      content: domainMessage.content,
+      message_type: domainMessage.messageType,
+      is_read: domainMessage.isRead,
+      read_at: domainMessage.readAt,
+      created_at: domainMessage.createdAt
+    };
+  }
+
+  /**
+   * Convert old CreateChatRoom to CreateChatRoomDto
+   */
+  private oldToDomainCreateRoom(oldCreate: CreateChatRoom): CreateChatRoomDto {
+    return {
+      buyer_id: oldCreate.buyer_id,
+      seller_id: oldCreate.seller_id,
+      product_id: oldCreate.product_id,
+      request_id: oldCreate.request_id
+    };
+  }
+
+  /**
+   * Convert old SendMessage to SendMessageDto
+   */
+  private oldToDomainSendMessage(oldSend: SendMessage): SendMessageDto {
+    return {
+      content: oldSend.content,
+      message_type: oldSend.message_type,
+      message_data: oldSend.message_data
+    };
   }
 
   // ============================================================================
@@ -87,32 +147,50 @@ export class ChatService {
 
   /**
    * Get all chat rooms
+   * Uses ChatRepository (DDD pattern)
    */
   getChatRooms(params?: any): Observable<any> {
-    return this.apiService.getChatRooms(params).pipe(
-      tap(response => {
-        if (response.success) {
-          this.updateChatState({ rooms: response.data.rooms });
-        }
+    return this.chatRepository.getRooms(params).pipe(
+      map((domainRooms: DomainChatRoom[]) => {
+        const rooms = domainRooms.map(r => this.domainRoomToOldFormat(r));
+        this.updateChatState({ rooms });
+        return {
+          success: true,
+          data: { rooms }
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Error fetching chat rooms:', error);
+        return of({ success: false, data: { rooms: [] } });
       })
     );
   }
 
   /**
    * Create new chat room
+   * Uses ChatRepository (DDD pattern)
    */
   createChatRoom(roomData: CreateChatRoom): Observable<any> {
-    return this.apiService.createChatRoom(roomData).pipe(
-      tap(response => {
-        if (response.success) {
+    const createDto = this.oldToDomainCreateRoom(roomData);
+    
+    return this.chatRepository.createRoom(createDto).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
           const currentRooms = this.getChatState().rooms;
           this.updateChatState({ 
-            rooms: [response.data, ...currentRooms],
-            currentRoom: response.data
+          rooms: [room, ...currentRooms],
+          currentRoom: room
           });
           // Join the created room via socket
-          this.joinRoom(response.data.id);
-        }
+        this.joinRoom(room.id);
+        return {
+          success: true,
+          data: room
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Error creating chat room:', error);
+        throw error;
       })
     );
   }
@@ -181,13 +259,21 @@ export class ChatService {
 
   /**
    * Get chat messages
+   * Uses ChatRepository (DDD pattern)
    */
   getChatMessages(roomId: string, params?: any): Observable<any> {
-    return this.apiService.getChatMessages(roomId, params).pipe(
-      tap(response => {
-        if (response.success) {
-          this.updateChatState({ messages: response.data.messages });
-        }
+    return this.chatRepository.getMessages(roomId, params).pipe(
+      map((domainMessages: DomainChatMessage[]) => {
+        const messages = domainMessages.map(m => this.domainMessageToOldFormat(m));
+        this.updateChatState({ messages });
+        return {
+          success: true,
+          data: { messages }
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Error fetching chat messages:', error);
+        return of({ success: false, data: { messages: [] } });
       })
     );
   }
@@ -201,12 +287,14 @@ export class ChatService {
 
   /**
    * Send message
+   * Uses ChatRepository (DDD pattern)
    */
   sendMessage(roomId: string, messageData: SendMessage): Observable<any> {
-    return this.apiService.sendMessage(roomId, messageData).pipe(
-      tap(response => {
-        if (response.success) {
-          const newMessage = response.data;
+    const sendDto = this.oldToDomainSendMessage(messageData);
+    
+    return this.chatRepository.sendMessage(roomId, sendDto).pipe(
+      map((domainMessage: DomainChatMessage) => {
+        const newMessage = this.domainMessageToOldFormat(domainMessage);
           const currentMessages = this.getChatState().messages;
           this.updateChatState({ 
             messages: [...currentMessages, newMessage]
@@ -217,7 +305,14 @@ export class ChatService {
             message: messageData.content,
             ...messageData.message_data
           });
-        }
+        return {
+          success: true,
+          data: newMessage
+        };
+      }),
+      catchError((error: any) => {
+        console.error('Error sending message:', error);
+        throw error;
       })
     );
   }
@@ -259,17 +354,22 @@ export class ChatService {
 
   /**
    * Mark messages as read (room-level per backend spec)
+   * Uses ChatRepository (DDD pattern)
    */
   markMessagesAsRead(roomId: string): Observable<any> {
-    return this.apiService.markMessagesAsRead(roomId).pipe(
-      tap(response => {
-        if (response.success) {
+    return this.chatRepository.markMessagesAsRead(roomId).pipe(
+      map(() => {
           const currentMessages = this.getChatState().messages;
           const updatedMessages = currentMessages.map(msg => 
             msg.room_id === roomId ? { ...msg, is_read: true } : msg
           );
           this.updateChatState({ messages: updatedMessages });
-        }
+        this.markRoomAsRead(roomId);
+        return { success: true };
+      }),
+      catchError((error: any) => {
+        console.error('Error marking messages as read:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
@@ -279,89 +379,114 @@ export class ChatService {
   // ============================================================================
 
   pinChat(roomId: string): Observable<any> {
-    return this.apiService.pinChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.pinned = true;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.pinRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error pinning chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   unpinChatRoom(roomId: string): Observable<any> {
-    return this.apiService.pinChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.pinned = false;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.unpinRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error unpinning chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   muteChat(roomId: string): Observable<any> {
-    return this.apiService.muteChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.muted = true;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.muteRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error muting chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   unmuteChatRoom(roomId: string): Observable<any> {
-    return this.apiService.muteChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.muted = false;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.unmuteRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error unmuting chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   archiveChat(roomId: string): Observable<any> {
-    return this.apiService.archiveChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.archived = true;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.archiveRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error archiving chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   unarchiveChatRoom(roomId: string): Observable<any> {
-    return this.apiService.archiveChatRoom(roomId).pipe(
-      map(response => response.data),
-      tap(() => {
-        const room = this.getChatState().rooms.find(r => r.id === roomId);
-        if (room) {
-          room.archived = false;
-          this.updateChatState({ rooms: [...this.getChatState().rooms] });
-        }
+    return this.chatRepository.unarchiveRoom(roomId).pipe(
+      map((domainRoom: DomainChatRoom) => {
+        const room = this.domainRoomToOldFormat(domainRoom);
+        const currentRooms = this.getChatState().rooms;
+        const updatedRooms = currentRooms.map(r => r.id === roomId ? room : r);
+        this.updateChatState({ rooms: updatedRooms });
+        return { success: true, data: room };
+      }),
+      catchError((error: any) => {
+        console.error('Error unarchiving chat:', error);
+        return of({ success: false, error: error.message });
       })
     );
   }
 
   deleteChat(roomId: string): Observable<void> {
-    return this.apiService.deleteChatRoom(roomId).pipe(
-      map(() => void 0),
-      tap(() => {
+    return this.chatRepository.deleteRoom(roomId).pipe(
+      map(() => {
         const updatedRooms = this.getChatState().rooms.filter(r => r.id !== roomId);
         this.updateChatState({ rooms: updatedRooms });
+        if (this.getChatState().currentRoom?.id === roomId) {
+          this.updateChatState({ currentRoom: null, messages: [] });
+        }
+        return void 0;
+      }),
+      catchError((error: any) => {
+        console.error('Error deleting chat:', error);
+        throw error;
       })
     );
   }
@@ -371,20 +496,47 @@ export class ChatService {
   // ============================================================================
 
   getMessageReactions(messageId: string): Observable<ChatMessageReactionSummary[]> {
-    return this.apiService.getMessageReactions(messageId).pipe(
-      map(response => response.data || [])
+    return this.chatRepository.getMessageReactions(messageId).pipe(
+      map((reactions) => {
+        // Convert DTO to old interface format
+        return reactions.map(reaction => ({
+          reaction_type: reaction.reaction_type,
+          emoji: reaction.emoji,
+          count: reaction.count,
+          has_reacted: reaction.has_reacted,
+          user_id: reaction.user_id
+        }));
+      }),
+      catchError((error: any) => {
+        console.error('Error getting message reactions:', error);
+        return of([]);
+      })
     );
   }
 
   addMessageReaction(messageId: string, reactionType: string): Observable<ChatMessageReactionSummary> {
-    return this.apiService.addMessageReaction(messageId, { reaction_type: reactionType }).pipe(
-      map(response => response.data)
+    return this.chatRepository.addMessageReaction(messageId, { reaction_type: reactionType }).pipe(
+      map((reaction) => ({
+        reaction_type: reaction.reaction_type,
+        emoji: reaction.emoji,
+        count: reaction.count,
+        has_reacted: reaction.has_reacted,
+        user_id: reaction.user_id
+      })),
+      catchError((error: any) => {
+        console.error('Error adding message reaction:', error);
+        throw error;
+      })
     );
   }
 
   removeMessageReaction(messageId: string, reactionType: string): Observable<void> {
-    return this.apiService.removeMessageReaction(messageId, reactionType).pipe(
-      map(() => void 0)
+    return this.chatRepository.removeMessageReaction(messageId, reactionType).pipe(
+      map(() => void 0),
+      catchError((error: any) => {
+        console.error('Error removing message reaction:', error);
+        throw error;
+      })
     );
   }
 

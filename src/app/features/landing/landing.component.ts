@@ -509,6 +509,7 @@ export class LandingComponent implements OnInit {
     this.errorMessage = '';
     
     // Load featured products
+    // TODO: getFeaturedProducts() not yet migrated to MarketplaceService - keeping ApiService for now
     this.loadingFeaturedProducts = true;
     this.apiService.getFeaturedProducts().subscribe({
       next: (response) => {
@@ -524,6 +525,7 @@ export class LandingComponent implements OnInit {
     });
 
     // Load trending requests
+    // TODO: getTrendingRequests() not yet migrated to RequestService - keeping ApiService for now
     this.loadingTrendingRequests = true;
     this.apiService.getTrendingRequests().subscribe({
       next: (response) => {
@@ -539,6 +541,7 @@ export class LandingComponent implements OnInit {
     });
 
     // Load community highlights
+    // TODO: getCommunityHighlights() not yet migrated to SocialService - keeping ApiService for now
     this.loadingCommunityHighlights = true;
     this.apiService.getCommunityHighlights().subscribe({
       next: (response) => {

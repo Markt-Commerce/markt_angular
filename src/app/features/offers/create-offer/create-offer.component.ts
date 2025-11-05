@@ -5,7 +5,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
-import { ApiService } from '../../../core/services/api.service';
+import { RequestService } from '../../../core/services/request.service';
+import { MediaService } from '../../../core/services/media.service';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 
 interface BuyerRequest {
@@ -579,7 +580,8 @@ export class CreateOfferComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private requestService = inject(RequestService);
+  private mediaService = inject(MediaService);
 
   loading = true;
   submitting = false;
@@ -612,9 +614,30 @@ export class CreateOfferComponent implements OnInit {
     if (requestId) {
       this.loading = true;
       
-      this.apiService.getRequest(requestId).subscribe({
+      // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
+      this.requestService.getRequest(requestId).subscribe({
         next: (response) => {
-          this.request = response.data as any;
+          if (response.success && response.data) {
+            // Convert API response to component's BuyerRequest interface
+            const apiRequest = response.data;
+            this.request = {
+              id: apiRequest.id,
+              title: apiRequest.title,
+              description: apiRequest.description,
+              budget: apiRequest.budget || 0,
+              buyerName: apiRequest.user?.username || apiRequest.buyer?.username || 'Unknown',
+              category: apiRequest.categories?.[0]?.name || 'Uncategorized',
+              buyerAvatar: apiRequest.user?.profile_picture_url || apiRequest.buyer?.profile_picture_url,
+              buyerId: apiRequest.user_id || apiRequest.user?.id || '',
+              status: apiRequest.status,
+              created_at: apiRequest.created_at,
+              updated_at: apiRequest.updated_at,
+              buyer: apiRequest.user || apiRequest.buyer,
+              category_ids: apiRequest.category_ids,
+              budget_min: apiRequest.budget,
+              budget_max: apiRequest.budget
+            };
+          }
           this.loading = false;
         },
         error: (error) => {
@@ -728,8 +751,9 @@ export class CreateOfferComponent implements OnInit {
 
       // First upload images if any
       if (this.selectedImages.length > 0) {
+        // Migrated to MediaService.uploadMedia() - uses DDD pattern with MediaRepository
         const uploadPromises = this.selectedImages.map(img => 
-          this.apiService.uploadMedia(img.file).toPromise()
+          this.mediaService.uploadMedia(img.file).toPromise()
         );
         
         Promise.all(uploadPromises).then(uploadResponses => {
@@ -750,10 +774,20 @@ export class CreateOfferComponent implements OnInit {
   }
 
   private createOffer(offerData: any): void {
-    this.apiService.createOffer(offerData.request_id, offerData).subscribe({
+    // Migrated to RequestService.addOffer() - uses DDD pattern with RequestRepository
+    // RequestService.addOffer() expects SellerOfferCreate interface: { product_id?, price, message }
+    const sellerOfferCreate = {
+      product_id: offerData.product_id || undefined,
+      price: offerData.price,
+      message: offerData.message || ''
+    };
+    
+    this.requestService.addOffer(offerData.request_id, sellerOfferCreate).subscribe({
       next: (response) => {
         this.submitting = false;
-        this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
+        if (response.success && response.data) {
+          this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
+        }
       },
       error: (error) => {
         console.error('Error creating offer:', error);

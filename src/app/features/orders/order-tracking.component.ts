@@ -14,7 +14,6 @@ import {
   faShieldAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { OrderService } from '../../core/services/order.service';
-import { ApiService } from '../../core/services/api.service';
 
 interface TrackingEvent {
   id: string;
@@ -287,7 +286,6 @@ export class OrderTrackingComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService);
 
   // Icons
   faCopy = faCopy;
@@ -380,9 +378,14 @@ export class OrderTrackingComponent implements OnInit {
     
     if (orderId) {
       this.loading = true;
-      this.apiService.trackOrder(orderId).subscribe({
+      this.orderService.trackOrder(orderId).subscribe({
         next: (response) => {
+          if (response.success && response.data) {
           this.trackingData = this.transformTrackingData(response.data);
+          } else {
+            // Use mock data if response format is unexpected
+            this.trackingData = this.getMockTrackingData();
+          }
           this.loading = false;
         },
         error: (error) => {

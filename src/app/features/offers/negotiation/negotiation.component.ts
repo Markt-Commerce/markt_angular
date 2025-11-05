@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faClock, faChevronRight, faBell, faPaperPlane, faPaperclip, faImage, faLightbulb, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../core/services/api.service'; // TODO: Will be integrated when backend is ready
 
 interface NegotiationStats {
   askingPrice: number;
@@ -205,7 +205,7 @@ interface MessageItem {
 export class NegotiationComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private api = inject(ApiService);
+  private apiService = inject(ApiService); // TODO: Will be integrated when backend is ready
 
   // icons
   faClock = faClock;

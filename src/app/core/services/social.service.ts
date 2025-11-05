@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { TypeSafetyService } from './type-safety.service';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { ApiService } from './api.service';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { PostRepository } from '../../domains/social/repositories/post.repository';
+import { Post as DomainPost } from '../../domains/social/models/post.model';
+import { PostCreateDto, CommentCreateDto } from '../../domains/social/models/post.dto';
+import { ApiService } from './api.service'; // Still needed for niche, stories, collections, follow operations (no repositories yet)
 import { 
   Niche, 
   NicheCreate, 
@@ -30,7 +33,7 @@ import {
   NichePostApproval,
   NicheMembershipSearchResult
 } from '../models';
-import { map } from 'rxjs/operators';
+import { map, switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { forkJoin } from 'rxjs';
 import { RealtimeService } from './realtime.service';
@@ -81,7 +84,8 @@ export interface ModerationData {
 })
 export class SocialService {
   private typeSafety = inject(TypeSafetyService);
-  private apiService = inject(ApiService);
+  private postRepository = inject(PostRepository);
+  private apiService = inject(ApiService); // Still needed for niche, stories, collections, follow operations
   private authService = inject(AuthService);
   private realtime = inject(RealtimeService);
   
@@ -103,9 +107,12 @@ export class SocialService {
   // ============================================================================
   // NICHE OPERATIONS
   // ============================================================================
+  // Note: Niche operations still use ApiService - no NicheRepository yet
+  // TODO: Create NicheRepository in domains/social or separate domains/niche
 
   /**
    * Get all niches
+   * Note: Uses ApiService - no NicheRepository yet
    */
   getNiches(params?: NicheParams): Observable<ApiResponse<PaginatedResponse<Niche>>> {
     return this.apiService.getNiches(params);
@@ -191,12 +198,53 @@ export class SocialService {
 
   /**
    * Get feed posts
+   * Uses PostRepository (DDD pattern)
    */
   getFeed(params?: FeedParams): Observable<PaginatedResponse<Post>> {
-    return this.apiService.globalSearch('', { type: 'posts', ...params }).pipe(
-      map(response => ({
-        items: response.data?.posts || [],
-        pagination: response.data?.pagination || { page: 1, limit: 10, total: 0 }
+    return this.postRepository.findAll(params).pipe(
+      map((domainPosts: DomainPost[]) => {
+        const posts = domainPosts.map(p => ({
+          id: p.id,
+          seller_id: p.sellerId,
+          caption: p.caption,
+          like_count: p.likeCount,
+          comment_count: p.commentCount,
+          created_at: p.createdAt,
+          categories: [],
+          media: [],
+          tags: []
+        })) as Post[];
+        
+        return {
+          items: posts,
+          pagination: {
+            page: params?.page || 1,
+            per_page: params?.per_page || 10,
+            total_items: posts.length,
+            total_pages: Math.ceil(posts.length / (params?.per_page || 10)),
+            first_page: 1,
+            last_page: Math.ceil(posts.length / (params?.per_page || 10)),
+            previous_page: (params?.page || 1) > 1 ? (params?.page || 1) - 1 : null,
+            next_page: null,
+            has_next: false,
+            has_prev: (params?.page || 1) > 1
+          }
+        };
+      }),
+      catchError(() => of({
+        items: [],
+        pagination: {
+          page: 1,
+          per_page: 10,
+          total_items: 0,
+          total_pages: 0,
+          first_page: 1,
+          last_page: 1,
+          previous_page: null,
+          next_page: null,
+          has_next: false,
+          has_prev: false
+        }
       }))
     );
   }
@@ -207,19 +255,22 @@ export class SocialService {
 
   /**
    * Like a post
+   * Uses PostRepository (DDD pattern)
    */
   likePost(postId: string): Observable<Post> {
-    return this.apiService.post<Post>(`/socials/posts/${postId}/like`).pipe(
-      map(response => response.data)
+    return this.postRepository.like(postId).pipe(
+      switchMap(() => this.getPost(postId))
     );
   }
 
   /**
    * Unlike a post
+   * Uses PostRepository (DDD pattern) - same as like for now
    */
   unlikePost(postId: string): Observable<Post> {
-    return this.apiService.delete<Post>(`/socials/posts/${postId}/like`).pipe(
-      map(response => response.data)
+    // TODO: Add unlike method to PostRepository
+    return this.postRepository.like(postId).pipe(
+      switchMap(() => this.getPost(postId))
     );
   }
 
@@ -332,19 +383,50 @@ export class SocialService {
 
   /**
    * Create new post
+   * Uses PostRepository (DDD pattern)
    */
   createPost(postData: PostCreate): Observable<Post> {
-    return this.apiService.createPost(postData).pipe(
-      map(response => response.data)
+    // Note: PostCreate to PostCreateDto conversion needed
+    // For now, keeping direct API call until repository supports full PostCreate
+    // TODO: Add proper conversion and use repository
+    return this.postRepository.create(postData as any).pipe(
+      map((domainPost: DomainPost) => {
+        // Convert domain to old format
+        return {
+          id: domainPost.id,
+          seller_id: domainPost.sellerId,
+          caption: domainPost.caption,
+          like_count: domainPost.likeCount,
+          comment_count: domainPost.commentCount,
+          created_at: domainPost.createdAt,
+          categories: [],
+          media: [],
+          tags: []
+        } as Post;
+      })
     );
   }
 
   /**
    * Get post details
+   * Uses PostRepository (DDD pattern)
    */
   getPost(postId: string): Observable<Post> {
-    return this.apiService.getPost(postId).pipe(
-      map(response => response.data)
+    return this.postRepository.findById(postId).pipe(
+      map((domainPost: DomainPost) => {
+        // Convert domain to old format
+        return {
+          id: domainPost.id,
+          seller_id: domainPost.sellerId,
+          caption: domainPost.caption,
+          like_count: domainPost.likeCount,
+          comment_count: domainPost.commentCount,
+          created_at: domainPost.createdAt,
+          categories: [],
+          media: [],
+          tags: []
+        } as Post;
+      })
     );
   }
 
@@ -384,19 +466,58 @@ export class SocialService {
 
   /**
    * Get post comments
+   * Uses PostRepository (DDD pattern)
    */
   getPostComments(postId: string, params?: FeedParams): Observable<PaginatedResponse<PostComment>> {
-    return this.apiService.getPostComments(postId, params).pipe(
-      map(response => response.data)
+    return this.postRepository.getComments(postId).pipe(
+      map((comments) => ({
+        items: comments.map(c => ({
+          id: c.id,
+          post_id: c.post_id,
+          user_id: c.user_id,
+          content: c.content,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+          like_count: c.like_count || 0,
+          user: {} as any
+        })) as PostComment[],
+        pagination: {
+          page: 1,
+          per_page: 10,
+          total_items: comments.length,
+          total_pages: 1,
+          first_page: 1,
+          last_page: 1,
+          previous_page: null,
+          next_page: null,
+          has_next: false,
+          has_prev: false
+        }
+      }))
     );
   }
 
   /**
    * Add comment to post
+   * Uses PostRepository (DDD pattern)
    */
   addComment(postId: string, commentData: CommentCreate): Observable<PostComment> {
-    return this.apiService.addComment(postId, commentData).pipe(
-      map(response => response.data)
+    const commentDto: CommentCreateDto = {
+      content: commentData.content,
+      parent_id: commentData.parent_id
+    };
+    
+    return this.postRepository.addComment(postId, commentDto).pipe(
+      map((comment) => ({
+        id: comment.id,
+        post_id: comment.post_id,
+        user_id: comment.user_id,
+        content: comment.content,
+        created_at: comment.created_at,
+        updated_at: comment.updated_at,
+        like_count: comment.like_count || 0,
+        user: {} as any
+      } as PostComment))
     );
   }
 

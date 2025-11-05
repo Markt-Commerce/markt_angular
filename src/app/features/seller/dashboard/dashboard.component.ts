@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../../core/services/api.service';
+import { OrderService } from '../../../core/services/order.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for getSellerAnalytics (not yet migrated)
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -73,7 +74,8 @@ interface SalesData {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  private apiService = inject(ApiService);
+  private orderService = inject(OrderService);
+  private apiService = inject(ApiService); // Still needed for getSellerAnalytics (not yet migrated)
   private router = inject(Router);
 
   // Font Awesome Icons
@@ -204,7 +206,7 @@ export class DashboardComponent implements OnInit {
    * This method fetches real data from the backend when available
    */
   private loadDashboardData(): void {
-    // Load seller analytics
+    // TODO: getSellerAnalytics() not yet migrated to domain service - keeping ApiService for now
     this.apiService.getSellerAnalytics().subscribe({
       next: (response) => {
         if (response.success && response.data) {
@@ -225,18 +227,19 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // Load recent orders
-    this.apiService.getMyOrders({ limit: 3 }).subscribe({
+    // Migrated to OrderService.getOrders() - uses DDD pattern with OrderRepository
+    this.orderService.getOrders().subscribe({
       next: (response) => {
-        if (response.success && response.data?.items) {
-          const orders: RecentOrder[] = response.data.items.map((order: any) => ({
+        if (response.success && response.data) {
+          // Take first 3 orders and map to RecentOrder format
+          const orders: RecentOrder[] = response.data.slice(0, 3).map((order: any) => ({
             id: order.id,
-            orderNumber: order.order_number,
-            customerName: order.buyer?.buyername || 'Unknown Customer',
+            orderNumber: order.order_number || order.id,
+            customerName: order.buyer?.buyername || order.buyer?.username || 'Unknown Customer',
             customerAvatar: order.buyer?.profile_picture_url || '/assets/images/default-avatar.png',
-            total: order.total,
-            status: order.status,
-            date: order.created_at
+            total: order.total || 0,
+            status: order.status || 'pending',
+            date: order.created_at || new Date().toISOString()
           }));
           this.recentOrders.set(orders);
         }

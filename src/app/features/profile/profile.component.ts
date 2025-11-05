@@ -4,8 +4,10 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { ApiService } from '../../core/services/api.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MarketplaceService } from '../../core/services/marketplace.service';
+import { ApiService } from '../../core/services/api.service'; // Still needed for getMyReviews, getUsers, createBuyerAccount, createSellerAccount, passwordReset, etc. (methods not migrated yet)
 import { ActivatedRoute } from '@angular/router';
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 
@@ -413,7 +415,9 @@ export class ProfileComponent implements OnInit {
   // Expose route constants to template
   readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
 
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
+  private marketplaceService = inject(MarketplaceService);
+  private apiService = inject(ApiService); // Still needed for getMyReviews, getMyProducts, getUsers
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private typeSafety = inject(TypeSafetyService);
@@ -458,9 +462,11 @@ export class ProfileComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     
-    this.apiService.getProfile().subscribe({
+    // Migrated to ProfileService.getProfile() - uses DDD pattern with UserRepository
+    this.profileService.getProfile().subscribe({
       next: (response) => {
-        const u = (this.typeSafety.getProperty(response, 'data', response) || response) as any;
+        if (response.success && response.data) {
+          const u = response.data as any;
         const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
         const location = u.address ? [u.address.city, u.address.state, u.address.country].filter(Boolean).join(', ') : '';
         const seller = u.seller_account || {};
@@ -487,9 +493,10 @@ export class ProfileComponent implements OnInit {
           shop_categories: Array.isArray(seller?.categories) ? seller.categories.map((c: any) => this.typeSafety.getProperty(c, 'name')).filter(Boolean) : [],
           policies: seller?.policies || {}
         } as UserProfile;
+        }
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading profile:', error);
         this.profile = null;
         this.errorMessage = 'Failed to load profile. Please try again.';
@@ -499,6 +506,7 @@ export class ProfileComponent implements OnInit {
   }
 
   loadReviews(): void {
+    // TODO: getMyReviews() not yet migrated to domain service - keeping ApiService for now
     this.apiService.getMyReviews().subscribe({
       next: (response) => {
         this.reviews = response.data || [];
@@ -512,7 +520,8 @@ export class ProfileComponent implements OnInit {
   }
 
   loadListings(): void {
-    this.apiService.getMyProducts().subscribe({
+    // Migrated to MarketplaceService.getMyProducts() - uses DDD pattern with ProductRepository
+    this.marketplaceService.getMyProducts().subscribe({
       next: (response) => {
         const items: any[] = response?.data?.items || [];
         this.listings = items.map((p: any) => {
@@ -582,20 +591,28 @@ export class ProfileComponent implements OnInit {
   }
 
   updateBuyerProfile(buyerData: any): void {
-    this.apiService.updateBuyerProfile(buyerData).subscribe({
+    // Use ProfileService (DDD pattern)
+    this.profileService.updateBuyerProfile(buyerData).subscribe({
       next: (response) => {
+        if (response.success) {
+          this.loadProfile(); // Refresh profile
+        }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating buyer profile:', error);
       }
     });
   }
 
   updateSellerProfile(sellerData: any): void {
-    this.apiService.updateSellerProfile(sellerData).subscribe({
+    // Use ProfileService (DDD pattern)
+    this.profileService.updateSellerProfile(sellerData).subscribe({
       next: (response) => {
+        if (response.success) {
+          this.loadProfile(); // Refresh profile
+        }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating seller profile:', error);
       }
     });
@@ -625,30 +642,42 @@ export class ProfileComponent implements OnInit {
   }
 
   getPublicProfile(userId: string): void {
-    this.apiService.getPublicProfile(userId).subscribe({
+    // Use ProfileService (DDD pattern)
+    this.profileService.getPublicProfile(userId).subscribe({
       next: (response) => {
+        if (response.success && response.data) {
+          // Handle public profile data
+        }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading public profile:', error);
       }
     });
   }
 
   loadUserSettings(): void {
-    this.apiService.getUserSettings().subscribe({
+    // Use ProfileService (DDD pattern)
+    this.profileService.getUserSettings().subscribe({
       next: (response) => {
+        if (response.success && response.data) {
+          // Handle user settings data
+        }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading user settings:', error);
       }
     });
   }
 
   updateUserSettings(settings: any): void {
-    this.apiService.updateUserSettings(settings).subscribe({
+    // Use ProfileService (DDD pattern)
+    this.profileService.updateUserSettings(settings).subscribe({
       next: (response) => {
+        if (response.success) {
+          // Settings updated successfully
+        }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating user settings:', error);
       }
     });

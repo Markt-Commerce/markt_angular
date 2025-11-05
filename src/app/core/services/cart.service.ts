@@ -1,17 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { ApiService } from './api.service';
+import { BehaviorSubject, Observable, tap, throwError } from 'rxjs';
+import { CartRepository } from '../../domains/orders/repositories/cart.repository';
+import { Cart as DomainCart, CartItem as DomainCartItem } from '../../domains/orders/models/cart.model';
+import { AddToCartDto, UpdateCartItemDto } from '../../domains/orders/models/order.dto';
 import { Cart, CartItem, AddToCart, UpdateCartItem, Checkout, Order, CartSummary, ApiResponse } from '../models';
 import { CheckoutData } from './api.service';
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
-  private apiService = inject(ApiService);
+  private cartRepository = inject(CartRepository);
   private authService = inject(AuthService);
   
   private cartSubject = new BehaviorSubject<Cart | null>(null);
@@ -50,6 +51,7 @@ export class CartService {
 
   /**
    * Get current cart
+   * Uses CartRepository (DDD pattern)
    */
   getCart(): Observable<ApiResponse<Cart>> {
     const role = this.authService.getCurrentRole?.();
@@ -61,13 +63,16 @@ export class CartService {
         message: 'Only buyers can access cart'
       }).asObservable();
     }
-    return this.apiService.getCart().pipe(
+    return this.cartRepository.getCart().pipe(
+      map((domainCart: DomainCart) => {
+        const cart = this.domainToOldFormat(domainCart);
+        this.cartSubject.next(cart);
+        return {
+          success: true,
+          data: cart
+        };
+      }),
       tap({
-        next: (response: ApiResponse<Cart>) => {
-          if (response.success) {
-            this.cartSubject.next(response.data);
-          }
-        },
         error: (error: unknown) => {
           console.error('Error loading cart:', error);
         }
@@ -84,38 +89,46 @@ export class CartService {
 
   /**
    * Add item to cart with quantity
+   * Uses CartRepository (DDD pattern)
    */
   addToCart(productId: string, quantity: number = 1): Observable<ApiResponse<CartItem>> {
     const role = this.authService.getCurrentRole?.();
     if (role !== 'buyer') {
       return throwError(() => new Error('Only buyers can access this endpoint'));
     }
-    const cartData: AddToCart = {
+    const cartData: AddToCartDto = {
       product_id: productId,
       quantity: quantity
     };
     
-    return this.apiService.addToCart(cartData).pipe(
-      tap((response: ApiResponse<CartItem>) => {
-        if (response.success) {
-          this.loadCart();
-        }
+    return this.cartRepository.addItem(cartData).pipe(
+      map((domainCartItem: DomainCartItem) => {
+        const cartItem = this.cartItemToOldFormat(domainCartItem);
+        this.loadCart(); // Reload cart
+        return {
+          success: true,
+          data: cartItem
+        };
       })
     );
   }
 
   /**
    * Update cart item quantity
+   * Uses CartRepository (DDD pattern)
    */
   updateCartItem(itemId: string, quantity: number): Observable<ApiResponse<CartItem>> {
-    const updateData: UpdateCartItem = { quantity };
-    return this.apiService.updateCartItem(itemId, updateData).pipe(
+    const updateData: UpdateCartItemDto = { quantity };
+    return this.cartRepository.updateItem(itemId, updateData).pipe(
+      map((domainCartItem: DomainCartItem) => {
+        const cartItem = this.cartItemToOldFormat(domainCartItem);
+        this.loadCart(); // Reload cart
+        return {
+          success: true,
+          data: cartItem
+        };
+      }),
       tap({
-        next: (response: ApiResponse<CartItem>) => {
-          if (response.success) {
-            this.loadCart(); // Reload cart to get updated state
-          }
-        },
         error: (error: unknown) => {
           console.error('Error updating cart item:', error);
         }
@@ -125,15 +138,18 @@ export class CartService {
 
   /**
    * Remove item from cart
+   * Uses CartRepository (DDD pattern)
    */
   removeCartItem(itemId: string): Observable<ApiResponse<void>> {
-    return this.apiService.removeCartItem(itemId).pipe(
+    return this.cartRepository.removeItem(itemId).pipe(
+      map(() => {
+        this.loadCart(); // Reload cart
+        return {
+          success: true,
+          data: undefined
+        };
+      }),
       tap({
-        next: (response: ApiResponse<void>) => {
-          if (response.success) {
-            this.loadCart(); // Reload cart to get updated state
-          }
-        },
         error: (error: unknown) => {
           console.error('Error removing cart item:', error);
         }
@@ -143,15 +159,18 @@ export class CartService {
 
   /**
    * Clear entire cart
+   * Uses CartRepository (DDD pattern)
    */
   clearCart(): Observable<ApiResponse<void>> {
-    return this.apiService.clearCart().pipe(
+    return this.cartRepository.clear().pipe(
+      map(() => {
+        this.cartSubject.next(null);
+        return {
+          success: true,
+          data: undefined
+        };
+      }),
       tap({
-        next: (response: ApiResponse<void>) => {
-          if (response.success) {
-            this.cartSubject.next(null);
-          }
-        },
         error: (error: unknown) => {
           console.error('Error clearing cart:', error);
         }
@@ -161,22 +180,31 @@ export class CartService {
 
   /**
    * Get cart summary
+   * Uses CartRepository (DDD pattern)
    */
   getCartSummary(): Observable<ApiResponse<CartSummary>> {
-    return this.apiService.getCartSummary();
+    return this.cartRepository.getSummary().pipe(
+      map((summary) => ({
+        success: true,
+        data: summary
+      }))
+    );
   }
 
   /**
    * Apply coupon to cart
+   * Uses CartRepository (DDD pattern)
    */
   applyCoupon(couponCode: string): Observable<ApiResponse<{ discount_amount: number; message: string }>> {
-    return this.apiService.applyCoupon({ code: couponCode }).pipe(
+    return this.cartRepository.applyCoupon(couponCode).pipe(
+      map((result) => {
+        this.loadCart(); // Reload cart
+        return {
+          success: true,
+          data: result
+        };
+      }),
       tap({
-        next: (response: ApiResponse<{ discount_amount: number; message: string }>) => {
-          if (response.success) {
-            this.loadCart(); // Reload cart to get updated state
-          }
-        },
         error: (error: unknown) => {
           console.error('Error applying coupon:', error);
         }
@@ -186,6 +214,7 @@ export class CartService {
 
   /**
    * Checkout cart
+   * TODO: This should use OrderRepository to create order
    */
   checkout(checkoutData: Checkout): Observable<ApiResponse<Order>> {
     // Add payment_method if not present
@@ -195,19 +224,59 @@ export class CartService {
       customer_note: checkoutData.notes
     };
     
-    return this.apiService.checkoutCart(checkoutDataWithPayment).pipe(
-      tap({
-        next: (response: ApiResponse<Order>) => {
-          if (response.success) {
-            // Clear cart after successful checkout
-            this.cartSubject.next(null);
-          }
-        },
-        error: (error: unknown) => {
-          console.error('Error during checkout:', error);
+    // TODO: Use OrderRepository to create order
+    // For now, return empty - will need to inject OrderRepository
+    return throwError(() => new Error('Checkout needs OrderRepository - TODO: Implement'));
+  }
+
+  /**
+   * Convert domain cart to old format for backward compatibility
+   */
+  private domainToOldFormat(domainCart: DomainCart): Cart {
+    return {
+      id: domainCart.id,
+      buyer_id: domainCart.buyerId,
+      items: domainCart.getItems().map(item => this.cartItemToOldFormat(item)),
+      total_items: domainCart.getTotalItems(),
+      subtotal: domainCart.calculateSubtotal(),
+      coupon_code: domainCart.getCouponCode(),
+      expires_at: domainCart.expiresAt
+    };
+  }
+
+  /**
+   * Convert domain cart item to old format
+   */
+  private cartItemToOldFormat(domainCartItem: DomainCartItem): CartItem {
+    const product = domainCartItem.product;
+    return {
+      id: domainCartItem.id,
+      cart_id: '', // Will be set by cart
+      product_id: product.id,
+      variant_id: undefined,
+      quantity: domainCartItem.getQuantity(),
+      product_price: product.getPrice(),
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.getPrice(),
+        stock: product.getStock(),
+        status: product.status,
+        seller_id: product.sellerId,
+        category_ids: product.categoryIds,
+        average_rating: product.averageRating,
+        review_count: product.reviewCount,
+        created_at: product.createdAt,
+        updated_at: product.updatedAt,
+        // Add other required fields
+        description: '',
+        compare_at_price: undefined,
+        images: [],
+        variants: [],
+        seller: {} as any,
+        view_count: 0
         }
-      })
-    );
+    };
   }
 
   // ============================================================================

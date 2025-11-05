@@ -35,7 +35,6 @@ import {
 import { RequestService } from '../../core/services/request.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
-import { ApiService } from '../../core/services/api.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
@@ -435,7 +434,6 @@ export class RequestsComponent implements OnInit {
   private requestService = inject(RequestService);
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
-  private apiService = inject(ApiService);
   private router = inject(Router);
   public access = inject(AccessControlService);
 
@@ -517,7 +515,8 @@ export class RequestsComponent implements OnInit {
       sort_by: this.sortBy
     };
 
-    this.apiService.getRequests(params).subscribe({
+    // Migrated to RequestService.getRequests() - uses DDD pattern with RequestRepository
+    this.requestService.getRequests(params).subscribe({
       next: (response) => {
         if (response.success) {
           this.requests = response.data.items;
@@ -649,8 +648,10 @@ export class RequestsComponent implements OnInit {
   }
 
   // Additional request endpoint integrations
+  // Migrated to RequestService - uses DDD pattern with RequestRepository
   deleteRequest(requestId: string): void {
-    this.apiService.deleteRequest(requestId).subscribe({
+    // Migrated to RequestService.deleteRequest() - uses RequestRepository for DDD pattern
+    this.requestService.deleteRequest(requestId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -661,7 +662,8 @@ export class RequestsComponent implements OnInit {
   }
 
   updateRequest(requestId: string, requestData: any): void {
-    this.apiService.updateRequest(requestId, requestData).subscribe({
+    // Migrated to RequestService.updateRequest() - uses RequestRepository for DDD pattern
+    this.requestService.updateRequest(requestId, requestData).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -672,8 +674,9 @@ export class RequestsComponent implements OnInit {
   }
 
   updateRequestStatus(requestId: string, status: string): void {
-    const statusData = { status };
-    this.apiService.updateRequestStatus(requestId, statusData).subscribe({
+    // Migrated to RequestService.updateRequestStatus() - uses RequestRepository for DDD pattern
+    const statusData = { status: status as any };
+    this.requestService.updateRequestStatus(requestId, statusData).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -689,8 +692,9 @@ export class RequestsComponent implements OnInit {
       return;
     }
 
+    // Migrated to RequestService.upvoteRequest() - uses RequestRepository for DDD pattern
     this.upvotingRequest = true;
-    this.apiService.upvoteRequest(requestId).subscribe({
+    this.requestService.upvoteRequest(requestId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
         this.upvotingRequest = false;
@@ -704,7 +708,8 @@ export class RequestsComponent implements OnInit {
   }
 
   withdrawOffer(offerId: string): void {
-    this.apiService.withdrawOffer(offerId).subscribe({
+    // Migrated to RequestService.withdrawOffer() - uses RequestRepository for DDD pattern
+    this.requestService.withdrawOffer(offerId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },

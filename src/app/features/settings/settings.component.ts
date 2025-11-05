@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { ApiService } from '../../core/services/api.service';
+import { ProfileService } from '../../core/services/profile.service';
+import { ApiService } from '../../core/services/api.service'; // Still needed for operations not yet migrated to ProfileService
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faUser, faBell, faLock, faCreditCard, faBox, faGear, faArrowRight, IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
@@ -256,7 +257,8 @@ interface SettingsSection {
   `]
 })
 export class SettingsComponent implements OnInit {
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
+  private apiService = inject(ApiService); // Still needed for operations not yet migrated to ProfileService
   faArrowRight = faArrowRight;
 
   loading = false;
@@ -321,8 +323,9 @@ export class SettingsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
+    // Migrated to ProfileService.getProfile() - uses DDD pattern with UserRepository
     // Try to load user profile data, but don't block settings display if it fails
-    this.apiService.getProfile().subscribe({
+    this.profileService.getProfile().subscribe({
       next: (response) => {
         this.userProfile = response.data;
         this.loading = false;

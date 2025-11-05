@@ -41,7 +41,7 @@ import { MarketplaceService } from '../../../core/services/marketplace.service';
 import { CartService } from '../../../core/services/cart.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/social.service';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for toggleWishlist (wishlist operations not yet migrated to domain service)
 import { finalize } from 'rxjs/operators';
 import { AccessControlService } from '../../../core/services/access-control.service';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
@@ -456,16 +456,12 @@ export class ProductDetailComponent implements OnInit {
     if (productId) {
       this.isLoading = true;
       
-      this.apiService.getProduct(productId)
+      this.marketplaceService.getProduct(productId)
         .pipe(finalize(() => { this.isLoading = false; }))
         .subscribe({
           next: (response) => {
-            const data = this.typeSafety.getProperty(response, 'data.item') || this.typeSafety.getProperty(response, 'data.product') || this.typeSafety.getProperty(response, 'data') || this.typeSafety.getProperty(response, 'item') || this.typeSafety.getProperty(response, 'product') || response || null;
-            if (!data || !(this.typeSafety.getProperty(data, 'id') || this.typeSafety.getProperty(data, 'product_id') || this.typeSafety.getProperty(data, 'slug'))) {
-              this.product = null;
-              return;
-            }
-            this.product = data;
+            if (response.success && response.data) {
+              this.product = response.data;
             this.selectedImage = this.product?.images?.[0] || null;
             this.titleMeta.setTitle([this.product.name, 'Markt']);
             this.titleMeta.setMeta(this.product.description);
@@ -473,21 +469,11 @@ export class ProductDetailComponent implements OnInit {
             this.loadReviews();
             this.checkWishlistStatus();
             this.trackProductView();
+            }
           },
           error: () => { 
             // Fallback to mock data for marketplace product IDs
             this.loadMockProduct(productId);
-          }
-        });
-
-      // Load product reviews
-      this.apiService.getProductReviews(productId).subscribe({
-        next: (response) => {
-          this.reviews = response.data?.items || [];
-        },
-        error: (error) => {
-          console.error('Error loading product reviews:', error);
-          this.reviews = [];
         }
       });
  
@@ -538,7 +524,8 @@ export class ProductDetailComponent implements OnInit {
 
   // Additional product endpoint integrations
   createProductReview(reviewData: any): void {
-    this.apiService.addProductReview(this.product.id, reviewData).subscribe({
+    // Migrated to MarketplaceService.createProductReview() - uses DDD pattern with ProductRepository
+    this.marketplaceService.createProductReview(this.product.id, reviewData).subscribe({
       next: (response: any) => {
         this.loadReviews(); // Refresh reviews
       },
@@ -549,7 +536,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   upvoteReview(reviewId: string): void {
-    this.apiService.upvoteReview(reviewId).subscribe({
+    this.marketplaceService.upvoteReview(reviewId).subscribe({
       next: (response) => {
         this.loadReviews(); // Refresh reviews
       },
@@ -560,7 +547,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   trackProductView(): void {
-    this.apiService.trackProductView(this.product.id).subscribe({
+    this.marketplaceService.trackProductView(this.product.id).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -570,9 +557,11 @@ export class ProductDetailComponent implements OnInit {
   }
 
   loadRecommendedProducts(): void {
-    this.apiService.getRecommendedProducts().subscribe({
+    this.marketplaceService.getRecommendedProducts().subscribe({
       next: (response) => {
+        if (response.success && response.data) {
         this.recommendedProducts = response.data || [];
+        }
       },
       error: (error) => {
         console.error('Error loading recommended products:', error);
@@ -582,9 +571,11 @@ export class ProductDetailComponent implements OnInit {
   }
 
   loadTrendingProducts(): void {
-    this.apiService.getTrendingProducts().subscribe({
+    this.marketplaceService.getTrendingProducts().subscribe({
       next: (response) => {
+        if (response.success && response.data) {
         this.trendingProducts = response.data || [];
+        }
       },
       error: (error) => {
         console.error('Error loading trending products:', error);
@@ -643,6 +634,8 @@ export class ProductDetailComponent implements OnInit {
   toggleWishlist(): void {
   if (!this.product) return;
 
+    // Note: toggleWishlist method not in MarketplaceService yet - keeping ApiService for now
+    // TODO: Add toggleWishlist method to MarketplaceService or create WishlistService
     this.apiService.toggleWishlist(this.product.id).subscribe({
       next: (response) => {
         // Optimistically toggle on success
@@ -663,10 +656,12 @@ export class ProductDetailComponent implements OnInit {
   shareProduct(): void {
     if (!this.product) return;
 
-    this.apiService.shareProduct(this.product.id).subscribe({
+    this.marketplaceService.shareProduct(this.product.id).subscribe({
       next: (response) => {
-        const shareUrl = this.typeSafety.toString(this.typeSafety.getProperty(response, 'share_url') || this.typeSafety.getNestedProperty(response, 'data.share_url'), window.location.href);
+        if (response.success && response.data) {
+          const shareUrl = response.data.share_url || window.location.href;
         navigator.clipboard.writeText(shareUrl);
+        }
       },
       error: (error) => {
         console.error('Error sharing product:', error);

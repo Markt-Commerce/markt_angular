@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService } from '../../../core/services/api.service'; // TODO: Will be integrated when backend is ready
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 interface Product {
@@ -45,7 +45,7 @@ export class MakeOfferComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private apiService = inject(ApiService); // TODO: Will be integrated when backend is ready
 
   product: Product = {
     id: '1',

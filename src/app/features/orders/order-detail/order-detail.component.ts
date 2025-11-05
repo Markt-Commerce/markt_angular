@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { OrderService } from '../../../core/services/order.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
@@ -796,7 +796,7 @@ export class OrderDetailComponent implements OnInit {
   
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private orderService = inject(OrderService);
   private titleMeta = inject(TitleMetaService);
 
   loading = true;
@@ -814,9 +814,14 @@ export class OrderDetailComponent implements OnInit {
     const orderId = this.route.snapshot.paramMap.get('id');
     
     if (orderId) {
-      this.apiService.getOrder(orderId).subscribe({
+      this.orderService.getOrder(orderId).subscribe({
         next: (response) => {
           // Transform API response to match local Order interface
+          if (!response.success || !response.data) {
+            this.loading = false;
+            this.order = null;
+            return;
+          }
           const apiOrder = response.data;
           this.order = {
             id: apiOrder.id,
@@ -935,7 +940,7 @@ export class OrderDetailComponent implements OnInit {
     if (this.order) {
       // Use updateOrderItemStatus for each item in the order
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'processing' }).toPromise()
+        this.orderService.updateOrderItemStatus(item.id, 'processing' as any).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -952,7 +957,7 @@ export class OrderDetailComponent implements OnInit {
     if (this.order) {
       // Use updateOrderItemStatus for each item in the order
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'shipped' }).toPromise()
+        this.orderService.updateOrderItemStatus(item.id, 'shipped' as any).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -974,7 +979,7 @@ export class OrderDetailComponent implements OnInit {
     if (this.order) {
       // Use updateOrderItemStatus for each item in the order
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'delivered' }).toPromise()
+        this.orderService.updateOrderItemStatus(item.id, 'delivered' as any).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -991,7 +996,7 @@ export class OrderDetailComponent implements OnInit {
     if (this.order && confirm('Are you sure you want to cancel this order?')) {
       // Use updateOrderItemStatus for each item in the order
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'cancelled' }).toPromise()
+        this.orderService.updateOrderItemStatus(item.id, 'cancelled' as any).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
