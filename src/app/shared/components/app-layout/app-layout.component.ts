@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { SmartBreadcrumbComponent } from '../smart-breadcrumb/smart-breadcrumb.component';
@@ -33,11 +33,11 @@ import {
   faQuestionCircle,
   faEnvelope
 } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
-import { CartService } from '../../../core/services/cart.service';
-import { NotificationService } from '../../../core/services/notification.service';
-import { ChatService } from '../../../core/services/chat.service';
+import { CartService } from '../../../domains/orders/services/cart.service';
+import { NotificationService } from '../../../domains/notifications/services/notification.service';
+import { ChatService } from '../../../domains/chat/services/chat.service';
 import { AccessControlService } from '../../../core/services/access-control.service';
 import { ObservableUtilsService } from '../../../core/services/observable-utils.service';
 
@@ -527,9 +527,13 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   searchQuery = '';
   
   // Observables
-  cartItemCount$ = this.cartService.getCartItemCount$();
-  unreadNotifications$ = this.notificationService.getUnreadCount$();
-  unreadMessages$ = this.chatService.getUnreadCount$();
+  cartItemCount$ = this.cartService.cart$.pipe(
+    map(cart => cart?.items.reduce((total, item) => total + item.quantity, 0) || 0)
+  );
+  unreadNotifications$ = this.notificationService.getUnreadCount();
+  unreadMessages$ = this.chatService.getRooms().pipe(
+    map(rooms => rooms.reduce((total, room) => total + room.unreadCountBuyer + room.unreadCountSeller, 0))
+  );
   
   // Local state
   cartItemCount = 0;
@@ -579,8 +583,11 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   }
 
   private initializeServices(): void {
-    // Initialize services that need lifecycle hooks
-    this.cartService.initialize();
+    // Domain services initialize themselves in their constructors
+    // Load cart to populate the cart$ observable
+    if (this.authService.getCurrentRole() === 'buyer') {
+      this.cartService.getCart().subscribe();
+    }
   }
 
   toggleSidebar(): void {

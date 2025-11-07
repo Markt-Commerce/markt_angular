@@ -18,6 +18,7 @@ import {
   BuyerAccountUpdateDto,
   SellerAccountUpdateDto
 } from '../models/user.dto';
+import { ApiService } from '../../../core/services/api.service';
 
 export interface AuthState {
   user: User | null;
@@ -31,6 +32,7 @@ export interface AuthState {
 })
 export class AuthService {
   private userRepository = inject(UserRepository);
+  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
   
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
@@ -362,6 +364,76 @@ export class AuthService {
    */
   verifyEmail(email: string, code: string): Observable<{ message: string }> {
     return this.userRepository.verifyEmail({ email, verification_code: code });
+  }
+
+  /**
+   * Check username availability
+   */
+  checkUsername(username: string): Observable<{ available: boolean; message?: string }> {
+    return this.userRepository.checkUsernameAvailability(username);
+  }
+
+  /**
+   * Get user addresses
+   * TODO: Migrate to UserRepository when address methods are added
+   * Temporary: delegates to ApiService
+   */
+  getUserAddresses(): Observable<any> {
+    return this.apiService.getUserAddresses();
+  }
+
+  /**
+   * Get privacy settings
+   * TODO: Migrate to UserRepository when settings methods are added
+   * Temporary: delegates to ApiService
+   */
+  getPrivacySettings(): Observable<any> {
+    return this.apiService.getPrivacySettings();
+  }
+
+  /**
+   * Update privacy settings
+   * TODO: Migrate to UserRepository when settings methods are added
+   * Temporary: delegates to ApiService
+   */
+  updatePrivacySettings(data: any): Observable<any> {
+    return this.apiService.updatePrivacySettings(data);
+  }
+
+  /**
+   * Get my reviews
+   * TODO: Migrate to ReviewRepository when created
+   * Temporary: delegates to ApiService
+   */
+  getMyReviews(): Observable<any> {
+    return this.apiService.getMyReviews();
+  }
+
+  /**
+   * Get user reviews
+   * TODO: Migrate to ReviewRepository when created
+   * Temporary: delegates to ApiService
+   */
+  getUserReviews(userId: string): Observable<any> {
+    return this.apiService.getUserReviews(userId);
+  }
+
+  /**
+   * Get users (admin/search)
+   * TODO: Migrate to UserRepository when search methods are added
+   * Temporary: delegates to ApiService
+   */
+  getUsers(params?: any): Observable<any> {
+    return this.apiService.getUsers(params);
+  }
+
+  /**
+   * Get shop categories
+   * TODO: Migrate to MarketplaceService or CategoryRepository when created
+   * Temporary: delegates to ApiService
+   */
+  getShopCategories(): Observable<any> {
+    return this.apiService.getShopCategories();
   }
 
   /**

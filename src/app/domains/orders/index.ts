@@ -2,7 +2,8 @@
  * Orders Domain - Public API
  */
 
-export { Order, OrderItem, OrderStatus, OrderItemStatus } from './models/order.model';
+export { Order, OrderItem } from './models/order.model';
+export type { OrderStatus, OrderItemStatus } from './models/order.model';
 export { Cart, CartItem } from './models/cart.model';
 
 export type {

@@ -4,12 +4,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faHeart, faComment, faShare, faPlus, faImage, faMapMarkerAlt, faStore, faCheckCircle, faEllipsisV } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../../core/services/auth.service';
-import { SocialService } from '../../../core/services/social.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+import { SocialService } from '../../../domains/social/services/social.service';
 import { Observable } from 'rxjs';
 import { User } from '../../../core/models/auth.model';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for getCommunityFeed fallback (not yet in SocialService)
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
+import { SocialService } from '../../../domains/social';
 
 interface FeedPost {
   id: string;
@@ -262,7 +263,7 @@ export class FeedComponent implements OnInit {
       error: (error) => {
         console.error('Error loading community feed:', error);
         // Fallback to community feed - TODO: getCommunityFeed() not yet in SocialService
-        this.apiService.getCommunityFeed().subscribe({
+        this.socialService.getPosts().subscribe({
           next: (fallback) => {
             const items = fallback.data?.items || fallback.data || [];
             this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));

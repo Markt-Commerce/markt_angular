@@ -49,14 +49,14 @@ export class ChatRoom {
     public readonly id: string,
     public readonly buyerId: string,
     public readonly sellerId: string,
+    public readonly pinned: boolean,
+    public readonly muted: boolean,
+    public readonly archived: boolean,
     public readonly productId?: string,
     public readonly requestId?: string,
     public readonly lastMessageAt?: string,
-    public readonly unreadCountBuyer: number,
-    public readonly unreadCountSeller: number,
-    public readonly pinned: boolean,
-    public readonly muted: boolean,
-    public readonly archived: boolean
+    public readonly unreadCountBuyer?: number,
+    public readonly unreadCountSeller?: number
   ) {}
 
   /**
@@ -64,10 +64,10 @@ export class ChatRoom {
    */
   getUnreadCount(userId: string): number {
     if (userId === this.buyerId) {
-      return this.unreadCountBuyer;
+      return this.unreadCountBuyer ?? 0;
     }
     if (userId === this.sellerId) {
-      return this.unreadCountSeller;
+      return this.unreadCountSeller ?? 0;
     }
     return 0;
   }

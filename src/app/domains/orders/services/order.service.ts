@@ -11,6 +11,7 @@ import { OrderRepository } from '../repositories/order.repository';
 import { Order, OrderStatus } from '../models/order.model';
 import { OrderCreateDto } from '../models/order.dto';
 import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
+import { ApiService } from '../../../core/services/api.service';
 
 export interface OrderState {
   orders: Order[];
@@ -24,6 +25,7 @@ export interface OrderState {
 })
 export class OrderService {
   private orderRepository = inject(OrderRepository);
+  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
 
   private orderStateSubject = new BehaviorSubject<OrderState>({
     orders: [],
@@ -178,6 +180,27 @@ export class OrderService {
     params?: Record<string, unknown>
   ): Observable<Order[]> {
     return this.orderRepository.findBySeller(sellerId, params);
+  }
+
+  /**
+   * Update order item status
+   * TODO: Migrate to OrderItemRepository when created
+   * Temporary: delegates to ApiService
+   */
+  updateOrderItemStatus(
+    orderItemId: number,
+    statusData: { status: string }
+  ): Observable<any> {
+    return this.apiService.updateOrderItemStatus(orderItemId, statusData);
+  }
+
+  /**
+   * Track order
+   * TODO: Migrate to OrderTrackingRepository when created
+   * Temporary: delegates to ApiService
+   */
+  trackOrder(orderId: string): Observable<any> {
+    return this.apiService.trackOrder(orderId);
   }
 
   /**

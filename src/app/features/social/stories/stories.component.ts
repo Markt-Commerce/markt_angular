@@ -19,8 +19,10 @@ import {
   faTrash,
   faEdit
 } from '@fortawesome/free-solid-svg-icons';
-import { SocialService } from '../../../core/services/social.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { SocialService } from '../../../domains/social/services/social.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+// TODO: Create Story domain model in domains/social/models/story.model and migrate when available
+// Currently using old interface from core/models as domain model doesn't exist yet
 import { Story, StoryCreate } from '../../../core/models';
 import { Router } from '@angular/router';
 

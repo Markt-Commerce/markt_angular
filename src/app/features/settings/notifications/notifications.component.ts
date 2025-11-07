@@ -9,6 +9,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
+import { NotificationService } from '../../../domains/notifications';
   faMobileScreen, 
   faEnvelope, 
   faCommentSms, 
@@ -730,6 +731,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private notificationService = inject(NotificationService);
   private messageTimer?: Subscription;
 
   // FontAwesome icons
@@ -814,9 +816,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private loadSettings(): void {
     this.loading = true;
     
-    this.apiService.getNotificationSettings().subscribe({
-      next: (response) => {
-        this.notificationsForm.patchValue(response.data);
+    this.notificationService.getSettings().subscribe({
+      next: (response: any) => {
+        this.notificationsForm.patchValue(response?.data || {});
         this.loading = false;
       },
       error: (error) => {
@@ -833,7 +835,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     
     const formData = this.notificationsForm.value;
     
-    this.apiService.updateNotificationSettings(formData).subscribe({
+    this.notificationService.updateSettings(formData).subscribe({
       next: (response) => {
         this.loading = false;
         this.successMessage = 'Notification settings updated successfully!';

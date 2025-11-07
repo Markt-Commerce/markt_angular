@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for operations not yet migrated to ProfileService
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';

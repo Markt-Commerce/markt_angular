@@ -15,6 +15,7 @@ import { ProductRepository } from '../repositories/product.repository';
 import { Product } from '../models/product.model';
 import { CreateProductDto, UpdateProductDto, ProductSearchParamsDto } from '../models/product.dto';
 import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
+import { CartService } from '../../orders';
 
 @Injectable({
   providedIn: 'root'
@@ -143,6 +144,15 @@ export class MarketplaceService {
   getMyProducts(params?: ProductSearchParamsDto): Observable<Product[]> {
     return this.productRepository.findBySeller('current-seller-id', params);
     // In real implementation, get seller ID from auth service
+  }
+
+  /**
+   * Get user's products (by user ID)
+   * TODO: Migrate to proper repository method when available
+   * Temporary: uses findBySeller with user ID
+   */
+  getUserProducts(userId: string, params?: ProductSearchParamsDto): Observable<Product[]> {
+    return this.productRepository.findBySeller(userId, params);
   }
 
   /**

@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ProfileService } from '../../core/services/profile.service';
-import { AuthService } from '../../core/services/auth.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
+import { AuthService } from '../../domains/authentication';
+import { MarketplaceService } from '../../domains/marketplace';
 import { ApiService } from '../../core/services/api.service'; // Still needed for getMyReviews, getUsers, createBuyerAccount, createSellerAccount, passwordReset, etc. (methods not migrated yet)
 import { ActivatedRoute } from '@angular/router';
 import { TypeSafetyService } from '../../core/services/type-safety.service';
@@ -507,9 +507,9 @@ export class ProfileComponent implements OnInit {
 
   loadReviews(): void {
     // TODO: getMyReviews() not yet migrated to domain service - keeping ApiService for now
-    this.apiService.getMyReviews().subscribe({
-      next: (response) => {
-        this.reviews = response.data || [];
+    this.authService.getMyReviews().subscribe({
+      next: (response: any) => {
+        this.reviews = response?.data || [];
       },
       error: (error) => {
         console.error('Error loading reviews:', error);
@@ -523,7 +523,8 @@ export class ProfileComponent implements OnInit {
     // Migrated to MarketplaceService.getMyProducts() - uses DDD pattern with ProductRepository
     this.marketplaceService.getMyProducts().subscribe({
       next: (response) => {
-        const items: any[] = response?.data?.items || [];
+        // getMyProducts() returns Product[] directly from domain service
+        const items: any[] = Array.isArray(response) ? response : [];
         this.listings = items.map((p: any) => {
           const firstImage = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
           const imageUrl = firstImage?.media?.thumbnail_url || firstImage?.media?.url || firstImage?.media?.original_url || firstImage?.url || '';
@@ -571,7 +572,7 @@ export class ProfileComponent implements OnInit {
 
   // User management endpoint integrations - using component data instead of hardcoded values
   createBuyerAccount(buyerData: any): void {
-    this.apiService.createBuyerAccount(buyerData).subscribe({
+    this.authService.createBuyerAccount(buyerData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -581,7 +582,7 @@ export class ProfileComponent implements OnInit {
   }
 
   createSellerAccount(sellerData: any): void {
-    this.apiService.createSellerAccount(sellerData).subscribe({
+    this.authService.createSellerAccount(sellerData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -619,7 +620,8 @@ export class ProfileComponent implements OnInit {
   }
 
   switchRole(): void {
-    this.authService.switchRole().subscribe({
+    const targetRole = this.currentRole === 'buyer' ? 'seller' : 'buyer';
+    this.authService.switchRole(targetRole).subscribe({
       next: () => {
         this.currentRole = this.authService.getCurrentRole();
         this.loadProfile();
@@ -632,8 +634,8 @@ export class ProfileComponent implements OnInit {
   }
 
   getUsers(): void {
-    this.apiService.getUsers().subscribe({
-      next: (response) => {
+    this.authService.getUsers().subscribe({
+      next: (response: any) => {
       },
       error: (error) => {
         console.error('Error loading users:', error);
@@ -704,7 +706,7 @@ export class ProfileComponent implements OnInit {
   }
 
   sendEmailVerification(email: string): void {
-    this.apiService.sendEmailVerification(email).subscribe({
+    this.authService.sendEmailVerification(email).subscribe({
       next: (response) => {
       },
       error: (error) => {

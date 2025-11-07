@@ -19,7 +19,7 @@ import {
   faHandshake
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../../core/services/api.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 
 interface User {
   id: string;

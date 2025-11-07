@@ -32,14 +32,15 @@ import {
   faStar,
   faStore,
 } from '@fortawesome/free-solid-svg-icons';
-import { CartService } from '../../core/services/cart.service';
-import { OrderService } from '../../core/services/order.service';
-import { PaymentService } from '../../core/services/payment.service';
-import { AuthService } from '../../core/services/auth.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
+import { CartService, OrderService, Cart, CartItem } from '../../domains/orders';
+import { PaymentService } from '../../domains/payment';
+import { AuthService } from '../../domains/authentication';
+import { MarketplaceService } from '../../domains/marketplace';
 import { ApiService } from '../../core/services/api.service'; // Still needed for getUserAddresses, applyCoupon, payOrder, handlePaystackWebhook, handlePaymentCallback (methods not migrated yet)
 import { ActivatedRoute } from '@angular/router';
 import { AccessControlService } from '../../core/services/access-control.service';
+import { MediaOptimizationService } from '../../core/services/media-optimization.service';
+import { AuthService } from '../../domains/authentication';
 
 @Component({
   selector: 'app-checkout',
@@ -752,22 +753,24 @@ import { AccessControlService } from '../../core/services/access-control.service
                     >
                       <img
                         [src]="
-                          item.product?.images[0]?.url || '/markt-text-logo.png'
+                          getProductImageUrl(
+                            item.productDto?.images?.[0]
+                          ) || '/markt-text-logo.png'
                         "
-                        [alt]="item.product?.name"
+                        [alt]="item.productDto?.name || item.product.name"
                         class="w-16 h-16 object-cover rounded-lg"
                       />
                       <div class="flex-1">
                         <h4 class="font-medium text-gray-900">
-                          {{ item.product?.name }}
+                          {{ item.productDto?.name || item.product.name }}
                         </h4>
                         <p class="text-sm text-gray-500">
-                          Qty: {{ item.quantity }}
+                          Qty: {{ item.getQuantity() }}
                         </p>
                       </div>
                       <div class="text-right">
                         <p class="font-medium text-gray-900">
-                          {{ item.price * item.quantity | currency : 'USD' }}
+                          {{ item.calculateSubtotal() / 100 | currency : 'USD' }}
                         </p>
                       </div>
                     </div>
@@ -803,21 +806,22 @@ import { AccessControlService } from '../../core/services/access-control.service
                 @for (item of cartItems; track item.id) {
                 <div class="flex items-center space-x-3">
                   <img
-                    ngSrc="{{ item.product?.images?.[0]?.url || '/assets/images/products/sony-headphones.png' }}"
-                    width="64"
-                    height="64"
-                    priority
-                    alt="{{ item.product?.name }}"
+                    [src]="
+                      getProductImageUrl(
+                        item.productDto?.images?.[0]
+                      ) || '/assets/images/products/sony-headphones.png'
+                    "
+                    [alt]="item.productDto?.name || item.product.name"
                     class="w-16 h-16 rounded-lg object-cover"
                   />
                   <div class="flex-1">
                     <h3 class="font-medium text-dark">
-                      {{ item.product?.name }}
+                      {{ item.productDto?.name || item.product.name }}
                     </h3>
-                    <p class="text-sm text-muted">Qty: {{ item.quantity }}</p>
+                    <p class="text-sm text-muted">Qty: {{ item.getQuantity() }}</p>
                   </div>
                   <span class="font-semibold text-dark">{{
-                    item.price * item.quantity | currency : 'USD'
+                    item.calculateSubtotal() / 100 | currency : 'USD'
                   }}</span>
                 </div>
                 }
@@ -846,32 +850,32 @@ import { AccessControlService } from '../../core/services/access-control.service
               <!-- Price Breakdown -->
               <div class="space-y-3 border-t border-border pt-4">
                 <div class="flex justify-between text-sm">
-                  <span class="text-muted">Subtotal</span>
+                  <span class="text-muted">Subtotal ({{ cartItemCount }} items)</span>
                   <span class="text-dark">{{
-                    cartSubtotal | currency : 'USD'
+                    cartSubtotal / 100 | currency : 'USD'
                   }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-muted">Shipping</span>
                   <span class="text-dark">{{
-                    cartShipping | currency : 'USD'
+                    cartShipping / 100 | currency : 'USD'
                   }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-muted">Tax</span>
                   <span class="text-dark">{{
-                    cartTax | currency : 'USD'
+                    cartTax / 100 | currency : 'USD'
                   }}</span>
                 </div>
                 <div class="flex justify-between text-sm text-green-600">
                   <span>Student Discount</span>
-                  <span>-{{ couponDiscount | currency : 'USD' }}</span>
+                  <span>-{{ couponDiscount / 100 | currency : 'USD' }}</span>
                 </div>
                 <div class="border-t border-border pt-3">
                   <div class="flex justify-between text-lg font-semibold">
                     <span class="text-dark">Total</span>
                     <span class="text-dark">{{
-                      cartTotal | currency : 'USD'
+                      cartTotal / 100 | currency : 'USD'
                     }}</span>
                   </div>
                 </div>
@@ -951,7 +955,7 @@ import { AccessControlService } from '../../core/services/access-control.service
               class="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <fa-icon [icon]="faLock" class="mr-2"></fa-icon>
-              Place Order - {{ cartTotal | currency : 'USD' }}
+              Place Order - {{ cartTotal / 100 | currency : 'USD' }}
             </button>
           </div>
         </section>
@@ -1016,6 +1020,7 @@ export class CheckoutComponent implements OnInit {
   private apiService = inject(ApiService);
   private route = inject(ActivatedRoute);
   public access = inject(AccessControlService);
+  public media = inject(MediaOptimizationService);
 
   // Icons
   faArrowLeft = faArrowLeft;
@@ -1042,8 +1047,10 @@ export class CheckoutComponent implements OnInit {
   shippingForm: FormGroup;
   paymentForm: FormGroup;
 
-  // Data
-  cartItems: any[] = [];
+  // Data - Using domain models
+  cart: Cart | null = null;
+  cartItems: CartItem[] = [];
+  cartItemCount = 0;
   cartSubtotal = 0;
   cartShipping = 0;
   cartTax = 0;
@@ -1056,7 +1063,6 @@ export class CheckoutComponent implements OnInit {
   selectedPaymentMethod = 'card';
   loading = false;
   errorMessage = '';
-  cart: any = null;
   cartSummary: any = null;
   offerContext: { offerId?: string } = {};
   addresses: any[] = [];
@@ -1167,78 +1173,46 @@ export class CheckoutComponent implements OnInit {
     this.errorMessage = '';
 
     // Load cart data - Use CartService (DDD pattern)
+    // Using domain CartService.getCart() - returns Observable<Cart> directly
     this.cartService.getCart().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.cart = response.data;
-          this.cartItems = (this.cart?.items || []).map((ci: any) => ({
-            id: ci.id,
-            product: ci.product,
-            quantity: ci.quantity,
-            price: (ci.product_price ?? ci.price ?? 0) / 100,
-          }));
+      next: (cart: Cart) => {
+        // Domain service returns Cart domain model
+        this.cart = cart;
+        if (cart) {
+          // Use domain model methods
+          this.cartItems = [...cart.getItems()]; // Get immutable copy
+          this.cartItemCount = cart.getTotalItems();
+          // Use domain model method for subtotal calculation
+          this.cartSubtotal = cart.calculateSubtotal();
           this.calculateTotals();
+        } else {
+          this.cartItems = [];
+          this.cartItemCount = 0;
+          this.cartSubtotal = 0;
         }
         this.loading = false;
       },
       error: (error: any) => {
         console.error('Error loading cart:', error);
-        // Mock data from Figma design
-        this.cartItems = [
-          {
-            id: 'cart-item-1',
-            product: {
-              id: 'economics-textbook',
-              name: 'Economics Textbook',
-              images: [
-                {
-                  media: {
-                    original_url:
-                      '/assets/images/products/economics-textbook.png',
-                  },
-                },
-              ],
-            },
-            quantity: 1,
-            price: 89.99,
-          },
-          {
-            id: 'cart-item-2',
-            product: {
-              id: 'university-hoodie',
-              name: 'University Hoodie',
-              images: [
-                {
-                  media: {
-                    original_url:
-                      '/assets/images/products/university-hoodie.png',
-                  },
-                },
-              ],
-            },
-            quantity: 1,
-            price: 45.0,
-          },
-        ];
-        this.cartSubtotal = 134.99; // $89.99 + $45.00
-        this.cartShipping = 5.99;
-        this.cartTax = 11.24;
-        this.couponDiscount = 10.0; // Student Discount
-        this.cartTotal =
-          this.cartSubtotal +
-          this.cartShipping +
-          this.cartTax -
-          this.couponDiscount; // $142.22
+        // Fallback to empty cart - domain models don't support mock data easily
+        this.cart = null;
+        this.cartItems = [];
+        this.cartItemCount = 0;
+        this.cartSubtotal = 0;
+        this.cartShipping = 0;
+        this.cartTax = 0;
+        this.couponDiscount = 0;
+        this.cartTotal = 0;
         this.loading = false;
       },
     });
 
     // Load cart summary - Use CartService (DDD pattern)
+    // Using domain CartService.getCartSummary() - returns Observable<CartSummary> directly
     this.cartService.getCartSummary().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.cartSummary = response.data;
-        }
+      next: (summary) => {
+        // Domain service returns CartSummary directly (no .success/.data wrapper)
+        this.cartSummary = summary as any;
       },
       error: (error: any) => {
         console.error('Error loading cart summary:', error);
@@ -1247,10 +1221,10 @@ export class CheckoutComponent implements OnInit {
     });
 
     // Load user addresses (non-blocking)
-    // TODO: getUserAddresses() not yet migrated to ProfileService - keeping ApiService for now
-    this.apiService.getUserAddresses().subscribe({
-      next: (response) => {
-        this.addresses = response.data || [];
+    // Using AuthService.getUserAddresses() (temporarily delegates to ApiService)
+    this.authService.getUserAddresses().subscribe({
+      next: (response: any) => {
+        this.addresses = response?.data || [];
       },
       error: (error) => {
         console.error('Error loading addresses:', error);
@@ -1262,14 +1236,13 @@ export class CheckoutComponent implements OnInit {
 
   applyCoupon(): void {
     if (this.couponCode) {
-      // Migrated to CartService.applyCoupon() - uses DDD pattern with CartRepository
+      // Using domain CartService.applyCoupon() - returns Observable<{ discount_amount, message }> directly
       this.cartService.applyCoupon(this.couponCode).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.couponApplied = true;
-            this.couponDiscount = response.data.discount_amount || 0;
-            this.calculateTotals();
-          }
+        next: (result) => {
+          // Domain service returns { discount_amount, message } directly (no .success/.data wrapper)
+          this.couponApplied = true;
+          this.couponDiscount = result.discount_amount || 0;
+          this.calculateTotals();
         },
         error: (error) => {
           console.error('Error applying coupon:', error);
@@ -1280,6 +1253,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   initializePayment(): void {
+    if (!this.cart) {
+      this.errorMessage = 'Cart is empty. Please add items to your cart.';
+      return;
+    }
+
     const paymentData = {
       amount: this.totalAmount,
       currency: 'NGN',
@@ -1305,6 +1283,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   processOrder(): void {
+    if (!this.cart) {
+      this.errorMessage = 'Cart is empty. Please add items to your cart.';
+      return;
+    }
+
     const orderData = {
       cart_id: this.cart.id,
       shipping_address: this.selectedAddress,
@@ -1333,16 +1316,28 @@ export class CheckoutComponent implements OnInit {
   }
 
   private calculateTotals(): void {
+    // Use domain model method for subtotal if cart is available
     if (this.cart) {
-      this.subtotal = this.cart.items.reduce(
-        (sum: number, item: any) => sum + item.price * item.quantity,
+      this.cartSubtotal = this.cart.calculateSubtotal();
+    } else {
+      // Fallback: calculate from items using domain model methods
+      this.cartSubtotal = this.cartItems.reduce(
+        (total, item) => total + item.calculateSubtotal(),
         0
       );
-      this.shipping = this.cartSummary?.shipping_cost || 0;
-      this.tax = this.cartSummary?.tax_amount || 0;
-      this.totalAmount =
-        this.subtotal + this.shipping + this.tax - (this.couponDiscount || 0);
     }
+    this.cartShipping = this.cartSummary?.shipping_cost || 0;
+    this.cartTax = this.cartSummary?.tax_amount || 0;
+    // Convert to cents for display (domain models use cents)
+    this.cartShipping = this.cartShipping * 100;
+    this.cartTax = this.cartTax * 100;
+    this.cartTotal =
+      this.cartSubtotal + this.cartShipping + this.cartTax - (this.couponDiscount || 0);
+    // Also update legacy fields for compatibility
+    this.subtotal = this.cartSubtotal / 100;
+    this.shipping = this.cartShipping / 100;
+    this.tax = this.cartTax / 100;
+    this.totalAmount = this.cartTotal / 100;
   }
 
   syncBillingWithShipping(): void {
@@ -1422,9 +1417,9 @@ export class CheckoutComponent implements OnInit {
 
   private createOrderData(): any {
     const user = this.authService.getCurrentUser();
-    const cart = this.cartService.getCurrentCart();
+    // Use domain Cart model instead of getCurrentCart()
     return {
-      cart_id: cart?.id,
+      cart_id: this.cart?.id,
       shipping_address: {
         firstName: user?.first_name || user?.username || '',
         lastName: user?.last_name || '',
@@ -1610,5 +1605,25 @@ export class CheckoutComponent implements OnInit {
       },
       error: () => {},
     });
+  }
+
+  // Helper method for getting product image URLs (matches cart component pattern)
+  getProductImageUrl(imageData: any): string {
+    if (!imageData) {
+      return '';
+    }
+
+    // If imageData has a media property with URLs, use those
+    if (imageData.media && imageData.media.original_url) {
+      return imageData.media.original_url;
+    }
+
+    // If imageData is a string URL, use it directly
+    if (typeof imageData === 'string') {
+      return imageData;
+    }
+
+    // No fallback - return empty string
+    return '';
   }
 }

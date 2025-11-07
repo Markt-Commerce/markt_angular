@@ -10,7 +10,7 @@
  * - Serialization/deserialization
  */
 
-import { Pagination } from '../../../../core/infrastructure/http/api-response.types';
+import { Pagination } from '../../../core/infrastructure/http/api-response.types';
 
 /**
  * Product as returned from API

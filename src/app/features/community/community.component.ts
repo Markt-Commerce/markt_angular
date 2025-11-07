@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
-import { SocialService } from '../../core/services/social.service';
+import { SocialService } from '../../domains/social/services/social.service';
 import { ApiService } from '../../core/services/api.service'; // Still needed for operations not yet migrated to SocialService
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 

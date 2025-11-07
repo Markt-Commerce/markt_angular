@@ -2,11 +2,12 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { OrderService } from '../../../core/services/order.service';
+import { OrderService } from '../../../domains/orders/services/order.service';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for getSellerAnalytics (not yet migrated)
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
+import { MarketplaceService } from '../../../domains/marketplace';
   faBell,
   faChartLine,
   faBox,
@@ -76,6 +77,7 @@ interface SalesData {
 export class DashboardComponent implements OnInit {
   private orderService = inject(OrderService);
   private apiService = inject(ApiService); // Still needed for getSellerAnalytics (not yet migrated)
+  private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
 
   // Font Awesome Icons
@@ -207,7 +209,7 @@ export class DashboardComponent implements OnInit {
    */
   private loadDashboardData(): void {
     // TODO: getSellerAnalytics() not yet migrated to domain service - keeping ApiService for now
-    this.apiService.getSellerAnalytics().subscribe({
+    this.marketplaceService.getSellerAnalytics().subscribe({
       next: (response) => {
         if (response.success && response.data) {
           // Update stats with real data
@@ -227,22 +229,26 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // Migrated to OrderService.getOrders() - uses DDD pattern with OrderRepository
+    // Domain service returns Order[] directly, not wrapped in ApiResponse
+    // Domain Order model has: id, orderNumber, buyerId (not full buyer object), total, status, createdAt, etc.
     this.orderService.getOrders().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          // Take first 3 orders and map to RecentOrder format
-          const orders: RecentOrder[] = response.data.slice(0, 3).map((order: any) => ({
-            id: order.id,
-            orderNumber: order.order_number || order.id,
-            customerName: order.buyer?.buyername || order.buyer?.username || 'Unknown Customer',
-            customerAvatar: order.buyer?.profile_picture_url || '/assets/images/default-avatar.png',
-            total: order.total || 0,
-            status: order.status || 'pending',
-            date: order.created_at || new Date().toISOString()
-          }));
-          this.recentOrders.set(orders);
-        }
+      next: (orders) => {
+        // Take first 3 orders and map to RecentOrder format
+        // Note: Domain Order model has buyerId, not full buyer object
+        // If buyer data is needed, it would need to be fetched separately or included in the API response
+        const recentOrders: RecentOrder[] = orders.slice(0, 3).map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber || order.order_number || order.id,
+          // Domain model has buyerId, not buyer object - use buyerId or check if buyer data is preserved
+          customerName: order.buyer?.buyername || order.buyer?.name || order.buyer?.username || 
+                        (order.buyerId ? `Customer ${order.buyerId}` : 'Unknown Customer'),
+          customerAvatar: order.buyer?.profile_picture_url || order.buyer?.profilePictureUrl || 
+                          '/assets/images/default-avatar.png',
+          total: order.total || 0,
+          status: order.status || 'pending',
+          date: order.createdAt || order.created_at || new Date().toISOString()
+        }));
+        this.recentOrders.set(recentOrders);
       },
       error: (error) => {
         console.error('Error loading recent orders:', error);

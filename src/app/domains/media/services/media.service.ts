@@ -6,7 +6,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, switchMap, map } from 'rxjs/operators';
 import { MediaRepository } from '../repositories/media.repository';
 import { Media } from '../models/media.model';
 import {
@@ -14,6 +14,7 @@ import {
   SocialMediaOptimizationDto
 } from '../models/media.dto';
 import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
+import { ApiService } from '../../../core/services/api.service';
 
 export interface MediaState {
   media: Media[];
@@ -28,6 +29,7 @@ export interface MediaState {
 })
 export class MediaService {
   private mediaRepository = inject(MediaRepository);
+  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
   
   private mediaStateSubject = new BehaviorSubject<MediaState>({
     media: [],
@@ -138,22 +140,12 @@ export class MediaService {
   deleteMedia(id: string): Observable<void> {
     // Business rule: Check if media is still processing
     return this.getMedia(id).pipe(
-      tap({
-        next: (media) => {
-          if (media.isProcessing()) {
-            throw new Error('Cannot delete media that is currently being processed');
-          }
+      tap((media) => {
+        if (media.isProcessing()) {
+          throw new Error('Cannot delete media that is currently being processed');
         }
-      })
-    ).pipe(
-      // Switch to delete operation
-      tap(() => {
-        return this.mediaRepository.delete(id);
-      })
-    ) as Observable<void>;
-
-    // Simplified version
-    return this.mediaRepository.delete(id).pipe(
+      }),
+      switchMap(() => this.mediaRepository.delete(id)),
       tap({
         next: () => {
           const currentMedia = this.getState().media;
@@ -163,7 +155,8 @@ export class MediaService {
         error: (error) => {
           this.setError(error.message || 'Failed to delete media');
         }
-      })
+      }),
+      map(() => undefined)
     );
   }
 
@@ -242,6 +235,36 @@ export class MediaService {
 
   private setUploadProgress(progress: number): void {
     this.updateState({ uploadProgress: progress });
+  }
+
+  /**
+   * Upload media for social post
+   * TODO: Migrate to MediaRepository when method is added
+   * Temporary: delegates to ApiService
+   * Note: This overloads the existing uploadMedia method for social posts
+   */
+  uploadSocialPostMedia(postId: string, file: File): Observable<any> {
+    return this.apiService.addSocialPostMedia(postId, file);
+  }
+
+  /**
+   * Delete media for social post
+   * TODO: Migrate to MediaRepository when method is added
+   * Temporary: delegates to ApiService
+   * Note: This is separate from deleteMedia(id) which deletes by media ID
+   */
+  deleteSocialPostMedia(postId: string, mediaId: number): Observable<any> {
+    return this.apiService.deleteSocialPostMedia(postId, mediaId);
+  }
+
+  /**
+   * Get media list for social post
+   * TODO: Migrate to MediaRepository when method is added
+   * Temporary: delegates to ApiService
+   * Note: This overloads the existing getMediaList method for social posts
+   */
+  getSocialPostMediaList(postId: string): Observable<any> {
+    return this.apiService.getSocialPostMedia(postId);
   }
 }
 

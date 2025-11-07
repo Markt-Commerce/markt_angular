@@ -32,9 +32,9 @@ import {
   faArrowRight,
   faComments
 } from '@fortawesome/free-solid-svg-icons';
-import { RequestService } from '../../core/services/request.service';
-import { AuthService } from '../../core/services/auth.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
+import { RequestService } from '../../domains/requests/services/request.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
+import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
@@ -248,14 +248,14 @@ import { AccessControlService } from '../../core/services/access-control.service
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="request.buyer?.profile_picture_url || '/markt-text-logo.png'" 
-                  [alt]="request.buyer?.username"
+                  [src]="request.user?.profile_picture_url || '/markt-text-logo.png'" 
+                  [alt]="request.user?.username"
                   class="w-10 h-10 rounded-full object-cover"
                 >
                 <div>
                   <div class="flex items-center space-x-2">
-                    <h3 class="font-medium text-gray-900">{{ request.buyer?.username }}</h3>
-                    <span *ngIf="request.buyer?.verified" class="text-blue-500">
+                    <h3 class="font-medium text-gray-900">{{ request.user?.username }}</h3>
+                    <span *ngIf="request.user?.email_verified" class="text-blue-500">
                       <fa-icon [icon]="faStar" class="w-4 h-4"></fa-icon>
                     </span>
                   </div>
@@ -264,7 +264,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                     <span>•</span>
                     <span class="flex items-center">
                       <fa-icon [icon]="faMapMarkerAlt" class="w-3 h-3 mr-1"></fa-icon>
-                      {{ request.buyer?.location || 'Location not specified' }}
+                      Location not specified
                     </span>
                   </div>
                 </div>
@@ -506,13 +506,19 @@ export class RequestsComponent implements OnInit {
   private loadRequests(): void {
     this.isLoading = true;
     
-    const params = {
+    // Parse sortBy (e.g., 'created_at_desc') to extract field and order
+    const sortParts = this.sortBy.split('_');
+    const sortField = sortParts.slice(0, -1).join('_') as 'created_at' | 'budget' | 'expires_at';
+    const sortOrder = sortParts[sortParts.length - 1] as 'asc' | 'desc';
+    
+    const params: any = {
       page: this.currentPage,
       search: this.searchQuery,
       category_ids: this.categoryFilter ? [this.categoryFilter] : undefined,
       status: this.statusFilter as 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED' | undefined,
       budget_range: this.budgetFilter,
-      sort_by: this.sortBy
+      sort_by: sortField,
+      sort_order: sortOrder
     };
 
     // Migrated to RequestService.getRequests() - uses DDD pattern with RequestRepository

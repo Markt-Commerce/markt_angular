@@ -14,8 +14,8 @@ import {
   faBell,
   faComment
 } from '@fortawesome/free-solid-svg-icons';
-import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { ChatService } from '../../../domains/chat/services/chat.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { SearchService } from '../../../core/services/search.service';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 

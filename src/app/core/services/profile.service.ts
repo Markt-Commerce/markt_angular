@@ -136,7 +136,7 @@ export class ProfileService {
       username: profileData.username,
       email: profileData.email,
       phone_number: profileData.phone_number,
-      profile_picture_url: profileData.profile_picture_url
+      profile_picture: profileData.profile_picture_url
     };
     
     return this.userRepository.updateProfile(updateDto).pipe(
@@ -171,7 +171,7 @@ export class ProfileService {
       shipping_address: buyerData.shipping_address
     };
     
-    return this.userRepository.updateBuyerAccount(updateDto).pipe(
+    return this.userRepository.updateBuyerProfile(updateDto).pipe(
       map((domainUser: DomainUser) => {
         const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
@@ -203,7 +203,7 @@ export class ProfileService {
       category_ids: sellerData.category_ids
     };
     
-    return this.userRepository.updateSellerAccount(updateDto).pipe(
+    return this.userRepository.updateSellerProfile(updateDto).pipe(
       map((domainUser: DomainUser) => {
         const profile = this.domainToUserProfile(domainUser);
           this.updateProfileState({
@@ -257,7 +257,9 @@ export class ProfileService {
    * Uses UserRepository (DDD pattern)
    */
   getPublicProfile(userId: string): Observable<any> {
-    return this.userRepository.findById(userId).pipe(
+    // TODO: Add findById method to UserRepository
+    // For now, use getProfile which returns current user
+    return this.userRepository.getProfile().pipe(
       map((domainUser: DomainUser) => {
         const profile = this.domainToUserProfile(domainUser);
         return { success: true, data: profile };

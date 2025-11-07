@@ -6,12 +6,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { Notification } from '../models/notification.model';
+import { ApiService } from '../../../core/services/api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
   private notificationRepository = inject(NotificationRepository);
+  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
 
   getNotifications(params?: Record<string, unknown>): Observable<Notification[]> {
     return this.notificationRepository.findAll(params);
@@ -27,6 +29,24 @@ export class NotificationService {
 
   getUnreadCount(): Observable<number> {
     return this.notificationRepository.getUnreadCount();
+  }
+
+  /**
+   * Get notification settings
+   * TODO: Migrate to NotificationRepository when settings methods are added
+   * Temporary: delegates to ApiService
+   */
+  getSettings(): Observable<any> {
+    return this.apiService.getNotificationSettings();
+  }
+
+  /**
+   * Update notification settings
+   * TODO: Migrate to NotificationRepository when settings methods are added
+   * Temporary: delegates to ApiService
+   */
+  updateSettings(data: any): Observable<any> {
+    return this.apiService.updateNotificationSettings(data);
   }
 }
 

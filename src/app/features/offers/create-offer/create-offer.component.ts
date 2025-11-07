@@ -5,8 +5,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
-import { RequestService } from '../../../core/services/request.service';
-import { MediaService } from '../../../core/services/media.service';
+import { RequestService } from '../../../domains/requests/services/request.service';
+import { MediaService } from '../../../domains/media/services/media.service';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 
 interface BuyerRequest {
@@ -625,14 +625,14 @@ export class CreateOfferComponent implements OnInit {
               title: apiRequest.title,
               description: apiRequest.description,
               budget: apiRequest.budget || 0,
-              buyerName: apiRequest.user?.username || apiRequest.buyer?.username || 'Unknown',
+              buyerName: apiRequest.user?.username || 'Unknown',
               category: apiRequest.categories?.[0]?.name || 'Uncategorized',
-              buyerAvatar: apiRequest.user?.profile_picture_url || apiRequest.buyer?.profile_picture_url,
+              buyerAvatar: apiRequest.user?.profile_picture_url,
               buyerId: apiRequest.user_id || apiRequest.user?.id || '',
               status: apiRequest.status,
               created_at: apiRequest.created_at,
               updated_at: apiRequest.updated_at,
-              buyer: apiRequest.user || apiRequest.buyer,
+              buyer: apiRequest.user,
               category_ids: apiRequest.category_ids,
               budget_min: apiRequest.budget,
               budget_max: apiRequest.budget

@@ -65,7 +65,8 @@ export class ProductRepository {
    * Returns array of domain models
    */
   findAll(params?: ProductSearchParamsDto): Observable<Product[]> {
-    return this.apiClient.get<ProductDto[]>(this.baseEndpoint, params).pipe(
+    const queryParams = params ? this.convertToQueryParams(params) : undefined;
+    return this.apiClient.get<ProductDto[]>(this.baseEndpoint, queryParams).pipe(
       map(response => response.data.map(dto => this.toDomain(dto)))
     );
   }
@@ -75,7 +76,8 @@ export class ProductRepository {
    * Returns paginated response with domain models
    */
   findPaginated(params?: ProductSearchParamsDto): Observable<PaginatedResponse<Product>> {
-    return this.apiClient.get<ProductSearchResultDto>(this.baseEndpoint, params).pipe(
+    const queryParams = params ? this.convertToQueryParams(params) : undefined;
+    return this.apiClient.get<ProductSearchResultDto>(this.baseEndpoint, queryParams).pipe(
       map(response => ({
         items: response.data.items.map(dto => this.toDomain(dto)),
         pagination: response.data.pagination
@@ -124,7 +126,8 @@ export class ProductRepository {
    * Get trending products
    */
   findTrending(params?: ProductSearchParamsDto): Observable<Product[]> {
-    return this.apiClient.get<ProductDto[]>(`${this.baseEndpoint}/trending`, params).pipe(
+    const queryParams = params ? this.convertToQueryParams(params) : undefined;
+    return this.apiClient.get<ProductDto[]>(`${this.baseEndpoint}/trending`, queryParams).pipe(
       map(response => response.data.map(dto => this.toDomain(dto)))
     );
   }
@@ -133,9 +136,36 @@ export class ProductRepository {
    * Get recommended products
    */
   findRecommended(params?: ProductSearchParamsDto): Observable<Product[]> {
-    return this.apiClient.get<ProductDto[]>(`${this.baseEndpoint}/recommended`, params).pipe(
+    const queryParams = params ? this.convertToQueryParams(params) : undefined;
+    return this.apiClient.get<ProductDto[]>(`${this.baseEndpoint}/recommended`, queryParams).pipe(
       map(response => response.data.map(dto => this.toDomain(dto)))
     );
+  }
+
+  /**
+   * Convert ProductSearchParamsDto to query params format
+   */
+  private convertToQueryParams(params: ProductSearchParamsDto): Record<string, unknown> {
+    const queryParams: Record<string, unknown> = {};
+    
+    if (params.page !== undefined) queryParams['page'] = params.page;
+    if (params.per_page !== undefined) queryParams['per_page'] = params.per_page;
+    if (params.search) queryParams['search'] = params.search;
+    if (params.sort_by) queryParams['sort_by'] = params.sort_by;
+    if (params.sort_order) queryParams['sort_order'] = params.sort_order;
+    if (params.category_ids && params.category_ids.length > 0) {
+      queryParams['category_ids'] = params.category_ids.join(',');
+    }
+    if (params.price_min !== undefined) queryParams['price_min'] = params.price_min;
+    if (params.price_max !== undefined) queryParams['price_max'] = params.price_max;
+    if (params.rating_min !== undefined) queryParams['rating_min'] = params.rating_min;
+    if (params.status) queryParams['status'] = params.status;
+    if (params.seller_id) queryParams['seller_id'] = params.seller_id;
+    if (params.tags && params.tags.length > 0) {
+      queryParams['tags'] = params.tags.join(',');
+    }
+    
+    return queryParams;
   }
 
   /**

@@ -2,7 +2,8 @@
  * Media Domain - Public API
  */
 
-export { Media, MediaVariant, MediaType, ProcessingStatus } from './models/media.model';
+export { Media, MediaVariant } from './models/media.model';
+export type { MediaType, ProcessingStatus } from './models/media.model';
 export type {
   MediaDto,
   MediaVariantDto,

@@ -185,35 +185,45 @@ export class UserRepository {
    * Request password reset
    */
   passwordReset(email: string): Observable<{ message: string }> {
-    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/password-reset`, { email });
+    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/password-reset`, { email }).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Confirm password reset
    */
   passwordResetConfirm(data: PasswordResetConfirmDto): Observable<{ message: string }> {
-    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/password-reset/confirm`, data);
+    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/password-reset/confirm`, data).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Send email verification
    */
   sendEmailVerification(email: string): Observable<{ message: string }> {
-    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/email-verification/send`, { email });
+    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/email-verification/send`, { email }).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Verify email
    */
   verifyEmail(data: EmailVerificationDto): Observable<{ message: string }> {
-    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/email-verification/verify`, data);
+    return this.apiClient.post<{ message: string }>(`${this.baseEndpoint}/email-verification/verify`, data).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
    * Check username availability
    */
   checkUsernameAvailability(username: string): Observable<{ available: boolean; message?: string }> {
-    return this.apiClient.get<{ available: boolean; message?: string }>(`${this.baseEndpoint}/check-username`, { username });
+    return this.apiClient.get<{ available: boolean; message?: string }>(`${this.baseEndpoint}/check-username`, { username }).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
@@ -272,18 +282,19 @@ export class UserRepository {
           dto.is_public,
           dto.background_removed,
           dto.compression_quality,
-          dto.variants.map(v => ({
+          // Variants mapping: cast to domain type for now until a MediaVariant factory is introduced
+          (dto.variants as unknown as any[]).map(v => ({
             id: v.id,
-            variantType: v.variant_type,
+            variantType: (v as any).variant_type,
             quality: v.quality,
             width: v.width,
             height: v.height,
             format: v.format,
-            fileSize: v.file_size,
+            fileSize: (v as any).file_size,
             url: v.url,
-            storageKey: v.storage_key,
-            processingTime: v.processing_time
-          })),
+            storageKey: (v as any).storage_key,
+            processingTime: (v as any).processing_time
+          })) as unknown as import('../../media/models/media.model').MediaVariant[],
           dto.exif_data
         );
       })

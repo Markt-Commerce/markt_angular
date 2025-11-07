@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE, buildPath, RouteParams } from '../../../core/config/routes.config';
-import { MarketplaceService } from '../../../core/services/marketplace.service';
+import { MarketplaceService } from '../../../domains/marketplace/services/marketplace.service';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for operations not yet migrated
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
@@ -25,6 +25,7 @@ import {
   faRefresh
 } from '@fortawesome/free-solid-svg-icons';
 
+// TODO: Migrate to Product domain model from domains/marketplace/models/product.model when domain model includes all properties (images, seller, category, description, etc.)
 import { Product } from '../../../core/models';
 import { RoleIntentService } from '../../../core/services/role-intent.service';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
@@ -453,7 +454,7 @@ export class ListingsComponent implements OnInit {
   private resumeProduct(productId: string): void {
     const product = this.products().find(p => p.id === productId);
     if (product) {
-      // Migrated to MarketplaceService.updateProduct() - uses DDD pattern with ProductRepository
+      // Domain service returns Product directly, not wrapped in ApiResponse
       this.marketplaceService.updateProduct(productId, {
         name: product.name,
         description: product.description,
@@ -493,7 +494,7 @@ export class ListingsComponent implements OnInit {
 
   deleteProduct(productId: string): void {
     if (confirm('Are you sure you want to delete this product?')) {
-      // Migrated to MarketplaceService.deleteProduct() - uses DDD pattern with ProductRepository
+      // Domain service returns void directly, not wrapped in ApiResponse
       this.marketplaceService.deleteProduct(productId).subscribe({
         next: () => {
           const updatedProducts = this.products().filter(p => p.id !== productId);
@@ -512,7 +513,7 @@ export class ListingsComponent implements OnInit {
   bulkActivate(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0) {
-      // Migrated to MarketplaceService.updateProduct() - uses DDD pattern with ProductRepository
+      // Domain service returns Product directly, not wrapped in ApiResponse
       const updatePromises = selected.map(productId => {
         const product = this.products().find(p => p.id === productId);
         if (product) {
@@ -540,7 +541,7 @@ export class ListingsComponent implements OnInit {
   bulkPause(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0) {
-      // Migrated to MarketplaceService.updateProduct() - uses DDD pattern with ProductRepository
+      // Domain service returns Product directly, not wrapped in ApiResponse
       const updatePromises = selected.map(productId => {
         const product = this.products().find(p => p.id === productId);
         if (product) {
@@ -576,7 +577,7 @@ export class ListingsComponent implements OnInit {
   bulkDelete(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0 && confirm(`Are you sure you want to delete ${selected.length} products?`)) {
-      // Migrated to MarketplaceService.deleteProduct() - uses DDD pattern with ProductRepository
+      // Domain service returns void directly, not wrapped in ApiResponse
       const deletePromises = selected.map(productId =>
         this.marketplaceService.deleteProduct(productId).toPromise()
       );

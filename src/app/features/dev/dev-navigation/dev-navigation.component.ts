@@ -36,7 +36,7 @@ import {
   faGavel
 } from '@fortawesome/free-solid-svg-icons';
 import { AccessControlService } from '../../../core/services/access-control.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 
 interface DevRoute {
   path: string;

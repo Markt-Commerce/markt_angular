@@ -1,7 +1,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AccessControlService } from '../../../core/services/access-control.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication';
 
 @Component({
   selector: 'app-role-gate',

@@ -34,14 +34,14 @@ export class ChatRepository {
       dto.id,
       dto.buyer_id,
       dto.seller_id,
+      dto.pinned || false,
+      dto.muted || false,
+      dto.archived || false,
       dto.product_id,
       dto.request_id,
       dto.last_message_at,
       dto.unread_count_buyer,
-      dto.unread_count_seller,
-      dto.pinned || false,
-      dto.muted || false,
-      dto.archived || false
+      dto.unread_count_seller
     );
   }
 

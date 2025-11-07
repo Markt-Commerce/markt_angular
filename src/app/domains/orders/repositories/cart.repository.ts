@@ -28,9 +28,10 @@ export class CartRepository {
 
   /**
    * Convert CartItemDto to CartItem domain model
+   * Preserves the full ProductDto for display purposes (images, seller info, etc.)
    */
   private cartItemToDomain(dto: CartItemDto): CartItem {
-    // Convert product DTO to domain model
+    // Convert product DTO to domain model for business logic
     const product = new Product(
       dto.product.id,
       dto.product.name,
@@ -45,10 +46,12 @@ export class CartRepository {
       dto.product.updated_at
     );
 
+    // Preserve full ProductDto for display purposes (images, seller, description, etc.)
     return new CartItem(
       dto.id,
       product,
-      dto.quantity
+      dto.quantity,
+      dto.product // Pass full ProductDto for display
     );
   }
 

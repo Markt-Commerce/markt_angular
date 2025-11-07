@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { RequestService } from '../../../core/services/request.service';
-import { CartService } from '../../../core/services/cart.service';
+import { RequestService } from '../../../domains/requests/services/request.service';
+import { CartService } from '../../../domains/orders/services/cart.service';
 import { NavigationService } from '../../../core/services/navigation.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
@@ -129,8 +129,8 @@ export class RequestDetailComponent implements OnInit {
               budgetMin: apiRequest.budget || 0,
               budgetMax: apiRequest.budget || 0,
               status: apiRequest.status as 'Active' | 'Pending' | 'Fulfilled' | 'Closed',
-              buyerName: apiRequest.user?.username || apiRequest.buyer?.username || 'Unknown',
-              buyerAvatar: apiRequest.user?.profile_picture_url || apiRequest.buyer?.profile_picture_url || '',
+              buyerName: apiRequest.user?.username || 'Unknown',
+              buyerAvatar: apiRequest.user?.profile_picture_url || '',
               buyerId: apiRequest.user_id || apiRequest.user?.id || '',
               createdAt: apiRequest.created_at,
               expiresAt: apiRequest.expires_at || '',
@@ -139,7 +139,7 @@ export class RequestDetailComponent implements OnInit {
               tags: [], // TODO: Extract from metadata if available
               location: '', // TODO: Extract from metadata if available
               urgency: 'medium' as const, // TODO: Extract from metadata if available
-              mediaUrls: apiRequest.images?.map(img => img.url) || [],
+              mediaUrls: apiRequest.images?.map(img => img.media?.original_url || img.media?.thumbnail_url || '') || [],
               isOwner: false, // TODO: Check if current user is owner
               condition: '', // TODO: Extract from request or metadata
               timeline: '' // TODO: Calculate from expiresAt

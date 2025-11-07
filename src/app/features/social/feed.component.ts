@@ -31,10 +31,12 @@ import {
   faExpand,
   faCompress
 } from '@fortawesome/free-solid-svg-icons';
-import { SocialService } from '../../core/services/social.service';
-import { AuthService } from '../../core/services/auth.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
+import { SocialService } from '../../domains/social/services/social.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
+import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
 import { ApiService } from '../../core/services/api.service';
+import { MediaService } from '../../domains/media';
+import { ChatService } from '../../domains/chat';
 
 @Component({
   selector: 'app-feed',
@@ -433,6 +435,8 @@ export class FeedComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private mediaService = inject(MediaService);
+  private chatService = inject(ChatService);
 
   // Icons
   faHeart = faHeart;
@@ -498,18 +502,18 @@ export class FeedComponent implements OnInit {
   private loadFeed(): void {
     this.isLoading = true;
     
-    // Migrated to SocialService.getPersonalizedFeed() - uses DDD pattern with PostRepository
-    this.socialService.getPersonalizedFeed({ page: 1, per_page: 20 }).subscribe({
+    // Migrated to SocialService.getFeed() - uses DDD pattern with PostRepository
+    this.socialService.getFeed({ page: 1, per_page: 20 }).subscribe({
       next: (response) => {
         // SocialService returns PaginatedResponse<Post>
-        const initialPosts = response.items || [];
+        const initialPosts = response.items || response || [];
         this.posts = initialPosts;
         this.hasMorePosts = response.pagination?.has_next || false;
         // Seed SocialService with initial posts so realtime merges correctly
         this.socialService.setInitialFeed(this.posts);
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading social feed:', error);
         this.posts = [];
         this.isLoading = false;
@@ -531,12 +535,13 @@ export class FeedComponent implements OnInit {
   loadMorePosts(): void {
     this.currentPage++;
     this.socialService.getFeed({ page: this.currentPage }).subscribe({
-      next: (response) => {
-        this.posts = [...this.posts, ...(response.items || [])];
+      next: (response: any) => {
+        const newPosts = response.items || response || [];
+        this.posts = [...this.posts, ...newPosts];
         this.hasMorePosts = response.pagination?.has_next || false;
         this.socialService.setInitialFeed(this.posts);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading more posts:', error);
       }
     });
@@ -600,10 +605,10 @@ export class FeedComponent implements OnInit {
 
   loadComments(post: any): void {
     this.socialService.getPostComments(post.id).subscribe({
-      next: (response) => {
-        post.comments = response.items || [];
+      next: (response: any) => {
+        post.comments = response.items || response || [];
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading comments:', error);
       }
     });
@@ -612,7 +617,7 @@ export class FeedComponent implements OnInit {
   addComment(post: any): void {
     if (!post.newComment?.trim()) return;
 
-    this.socialService.addComment(post.id, { content: post.newComment }).subscribe({
+    this.socialService.addComment(post.id, post.newComment).subscribe({
       next: (response) => {
         post.comments.unshift(response);
         post.comments_count++;
@@ -764,7 +769,7 @@ export class FeedComponent implements OnInit {
 
   // Social post media endpoint integrations
   addSocialPostMedia(postId: string, mediaFile: File): void {
-    this.apiService.addSocialPostMedia(postId, mediaFile).subscribe({
+    this.mediaService.uploadSocialPostMedia(postId, mediaFile).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -774,7 +779,7 @@ export class FeedComponent implements OnInit {
   }
 
   deleteSocialPostMedia(postId: string, mediaId: string): void {
-    this.apiService.deleteSocialPostMedia(postId, Number(mediaId)).subscribe({
+    this.mediaService.deleteSocialPostMedia(postId, Number(mediaId)).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -784,7 +789,7 @@ export class FeedComponent implements OnInit {
   }
 
   getSocialPostMedia(postId: string): void {
-    this.apiService.getSocialPostMedia(postId).subscribe({
+    this.mediaService.getSocialPostMediaList(postId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -807,7 +812,7 @@ export class FeedComponent implements OnInit {
   }
 
   addCommentReaction(commentId: string, reactionData: any): void {
-    this.apiService.addCommentReaction(commentId, reactionData).subscribe({
+    this.socialService.addCommentReaction(commentId, reactionData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -817,7 +822,7 @@ export class FeedComponent implements OnInit {
   }
 
   addMessageReaction(messageId: string, reactionData: any): void {
-    this.apiService.addMessageReaction(messageId, reactionData).subscribe({
+    this.chatService.addMessageReaction(messageId, reactionData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -867,7 +872,7 @@ export class FeedComponent implements OnInit {
   }
 
   createNiche(nicheData: any): void {
-    this.apiService.createNiche(nicheData).subscribe({
+    this.socialService.createNiche(nicheData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -877,7 +882,7 @@ export class FeedComponent implements OnInit {
   }
 
   createNichePost(nicheId: string, postData: any): void {
-    this.apiService.createNichePost(nicheId, postData).subscribe({
+    this.socialService.createNichePost(nicheId, postData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -887,7 +892,7 @@ export class FeedComponent implements OnInit {
   }
 
   deletePostViaApi(postId: string): void {
-    this.apiService.deletePost(postId).subscribe({
+    this.socialService.deletePost(postId).subscribe({
       next: (response) => {
         this.loadFeed(); // Refresh feed
       },
@@ -908,7 +913,7 @@ export class FeedComponent implements OnInit {
   }
 
   getFollowers(userId: string): void {
-    this.apiService.getFollowers(userId).subscribe({
+    this.socialService.getFollowers(userId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -918,7 +923,7 @@ export class FeedComponent implements OnInit {
   }
 
   getFollowing(userId: string): void {
-    this.apiService.getFollowing(userId).subscribe({
+    this.socialService.getFollowing(userId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -928,7 +933,7 @@ export class FeedComponent implements OnInit {
   }
 
   getMyNiches(): void {
-    this.apiService.getMyNiches().subscribe({
+    this.socialService.getMyNiches().subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -938,7 +943,7 @@ export class FeedComponent implements OnInit {
   }
 
   getNiche(nicheId: string): void {
-    this.apiService.getNiche(nicheId).subscribe({
+    this.socialService.getNiche(nicheId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -948,7 +953,7 @@ export class FeedComponent implements OnInit {
   }
 
   getNicheFeed(nicheId: string): void {
-    this.apiService.getNicheFeed(nicheId).subscribe({
+    this.socialService.getNicheFeed(nicheId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -958,7 +963,7 @@ export class FeedComponent implements OnInit {
   }
 
   getNicheMembers(nicheId: string): void {
-    this.apiService.getNicheMembers(nicheId).subscribe({
+    this.socialService.getNicheMembers(nicheId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -968,7 +973,7 @@ export class FeedComponent implements OnInit {
   }
 
   getNichePosts(nicheId: string): void {
-    this.apiService.getNichePosts(nicheId).subscribe({
+    this.socialService.getNichePosts(nicheId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -978,7 +983,7 @@ export class FeedComponent implements OnInit {
   }
 
   getNiches(): void {
-    this.apiService.getNiches().subscribe({
+    this.socialService.getNiches().subscribe({
       next: (response) => {
       },
       error: (error) => {

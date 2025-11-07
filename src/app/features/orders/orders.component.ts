@@ -29,8 +29,8 @@ import {
   faDownload,
   faStore
 } from '@fortawesome/free-solid-svg-icons';
-import { OrderService } from '../../core/services/order.service';
-import { AuthService } from '../../core/services/auth.service';
+import { OrderService } from '../../domains/orders';
+import { AuthService } from '../../domains/authentication';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
@@ -450,12 +450,14 @@ export class OrdersComponent implements OnInit {
     };
 
     // Use OrderService (DDD pattern)
-    const source$ = this.viewMode === 'seller'
-      ? this.orderService.getSellerOrders(params)
-      : this.orderService.getOrders();
+    const source$ = (
+      this.viewMode === 'seller'
+        ? this.orderService.getSellerOrders(params)
+        : this.orderService.getOrders()
+    ) as unknown as import('rxjs').Observable<any>;
 
     source$.subscribe({
-      next: (response) => {
+      next: (response: any) => {
         if (response.success) {
           if (this.viewMode === 'seller' && response.data?.items) {
             // Seller orders have paginated response with items
@@ -476,7 +478,7 @@ export class OrdersComponent implements OnInit {
         }
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading orders:', error);
         this.orders = [];
         if (this.viewMode === 'buyer') {
@@ -627,11 +629,11 @@ export class OrdersComponent implements OnInit {
 
   cancelOrder(order: any): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.updateRequestStatus(order.id, { status: 'cancelled' }).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.refreshOrders();
-          }
+      // Using domain OrderService.cancelOrder() - returns Observable<Order> directly
+      this.orderService.cancelOrder(order.id).subscribe({
+        next: (cancelledOrder) => {
+          // Domain service returns Order directly (no .success wrapper)
+          this.refreshOrders();
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
@@ -656,11 +658,11 @@ export class OrdersComponent implements OnInit {
   // Additional order endpoint integrations
   getOrders(): void {
     // Use OrderService (DDD pattern)
+    // Using domain OrderService.getOrders() - returns Observable<Order[]> directly
     this.orderService.getOrders().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.orders = response.data;
-        }
+      next: (orders) => {
+        // Domain service returns Order[] directly (no .success/.data wrapper)
+        this.orders = orders;
       },
       error: (error) => {
         console.error('Error loading orders:', error);

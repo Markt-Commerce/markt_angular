@@ -2,8 +2,8 @@
  * Authentication Domain - Public API
  */
 
-export { User, UserRole, UserSession } from './models/user.model';
-export type { Address, BuyerAccountData, SellerAccountData } from './models/user.model';
+export { User, UserSession } from './models/user.model';
+export type { UserRole, Address, BuyerAccountData, SellerAccountData } from './models/user.model';
 
 export type {
   UserDto,

@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { AuthService } from '../../../domains/authentication';
 
 interface PrivacySetting {
   id: string;
@@ -491,6 +492,7 @@ export class PrivacyComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
 
   privacyForm!: FormGroup;
   loading = false;
@@ -627,9 +629,9 @@ export class PrivacyComponent implements OnInit {
   private loadSettings(): void {
     this.loading = true;
     
-    this.apiService.getPrivacySettings().subscribe({
-      next: (response) => {
-        this.privacyForm.patchValue(response.data);
+    this.authService.getPrivacySettings().subscribe({
+      next: (response: any) => {
+        this.privacyForm.patchValue(response?.data || {});
         this.loading = false;
       },
       error: (error) => {
@@ -646,7 +648,7 @@ export class PrivacyComponent implements OnInit {
     
     const formData = this.privacyForm.value;
     
-    this.apiService.updatePrivacySettings(formData).subscribe({
+    this.authService.updatePrivacySettings(formData).subscribe({
       next: (response) => {
         this.loading = false;
         this.successMessage = 'Privacy settings updated successfully!';

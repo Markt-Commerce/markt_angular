@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -166,14 +166,11 @@ export class VerifyEmailComponent implements OnInit {
     this.isVerifying = true;
     this.verificationStatus = null;
 
-    this.authService.verifyEmail({
-      email: email,
-      verification_code: code
-    }).subscribe({
-      next: (response: any) => {
+    this.authService.verifyEmail(email, code).subscribe({
+      next: (result) => {
+        // Domain service returns { message: string } directly
         this.isVerifying = false;
         this.verificationStatus = 'success';
-        
       },
       error: (error: any) => {
         this.isVerifying = false;
@@ -190,7 +187,8 @@ export class VerifyEmailComponent implements OnInit {
     this.isResending = true;
 
     this.authService.sendEmailVerification(this.email).subscribe({
-      next: (response: any) => {
+      next: (result) => {
+        // Domain service returns { message: string } directly
         this.isResending = false;
         this.startResendCooldown();
         

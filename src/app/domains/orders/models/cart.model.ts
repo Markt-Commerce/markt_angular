@@ -6,6 +6,7 @@
  */
 
 import { Product } from '../../marketplace/models/product.model';
+import { ProductDto } from '../../marketplace/models/product.dto';
 
 /**
  * Cart Item - Value Object
@@ -15,7 +16,13 @@ export class CartItem {
   constructor(
     public readonly id: string,
     public readonly product: Product,
-    private _quantity: number
+    private _quantity: number,
+    /**
+     * Optional: Full product DTO for display purposes (images, seller info, etc.)
+     * This is kept separate from the domain Product model to maintain separation of concerns.
+     * The domain Product model contains business logic, while ProductDto contains display data.
+     */
+    public readonly productDto?: ProductDto
   ) {}
 
   /**
@@ -37,7 +44,7 @@ export class CartItem {
       throw new Error(`Cannot add ${newQuantity} items. Only ${this.product.getStock()} available.`);
     }
 
-    return new CartItem(this.id, this.product, newQuantity);
+    return new CartItem(this.id, this.product, newQuantity, this.productDto);
   }
 
   /**

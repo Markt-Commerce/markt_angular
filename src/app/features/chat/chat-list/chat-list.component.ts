@@ -22,9 +22,9 @@ import {
   faEllipsisV,
   faCircle
 } from '@fortawesome/free-solid-svg-icons';
-import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { ChatRoom, ChatMessage } from '../../../core/models';
+import { ChatService } from '../../../domains/chat/services/chat.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
 
 @Component({
   selector: 'app-chat-list',
@@ -132,14 +132,14 @@ import { ChatRoom, ChatMessage } from '../../../core/models';
                     <fa-icon [icon]="faPrint" class="w-3 h-3"></fa-icon>
                   </span>
                   <span class="text-xs text-gray-500">
-                    {{ formatTimestamp(chat.last_message?.created_at) }}
+                    {{ formatTimestamp((chat as any).last_message?.created_at) }}
                   </span>
                 </div>
               </div>
               
               <div class="flex items-center justify-between mt-1">
                 <p class="text-sm text-gray-500 truncate">
-                  <span *ngIf="chat.last_message?.sender_id === user?.id" class="text-gray-400">You: </span>
+                  <span *ngIf="(chat as any).last_message?.sender_id === user?.id" class="text-gray-400">You: </span>
                   {{ getLastMessagePreview(chat) }}
                 </p>
                 <div class="flex items-center space-x-2">
@@ -256,7 +256,8 @@ export class ChatListComponent implements OnInit {
   faCircle = faCircle;
 
   // Data
-  chatRooms: any[] = [];
+  // TODO: ChatService currently converts domain models to old format - update when service returns domain models directly
+  chatRooms: ChatRoom[] = [];
   user: any = null;
   currentRole: 'buyer' | 'seller' | null = null;
   isLoading = false;
@@ -267,10 +268,10 @@ export class ChatListComponent implements OnInit {
   searchQuery = '';
   selectedChatId: string | null = null;
   showMenu = false;
-  selectedChat: any = null;
+  selectedChat: ChatRoom | null = null;
   menuPosition = { x: 0, y: 0 };
 
-  get filteredChatRooms(): any[] {
+  get filteredChatRooms(): ChatRoom[] {
     if (!this.searchQuery) {
       return this.chatRooms;
     }
@@ -286,22 +287,27 @@ export class ChatListComponent implements OnInit {
     this.loadChatList();
 
     // Live update chat list on new messages
-    this.chatService.newMessage$.subscribe(message => {
-      const room = this.chatRooms.find(r => r.id === message.room_id);
+    // TODO: Update when ChatService returns domain models - message will be ChatMessage domain model
+    this.chatService.newMessage$.subscribe((message: any) => {
+      const room = this.chatRooms.find(r => r.id === message.room_id || message.roomId);
       if (room) {
-        room.last_message = {
+        // TODO: When using domain models, lastMessage will be a ChatMessage instance
+        (room as any).last_message = {
           id: message.id,
           content: message.content,
-          message_type: message.message_type,
-          sender_id: message.sender_id,
-          created_at: message.created_at
+          message_type: message.message_type || message.messageType,
+          sender_id: message.sender_id || message.senderId,
+          created_at: message.created_at || message.createdAt
         };
         // Increment unread count for current user
+        // TODO: When using domain models, use room.getUnreadCount(userId) method
         if (this.user) {
-          if (this.user.id === room.buyer_id) {
-            room.unread_count_buyer = (room.unread_count_buyer || 0) + 1;
-          } else if (this.user.id === room.seller_id) {
-            room.unread_count_seller = (room.unread_count_seller || 0) + 1;
+          const buyerId = (room as any).buyer_id || (room as any).buyerId;
+          const sellerId = (room as any).seller_id || (room as any).sellerId;
+          if (this.user.id === buyerId) {
+            (room as any).unread_count_buyer = ((room as any).unread_count_buyer || (room as any).unreadCountBuyer || 0) + 1;
+          } else if (this.user.id === sellerId) {
+            (room as any).unread_count_seller = ((room as any).unread_count_seller || (room as any).unreadCountSeller || 0) + 1;
           }
         }
         // Move room to top
@@ -371,7 +377,7 @@ export class ChatListComponent implements OnInit {
     // Search is handled by the filteredChatRooms getter
   }
 
-  selectChat(chat: any): void {
+  selectChat(chat: ChatRoom): void {
     this.selectedChatId = chat.id;
     this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, chat.id]);
   }
@@ -381,36 +387,41 @@ export class ChatListComponent implements OnInit {
   }
 
   // Helpers adapted to Ife's response shape
-  getChatAvatar(chat: any): string {
-    const other = chat.other_user;
+  // TODO: Update when ChatService returns domain models - chat will be ChatRoom domain model
+  getChatAvatar(chat: ChatRoom): string {
+    // TODO: When using domain models, access other user through chat participants
+    const other = (chat as any).other_user;
     if (other) {
       return other.profile_picture || other.profile_picture_url || '""';
     }
     return '""';
   }
 
-  getChatName(chat: any): string {
-    const other = chat.other_user;
+  getChatName(chat: ChatRoom): string {
+    // TODO: When using domain models, access other user through chat participants
+    const other = (chat as any).other_user;
     if (other) {
       return other.username || 'Unknown User';
     }
     return 'Unknown User';
   }
 
-  getOtherUser(chat: any): any {
+  getOtherUser(chat: ChatRoom): any {
     if (!this.user) return null;
-    
-    return chat.participants.find((participant: any) => participant.id !== this.user.id);
+    // TODO: When using domain models, access participants property
+    return (chat as any).participants?.find((participant: any) => participant.id !== this.user.id);
   }
 
-  getChatOnlineStatus(_chat: any): boolean {
+  getChatOnlineStatus(_chat: ChatRoom): boolean {
     return false; // backend may provide presence later
   }
 
-  getLastMessagePreview(chat: any): string {
-    const lm = chat.last_message;
+  getLastMessagePreview(chat: ChatRoom): string {
+    // TODO: When using domain models, lastMessage will be a ChatMessage instance
+    const lm = (chat as any).last_message;
     if (!lm) return 'No messages yet';
-    switch (lm.message_type) {
+    const messageType = lm.message_type || lm.messageType;
+    switch (messageType) {
       case 'text':
         return lm.content;
       case 'image':
@@ -437,13 +448,16 @@ export class ChatListComponent implements OnInit {
   }
 
   // Unread badge helper for either role
-  get unreadCountGetter() { return (chat: any) => {
-    if (this.user?.id === chat?.buyer_id) return chat.unread_count_buyer || 0;
-    if (this.user?.id === chat?.seller_id) return chat.unread_count_seller || 0;
+  // TODO: When using domain models, use chat.getUnreadCount(userId) method
+  get unreadCountGetter() { return (chat: ChatRoom) => {
+    const buyerId = (chat as any).buyer_id || (chat as any).buyerId;
+    const sellerId = (chat as any).seller_id || (chat as any).sellerId;
+    if (this.user?.id === buyerId) return (chat as any).unread_count_buyer || (chat as any).unreadCountBuyer || 0;
+    if (this.user?.id === sellerId) return (chat as any).unread_count_seller || (chat as any).unreadCountSeller || 0;
     return 0;
   }}
 
-  showChatMenu(chat: any, event: MouseEvent): void {
+  showChatMenu(chat: ChatRoom, event: MouseEvent): void {
     event.stopPropagation();
     
     this.selectedChat = chat;
@@ -459,13 +473,14 @@ export class ChatListComponent implements OnInit {
     this.selectedChat = null;
   }
 
-  pinChat(chat: any): void {
+  pinChat(chat: ChatRoom): void {
     if (!chat) return;
     
     this.chatService.pinChat(chat.id).subscribe({
       next: (response) => {
         if (response.success) {
-          chat.pinned = !chat.pinned;
+          // TODO: When using domain models, create new instance with updated pinned status (immutability)
+          (chat as any).pinned = !chat.pinned;
           this.hideChatMenu();
         }
       },
@@ -475,13 +490,14 @@ export class ChatListComponent implements OnInit {
     });
   }
 
-  muteChat(chat: any): void {
+  muteChat(chat: ChatRoom): void {
     if (!chat) return;
     
     this.chatService.muteChat(chat.id).subscribe({
       next: (response) => {
         if (response.success) {
-          chat.muted = !chat.muted;
+          // TODO: When using domain models, create new instance with updated muted status (immutability)
+          (chat as any).muted = !chat.muted;
           this.hideChatMenu();
         }
       },
@@ -491,7 +507,7 @@ export class ChatListComponent implements OnInit {
     });
   }
 
-  archiveChat(chat: any): void {
+  archiveChat(chat: ChatRoom): void {
     if (!chat) return;
     
     this.chatService.archiveChat(chat.id).subscribe({
@@ -507,7 +523,7 @@ export class ChatListComponent implements OnInit {
     });
   }
 
-  deleteChat(chat: any): void {
+  deleteChat(chat: ChatRoom): void {
     if (!chat) return;
     
     if (confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {

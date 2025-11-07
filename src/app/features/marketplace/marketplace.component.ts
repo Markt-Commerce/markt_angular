@@ -32,16 +32,16 @@ import {
   faComment,
   faMobile
 } from '@fortawesome/free-solid-svg-icons';
-import { MarketplaceService } from '../../core/services/marketplace.service';
-import { CartService } from '../../core/services/cart.service';
+import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
+import { CartService } from '../../domains/orders/services/cart.service';
 import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
-import { SocialService } from '../../core/services/social.service';
+import { SocialService } from '../../domains/social/services/social.service';
 import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 
 @Component({
