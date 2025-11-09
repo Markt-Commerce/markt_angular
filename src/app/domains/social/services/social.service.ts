@@ -3,7 +3,8 @@
  */
 
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { PostRepository } from '../repositories/post.repository';
 import { Post } from '../models/post.model';
 import { PostCreateDto, CommentCreateDto } from '../models/post.dto';
@@ -15,6 +16,8 @@ import { ApiService } from '../../../core/services/api.service';
 export class SocialService {
   private postRepository = inject(PostRepository);
   private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
+  private feedSubject = new BehaviorSubject<Post[]>([]);
+  public readonly feed$ = this.feedSubject.asObservable();
 
   getPosts(params?: Record<string, unknown>): Observable<Post[]> {
     return this.postRepository.findAll(params);
@@ -36,8 +39,16 @@ export class SocialService {
     return this.postRepository.create(data);
   }
 
-  likePost(id: string): Observable<void> {
-    return this.postRepository.like(id);
+  likePost(id: string): Observable<any> {
+    return this.apiService.likePost(id).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  togglePostLike(id: string): Observable<any> {
+    return this.apiService.togglePostLike(id).pipe(
+      map(response => response.data ?? response)
+    );
   }
 
   addComment(postId: string, content: string | { content: string }): Observable<any> {
@@ -58,7 +69,18 @@ export class SocialService {
    * Temporary: delegates to ApiService
    */
   getPostComments(postId: string, params?: any): Observable<any> {
-    return this.apiService.getPostComments(postId, params);
+    return this.apiService.getPostComments(postId, params).pipe(
+      map(response => {
+        const payload = response.data ?? response;
+        if (payload?.items) {
+          return payload;
+        }
+        if (Array.isArray(payload)) {
+          return { items: payload };
+        }
+        return { items: payload };
+      })
+    );
   }
 
   /**
@@ -67,9 +89,30 @@ export class SocialService {
    * Temporary: delegates to ApiService or uses getPosts
    */
   getFeed(params?: any): Observable<any> {
-    // Use getPosts for now, which returns Post[]
-    // Components expecting paginated response should be updated
-    return this.getPosts(params);
+    return this.apiService.getPersonalizedFeed(params).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  /**
+   * Personalized feed - compatibility helper for feature components expecting items/pagination shape.
+   */
+  getPersonalizedFeed(params?: Record<string, unknown>): Observable<any> {
+    return this.apiService.getPersonalizedFeed(params).pipe(
+      map(response => {
+        const payload = response.data ?? response;
+        if (payload?.items) {
+          return payload;
+        }
+        if (Array.isArray(payload)) {
+          return { items: payload, pagination: undefined };
+        }
+        if (payload?.data?.items) {
+          return payload.data;
+        }
+        return { items: [], pagination: payload?.pagination };
+      })
+    );
   }
 
   /**
@@ -78,8 +121,7 @@ export class SocialService {
    * Temporary: no-op method for backward compatibility
    */
   setInitialFeed(posts: any[]): void {
-    // No-op: This was likely used for internal state management
-    // Components should manage their own state
+    this.feedSubject.next(Array.isArray(posts) ? [...posts] : []);
   }
 
   /**
@@ -88,7 +130,9 @@ export class SocialService {
    * Temporary: delegates to ApiService
    */
   unlikePost(postId: string): Observable<any> {
-    return this.apiService.unlikePost(postId);
+    return this.apiService.unlikePost(postId).pipe(
+      map(response => response.data ?? response)
+    );
   }
 
   /**

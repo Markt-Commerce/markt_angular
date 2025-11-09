@@ -604,8 +604,7 @@ export class CreateRequestComponent implements OnInit {
   // TODO: These methods still use ApiService - image operations may need MediaService or stay in ApiService
   // for cross-domain operations (request images are part of media domain)
   addRequestImage(requestId: string, imageFile: File): void {
-    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
-    this.mediaService.uploadMedia(requestId, imageFile).subscribe({
+    this.mediaService.uploadRequestImage(requestId, imageFile).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -615,8 +614,7 @@ export class CreateRequestComponent implements OnInit {
   }
 
   deleteRequestImage(requestId: string, imageId: string): void {
-    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
-    this.mediaService.deleteMedia(requestId, parseInt(imageId)).subscribe({
+    this.mediaService.deleteRequestImage(requestId, parseInt(imageId, 10)).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -626,10 +624,8 @@ export class CreateRequestComponent implements OnInit {
   }
 
   getRequestImages(requestId: string): void {
-    // TODO: Consider migrating to MediaService or keeping in ApiService for cross-domain operations
-    this.mediaService.getMediaList(requestId).subscribe({
-      next: (response) => {
-      },
+    this.mediaService.getRequestImages(requestId).subscribe({
+      next: () => {},
       error: (error) => {
         console.error('Error loading request images:', error);
       }

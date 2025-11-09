@@ -757,7 +757,9 @@ export class CreateOfferComponent implements OnInit {
         );
         
         Promise.all(uploadPromises).then(uploadResponses => {
-          const imageUrls = uploadResponses.map(response => response?.data?.url).filter(url => url);
+          const imageUrls = uploadResponses
+            .map((response: any) => response?.data?.url || response?.url)
+            .filter((url: string | undefined) => Boolean(url));
           offerData['images'] = imageUrls;
           
           // Now create the offer

@@ -176,10 +176,18 @@ export class OrderService {
    * Get seller orders
    */
   getSellerOrders(
-    sellerId: string,
+    sellerIdOrParams?: string | Record<string, unknown>,
     params?: Record<string, unknown>
-  ): Observable<Order[]> {
-    return this.orderRepository.findBySeller(sellerId, params);
+  ): Observable<any> {
+    if (typeof sellerIdOrParams === 'string') {
+      return this.orderRepository.findBySeller(sellerIdOrParams, params);
+    }
+
+    return this.apiService.getSellerOrders(sellerIdOrParams);
+  }
+
+  getSellerOrderStats(): Observable<any> {
+    return this.apiService.getSellerOrderStats();
   }
 
   /**
@@ -201,6 +209,10 @@ export class OrderService {
    */
   trackOrder(orderId: string): Observable<any> {
     return this.apiService.trackOrder(orderId);
+  }
+
+  reviewOrder(orderId: string, reviewData: Record<string, unknown>): Observable<any> {
+    return this.apiService.reviewOrder(orderId, reviewData as any);
   }
 
   /**

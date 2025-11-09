@@ -139,7 +139,9 @@ export class RequestDetailComponent implements OnInit {
               tags: [], // TODO: Extract from metadata if available
               location: '', // TODO: Extract from metadata if available
               urgency: 'medium' as const, // TODO: Extract from metadata if available
-              mediaUrls: apiRequest.images?.map(img => img.media?.original_url || img.media?.thumbnail_url || '') || [],
+              mediaUrls: (apiRequest.images ?? [])
+                .map((img: any) => img?.media?.original_url || img?.media?.thumbnail_url || '')
+                .filter((url: string) => Boolean(url)),
               isOwner: false, // TODO: Check if current user is owner
               condition: '', // TODO: Extract from request or metadata
               timeline: '' // TODO: Calculate from expiresAt
@@ -199,7 +201,7 @@ export class RequestDetailComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           // Convert API offers to component's SellerResponse interface
-          const sellerResponses: SellerResponse[] = response.data.map(offer => ({
+          const sellerResponses: SellerResponse[] = response.data.map((offer: any) => ({
             id: offer.id,
             sellerName: '', // TODO: Get seller name from offer data
             sellerAvatar: '', // TODO: Get seller avatar from offer data

@@ -199,7 +199,7 @@ interface CommunityDiscussion {
                     </div>
                     <div class="post-content">
                       <div class="h-4 w-full bg-gray-200 rounded animate-pulse mb-2"></div>
-                      <div class="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                      <div class="h-4 w-3-4 bg-gray-200 rounded animate-pulse"></div>
                     </div>
                     <div class="post-actions-bar">
                       <div class="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
@@ -316,9 +316,9 @@ interface CommunityDiscussion {
                       </div>
                     </div>
                     <div class="discussion-content">
-                      <div class="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                      <div class="h-5 w-3-4 bg-gray-200 rounded animate-pulse mb-2"></div>
                       <div class="h-4 w-full bg-gray-200 rounded animate-pulse mb-1"></div>
-                      <div class="h-4 w-2/3 bg-gray-200 rounded animate-pulse"></div>
+                      <div class="h-4 w-2-3 bg-gray-200 rounded animate-pulse"></div>
                     </div>
                     <div class="discussion-footer">
                       <div class="discussion-author">
@@ -966,8 +966,8 @@ interface CommunityDiscussion {
     .w-16 { width: 4rem; }
     .w-24 { width: 6rem; }
     .w-full { width: 100%; }
-    .w-3\/4 { width: 75%; }
-    .w-2\/3 { width: 66.666667%; }
+    .w-3-4 { width: 75%; }
+    .w-2-3 { width: 66.666667%; }
     .mt-1 { margin-top: 0.25rem; }
     .mb-2 { margin-bottom: 0.5rem; }
     .mb-1 { margin-bottom: 0.25rem; }

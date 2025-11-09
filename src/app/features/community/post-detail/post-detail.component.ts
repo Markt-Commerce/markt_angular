@@ -470,7 +470,7 @@ export class PostDetailComponent implements OnInit {
       
       // Migrated to SocialService.getPost() - uses DDD pattern with PostRepository
       this.socialService.getPost(postId).subscribe({
-        next: (post) => {
+        next: (post: any) => {
           // Convert SocialService Post format to component's expected format
           this.post = {
             id: Number(post.id) || 0,

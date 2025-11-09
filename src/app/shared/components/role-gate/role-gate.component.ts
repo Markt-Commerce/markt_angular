@@ -9,16 +9,23 @@ import { AuthService } from '../../../domains/authentication';
   imports: [CommonModule],
   template: `
     @if (!isAllowed()) {
-      <div class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between">
-        <div>
-          {{ message || defaultMessage }}
-        </div>
-        <button (click)="switchRole()" class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors">Switch to {{ requiredRole | titlecase }}</button>
+    <div
+      class="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-center justify-between"
+    >
+      <div>
+        {{ message || defaultMessage }}
       </div>
+      <button
+        (click)="switchRole()"
+        class="ml-4 bg-markt-primary text-white px-3 py-1.5 rounded-md hover:bg-markt-secondary transition-colors"
+      >
+        Switch to {{ requiredRole | titlecase }}
+      </button>
+    </div>
     } @else {
-      <ng-content></ng-content>
+    <ng-content></ng-content>
     }
-  `
+  `,
 })
 export class RoleGateComponent {
   @Input() requiredRole: 'buyer' | 'seller' = 'buyer';
@@ -34,10 +41,12 @@ export class RoleGateComponent {
   }
 
   isAllowed(): boolean {
-    return this.requiredRole === 'buyer' ? this.access.isBuyer : this.access.isSeller;
+    return this.requiredRole === 'buyer'
+      ? this.access.isBuyer
+      : this.access.isSeller;
   }
 
   switchRole(): void {
-    this.auth.switchRole().subscribe();
+    this.auth.switchRole(this.requiredRole).subscribe();
   }
-} 
+}

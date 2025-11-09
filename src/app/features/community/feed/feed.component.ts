@@ -7,10 +7,9 @@ import { faHeart, faComment, faShare, faPlus, faImage, faMapMarkerAlt, faStore, 
 import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { SocialService } from '../../../domains/social/services/social.service';
 import { Observable } from 'rxjs';
-import { User } from '../../../core/models/auth.model';
+import { User } from '../../../domains/authentication/models/user.model';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for getCommunityFeed fallback (not yet in SocialService)
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
-import { SocialService } from '../../../domains/social';
 
 interface FeedPost {
   id: string;
@@ -264,10 +263,15 @@ export class FeedComponent implements OnInit {
         console.error('Error loading community feed:', error);
         // Fallback to community feed - TODO: getCommunityFeed() not yet in SocialService
         this.socialService.getPosts().subscribe({
-          next: (fallback) => {
-            const items = fallback.data?.items || fallback.data || [];
-            this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
-            this.hasMorePosts = fallback.data?.pagination?.has_next || false;
+          next: (fallback: any) => {
+            const fallbackItems = Array.isArray(fallback)
+              ? fallback
+              : fallback?.items ?? fallback?.data ?? [];
+            this.posts = (fallbackItems || []).map((post: any) => this.mapPostToFeedPost(post));
+            const fallbackPagination = Array.isArray(fallback)
+              ? undefined
+              : fallback?.pagination ?? fallback?.data?.pagination;
+            this.hasMorePosts = fallbackPagination?.has_next ?? false;
             this.loading = false;
           },
           error: () => {

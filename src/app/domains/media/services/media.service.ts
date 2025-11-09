@@ -205,6 +205,27 @@ export class MediaService {
   }
 
   /**
+   * Request-specific media helpers (temporary delegations to ApiService)
+   */
+  uploadRequestImage(requestId: string, file: File): Observable<any> {
+    return this.apiService.addRequestImage(requestId, file).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  deleteRequestImage(requestId: string, imageId: number): Observable<any> {
+    return this.apiService.deleteRequestImage(requestId, imageId).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  getRequestImages(requestId: string): Observable<any> {
+    return this.apiService.getRequestImages(requestId).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  /**
    * Get media statistics
    */
   getStats(): Observable<any> {

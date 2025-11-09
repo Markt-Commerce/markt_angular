@@ -914,7 +914,7 @@ export class OfferDetailComponent implements OnInit {
         next: (response) => {
             if (response.success && response.data && response.data.length > 0) {
               // Find the offer by ID
-              const foundOffer = response.data.find(o => o.id === offerId);
+              const foundOffer = response.data.find((o: any) => o.id === offerId);
               if (foundOffer) {
                 this.offer = this.mapOfferToComponentFormat(foundOffer);
             this.loadRequest();
@@ -987,8 +987,8 @@ export class OfferDetailComponent implements OnInit {
         next: (response) => {
           if (response.success && response.data) {
             this.similarOffers = response.data
-              .filter(o => o.id !== this.offer?.id)
-              .map(o => this.mapOfferToComponentFormat(o));
+              .filter((o: any) => o.id !== this.offer?.id)
+              .map((o: any) => this.mapOfferToComponentFormat(o));
           }
         },
         error: (error) => {

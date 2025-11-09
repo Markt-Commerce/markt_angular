@@ -4,7 +4,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { ChatRepository } from '../repositories/chat.repository';
 import { ChatMessage, ChatRoom } from '../models/chat.model';
 import { SendMessageDto, CreateChatRoomDto } from '../models/chat.dto';
@@ -32,6 +32,36 @@ export class ChatService {
     }
 
     return this.chatRepository.createRoom(data);
+  }
+
+  /**
+   * Temporary helper for legacy components that expect createChatRoom API shape
+   * Delegates to ApiService until dedicated repository method is available
+   */
+  createChatRoom(roomData: Record<string, unknown>): Observable<ChatRoom> {
+    return this.apiService.createChatRoom(roomData).pipe(
+      map(response => {
+        const dto = response.data;
+
+        if (!dto) {
+          throw new Error('Failed to create chat room');
+        }
+
+        return new ChatRoom(
+          dto.id,
+          dto.buyer_id,
+          dto.seller_id,
+          dto.pinned ?? false,
+          dto.muted ?? false,
+          dto.archived ?? false,
+          dto.product_id,
+          dto.request_id,
+          dto.last_message_at,
+          dto.unread_count_buyer,
+          dto.unread_count_seller
+        );
+      })
+    );
   }
 
   getMessages(roomId: string, params?: Record<string, unknown>): Observable<ChatMessage[]> {
@@ -94,6 +124,27 @@ export class ChatService {
    */
   markMessagesAsRead(roomId: string): Observable<any> {
     return this.apiService.markMessagesAsRead(roomId);
+  }
+
+  /**
+   * Get unread chat count - compatibility helper for dashboard widgets.
+   */
+  getUnreadCount$(): Observable<number> {
+    return this.apiService.getUnreadCount().pipe(
+      map(response => {
+        const payload = response.data ?? response;
+        if (typeof payload === 'number') {
+          return payload;
+        }
+        if (typeof payload?.count === 'number') {
+          return payload.count;
+        }
+        if (typeof payload?.total === 'number') {
+          return payload.total;
+        }
+        return 0;
+      })
+    );
   }
 
   /**

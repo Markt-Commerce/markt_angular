@@ -459,7 +459,7 @@ export class OrderHistoryComponent implements OnInit {
     
     // Simulate API delay
     setTimeout(() => {
-      const mockOrders: Order[] = [
+      const mockOrdersData: any[] = [
         {
           id: '1',
           order_number: 'MKT-2024-001',
@@ -487,7 +487,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item1',
-              order_id: '1',
+              orderId: '1',
               product_id: 'prod1',
               seller_id: 'seller1',
               quantity: 1,
@@ -560,8 +560,8 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 150,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-15T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
@@ -596,7 +596,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item2',
-              order_id: '2',
+              orderId: '2',
               product_id: 'prod2',
               seller_id: 'seller2',
               quantity: 1,
@@ -669,11 +669,11 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 300,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-18T00:00:00Z'
-              }
+              } as any
             },
             {
               id: 'item3',
-              order_id: '2',
+              orderId: '2',
               product_id: 'prod3',
               seller_id: 'seller3',
               quantity: 1,
@@ -746,8 +746,8 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 200,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-18T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
@@ -782,7 +782,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item4',
-              order_id: '3',
+              orderId: '3',
               product_id: 'prod4',
               seller_id: 'seller4',
               quantity: 1,
@@ -855,16 +855,18 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 180,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-20T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
             buyername: 'John Doe',
             profile_picture_url: '/assets/images/mike-seller.png'
-          }
+            } as any
         }
       ];
+
+      const mockOrders = mockOrdersData as Order[];
 
       this.orders.set(mockOrders);
       this.updateStatusCounts();

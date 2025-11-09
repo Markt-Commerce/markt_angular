@@ -649,7 +649,7 @@ export class SearchComponent implements OnInit {
   }
 
   getSellerDisplayName(seller: Product['seller']): string {
-    return seller?.shop_name || seller?.username || 'Unknown Seller';
+    return seller?.shop_name || 'Unknown Seller';
   }
 
   isProductFavorited(productId: string): boolean {

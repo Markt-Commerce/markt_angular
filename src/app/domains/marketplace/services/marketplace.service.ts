@@ -14,8 +14,10 @@ import { map, tap } from 'rxjs/operators';
 import { ProductRepository } from '../repositories/product.repository';
 import { Product } from '../models/product.model';
 import { CreateProductDto, UpdateProductDto, ProductSearchParamsDto } from '../models/product.dto';
-import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
+import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
 import { CartService } from '../../orders';
+import { ApiService } from '../../../core/services/api.service';
+import { Category } from '../../../core/models';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +25,7 @@ import { CartService } from '../../orders';
 export class MarketplaceService {
   private productRepository = inject(ProductRepository);
   private cartService = inject(CartService);
+  private apiService = inject(ApiService);
   
   // Reactive state using Angular signals
   private searchResultsSubject = new BehaviorSubject<PaginatedResponse<Product> | null>(null);
@@ -37,6 +40,13 @@ export class MarketplaceService {
    */
   getProducts(params?: ProductSearchParamsDto): Observable<Product[]> {
     return this.productRepository.findAll(params);
+  }
+
+  /**
+   * Fetch marketplace categories for filters and navigation
+   */
+  getCategories(): Observable<ApiResponse<Category[]>> {
+    return this.apiService.getCategories();
   }
 
   /**
@@ -136,6 +146,24 @@ export class MarketplaceService {
    */
   getRecommendedProducts(params?: ProductSearchParamsDto): Observable<Product[]> {
     return this.productRepository.findRecommended(params);
+  }
+
+  /**
+   * Track a product view (analytics hook)
+   * TODO: Replace direct ApiService call when analytics repository exists
+   */
+  trackProductView(productId: string): Observable<ApiResponse<void>> {
+    return this.apiService.trackProductView(productId);
+  }
+
+  /**
+   * Upvote a product review
+   * TODO: Move to review domain service once repository exists
+   */
+  upvoteReview(
+    reviewId: string
+  ): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
+    return this.apiService.upvoteReview(reviewId);
   }
 
   /**

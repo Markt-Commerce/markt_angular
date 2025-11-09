@@ -1,37 +1,42 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
+import {
+  Router,
+  RouterLink,
+  RouterOutlet,
+  NavigationEnd,
+} from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter, map } from 'rxjs/operators';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { SmartBreadcrumbComponent } from '../smart-breadcrumb/smart-breadcrumb.component';
-import { 
-  faBars, 
-  faSearch, 
-  faBell, 
-  faChevronDown, 
-  faUser, 
-  faHome, 
-  faStore, 
-  faUsers, 
-  faComments, 
-  faShoppingBag, 
-  faShoppingCart, 
-  faReceipt, 
-  faTag, 
-  faClipboard, 
-  faChartBar, 
-  faChartLine, 
-  faList, 
-  faPlusCircle, 
-  faCog, 
-  faTimes, 
-  faChevronRight, 
+import {
+  faBars,
+  faSearch,
+  faBell,
+  faChevronDown,
+  faUser,
+  faHome,
+  faStore,
+  faUsers,
+  faComments,
+  faShoppingBag,
+  faShoppingCart,
+  faReceipt,
+  faTag,
+  faClipboard,
+  faChartBar,
+  faChartLine,
+  faList,
+  faPlusCircle,
+  faCog,
+  faTimes,
+  faChevronRight,
   faStream,
   faCode,
   faQuestionCircle,
-  faEnvelope
+  faEnvelope,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
@@ -44,42 +49,54 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 @Component({
   selector: 'app-app-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, FormsModule, FontAwesomeModule, SmartBreadcrumbComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RouterOutlet,
+    FormsModule,
+    FontAwesomeModule,
+    SmartBreadcrumbComponent,
+  ],
   template: `
     <div class="bg-gray-50 min-h-screen">
       <!-- Header -->
-        <header class="bg-white border-b border-border shadow-sm sticky top-0 z-50">
-          <div class="px-6 py-2">
+      <header
+        class="bg-white border-b border-border shadow-sm sticky top-0 z-50"
+      >
+        <div class="px-6 py-2">
           <div class="flex items-center justify-between">
             <!-- Logo -->
             <div class="flex items-center space-x-4">
-              <button 
+              <button
                 (click)="toggleSidebar()"
                 class="lg:hidden text-dark hover:text-primary"
                 aria-label="Toggle menu"
               >
                 <fa-icon [icon]="faBars" class="text-xl"></fa-icon>
               </button>
-                <div class="flex items-center">
-                    <img 
-                        src="/markt-text-logo.png" 
-                        alt="Markt Logo" 
-                        class="h-16 object-contain"
-                    />
-                </div>
+              <div class="flex items-center">
+                <img
+                  src="/markt-text-logo.png"
+                  alt="Markt Logo"
+                  class="h-16 object-contain"
+                />
+              </div>
             </div>
-              
-              <!-- Search Bar -->
+
+            <!-- Search Bar -->
             <div class="hidden md:flex flex-1 max-w-lg mx-8">
               <div class="relative w-full">
-                  <input 
-                    type="text" 
-                  placeholder="Search products, sellers, or communities..." 
+                <input
+                  type="text"
+                  placeholder="Search products, sellers, or communities..."
                   class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    [(ngModel)]="searchQuery"
+                  [(ngModel)]="searchQuery"
                   (keyup.enter)="onSearch()"
-                  >
-                <fa-icon [icon]="faSearch" class="absolute left-3 top-3 text-muted w-4 h-4"></fa-icon>
+                />
+                <fa-icon
+                  [icon]="faSearch"
+                  class="absolute left-3 top-3 text-muted w-4 h-4"
+                ></fa-icon>
               </div>
             </div>
 
@@ -87,13 +104,13 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
             <div class="flex items-center space-x-4">
               <!-- Notifications -->
               <div class="relative">
-                <button 
+                <button
                   (click)="goToNotifications()"
                   class="text-dark hover:text-primary relative"
                   aria-label="Notifications"
                 >
                   <fa-icon [icon]="faBell" class="text-xl"></fa-icon>
-                  <span 
+                  <span
                     *ngIf="unreadNotifications > 0"
                     class="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center"
                   >
@@ -104,51 +121,58 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- User Profile -->
               <div class="relative">
-                <button 
+                <button
                   (click)="toggleUserMenu()"
                   class="flex items-center space-x-3 hover:bg-light rounded-lg p-2"
                   [attr.aria-expanded]="userMenuOpen"
                 >
-                  <img 
-                    [src]="user?.profile_picture_url || '/Logo.png'" 
-                    alt="Profile" 
+                  <img
+                    [src]="user?.profile_picture_url || '/Logo.png'"
+                    alt="Profile"
                     class="w-8 h-8 rounded-full object-cover"
-                  >
+                  />
                   <div class="hidden md:block text-left">
-                    <div class="text-sm font-medium text-dark">{{ getUserDisplayName() }}</div>
-                    <div class="text-xs text-muted capitalize">{{ access.role || 'user' }}</div>
+                    <div class="text-sm font-medium text-dark">
+                      {{ getUserDisplayName() }}
+                    </div>
+                    <div class="text-xs text-muted capitalize">
+                      {{ access.role || 'user' }}
+                    </div>
                   </div>
-                  <fa-icon [icon]="faChevronDown" class="text-muted text-sm hidden md:block w-3 h-3"></fa-icon>
+                  <fa-icon
+                    [icon]="faChevronDown"
+                    class="text-muted text-sm hidden md:block w-3 h-3"
+                  ></fa-icon>
                 </button>
 
                 <!-- User Dropdown Menu -->
-                <div 
+                <div
                   *ngIf="userMenuOpen"
                   class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-border"
                 >
-                  <a 
+                  <a
                     [routerLink]="[ROUTES_ABSOLUTE.APP.PROFILE]"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
                     (click)="closeUserMenu()"
                   >
                     Profile
                   </a>
-                  <a 
+                  <a
                     [routerLink]="[ROUTES_ABSOLUTE.APP.SETTINGS]"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
                     (click)="closeUserMenu()"
                   >
                     Settings
                   </a>
-                  <a 
+                  <a
                     routerLink="/app/support"
                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-light"
                     (click)="closeUserMenu()"
                   >
                     Help & Support
                   </a>
-                  <hr class="my-1 border-border">
-                  <a 
+                  <hr class="my-1 border-border" />
+                  <a
                     routerLink="/dev-navigation"
                     class="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
                     (click)="closeUserMenu()"
@@ -156,8 +180,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                     <fa-icon [icon]="faCode" class="w-3 h-3 mr-2"></fa-icon>
                     Dev Navigation
                   </a>
-                  <hr class="my-1 border-border">
-                  <button 
+                  <hr class="my-1 border-border" />
+                  <button
                     (click)="logout()"
                     class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-light"
                   >
@@ -171,26 +195,33 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
           <!-- Mobile Search -->
           <div class="md:hidden mt-4">
             <div class="relative">
-              <input 
-                type="text" 
-                placeholder="Search..." 
+              <input
+                type="text"
+                placeholder="Search..."
                 class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 [(ngModel)]="searchQuery"
                 (keyup.enter)="onSearch()"
-              >
-              <fa-icon [icon]="faSearch" class="absolute left-3 top-3 text-muted w-4 h-4"></fa-icon>
-              </div>
+              />
+              <fa-icon
+                [icon]="faSearch"
+                class="absolute left-3 top-3 text-muted w-4 h-4"
+              ></fa-icon>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
       <div class="flex">
         <!-- Desktop Sidebar -->
-        <aside class="w-64 bg-white border-r border-border h-screen fixed top-16 left-0 hidden lg:block z-40">
+        <aside
+          class="w-64 bg-white border-r border-border h-screen fixed top-16 left-0 hidden lg:block z-40"
+        >
           <div class="p-6">
             <!-- Role Badge -->
             <div class="mb-6">
-              <div class="bg-primary/10 text-primary px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center">
+              <div
+                class="bg-primary/10 text-primary px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center"
+              >
                 <fa-icon [icon]="faUser" class="w-4 h-4 mr-2"></fa-icon>
                 <span class="capitalize">{{ access.role || 'user' }}</span>
               </div>
@@ -199,8 +230,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
             <!-- Navigation Menu -->
             <nav class="space-y-2">
               <!-- Dashboard -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.DASHBOARD]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.DASHBOARD]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -209,8 +240,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Feed -->
-              <a 
-                routerLink="/app/community/social-feed" 
+              <a
+                routerLink="/app/community/social-feed"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -219,8 +250,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Marketplace -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -229,8 +260,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Community -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.COMMUNITY]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.COMMUNITY]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -239,14 +270,14 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Messages -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
                 <fa-icon [icon]="faComments" class="w-4 h-4"></fa-icon>
                 <span>Messages</span>
-                <span 
+                <span
                   *ngIf="unreadMessages > 0"
                   class="bg-primary text-white text-xs px-2 py-1 rounded-full ml-auto"
                 >
@@ -255,8 +286,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Orders -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -265,8 +296,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Offers -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.OFFERS.ROOT]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.OFFERS.ROOT]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -275,8 +306,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Requests -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.REQUESTS.ROOT]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -285,8 +316,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- My Requests (Buy) -->
-              <a 
-                routerLink="/app/requests/my" 
+              <a
+                routerLink="/app/requests/my"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
@@ -295,14 +326,14 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
               </a>
 
               <!-- Cart -->
-              <a 
-                [routerLink]="[ROUTES_ABSOLUTE.APP.CART]" 
+              <a
+                [routerLink]="[ROUTES_ABSOLUTE.APP.CART]"
                 routerLinkActive="bg-primary text-white"
                 class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
               >
                 <fa-icon [icon]="faShoppingCart" class="w-4 h-4"></fa-icon>
                 <span>Cart</span>
-                <span 
+                <span
                   *ngIf="cartItemCount > 0"
                   class="bg-primary text-white text-xs px-2 py-1 rounded-full ml-auto"
                 >
@@ -314,10 +345,14 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Seller Section -->
               <div class="pt-4 mt-4 border-t border-border">
-                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Seller Tools</h3>
-                
-                <a 
-                  routerLink="/app/seller/dashboard" 
+                <h3
+                  class="text-xs font-semibold text-muted uppercase tracking-wider mb-2"
+                >
+                  Seller Tools
+                </h3>
+
+                <a
+                  routerLink="/app/seller/dashboard"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -325,8 +360,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   <span>Seller Dashboard</span>
                 </a>
 
-                <a 
-                  routerLink="/app/seller/listings" 
+                <a
+                  routerLink="/app/seller/listings"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -334,8 +369,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   <span>My Listings</span>
                 </a>
 
-                <a 
-                  routerLink="/app/seller/listings/create" 
+                <a
+                  routerLink="/app/seller/listings/create"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -343,8 +378,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   <span>Add Product</span>
                 </a>
 
-                <a 
-                  routerLink="/app/seller/analytics" 
+                <a
+                  routerLink="/app/seller/analytics"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -355,10 +390,14 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
 
               <!-- Account Section -->
               <div class="pt-4 mt-4 border-t border-border">
-                <h3 class="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Account</h3>
-                
-                <a 
-                  routerLink="/app/support" 
+                <h3
+                  class="text-xs font-semibold text-muted uppercase tracking-wider mb-2"
+                >
+                  Account
+                </h3>
+
+                <a
+                  routerLink="/app/support"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -366,8 +405,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   <span>Help & Support</span>
                 </a>
 
-                <a 
-                  routerLink="/app/contact" 
+                <a
+                  routerLink="/app/contact"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -375,8 +414,8 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
                   <span>Contact Us</span>
                 </a>
 
-                <a 
-                  [routerLink]="[ROUTES_ABSOLUTE.APP.SETTINGS]" 
+                <a
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.SETTINGS]"
                   routerLinkActive="bg-primary text-white"
                   class="flex items-center space-x-3 px-3 py-2 rounded-lg text-dark hover:bg-light cursor-pointer transition-colors"
                 >
@@ -394,65 +433,67 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
         <main class="flex-1 lg:ml-64">
           <!-- Smart Breadcrumb Navigation -->
           <app-smart-breadcrumb></app-smart-breadcrumb>
-          
+
           <!-- Page Content -->
           <router-outlet></router-outlet>
         </main>
       </div>
 
       <!-- Bottom Navigation (Mobile) - Essential routes only -->
-      <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-border lg:hidden">
+      <nav
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-border lg:hidden"
+      >
         <div class="flex justify-around py-2">
-          <a 
-            routerLink="/app/community/social-feed" 
+          <a
+            routerLink="/app/community/social-feed"
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
           >
             <fa-icon [icon]="faStream" class="w-4 h-4"></fa-icon>
             <span class="text-xs mt-1">Feed</span>
           </a>
-          
-          <a 
-            [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]" 
+
+          <a
+            [routerLink]="[ROUTES_ABSOLUTE.APP.MARKETPLACE]"
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
           >
             <fa-icon [icon]="faStore" class="w-4 h-4"></fa-icon>
             <span class="text-xs mt-1">Market</span>
           </a>
-          
-          <a 
-            [routerLink]="[ROUTES_ABSOLUTE.APP.CART]" 
+
+          <a
+            [routerLink]="[ROUTES_ABSOLUTE.APP.CART]"
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
           >
             <fa-icon [icon]="faShoppingCart" class="w-4 h-4"></fa-icon>
             <span class="text-xs mt-1">Cart</span>
-            <span 
+            <span
               *ngIf="cartItemCount > 0"
               class="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center"
             >
               {{ cartItemCount }}
             </span>
           </a>
-          
-          <a 
-            [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]" 
+
+          <a
+            [routerLink]="[ROUTES_ABSOLUTE.APP.CHAT]"
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors relative"
           >
             <fa-icon [icon]="faComments" class="w-4 h-4"></fa-icon>
             <span class="text-xs mt-1">Chat</span>
-            <span 
+            <span
               *ngIf="unreadMessages > 0"
               class="absolute -top-1 right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center"
             >
               {{ unreadMessages }}
             </span>
           </a>
-          
-          <a 
-            [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]" 
+
+          <a
+            [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT]"
             routerLinkActive="text-primary"
             class="flex flex-col items-center py-2 px-3 text-muted hover:text-primary cursor-pointer transition-colors"
           >
@@ -463,22 +504,25 @@ import { ObservableUtilsService } from '../../../core/services/observable-utils.
       </nav>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      min-height: 100vh;
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      display: none;
-    }
-    
-    html, body {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+        min-height: 100vh;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+
+      html,
+      body {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    `,
+  ],
 })
 export class AppLayoutComponent implements OnInit, OnDestroy {
   private router = inject(Router);
@@ -525,16 +569,26 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   userMenuOpen = false;
   searchQuery = '';
-  
+
   // Observables
   cartItemCount$ = this.cartService.cart$.pipe(
-    map(cart => cart?.items.reduce((total, item) => total + item.quantity, 0) || 0)
+    map((cart) => cart?.getTotalItems() ?? 0)
   );
   unreadNotifications$ = this.notificationService.getUnreadCount();
-  unreadMessages$ = this.chatService.getRooms().pipe(
-    map(rooms => rooms.reduce((total, room) => total + room.unreadCountBuyer + room.unreadCountSeller, 0))
-  );
-  
+  unreadMessages$ = this.chatService
+    .getRooms()
+    .pipe(
+      map((rooms) =>
+        rooms.reduce(
+          (total, room) =>
+            total +
+            (room.unreadCountBuyer ?? 0) +
+            (room.unreadCountSeller ?? 0),
+          0
+        )
+      )
+    );
+
   // Local state
   cartItemCount = 0;
   unreadNotifications = 0;
@@ -552,7 +606,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   private initializeComponent(): void {
     // Subscribe to auth state
-    this.authService.authState$.subscribe(authState => {
+    this.authService.authState$.subscribe((authState) => {
       this.user = authState.user;
     });
 
@@ -562,24 +616,24 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   private setupSubscriptions(): void {
     // Subscribe to cart, notification and message counts
-    this.cartItemCount$.subscribe(count => {
+    this.cartItemCount$.subscribe((count) => {
       this.cartItemCount = count;
     });
 
-    this.unreadNotifications$.subscribe(count => {
+    this.unreadNotifications$.subscribe((count) => {
       this.unreadNotifications = count;
     });
 
-    this.unreadMessages$.subscribe(count => {
+    this.unreadMessages$.subscribe((count) => {
       this.unreadMessages = count;
     });
 
     // Close user menu on route change
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      this.userMenuOpen = false;
-    });
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.userMenuOpen = false;
+      });
   }
 
   private initializeServices(): void {
@@ -605,7 +659,7 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   onSearch(): void {
     if (this.searchQuery.trim()) {
       this.router.navigate(['/app/marketplace/search'], {
-        queryParams: { q: this.searchQuery.trim() }
+        queryParams: { q: this.searchQuery.trim() },
       });
       this.searchQuery = '';
     }
@@ -629,11 +683,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   logout(): void {
     this.observableUtils.createSafeObservable({
       source: this.authService.logout(),
-      successHandler: () => this.router.navigate([this.ROUTES_ABSOLUTE.LANDING]),
+      successHandler: () =>
+        this.router.navigate([this.ROUTES_ABSOLUTE.LANDING]),
       errorSetter: (error: string | null) => {
         console.error('Logout error:', error);
         this.router.navigate([this.ROUTES_ABSOLUTE.LANDING]);
-      }
+      },
     });
   }
 }

@@ -10,7 +10,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { NgOptimizedImage } from '@angular/common';
 import {
   faArrowLeft,
   faMapMarkerAlt,
@@ -32,15 +31,18 @@ import {
   faStar,
   faStore,
 } from '@fortawesome/free-solid-svg-icons';
-import { CartService, OrderService, Cart, CartItem } from '../../domains/orders';
+import {
+  CartService,
+  OrderService,
+  Cart,
+  CartItem,
+} from '../../domains/orders';
 import { PaymentService } from '../../domains/payment';
 import { AuthService } from '../../domains/authentication';
 import { MarketplaceService } from '../../domains/marketplace';
-import { ApiService } from '../../core/services/api.service'; // Still needed for getUserAddresses, applyCoupon, payOrder, handlePaystackWebhook, handlePaymentCallback (methods not migrated yet)
 import { ActivatedRoute } from '@angular/router';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
-import { AuthService } from '../../domains/authentication';
 
 @Component({
   selector: 'app-checkout',
@@ -50,7 +52,6 @@ import { AuthService } from '../../domains/authentication';
     FormsModule,
     ReactiveFormsModule,
     FontAwesomeModule,
-    NgOptimizedImage,
   ],
   template: `
     <div class="min-h-screen bg-gray-50">
@@ -770,7 +771,9 @@ import { AuthService } from '../../domains/authentication';
                       </div>
                       <div class="text-right">
                         <p class="font-medium text-gray-900">
-                          {{ item.calculateSubtotal() / 100 | currency : 'USD' }}
+                          {{
+                            item.calculateSubtotal() / 100 | currency : 'USD'
+                          }}
                         </p>
                       </div>
                     </div>
@@ -818,7 +821,9 @@ import { AuthService } from '../../domains/authentication';
                     <h3 class="font-medium text-dark">
                       {{ item.productDto?.name || item.product.name }}
                     </h3>
-                    <p class="text-sm text-muted">Qty: {{ item.getQuantity() }}</p>
+                    <p class="text-sm text-muted">
+                      Qty: {{ item.getQuantity() }}
+                    </p>
                   </div>
                   <span class="font-semibold text-dark">{{
                     item.calculateSubtotal() / 100 | currency : 'USD'
@@ -850,7 +855,9 @@ import { AuthService } from '../../domains/authentication';
               <!-- Price Breakdown -->
               <div class="space-y-3 border-t border-border pt-4">
                 <div class="flex justify-between text-sm">
-                  <span class="text-muted">Subtotal ({{ cartItemCount }} items)</span>
+                  <span class="text-muted"
+                    >Subtotal ({{ cartItemCount }} items)</span
+                  >
                   <span class="text-dark">{{
                     cartSubtotal / 100 | currency : 'USD'
                   }}</span>
@@ -1017,7 +1024,6 @@ export class CheckoutComponent implements OnInit {
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
   private route = inject(ActivatedRoute);
   public access = inject(AccessControlService);
   public media = inject(MediaOptimizationService);
@@ -1272,39 +1278,11 @@ export class CheckoutComponent implements OnInit {
 
     this.paymentService.initializePayment(paymentData).subscribe({
       next: (response) => {
-        // Redirect to payment gateway
-        window.location.href = response.data.authorization_url;
+        window.location.href = response.authorization_url;
       },
       error: (error) => {
         console.error('Error initializing payment:', error);
         this.paymentError = error.message || 'Payment initialization failed';
-      },
-    });
-  }
-
-  processOrder(): void {
-    if (!this.cart) {
-      this.errorMessage = 'Cart is empty. Please add items to your cart.';
-      return;
-    }
-
-    const orderData = {
-      cart_id: this.cart.id,
-      shipping_address: this.selectedAddress,
-      billing_address: this.selectedAddress,
-      payment_method: this.paymentMethod,
-      coupon_code: this.couponCode,
-      notes: this.orderNotes,
-    };
-
-    this.orderService.createOrder(orderData).subscribe({
-      next: (response) => {
-        this.order = response.data;
-        this.initializePayment();
-      },
-      error: (error) => {
-        console.error('Error creating order:', error);
-        this.orderError = error.message || 'Order creation failed';
       },
     });
   }
@@ -1332,7 +1310,10 @@ export class CheckoutComponent implements OnInit {
     this.cartShipping = this.cartShipping * 100;
     this.cartTax = this.cartTax * 100;
     this.cartTotal =
-      this.cartSubtotal + this.cartShipping + this.cartTax - (this.couponDiscount || 0);
+      this.cartSubtotal +
+      this.cartShipping +
+      this.cartTax -
+      (this.couponDiscount || 0);
     // Also update legacy fields for compatibility
     this.subtotal = this.cartSubtotal / 100;
     this.shipping = this.cartShipping / 100;
@@ -1417,14 +1398,19 @@ export class CheckoutComponent implements OnInit {
 
   private createOrderData(): any {
     const user = this.authService.getCurrentUser();
-    // Use domain Cart model instead of getCurrentCart()
+    const displayName = user?.getDisplayName() ?? user?.username ?? '';
+    const nameParts = displayName.split(' ');
+    const firstName = nameParts.shift() ?? '';
+    const lastName = nameParts.join(' ');
+    const phoneNumber = user?.phoneNumber ?? '';
+
     return {
       cart_id: this.cart?.id,
       shipping_address: {
-        firstName: user?.first_name || user?.username || '',
-        lastName: user?.last_name || '',
+        firstName,
+        lastName,
         email: user?.email || '',
-        phone: user?.phone_number || '',
+        phone: phoneNumber,
         address: this.shippingForm.get('address')?.value || '',
         city: this.shippingForm.get('city')?.value || '',
         state: this.shippingForm.get('state')?.value || '',
@@ -1455,22 +1441,13 @@ export class CheckoutComponent implements OnInit {
     const orderData = this.createOrderData();
 
     this.orderService.createOrder(orderData).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Clear cart
-          this.cartService.clearCart().subscribe();
+      next: (order) => {
+        this.cartService.clearCart().subscribe();
 
-          // Navigate to order confirmation
-          this.router.navigate([
-            buildPath(
-              ROUTES_ABSOLUTE.APP.CHECKOUT,
-              'confirmation',
-              response.data.id
-            ),
-          ]);
-        } else {
-          this.errorMessage = response.message || 'Failed to place order';
-        }
+        this.router.navigate([
+          buildPath(ROUTES_ABSOLUTE.APP.CHECKOUT, 'confirmation', order.id),
+        ]);
+
         this.isProcessing = false;
       },
       error: (error) => {
@@ -1493,113 +1470,8 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  // Payment endpoint integrations - using component data instead of hardcoded values
-  getPayment(paymentId?: string): void {
-    const id = paymentId || this.order?.payment_id;
-    if (!id) return;
-
-    // Use PaymentService (DDD pattern)
-    this.paymentService.getPayment(id).subscribe({
-      next: (response) => {
-        // Payment retrieved successfully
-      },
-      error: (error) => {
-        console.error('Error getting payment:', error);
-      },
-    });
-  }
-
-  payOrder(): void {
-    if (!this.order?.id || !this.paymentForm.valid) return;
-
-    // Migrated to OrderService.payOrder() - uses DDD pattern with OrderRepository
-    const paymentData = this.getPaymentDetails();
-    this.orderService.payOrder(this.order.id, paymentData).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Payment processed successfully
-        }
-      },
-      error: (error) => {
-        console.error('Error paying order:', error);
-      },
-    });
-  }
-
-  handlePaystackWebhook(webhookData: any): void {
-    // Migrated to PaymentService.handlePaymentWebhook() - uses DDD pattern with PaymentRepository
-    this.paymentService.handlePaymentWebhook(webhookData).subscribe({
-      next: (response) => {},
-      error: (error) => {
-        console.error('Error handling webhook:', error);
-      },
-    });
-  }
-
-  handlePaymentCallback(paymentId?: string): void {
-    const id = paymentId || this.order?.payment_id;
-    if (!id) return;
-
-    // Migrated to PaymentService.handlePaymentCallback() - uses DDD pattern with PaymentRepository
-    this.paymentService.handlePaymentCallback(id).subscribe({
-      next: (response) => {},
-      error: (error) => {
-        console.error('Error handling payment callback:', error);
-      },
-    });
-  }
-
-  // Additional payment endpoint integrations
-  createPayment(paymentData: any): void {
-    // Use PaymentService (DDD pattern)
-    this.paymentService.createPayment(paymentData).subscribe({
-      next: (response) => {
-        // Payment created successfully
-      },
-      error: (error) => {
-        console.error('Error creating payment:', error);
-      },
-    });
-  }
-
-  processPayment(paymentId: string, paymentData: any): void {
-    // Use PaymentService (DDD pattern)
-    this.paymentService.processPayment(paymentId, paymentData).subscribe({
-      next: (response) => {
-        // Payment processed successfully
-      },
-      error: (error) => {
-        console.error('Error processing payment:', error);
-      },
-    });
-  }
-
-  verifyPayment(paymentId: string): void {
-    // Use PaymentService (DDD pattern)
-    this.paymentService.verifyPayment(paymentId).subscribe({
-      next: (response) => {
-        // Payment verified successfully
-      },
-      error: (error) => {
-        console.error('Error verifying payment:', error);
-      },
-    });
-  }
-
-  getPayments(): void {
-    // Use PaymentService (DDD pattern)
-    this.paymentService.getPayments().subscribe({
-      next: (response) => {
-        // Payments retrieved successfully
-      },
-      error: (error) => {
-        console.error('Error loading payments:', error);
-      },
-    });
-  }
-
   switchToBuyer(): void {
-    this.authService.switchRole().subscribe({
+    this.authService.switchRole('buyer').subscribe({
       next: () => {
         this.canCheckout = this.access.isBuyer;
       },

@@ -129,6 +129,20 @@ export class AuthService {
   }
 
   /**
+   * Check authentication status
+   */
+  isAuthenticated(): boolean {
+    return this.authStateSubject.value.isAuthenticated;
+  }
+
+  /**
+   * Compatibility helper for legacy code
+   */
+  getAccessToken(): string | null {
+    return this.getToken();
+  }
+
+  /**
    * Register new user
    * Business logic: Validate registration data
    */

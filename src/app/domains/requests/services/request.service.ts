@@ -4,54 +4,72 @@
 
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ApiService, RequestData, OfferData, StatusUpdateData } from '../../../core/services/api.service';
 import { RequestRepository } from '../repositories/request.repository';
 import { BuyerRequest, SellerOffer } from '../models/request.model';
-import { BuyerRequestCreateDto, SellerOfferCreateDto } from '../models/request.dto';
+import { BuyerRequestCreateDto, SellerOfferCreateDto, BuyerRequestUpdateDto, RequestStatisticsDto } from '../models/request.dto';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RequestService {
   private requestRepository = inject(RequestRepository);
+  private apiService = inject(ApiService);
 
-  getRequests(params?: Record<string, unknown>): Observable<BuyerRequest[]> {
-    return this.requestRepository.findAll(params);
+  getRequests(params?: Record<string, unknown>): Observable<any> {
+    return this.apiService.getRequests(params);
   }
 
-  getRequest(id: string): Observable<BuyerRequest> {
-    return this.requestRepository.findById(id);
+  getRequest(id: string): Observable<any> {
+    return this.apiService.getRequest(id);
   }
 
-  createRequest(data: BuyerRequestCreateDto): Observable<BuyerRequest> {
-    if (!data.title || data.title.trim().length === 0) {
-      throw new Error('Request title is required');
-    }
-
-    if (!data.description || data.description.trim().length === 0) {
-      throw new Error('Request description is required');
-    }
-
-    if (!data.category_ids || data.category_ids.length === 0) {
-      throw new Error('At least one category is required');
-    }
-
-    if (data.budget && data.budget <= 0) {
-      throw new Error('Budget must be greater than 0');
-    }
-
-    return this.requestRepository.create(data);
+  createRequest(data: BuyerRequestCreateDto): Observable<any> {
+    return this.apiService.createRequest(data as RequestData);
   }
 
   createOffer(requestId: string, data: SellerOfferCreateDto): Observable<SellerOffer> {
-    if (data.price <= 0) {
-      throw new Error('Offer price must be greater than 0');
-    }
-
-    if (!data.message || data.message.trim().length === 0) {
-      throw new Error('Offer message is required');
-    }
-
     return this.requestRepository.createOffer(requestId, data);
+  }
+
+  addOffer(requestId: string, data: SellerOfferCreateDto): Observable<any> {
+    return this.apiService.createOffer(requestId, data as OfferData);
+  }
+
+  getRequestOffers(requestId: string): Observable<any> {
+    return this.apiService.getRequestOffers(requestId);
+  }
+
+  acceptOffer(offerId: string): Observable<any> {
+    return this.apiService.acceptOffer(offerId);
+  }
+
+  rejectOffer(offerId: string): Observable<any> {
+    return this.apiService.rejectOffer(offerId);
+  }
+
+  withdrawOffer(offerId: string): Observable<any> {
+    return this.apiService.withdrawOffer(offerId);
+  }
+
+  updateRequest(id: string, data: BuyerRequestUpdateDto): Observable<any> {
+    return this.apiService.updateRequest(id, data as RequestData);
+  }
+
+  updateRequestStatus(id: string, data: StatusUpdateData): Observable<any> {
+    return this.apiService.updateRequestStatus(id, data);
+  }
+
+  deleteRequest(id: string): Observable<any> {
+    return this.apiService.deleteRequest(id);
+  }
+
+  upvoteRequest(id: string): Observable<any> {
+    return this.apiService.upvoteRequest(id);
+  }
+
+  getRequestStatistics(): Observable<RequestStatisticsDto> {
+    return this.requestRepository.getStatistics();
   }
 }
 

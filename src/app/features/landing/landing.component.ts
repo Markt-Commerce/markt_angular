@@ -533,9 +533,10 @@ export class LandingComponent implements OnInit {
     // Load trending requests
     // TODO: getTrendingRequests() not yet migrated to RequestService - keeping ApiService for now
     this.loadingTrendingRequests = true;
-    this.requestService.getRequests().subscribe({
-      next: (requests) => {
-        this.trendingRequests = requests as any;
+    this.requestService.getRequests({ per_page: 5 }).subscribe({
+      next: (response: any) => {
+        const items = response?.data?.items ?? response?.items ?? [];
+        this.trendingRequests = items as any;
         this.loadingTrendingRequests = false;
       },
       error: (error) => {

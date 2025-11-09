@@ -3,7 +3,7 @@ import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/ro
 import { RouterTestingModule } from '@angular/router/testing';
 import { compositeGuard } from './composite.guard';
 import { sellerVerifiedGuard } from './seller-verified.guard';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../../domains/authentication';
 import { ROUTES_ABSOLUTE } from '../config/routes.config';
 
 /**
