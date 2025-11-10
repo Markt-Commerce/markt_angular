@@ -38,6 +38,7 @@ import { Product } from '../../domains/marketplace/models/product.model';
 import { ProductSearchParamsDto } from '../../domains/marketplace/models/product.dto';
 import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
 import { CartService, Cart } from '../../domains/cart';
+import { CategoryService, CategorySummary } from '../../domains/categories';
 import { SearchService } from '../../core/services/search.service';
 import { AppStateService } from '../../core/services/app-state.service';
 import { AuthService } from '../../domains/authentication/services/auth.service';
@@ -110,12 +111,6 @@ interface PaginatedProductPayload {
 interface ProductApiResponse {
   success?: boolean;
   data?: PaginatedProductPayload;
-  [key: string]: unknown;
-}
-
-interface CategoryApiResponse {
-  success?: boolean;
-  data?: MarketplaceCategorySummary[];
   [key: string]: unknown;
 }
 
@@ -673,6 +668,7 @@ interface MixedContentItem {
 export class MarketplaceComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
   private cartService = inject(CartService);
+  private categoryService = inject(CategoryService);
   private searchService = inject(SearchService);
   private appStateService = inject(AppStateService);
   private router = inject(Router);
@@ -967,17 +963,20 @@ export class MarketplaceComponent implements OnInit {
         per_page: 20,
         status: 'active',
       }),
-      this.marketplaceService.getCategories(),
+      this.categoryService.getCategorySummaries(),
     ]).subscribe({
-      next: ([productsResponse, categoriesResponse]) => {
+      next: ([productsResponse, categorySummaries]) => {
         const productResult = this.resolveProductPayload(productsResponse);
         this.products = productResult.items;
         this.totalResults = productResult.totalItems;
         this.totalPages = productResult.totalPages;
 
-        const categoryResult = this.resolveCategoryPayload(categoriesResponse);
-        if (categoryResult.length > 0) {
-          this.categories = categoryResult;
+        const mappedCategories = this.normalizeCategorySummaries(
+          categorySummaries,
+          productResult.totalItems
+        );
+        if (mappedCategories.length > 0) {
+          this.categories = mappedCategories;
         }
 
         // Load social posts for content mixing
@@ -1657,21 +1656,43 @@ export class MarketplaceComponent implements OnInit {
     return { items: [], totalItems: 0, totalPages: 1 };
   }
 
-  private resolveCategoryPayload(
-    source: unknown
+  private normalizeCategorySummaries(
+    summaries: CategorySummary[] | null | undefined,
+    totalItems: number
   ): MarketplaceCategorySummary[] {
-    if (Array.isArray(source)) {
-      return source as MarketplaceCategorySummary[];
+    const mapped = Array.isArray(summaries)
+      ? summaries.map((summary) => ({
+          id: String(summary.id),
+          name: summary.name,
+          count: summary.childCount ?? 0,
+        }))
+      : [];
+
+    const deduped = mapped.filter(
+      (item, index, array) =>
+        array.findIndex((candidate) => candidate.id === item.id) === index
+    );
+
+    const baselineCount = Number.isFinite(totalItems) ? totalItems : 0;
+
+    if (deduped.length === 0) {
+      return [
+        {
+          id: 'all',
+          name: 'All Items',
+          count: baselineCount,
+        },
+      ];
     }
 
-    if (source && typeof source === 'object') {
-      const apiResponse = source as CategoryApiResponse;
-      if (Array.isArray(apiResponse.data)) {
-        return apiResponse.data;
-      }
-    }
-
-    return [];
+    return [
+      {
+        id: 'all',
+        name: 'All Items',
+        count: baselineCount,
+      },
+      ...deduped,
+    ];
   }
 
   private resolveSocialPosts(source: unknown): SocialFeedItem[] {

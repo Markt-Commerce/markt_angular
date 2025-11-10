@@ -8,12 +8,7 @@ import { RequestService } from '../../../domains/requests/services/request.servi
 import { ApiService } from '../../../core/services/api.service'; // Still needed for image operations (addRequestImage, deleteRequestImage, getRequestImages - not yet migrated)
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { MediaService } from '../../../domains/media';
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
+import { CategoryService, Category as CategoryModel } from '../../../domains/categories';
 
 interface MediaFile {
   file: File;
@@ -444,23 +439,18 @@ export class CreateRequestComponent implements OnInit {
   private requestService = inject(RequestService);
   private apiService = inject(ApiService); // Still needed for image operations (not yet migrated)
   private mediaService = inject(MediaService);
+  private categoryService = inject(CategoryService);
 
   requestForm!: FormGroup;
   submitting = false;
   selectedMedia: MediaFile[] = [];
   minDate = new Date().toISOString().slice(0, 16);
 
-  categories: Category[] = [
-    { id: 1, name: 'Electronics', slug: 'electronics' },
-    { id: 2, name: 'Fashion', slug: 'fashion' },
-    { id: 3, name: 'Home & Garden', slug: 'home' },
-    { id: 4, name: 'Sports', slug: 'sports' },
-    { id: 5, name: 'Books', slug: 'books' },
-    { id: 6, name: 'Beauty', slug: 'beauty' }
-  ];
+  categories: CategoryModel[] = [];
 
   ngOnInit(): void {
     this.initForm();
+    this.loadCategories();
   }
 
   private initForm(): void {
@@ -481,6 +471,26 @@ export class CreateRequestComponent implements OnInit {
     defaultExpiry.setDate(defaultExpiry.getDate() + 7);
     this.requestForm.patchValue({
       expiresAt: defaultExpiry.toISOString().slice(0, 16)
+    });
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getAllCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+        const firstCategoryId = categories[0]?.id;
+        if (
+          firstCategoryId !== undefined &&
+          !this.requestForm.get('category')?.value
+        ) {
+          this.requestForm.patchValue({
+            category: firstCategoryId.toString(),
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      },
     });
   }
 

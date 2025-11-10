@@ -1,6 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpParams,
+  HttpErrorResponse,
+  HttpHeaders,
+} from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TypeSafetyService } from './type-safety.service';
@@ -14,7 +19,6 @@ import {
   BuyerRequest,
   SellerOffer,
   Media,
-  Category,
   Niche,
   Post,
   PostComment,
@@ -27,7 +31,7 @@ import {
   Review,
   Tracking,
   RegisterResponse,
-  UserRole
+  UserRole,
 } from '../models';
 
 export interface UserData {
@@ -233,13 +237,6 @@ export interface VariantData {
   format?: string;
 }
 
-export interface CategoryData {
-  name: string;
-  description?: string;
-  parent_id?: string;
-  is_active?: boolean;
-}
-
 export interface NicheData {
   name: string;
   description: string;
@@ -343,7 +340,7 @@ export interface ReviewData {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
   private http = inject(HttpClient);
@@ -364,14 +361,14 @@ export class ApiService {
     // production safety fallback
     return 'https://test.api.marktcommerce.com/api/v1';
   }
-  
+
   // Configure HTTP options to include credentials (cookies)
   private readonly httpOptions = {
     withCredentials: true,
     headers: new HttpHeaders({
       Accept: 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    })
+      'X-Requested-With': 'XMLHttpRequest',
+    }),
   };
 
   // ============================================================================
@@ -416,22 +413,39 @@ export class ApiService {
     return this.patch<User>('/users/profile/seller', sellerData);
   }
 
-  switchRole(targetRole?: UserRole): Observable<ApiResponse<{ user: User; message: string }>> {
+  switchRole(
+    targetRole?: UserRole
+  ): Observable<ApiResponse<{ user: User; message: string }>> {
     // Validate targetRole parameter
-    if (targetRole !== undefined && targetRole !== 'buyer' && targetRole !== 'seller') {
-      return throwError(() => new Error('Invalid targetRole: must be "buyer" or "seller"'));
+    if (
+      targetRole !== undefined &&
+      targetRole !== 'buyer' &&
+      targetRole !== 'seller'
+    ) {
+      return throwError(
+        () => new Error('Invalid targetRole: must be "buyer" or "seller"')
+      );
     }
 
     const requestBody = targetRole ? { role: targetRole } : undefined;
-    
+
     // Try POST first, fallback to PATCH, then GET
-    return this.post<{ user: User; message: string }>('/users/switch-role', requestBody).pipe(
+    return this.post<{ user: User; message: string }>(
+      '/users/switch-role',
+      requestBody
+    ).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 405 || error.status === 404) {
-          return this.patch<{ user: User; message: string }>('/users/switch-role', requestBody).pipe(
+          return this.patch<{ user: User; message: string }>(
+            '/users/switch-role',
+            requestBody
+          ).pipe(
             catchError((patchErr: HttpErrorResponse) => {
               if (patchErr.status === 405 || patchErr.status === 404) {
-                return this.get<{ user: User; message: string }>('/users/switch-role', requestBody);
+                return this.get<{ user: User; message: string }>(
+                  '/users/switch-role',
+                  requestBody
+                );
               }
               return throwError(() => patchErr);
             })
@@ -447,20 +461,36 @@ export class ApiService {
     return this.post<{ message: string }>('/users/password-reset', { email });
   }
 
-  passwordResetConfirm(data: PasswordResetData): Observable<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>('/users/password-reset/confirm', data);
+  passwordResetConfirm(
+    data: PasswordResetData
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>(
+      '/users/password-reset/confirm',
+      data
+    );
   }
 
-  sendEmailVerification(email: string): Observable<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>('/users/email-verification/send', { email });
+  sendEmailVerification(
+    email: string
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>('/users/email-verification/send', {
+      email,
+    });
   }
 
-  verifyEmail(data: EmailVerificationData): Observable<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>('/users/email-verification/verify', data);
+  verifyEmail(
+    data: EmailVerificationData
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>(
+      '/users/email-verification/verify',
+      data
+    );
   }
 
   // User Management
-  getUsers(params?: UserParams): Observable<ApiResponse<PaginatedResponse<User>>> {
+  getUsers(
+    params?: UserParams
+  ): Observable<ApiResponse<PaginatedResponse<User>>> {
     return this.get<PaginatedResponse<User>>('/users/', params);
   }
 
@@ -468,7 +498,9 @@ export class ApiService {
     return this.get<Record<string, unknown>>('/users/settings');
   }
 
-  updateUserSettings(settings: Record<string, unknown>): Observable<ApiResponse<Record<string, unknown>>> {
+  updateUserSettings(
+    settings: Record<string, unknown>
+  ): Observable<ApiResponse<Record<string, unknown>>> {
     return this.patch<Record<string, unknown>>('/users/settings', settings);
   }
 
@@ -481,24 +513,36 @@ export class ApiService {
   }
 
   // Shop Discovery
-  getShops(params?: ShopParams): Observable<ApiResponse<PaginatedResponse<Record<string, unknown>>>> {
-    return this.get<PaginatedResponse<Record<string, unknown>>>('/users/shops', params);
+  getShops(
+    params?: ShopParams
+  ): Observable<ApiResponse<PaginatedResponse<Record<string, unknown>>>> {
+    return this.get<PaginatedResponse<Record<string, unknown>>>(
+      '/users/shops',
+      params
+    );
   }
 
   getTrendingShops(): Observable<ApiResponse<Record<string, unknown>[]>> {
     return this.get<Record<string, unknown>[]>('/users/shops/trending');
   }
 
-  getShopCategories(): Observable<ApiResponse<Category[]>> {
-    return this.get<Category[]>('/users/shops/categories');
+  getShopCategories(): Observable<ApiResponse<any[]>> {
+    return this.get<any[]>('/users/shops/categories');
   }
 
-  getShopDetails(shopId: number): Observable<ApiResponse<Record<string, unknown>>> {
+  getShopDetails(
+    shopId: number
+  ): Observable<ApiResponse<Record<string, unknown>>> {
     return this.get<Record<string, unknown>>(`/users/shops/${shopId}`);
   }
 
-  checkUsername(username: string): Observable<ApiResponse<{ available: boolean; message?: string }>> {
-    return this.get<{ available: boolean; message?: string }>('/users/check-username', { username });
+  checkUsername(
+    username: string
+  ): Observable<ApiResponse<{ available: boolean; message?: string }>> {
+    return this.get<{ available: boolean; message?: string }>(
+      '/users/check-username',
+      { username }
+    );
   }
 
   /**
@@ -511,15 +555,22 @@ export class ApiService {
   /**
    * Update push notification subscription
    */
-  updatePushSubscription(subscription: any): Observable<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>('/users/push-subscription', subscription);
+  updatePushSubscription(
+    subscription: any
+  ): Observable<ApiResponse<{ message: string }>> {
+    return this.post<{ message: string }>(
+      '/users/push-subscription',
+      subscription
+    );
   }
 
   // ============================================================================
   // PRODUCT ENDPOINTS (15 endpoints)
   // ============================================================================
 
-  getProducts(params?: ProductParams): Observable<ApiResponse<PaginatedResponse<Product>>> {
+  getProducts(
+    params?: ProductParams
+  ): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.get<PaginatedResponse<Product>>('/products/', params);
   }
 
@@ -531,7 +582,10 @@ export class ApiService {
     return this.get<Product>(`/products/${productId}`);
   }
 
-  updateProduct(productId: string, productData: ProductData): Observable<ApiResponse<Product>> {
+  updateProduct(
+    productId: string,
+    productData: ProductData
+  ): Observable<ApiResponse<Product>> {
     return this.put<Product>(`/products/${productId}`, productData);
   }
 
@@ -539,40 +593,71 @@ export class ApiService {
     return this.delete<void>(`/products/${productId}`);
   }
 
-  bulkCreateProducts(products: ProductData[]): Observable<ApiResponse<{ success: string[]; errors: string[] }>> {
-    return this.post<{ success: string[]; errors: string[] }>('/products/bulk', products);
+  bulkCreateProducts(
+    products: ProductData[]
+  ): Observable<ApiResponse<{ success: string[]; errors: string[] }>> {
+    return this.post<{ success: string[]; errors: string[] }>(
+      '/products/bulk',
+      products
+    );
   }
 
-  getTrendingProducts(params?: ProductParams): Observable<ApiResponse<Product[]>> {
+  getTrendingProducts(
+    params?: ProductParams
+  ): Observable<ApiResponse<Product[]>> {
     return this.get<Product[]>('/products/trending', params);
   }
 
-  getRecommendedProducts(params?: ProductParams): Observable<ApiResponse<Product[]>> {
+  getRecommendedProducts(
+    params?: ProductParams
+  ): Observable<ApiResponse<Product[]>> {
     return this.get<Product[]>('/products/recommended', params);
   }
 
-  getProductReviews(productId: string, params?: ProductParams): Observable<ApiResponse<{ items: unknown[]; pagination: unknown }>> {
-    return this.get<{ items: unknown[]; pagination: unknown }>(`/products/${productId}/reviews`, params);
+  getProductReviews(
+    productId: string,
+    params?: ProductParams
+  ): Observable<ApiResponse<{ items: unknown[]; pagination: unknown }>> {
+    return this.get<{ items: unknown[]; pagination: unknown }>(
+      `/products/${productId}/reviews`,
+      params
+    );
   }
 
-  addProductReview(productId: string, reviewData: { rating: number; title?: string; content: string }): Observable<ApiResponse<unknown>> {
+  addProductReview(
+    productId: string,
+    reviewData: { rating: number; title?: string; content: string }
+  ): Observable<ApiResponse<unknown>> {
     return this.post<unknown>(`/products/${productId}/reviews`, reviewData);
   }
 
-  upvoteReview(reviewId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
-    return this.post<{ success: boolean; new_count: number }>(`/products/reviews/${reviewId}/upvote`);
+  upvoteReview(
+    reviewId: string
+  ): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
+    return this.post<{ success: boolean; new_count: number }>(
+      `/products/reviews/${reviewId}/upvote`
+    );
   }
 
   trackProductView(productId: string): Observable<ApiResponse<void>> {
     return this.post<void>(`/products/${productId}/view`);
   }
 
-  shareProduct(productId: string): Observable<ApiResponse<{ success: boolean; share_url: string }>> {
-    return this.post<{ success: boolean; share_url: string }>(`/products/${productId}/share`);
+  shareProduct(
+    productId: string
+  ): Observable<ApiResponse<{ success: boolean; share_url: string }>> {
+    return this.post<{ success: boolean; share_url: string }>(
+      `/products/${productId}/share`
+    );
   }
 
-  getMyProducts(params?: ProductParams): Observable<ApiResponse<PaginatedResponse<Product>>> {
-    return this.get<PaginatedResponse<Product>>('/products/seller/my-products', params);
+  getMyProducts(
+    params?: ProductParams
+  ): Observable<ApiResponse<PaginatedResponse<Product>>> {
+    return this.get<PaginatedResponse<Product>>(
+      '/products/seller/my-products',
+      params
+    );
   }
 
   // ============================================================================
@@ -587,7 +672,10 @@ export class ApiService {
     return this.post<Order>('/orders/', orderData);
   }
 
-  payOrder(orderId: string, paymentData: PaymentData): Observable<ApiResponse<Order>> {
+  payOrder(
+    orderId: string,
+    paymentData: PaymentData
+  ): Observable<ApiResponse<Order>> {
     return this.post<Order>(`/orders/${orderId}/pay`, paymentData);
   }
 
@@ -595,7 +683,9 @@ export class ApiService {
     return this.get<Order>(`/orders/${orderId}`);
   }
 
-  getSellerOrders(params?: OrderParams): Observable<ApiResponse<PaginatedResponse<Order>>> {
+  getSellerOrders(
+    params?: OrderParams
+  ): Observable<ApiResponse<PaginatedResponse<Order>>> {
     return this.get<PaginatedResponse<Order>>('/orders/seller', params);
   }
 
@@ -603,8 +693,14 @@ export class ApiService {
     return this.get<OrderStats>('/orders/seller/stats');
   }
 
-  updateOrderItemStatus(orderItemId: number, statusData: StatusUpdateData): Observable<ApiResponse<OrderItem>> {
-    return this.patch<OrderItem>(`/orders/seller/items/${orderItemId}`, statusData);
+  updateOrderItemStatus(
+    orderItemId: number,
+    statusData: StatusUpdateData
+  ): Observable<ApiResponse<OrderItem>> {
+    return this.patch<OrderItem>(
+      `/orders/seller/items/${orderItemId}`,
+      statusData
+    );
   }
 
   trackOrder(orderId: string): Observable<ApiResponse<Tracking[]>> {
@@ -615,7 +711,10 @@ export class ApiService {
     return this.get<any>(`/orders/${orderId}/tracking`);
   }
 
-  reviewOrder(orderId: string, reviewData: ReviewData): Observable<ApiResponse<Review>> {
+  reviewOrder(
+    orderId: string,
+    reviewData: ReviewData
+  ): Observable<ApiResponse<Review>> {
     return this.post<Review>(`/orders/${orderId}/review`, reviewData);
   }
 
@@ -623,23 +722,35 @@ export class ApiService {
   // REQUEST ENDPOINTS (12 endpoints)
   // ============================================================================
 
-  getRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
+  getRequests(
+    params?: RequestParams
+  ): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
     return this.get<PaginatedResponse<BuyerRequest>>('/requests/', params);
   }
 
-  createRequest(requestData: RequestData): Observable<ApiResponse<BuyerRequest>> {
+  createRequest(
+    requestData: RequestData
+  ): Observable<ApiResponse<BuyerRequest>> {
     return this.post<BuyerRequest>('/requests/', requestData);
   }
 
-  getMyRequests(params?: RequestParams): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
-    return this.get<PaginatedResponse<BuyerRequest>>('/requests/my-requests', params);
+  getMyRequests(
+    params?: RequestParams
+  ): Observable<ApiResponse<PaginatedResponse<BuyerRequest>>> {
+    return this.get<PaginatedResponse<BuyerRequest>>(
+      '/requests/my-requests',
+      params
+    );
   }
 
   getRequest(requestId: string): Observable<ApiResponse<BuyerRequest>> {
     return this.get<BuyerRequest>(`/requests/${requestId}`);
   }
 
-  updateRequest(requestId: string, requestData: RequestData): Observable<ApiResponse<BuyerRequest>> {
+  updateRequest(
+    requestId: string,
+    requestData: RequestData
+  ): Observable<ApiResponse<BuyerRequest>> {
     return this.put<BuyerRequest>(`/requests/${requestId}`, requestData);
   }
 
@@ -647,19 +758,29 @@ export class ApiService {
     return this.delete<void>(`/requests/${requestId}`);
   }
 
-  updateRequestStatus(requestId: string, statusData: StatusUpdateData): Observable<ApiResponse<BuyerRequest>> {
+  updateRequestStatus(
+    requestId: string,
+    statusData: StatusUpdateData
+  ): Observable<ApiResponse<BuyerRequest>> {
     return this.put<BuyerRequest>(`/requests/${requestId}/status`, statusData);
   }
 
-  upvoteRequest(requestId: string): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
-    return this.post<{ success: boolean; new_count: number }>(`/requests/${requestId}/upvote`);
+  upvoteRequest(
+    requestId: string
+  ): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
+    return this.post<{ success: boolean; new_count: number }>(
+      `/requests/${requestId}/upvote`
+    );
   }
 
   getRequestOffers(requestId: string): Observable<ApiResponse<SellerOffer[]>> {
     return this.get<SellerOffer[]>(`/requests/${requestId}/offers`);
   }
 
-  createOffer(requestId: string, offerData: OfferData): Observable<ApiResponse<SellerOffer>> {
+  createOffer(
+    requestId: string,
+    offerData: OfferData
+  ): Observable<ApiResponse<SellerOffer>> {
     return this.post<SellerOffer>(`/requests/${requestId}/offers`, offerData);
   }
 
@@ -699,8 +820,14 @@ export class ApiService {
     return this.get<any>(`/media/${mediaId}/status`);
   }
 
-  optimizeForSocial(mediaId: number, optimizationData: SocialOptimizationData): Observable<ApiResponse<any>> {
-    return this.post<any>(`/media/${mediaId}/social-optimize`, optimizationData);
+  optimizeForSocial(
+    mediaId: number,
+    optimizationData: SocialOptimizationData
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/media/${mediaId}/social-optimize`,
+      optimizationData
+    );
   }
 
   removeBackground(mediaId: number): Observable<ApiResponse<any>> {
@@ -723,7 +850,10 @@ export class ApiService {
     return this.upload<any>(`/media/products/${productId}/images`, file);
   }
 
-  deleteProductImage(productId: string, imageId: number): Observable<ApiResponse<any>> {
+  deleteProductImage(
+    productId: string,
+    imageId: number
+  ): Observable<ApiResponse<any>> {
     return this.delete<any>(`/media/products/${productId}/images/${imageId}`);
   }
 
@@ -735,7 +865,10 @@ export class ApiService {
     return this.upload<any>(`/media/social-posts/${postId}/media`, file);
   }
 
-  deleteSocialPostMedia(postId: string, mediaId: number): Observable<ApiResponse<any>> {
+  deleteSocialPostMedia(
+    postId: string,
+    mediaId: number
+  ): Observable<ApiResponse<any>> {
     return this.delete<any>(`/media/social-posts/${postId}/media/${mediaId}`);
   }
 
@@ -747,7 +880,10 @@ export class ApiService {
     return this.upload<any>(`/media/requests/${requestId}/images`, file);
   }
 
-  deleteRequestImage(requestId: string, imageId: number): Observable<ApiResponse<any>> {
+  deleteRequestImage(
+    requestId: string,
+    imageId: number
+  ): Observable<ApiResponse<any>> {
     return this.delete<any>(`/media/requests/${requestId}/images/${imageId}`);
   }
 
@@ -759,44 +895,18 @@ export class ApiService {
     return this.get<any>(`/media/${mediaId}/variants`);
   }
 
-  generateVariants(mediaId: number, variantData: VariantData): Observable<ApiResponse<any>> {
+  generateVariants(
+    mediaId: number,
+    variantData: VariantData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>(`/media/${mediaId}/generate-variants`, variantData);
   }
 
-  updateMedia(mediaId: number, updateData: any): Observable<ApiResponse<Media>> {
+  updateMedia(
+    mediaId: number,
+    updateData: any
+  ): Observable<ApiResponse<Media>> {
     return this.put<Media>(`/media/${mediaId}`, updateData);
-  }
-
-  // ============================================================================
-  // CATEGORY ENDPOINTS (5 endpoints)
-  // ============================================================================
-
-  getCategories(): Observable<ApiResponse<Category[]>> {
-    return this.get<Category[]>('/categories/');
-  }
-
-  createCategory(categoryData: CategoryData): Observable<ApiResponse<Category>> {
-    return this.post<Category>('/categories/', categoryData);
-  }
-
-  getCategory(categoryId: number): Observable<ApiResponse<Category>> {
-    return this.get<Category>(`/categories/${categoryId}`);
-  }
-
-  updateCategory(categoryId: number, categoryData: CategoryData): Observable<ApiResponse<Category>> {
-    return this.put<Category>(`/categories/${categoryId}`, categoryData);
-  }
-
-  getCategoryProducts(categoryId: number, params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>(`/categories/${categoryId}/products`, params);
-  }
-
-  getPopularTags(): Observable<ApiResponse<any[]>> {
-    return this.get<any[]>('/categories/tags');
-  }
-
-  createTag(tagData: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/categories/tags', tagData);
   }
 
   // ============================================================================
@@ -815,7 +925,10 @@ export class ApiService {
     return this.get<any>(`/socials/niches/${nicheId}`);
   }
 
-  updateNiche(nicheId: string, nicheData: NicheData): Observable<ApiResponse<any>> {
+  updateNiche(
+    nicheId: string,
+    nicheData: NicheData
+  ): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/niches/${nicheId}`, nicheData);
   }
 
@@ -831,8 +944,14 @@ export class ApiService {
     return this.get<any>(`/socials/niches/${nicheId}/members`, params);
   }
 
-  moderateNiche(nicheId: string, moderationData: ModerationData): Observable<ApiResponse<any>> {
-    return this.post<any>(`/socials/niches/${nicheId}/moderate`, moderationData);
+  moderateNiche(
+    nicheId: string,
+    moderationData: ModerationData
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/socials/niches/${nicheId}/moderate`,
+      moderationData
+    );
   }
 
   getMyNiches(params?: any): Observable<ApiResponse<PaginatedResponse<any>>> {
@@ -869,12 +988,23 @@ export class ApiService {
     return this.get<any[]>(`/socials/comments/${commentId}/reactions`);
   }
 
-  addCommentReaction(commentId: string, reactionData: ReactionData): Observable<ApiResponse<any>> {
-    return this.post<any>(`/socials/comments/${commentId}/reactions`, reactionData);
+  addCommentReaction(
+    commentId: string,
+    reactionData: ReactionData
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/socials/comments/${commentId}/reactions`,
+      reactionData
+    );
   }
 
-  removeCommentReaction(commentId: string, reactionType: string): Observable<ApiResponse<void>> {
-    return this.delete<void>(`/socials/comments/${commentId}/reactions/${reactionType}`);
+  removeCommentReaction(
+    commentId: string,
+    reactionType: string
+  ): Observable<ApiResponse<void>> {
+    return this.delete<void>(
+      `/socials/comments/${commentId}/reactions/${reactionType}`
+    );
   }
 
   // ============================================================================
@@ -889,7 +1019,10 @@ export class ApiService {
     return this.post<Payment>('/payments/create', paymentData);
   }
 
-  processPayment(paymentId: string, paymentData: PaymentData): Observable<ApiResponse<Payment>> {
+  processPayment(
+    paymentId: string,
+    paymentData: PaymentData
+  ): Observable<ApiResponse<Payment>> {
     return this.post<Payment>(`/payments/${paymentId}/process`, paymentData);
   }
 
@@ -901,7 +1034,9 @@ export class ApiService {
     return this.get<Payment>(`/payments/${paymentId}`);
   }
 
-  handlePaystackWebhook(webhookData: WebhookData): Observable<ApiResponse<any>> {
+  handlePaystackWebhook(
+    webhookData: WebhookData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>('/payments/webhook/paystack', webhookData);
   }
 
@@ -930,7 +1065,9 @@ export class ApiService {
   }
 
   markAsRead(notificationIds: number[]): Observable<ApiResponse<any>> {
-    return this.post<any>('/notifications/mark-read', { notification_ids: notificationIds });
+    return this.post<any>('/notifications/mark-read', {
+      notification_ids: notificationIds,
+    });
   }
 
   // ============================================================================
@@ -949,8 +1086,14 @@ export class ApiService {
     return this.get<any>(`/chats/rooms/${roomId}/messages`, params);
   }
 
-  sendMessage(roomId: string, messageData: any): Observable<ApiResponse<ChatMessage>> {
-    return this.post<ChatMessage>(`/chats/rooms/${roomId}/messages`, messageData);
+  sendMessage(
+    roomId: string,
+    messageData: any
+  ): Observable<ApiResponse<ChatMessage>> {
+    return this.post<ChatMessage>(
+      `/chats/rooms/${roomId}/messages`,
+      messageData
+    );
   }
 
   // ============================================================================
@@ -981,7 +1124,9 @@ export class ApiService {
     return this.get<any[]>('/socials/collections');
   }
 
-  createCollection(collectionData: CollectionData): Observable<ApiResponse<any>> {
+  createCollection(
+    collectionData: CollectionData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>('/socials/collections', collectionData);
   }
 
@@ -989,8 +1134,14 @@ export class ApiService {
     return this.get<any>(`/socials/collections/${collectionId}`);
   }
 
-  updateCollection(collectionId: string, collectionData: CollectionData): Observable<ApiResponse<any>> {
-    return this.put<any>(`/socials/collections/${collectionId}`, collectionData);
+  updateCollection(
+    collectionId: string,
+    collectionData: CollectionData
+  ): Observable<ApiResponse<any>> {
+    return this.put<any>(
+      `/socials/collections/${collectionId}`,
+      collectionData
+    );
   }
 
   deleteCollection(collectionId: string): Observable<ApiResponse<void>> {
@@ -1065,12 +1216,23 @@ export class ApiService {
     return this.get<any[]>(`/chat/messages/${messageId}/reactions`);
   }
 
-  addMessageReaction(messageId: string, reactionData: ReactionData): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chat/messages/${messageId}/reactions`, reactionData);
+  addMessageReaction(
+    messageId: string,
+    reactionData: ReactionData
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/chat/messages/${messageId}/reactions`,
+      reactionData
+    );
   }
 
-  removeMessageReaction(messageId: string, reactionType: string): Observable<ApiResponse<void>> {
-    return this.delete<void>(`/chat/messages/${messageId}/reactions/${reactionType}`);
+  removeMessageReaction(
+    messageId: string,
+    reactionType: string
+  ): Observable<ApiResponse<void>> {
+    return this.delete<void>(
+      `/chat/messages/${messageId}/reactions/${reactionType}`
+    );
   }
 
   // ============================================================================
@@ -1133,7 +1295,10 @@ export class ApiService {
     return this.get<any>('/admin/users', params);
   }
 
-  updateUserStatus(userId: string, statusData: any): Observable<ApiResponse<any>> {
+  updateUserStatus(
+    userId: string,
+    statusData: any
+  ): Observable<ApiResponse<any>> {
     return this.put<any>(`/admin/users/${userId}/status`, statusData);
   }
 
@@ -1141,7 +1306,10 @@ export class ApiService {
     return this.get<any>('/admin/reports', params);
   }
 
-  resolveReport(reportId: string, resolutionData: any): Observable<ApiResponse<any>> {
+  resolveReport(
+    reportId: string,
+    resolutionData: any
+  ): Observable<ApiResponse<any>> {
     return this.post<any>(`/admin/reports/${reportId}/resolve`, resolutionData);
   }
 
@@ -1149,7 +1317,9 @@ export class ApiService {
     return this.get<any>('/admin/moderation/queue', params);
   }
 
-  takeModerationAction(actionData: ModerationData): Observable<ApiResponse<any>> {
+  takeModerationAction(
+    actionData: ModerationData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>('/admin/moderation/actions', actionData);
   }
 
@@ -1188,16 +1358,19 @@ export class ApiService {
   /**
    * Make a GET request
    */
-  get<T>(endpoint: string, params?: Record<string, unknown>): Observable<ApiResponse<T>> {
+  get<T>(
+    endpoint: string,
+    params?: Record<string, unknown>
+  ): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     const httpParams = this.buildHttpParams(params);
-    
-    return this.http.get<ApiResponse<T>>(url, { 
-      params: httpParams,
-      ...this.httpOptions
-    }).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .get<ApiResponse<T>>(url, {
+        params: httpParams,
+        ...this.httpOptions,
+      })
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -1205,10 +1378,10 @@ export class ApiService {
    */
   post<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
-    
-    return this.http.post<ApiResponse<T>>(url, data, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .post<ApiResponse<T>>(url, data, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -1216,10 +1389,10 @@ export class ApiService {
    */
   put<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
-    
-    return this.http.put<ApiResponse<T>>(url, data, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .put<ApiResponse<T>>(url, data, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -1227,10 +1400,10 @@ export class ApiService {
    */
   patch<T>(endpoint: string, data?: unknown): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
-    
-    return this.http.patch<ApiResponse<T>>(url, data, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .patch<ApiResponse<T>>(url, data, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -1238,52 +1411,60 @@ export class ApiService {
    */
   delete<T>(endpoint: string): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
-    
-    return this.http.delete<ApiResponse<T>>(url, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .delete<ApiResponse<T>>(url, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
    * Upload a single file
    */
-  upload<T>(endpoint: string, file: File, data?: Record<string, unknown>): Observable<ApiResponse<T>> {
+  upload<T>(
+    endpoint: string,
+    file: File,
+    data?: Record<string, unknown>
+  ): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     const formData = new FormData();
-    
+
     formData.append('file', file);
-    
+
     if (data) {
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         formData.append(key, String(data[key]));
       });
     }
-    
-    return this.http.post<ApiResponse<T>>(url, formData, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .post<ApiResponse<T>>(url, formData, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
    * Upload multiple files
    */
-  uploadMultiple<T>(endpoint: string, files: File[], data?: Record<string, unknown>): Observable<ApiResponse<T>> {
+  uploadMultiple<T>(
+    endpoint: string,
+    files: File[],
+    data?: Record<string, unknown>
+  ): Observable<ApiResponse<T>> {
     const url = this.getUrl(endpoint);
     const formData = new FormData();
-    
+
     files.forEach((file, index) => {
       formData.append(`files[${index}]`, file);
     });
-    
+
     if (data) {
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         formData.append(key, String(data[key]));
       });
     }
-    
-    return this.http.post<ApiResponse<T>>(url, formData, this.httpOptions).pipe(
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .post<ApiResponse<T>>(url, formData, this.httpOptions)
+      .pipe(catchError(this.handleError));
   }
 
   /**
@@ -1293,16 +1474,16 @@ export class ApiService {
     if (!params) {
       return new HttpParams();
     }
-    
+
     let httpParams = new HttpParams();
-    
-    Object.keys(params).forEach(key => {
+
+    Object.keys(params).forEach((key) => {
       const value = params[key];
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach(item => {
+          value.forEach((item) => {
             if (item !== null && item !== undefined) {
-            httpParams = httpParams.append(key, item.toString());
+              httpParams = httpParams.append(key, item.toString());
             }
           });
         } else {
@@ -1310,7 +1491,7 @@ export class ApiService {
         }
       }
     });
-    
+
     return httpParams;
   }
 
@@ -1327,19 +1508,19 @@ export class ApiService {
   private handleError = (error: any): Observable<never> => {
     // Prioritize server-provided error messages
     let errorMessage = this.extractServerErrorMessage(error);
-    
+
     // Fallback to status-based messages only if server didn't provide one
     if (!errorMessage) {
       errorMessage = this.getStatusBasedErrorMessage(error);
-    } 
-    
+    }
+
     console.error('API Error:', error);
     const enriched = new Error(errorMessage) as any;
     enriched.status = error?.status;
     enriched.body = error?.error;
-    enriched.url = error?.url; 
+    enriched.url = error?.url;
     return throwError(() => enriched);
-  }
+  };
 
   /**
    * Extract error message from server response
@@ -1379,7 +1560,7 @@ export class ApiService {
       500: 'Server error. Please try again later.',
       502: 'Bad gateway. Please try again later.',
       503: 'Service unavailable. Please try again later.',
-      504: 'Gateway timeout. Please try again later.'
+      504: 'Gateway timeout. Please try again later.',
     };
 
     // Special handling for specific endpoints
@@ -1427,11 +1608,17 @@ export class ApiService {
     return this.get<any>(`/socials/posts/${postId}/comments`, params);
   }
 
-  addComment(postId: string, commentData: CommentData): Observable<ApiResponse<any>> {
+  addComment(
+    postId: string,
+    commentData: CommentData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/posts/${postId}/comments`, commentData);
   }
 
-  updateComment(commentId: string, commentData: CommentData): Observable<ApiResponse<any>> {
+  updateComment(
+    commentId: string,
+    commentData: CommentData
+  ): Observable<ApiResponse<any>> {
     return this.put<any>(`/socials/comments/${commentId}`, commentData);
   }
 
@@ -1439,7 +1626,10 @@ export class ApiService {
     return this.delete<any>(`/socials/comments/${commentId}`);
   }
 
-  createNichePost(nicheId: string, postData: PostData): Observable<ApiResponse<any>> {
+  createNichePost(
+    nicheId: string,
+    postData: PostData
+  ): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/niches/${nicheId}/posts`, postData);
   }
 
@@ -1447,8 +1637,14 @@ export class ApiService {
     return this.get<any>(`/socials/niches/${nicheId}/posts`, params);
   }
 
-  approveNichePost(nichePostId: string, approvalData: any): Observable<ApiResponse<any>> {
-    return this.post<any>(`/socials/niches/posts/${nichePostId}/approve`, approvalData);
+  approveNichePost(
+    nichePostId: string,
+    approvalData: any
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/socials/niches/posts/${nichePostId}/approve`,
+      approvalData
+    );
   }
 
   markMessagesAsRead(roomId: string): Observable<ApiResponse<any>> {
@@ -1472,7 +1668,9 @@ export class ApiService {
     return this.get<User>(`/users/${userId}/profile`);
   }
 
-  getUserProducts(userId: string): Observable<ApiResponse<PaginatedResponse<Product>>> {
+  getUserProducts(
+    userId: string
+  ): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.get<PaginatedResponse<Product>>(`/users/${userId}/products`);
   }
 
@@ -1537,7 +1735,9 @@ export class ApiService {
   }
 
   // Marketplace - Missing methods
-  getMarketplaceProducts(): Observable<ApiResponse<PaginatedResponse<Product>>> {
+  getMarketplaceProducts(): Observable<
+    ApiResponse<PaginatedResponse<Product>>
+  > {
     return this.get<PaginatedResponse<Product>>('/products/marketplace');
   }
 
@@ -1562,8 +1762,14 @@ export class ApiService {
     return this.post<any>(`/socials/community/posts/${postId}/like`);
   }
 
-  commentOnCommunityPost(postId: string, commentData: any): Observable<ApiResponse<any>> {
-    return this.post<any>(`/socials/community/posts/${postId}/comments`, commentData);
+  commentOnCommunityPost(
+    postId: string,
+    commentData: any
+  ): Observable<ApiResponse<any>> {
+    return this.post<any>(
+      `/socials/community/posts/${postId}/comments`,
+      commentData
+    );
   }
 
   // Chat - Missing methods
@@ -1585,7 +1791,10 @@ export class ApiService {
     return this.get<Product[]>(`/products/${productId}/similar`);
   }
 
-  commentOnPost(postId: string, commentData: any): Observable<ApiResponse<any>> {
+  commentOnPost(
+    postId: string,
+    commentData: any
+  ): Observable<ApiResponse<any>> {
     return this.post<any>(`/socials/posts/${postId}/comments`, commentData);
   }
 
@@ -1595,24 +1804,26 @@ export class ApiService {
 
   // Social Post Reactions
   likePost(postId: string): Observable<ApiResponse<any>> {
-    return this.http.post<ApiResponse<any>>(`${this.API_BASE_URL}/socials/posts/${postId}/like`, {})
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http
+      .post<ApiResponse<any>>(
+        `${this.API_BASE_URL}/socials/posts/${postId}/like`,
+        {}
+      )
+      .pipe(catchError(this.handleError));
   }
 
   unlikePost(postId: string): Observable<ApiResponse<any>> {
-    return this.http.delete<ApiResponse<any>>(`${this.API_BASE_URL}/socials/posts/${postId}/like`)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http
+      .delete<ApiResponse<any>>(
+        `${this.API_BASE_URL}/socials/posts/${postId}/like`
+      )
+      .pipe(catchError(this.handleError));
   }
 
   // Cart Management
   removeFromCart(itemId: string): Observable<ApiResponse<any>> {
-    return this.http.delete<ApiResponse<any>>(`${this.API_BASE_URL}/cart/items/${itemId}`)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http
+      .delete<ApiResponse<any>>(`${this.API_BASE_URL}/cart/items/${itemId}`)
+      .pipe(catchError(this.handleError));
   }
 }

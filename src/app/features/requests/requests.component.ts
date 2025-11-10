@@ -34,7 +34,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { RequestService } from '../../domains/requests/services/request.service';
 import { AuthService } from '../../domains/authentication/services/auth.service';
-import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
+import { CategoryService, Category as CategoryModel } from '../../domains/categories';
 import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
@@ -433,7 +433,7 @@ export class RequestsComponent implements OnInit {
   
   private requestService = inject(RequestService);
   private authService = inject(AuthService);
-  private marketplaceService = inject(MarketplaceService);
+  private categoryService = inject(CategoryService);
   private router = inject(Router);
   public access = inject(AccessControlService);
 
@@ -467,7 +467,7 @@ export class RequestsComponent implements OnInit {
 
   // Data
   requests: any[] = [];
-  categories: any[] = [];
+  categories: CategoryModel[] = [];
   user: any = null;
   isLoading = false;
   upvotingRequest = false;
@@ -511,10 +511,17 @@ export class RequestsComponent implements OnInit {
     const sortField = sortParts.slice(0, -1).join('_') as 'created_at' | 'budget' | 'expires_at';
     const sortOrder = sortParts[sortParts.length - 1] as 'asc' | 'desc';
     
+    const categoryId = this.categoryFilter
+      ? Number(this.categoryFilter)
+      : undefined;
+
     const params: any = {
       page: this.currentPage,
       search: this.searchQuery,
-      category_ids: this.categoryFilter ? [this.categoryFilter] : undefined,
+      category_ids:
+        categoryId !== undefined && !Number.isNaN(categoryId)
+          ? [categoryId]
+          : undefined,
       status: this.statusFilter as 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED' | undefined,
       budget_range: this.budgetFilter,
       sort_by: sortField,
@@ -539,15 +546,13 @@ export class RequestsComponent implements OnInit {
   }
 
   private loadCategories(): void {
-    this.marketplaceService.getCategories().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.categories = response.data;
-        }
+    this.categoryService.getAllCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
       },
       error: (error) => {
         console.error('Error loading categories:', error);
-      }
+      },
     });
   }
 

@@ -2,13 +2,13 @@
  * Social DTOs
  */
 
-import { Category } from '../../../core/models';
+import { CategoryDto } from '../../categories';
 
 export interface PostDto {
   id: string;
   seller_id: string;
   caption: string;
-  categories: Category[];
+  categories: CategoryDto[];
   social_media: Array<{
     id: string;
     post_id: string;

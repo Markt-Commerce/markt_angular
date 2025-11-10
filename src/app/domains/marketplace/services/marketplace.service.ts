@@ -17,7 +17,6 @@ import { CreateProductDto, UpdateProductDto, ProductSearchParamsDto } from '../m
 import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
 import { CartService } from '../../cart';
 import { ApiService } from '../../../core/services/api.service';
-import { Category } from '../../../core/models';
 
 @Injectable({
   providedIn: 'root'
@@ -40,13 +39,6 @@ export class MarketplaceService {
    */
   getProducts(params?: ProductSearchParamsDto): Observable<Product[]> {
     return this.productRepository.findAll(params);
-  }
-
-  /**
-   * Fetch marketplace categories for filters and navigation
-   */
-  getCategories(): Observable<ApiResponse<Category[]>> {
-    return this.apiService.getCategories();
   }
 
   /**

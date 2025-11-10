@@ -24,7 +24,7 @@ export class PostRepository {
       dto.like_count,
       dto.comment_count,
       dto.created_at,
-      dto.categories.map(c => c.id),
+      dto.categories.map(c => c.id.toString()),
       'published' as PostStatus
     );
   }
