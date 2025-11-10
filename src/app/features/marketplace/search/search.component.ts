@@ -9,7 +9,7 @@ import { SearchService } from '../../../core/services/search.service';
 // TODO: Migrate to Product domain model from domains/marketplace/models/product.model when domain model includes all properties (images, seller, category, description, etc.)
 import { Product } from '../../../core/models';
 import { Subject, takeUntil, map } from 'rxjs';
-import { CartService } from '../../../domains/orders/services/cart.service';
+import { CartService } from '../../../domains/cart/services/cart.service';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for globalSearch, searchShops, searchRequests, searchNiches, searchUsers (methods not migrated yet)

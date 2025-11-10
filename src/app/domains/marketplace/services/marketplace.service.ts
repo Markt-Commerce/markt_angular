@@ -15,7 +15,7 @@ import { ProductRepository } from '../repositories/product.repository';
 import { Product } from '../models/product.model';
 import { CreateProductDto, UpdateProductDto, ProductSearchParamsDto } from '../models/product.dto';
 import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
-import { CartService } from '../../orders';
+import { CartService } from '../../cart';
 import { ApiService } from '../../../core/services/api.service';
 import { Category } from '../../../core/models';
 

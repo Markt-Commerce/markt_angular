@@ -5,7 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { RequestService } from '../../../domains/requests/services/request.service';
-import { CartService } from '../../../domains/orders/services/cart.service';
+import { CartService } from '../../../domains/cart/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';

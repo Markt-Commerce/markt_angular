@@ -38,7 +38,7 @@ import {
   faUndo,
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceService } from '../../../domains/marketplace';
-import { CartService } from '../../../domains/orders';
+import { CartService } from '../../../domains/cart';
 import { AuthService } from '../../../domains/authentication';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for toggleWishlist, reviews, tracking, and sharing (not yet migrated to domain services)
 import { finalize } from 'rxjs/operators';

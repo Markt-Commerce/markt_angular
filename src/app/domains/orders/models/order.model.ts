@@ -1,14 +1,26 @@
 /**
  * Order Domain Models
- * 
+ *
  * Domain entities for orders with business logic.
  */
 
 import { Address } from '../../authentication/models/user.model';
 import { Product } from '../../marketplace/models/product.model';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-export type OrderItemStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
+export type OrderItemStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
 
 /**
  * Order Item - Value Object
@@ -114,7 +126,7 @@ export class Order {
    * Business Rule: Check if all items are delivered
    */
   allItemsDelivered(): boolean {
-    return this.items.every(item => item.isDelivered());
+    return this.items.every((item) => item.isDelivered());
   }
 
   /**
@@ -125,10 +137,3 @@ export class Order {
     return Math.abs(calculatedTotal - this.total) < 0.01; // Allow small floating point differences
   }
 }
-
-/**
- * Cart - Aggregate Root (from orders domain)
- * Using the cart model we created earlier
- */
-export { Cart, CartItem } from './cart.model';
-

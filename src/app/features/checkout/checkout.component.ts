@@ -33,10 +33,11 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {
   CartService,
-  OrderService,
   Cart,
   CartItem,
-} from '../../domains/orders';
+  CartSummaryDto,
+} from '../../domains/cart';
+import { OrderService } from '../../domains/orders';
 import { PaymentService } from '../../domains/payment';
 import { AuthService } from '../../domains/authentication';
 import { MarketplaceService } from '../../domains/marketplace';
@@ -47,12 +48,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    FontAwesomeModule,
-  ],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FontAwesomeModule],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Progress Indicator - matches Figma design -->
@@ -766,7 +762,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                           {{ item.productDto?.name || item.product.name }}
                         </h4>
                         <p class="text-sm text-gray-500">
-                          Qty: {{ item.getQuantity() }}
+                          Qty: {{ item.quantity }}
                         </p>
                       </div>
                       <div class="text-right">
@@ -821,9 +817,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
                     <h3 class="font-medium text-dark">
                       {{ item.productDto?.name || item.product.name }}
                     </h3>
-                    <p class="text-sm text-muted">
-                      Qty: {{ item.getQuantity() }}
-                    </p>
+                    <p class="text-sm text-muted">Qty: {{ item.quantity }}</p>
                   </div>
                   <span class="font-semibold text-dark">{{
                     item.calculateSubtotal() / 100 | currency : 'USD'
@@ -1069,7 +1063,7 @@ export class CheckoutComponent implements OnInit {
   selectedPaymentMethod = 'card';
   loading = false;
   errorMessage = '';
-  cartSummary: any = null;
+  cartSummary: CartSummaryDto | null = null;
   offerContext: { offerId?: string } = {};
   addresses: any[] = [];
   couponCode = '';
@@ -1094,12 +1088,12 @@ export class CheckoutComponent implements OnInit {
 
   // Billing form (used when not same as shipping)
   billingForm: FormGroup = this.fb.group({
-    firstName: ['John'],
-    lastName: ['Doe'],
-    address: ['123 University Ave'],
-    city: ['College Town'],
-    state: [''],
-    postalCode: ['12345'],
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    address: ['', Validators.required],
+    city: ['', Validators.required],
+    state: ['', Validators.required],
+    postalCode: ['', Validators.required],
   });
 
   // Payment methods
@@ -1159,6 +1153,8 @@ export class CheckoutComponent implements OnInit {
       cvv: ['123', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
       cardholderName: ['John Doe', Validators.required],
     });
+
+    this.syncBillingWithShipping();
   }
 
   ngOnInit(): void {
@@ -1179,14 +1175,14 @@ export class CheckoutComponent implements OnInit {
     this.errorMessage = '';
 
     // Load cart data - Use CartService (DDD pattern)
-    // Using domain CartService.getCart() - returns Observable<Cart> directly
+    // Using domain CartService.getCart() - returns Observable<Cart | null> directly
     this.cartService.getCart().subscribe({
-      next: (cart: Cart) => {
+      next: (cart: Cart | null) => {
         // Domain service returns Cart domain model
         this.cart = cart;
         if (cart) {
           // Use domain model methods
-          this.cartItems = [...cart.getItems()]; // Get immutable copy
+          this.cartItems = [...cart.getItems()];
           this.cartItemCount = cart.getTotalItems();
           // Use domain model method for subtotal calculation
           this.cartSubtotal = cart.calculateSubtotal();
@@ -1217,8 +1213,7 @@ export class CheckoutComponent implements OnInit {
     // Using domain CartService.getCartSummary() - returns Observable<CartSummary> directly
     this.cartService.getCartSummary().subscribe({
       next: (summary) => {
-        // Domain service returns CartSummary directly (no .success/.data wrapper)
-        this.cartSummary = summary as any;
+        this.cartSummary = summary;
       },
       error: (error: any) => {
         console.error('Error loading cart summary:', error);
@@ -1242,12 +1237,11 @@ export class CheckoutComponent implements OnInit {
 
   applyCoupon(): void {
     if (this.couponCode) {
-      // Using domain CartService.applyCoupon() - returns Observable<{ discount_amount, message }> directly
+      // Using domain CartService.applyCoupon() - returns backend payload directly
       this.cartService.applyCoupon(this.couponCode).subscribe({
         next: (result) => {
-          // Domain service returns { discount_amount, message } directly (no .success/.data wrapper)
           this.couponApplied = true;
-          this.couponDiscount = result.discount_amount || 0;
+          this.couponDiscount = result.discount ?? 0;
           this.calculateTotals();
         },
         error: (error) => {
@@ -1304,16 +1298,23 @@ export class CheckoutComponent implements OnInit {
         0
       );
     }
-    this.cartShipping = this.cartSummary?.shipping_cost || 0;
-    this.cartTax = this.cartSummary?.tax_amount || 0;
-    // Convert to cents for display (domain models use cents)
-    this.cartShipping = this.cartShipping * 100;
-    this.cartTax = this.cartTax * 100;
-    this.cartTotal =
-      this.cartSubtotal +
-      this.cartShipping +
-      this.cartTax -
-      (this.couponDiscount || 0);
+    if (typeof this.cartSummary?.subtotal === 'number') {
+      this.cartSubtotal = this.cartSummary.subtotal;
+    }
+    if (typeof this.cartSummary?.discount === 'number') {
+      this.couponDiscount = this.cartSummary.discount;
+    }
+    this.cartShipping = 0;
+    this.cartTax = 0;
+    if (typeof this.cartSummary?.total === 'number') {
+      this.cartTotal = this.cartSummary.total;
+    } else {
+      this.cartTotal =
+        this.cartSubtotal +
+        this.cartShipping +
+        this.cartTax -
+        (this.couponDiscount || 0);
+    }
     // Also update legacy fields for compatibility
     this.subtotal = this.cartSubtotal / 100;
     this.shipping = this.cartShipping / 100;
@@ -1334,11 +1335,15 @@ export class CheckoutComponent implements OnInit {
         },
         { emitEvent: false }
       );
+      this.billingForm.disable({ emitEvent: false });
+    } else {
+      this.billingForm.enable({ emitEvent: false });
     }
   }
 
   onShippingSubmit(): void {
     if (this.shippingForm.valid) {
+      this.syncBillingWithShipping();
       this.currentStep = 2;
     } else {
       this.markFormGroupTouched(this.shippingForm);
@@ -1403,20 +1408,35 @@ export class CheckoutComponent implements OnInit {
     const firstName = nameParts.shift() ?? '';
     const lastName = nameParts.join(' ');
     const phoneNumber = user?.phoneNumber ?? '';
+    const shippingAddress = {
+      firstName,
+      lastName,
+      email: user?.email || '',
+      phone: phoneNumber,
+      address: this.shippingForm.get('address')?.value || '',
+      city: this.shippingForm.get('city')?.value || '',
+      state: this.shippingForm.get('state')?.value || '',
+      postal_code: this.shippingForm.get('postalCode')?.value || '',
+      notes: this.shippingForm.get('notes')?.value || '',
+    };
+    const billingFormValue = this.billingForm.getRawValue();
+    const billingAddress = this.billingSameAsShipping
+      ? { ...shippingAddress }
+      : {
+          firstName: billingFormValue.firstName || '',
+          lastName: billingFormValue.lastName || '',
+          email: user?.email || '',
+          phone: phoneNumber,
+          address: billingFormValue.address || '',
+          city: billingFormValue.city || '',
+          state: billingFormValue.state || '',
+          postal_code: billingFormValue.postalCode || '',
+        };
 
     return {
       cart_id: this.cart?.id,
-      shipping_address: {
-        firstName,
-        lastName,
-        email: user?.email || '',
-        phone: phoneNumber,
-        address: this.shippingForm.get('address')?.value || '',
-        city: this.shippingForm.get('city')?.value || '',
-        state: this.shippingForm.get('state')?.value || '',
-        postal_code: this.shippingForm.get('postalCode')?.value || '',
-        notes: this.shippingForm.get('notes')?.value || '',
-      },
+      shipping_address: shippingAddress,
+      billing_address: billingAddress,
       payment_method: this.paymentForm.get('paymentMethod')?.value || 'card',
       payment_details: this.getPaymentDetails(),
     };
@@ -1433,6 +1453,16 @@ export class CheckoutComponent implements OnInit {
       this.markFormGroupTouched(this.shippingForm);
       this.markFormGroupTouched(this.paymentForm);
       return;
+    }
+
+    if (!this.billingSameAsShipping && !this.billingForm.valid) {
+      this.errorMessage = 'Please complete your billing address';
+      this.markFormGroupTouched(this.billingForm);
+      return;
+    }
+
+    if (this.billingSameAsShipping) {
+      this.syncBillingWithShipping();
     }
 
     this.isProcessing = true;

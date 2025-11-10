@@ -40,7 +40,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../../domains/authentication/services/auth.service';
 import { AppStateService } from '../../../core/services/app-state.service';
-import { CartService } from '../../../domains/orders/services/cart.service';
+import { CartService } from '../../../domains/cart/services/cart.service';
 import { NotificationService } from '../../../domains/notifications/services/notification.service';
 import { ChatService } from '../../../domains/chat/services/chat.service';
 import { AccessControlService } from '../../../core/services/access-control.service';

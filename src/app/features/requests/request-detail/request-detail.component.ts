@@ -4,7 +4,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { RequestService } from '../../../domains/requests/services/request.service';
-import { CartService } from '../../../domains/orders/services/cart.service';
+import { CartService } from '../../../domains/cart/services/cart.service';
 import { NavigationService } from '../../../core/services/navigation.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';

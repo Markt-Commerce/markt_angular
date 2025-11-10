@@ -34,7 +34,7 @@ import { LandingComponent } from './landing/landing.component';
 
 // Domain Services
 import { MarketplaceService } from '../domains/marketplace';
-import { CartService } from '../domains/orders';
+import { CartService } from '../domains/cart';
 import { OrderService } from '../domains/orders';
 import { AuthService } from '../domains/authentication';
 import { SocialService } from '../domains/social';
@@ -102,12 +102,23 @@ describe('Migration Verification - Domain Services Integration', () => {
       'getMyProducts'
     ]);
 
-    cartService = jasmine.createSpyObj('CartService', [
-      'getCart',
-      'addToCart',
-      'removeFromCart',
-      'updateQuantity'
-    ]);
+    cartService = jasmine.createSpyObj(
+      'CartService',
+      [
+        'getCart',
+        'addToCart',
+        'updateCartItem',
+        'removeCartItem',
+        'clearCart',
+        'getCartSummary',
+        'applyCoupon',
+        'validateCartForCheckout',
+        'isProductInCart'
+      ],
+      {
+        cart$: of(null)
+      }
+    );
 
     orderService = jasmine.createSpyObj('OrderService', [
       'getOrder',
@@ -259,7 +270,6 @@ describe('Migration Verification - Domain Services Integration', () => {
         component.addToCart();
 
         expect(cartService.addToCart).toHaveBeenCalledWith('product1', 1);
-        expect(apiService.addToCart).not.toHaveBeenCalled();
       });
 
       it('should still use ApiService for methods not yet migrated (reviews, wishlist)', () => {
@@ -307,7 +317,6 @@ describe('Migration Verification - Domain Services Integration', () => {
         fixture.detectChanges();
 
         expect(cartService.getCart).toHaveBeenCalled();
-        expect(apiService.getCart).not.toHaveBeenCalled();
       });
 
       it('should still use ApiService for toggleWishlist (not yet migrated)', () => {
@@ -434,7 +443,6 @@ describe('Migration Verification - Domain Services Integration', () => {
       fixture.detectChanges();
 
       expect(cartService.getCart).toHaveBeenCalled();
-      expect(apiService.getCart).not.toHaveBeenCalled();
     });
 
     it('should use AuthService.getUserAddresses() instead of ApiService', () => {

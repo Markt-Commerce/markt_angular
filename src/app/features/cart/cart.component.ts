@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { combineLatest } from 'rxjs';
+import { Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
 import {
   faTrash,
   faPlus,
@@ -25,16 +26,39 @@ import {
   faStar,
   faTag,
 } from '@fortawesome/free-solid-svg-icons';
-import { CartService, Cart, CartItem } from '../../domains/orders';
-import { MarketplaceService } from '../../domains/marketplace';
-import { AuthService } from '../../domains/authentication';
-import { ApiService } from '../../core/services/api.service'; // Still needed for toggleWishlist (wishlist operations not yet migrated to domain service)
-import { Address } from '../../core/shared/value-objects/address.value-object';
+import { CartService, Cart, CartItem } from '../../domains/cart';
+import {
+  ProductDto,
+  SellerDto,
+} from '../../domains/marketplace/models/product.dto';
+
+import { AuthService } from '../../domains/authentication/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
+import { Address } from '../../core/models';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 import { RoleIntentService } from '../../core/services/role-intent.service';
-import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
+
+type SellerSummary = SellerDto | null;
+
+interface CartItemView {
+  id: string;
+  productId: string;
+  variantId: string | null;
+  variantName: string | null;
+  quantity: number;
+  unitPrice: number;
+  product: ProductDto | null;
+}
+
+interface SellerGroupSummary {
+  seller: SellerSummary;
+  items: CartItemView[];
+  subtotal: number;
+  shipping: number;
+  itemCount: number;
+}
 
 @Component({
   selector: 'app-cart',
@@ -127,12 +151,8 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
             <div class="bg-white rounded-lg border border-border p-6">
               <div class="flex items-start space-x-4">
                 <img
-                  [src]="
-                    getProductImageUrl(
-                      item.productDto?.images?.[0]
-                    )
-                  "
-                  [alt]="item.productDto?.name || item.product.name"
+                  [src]="getProductImageUrl(item.product?.images?.[0] ?? null)"
+                  [alt]="item.product?.name || 'Product image'"
                   class="w-24 h-24 rounded-lg object-cover"
                   loading="lazy"
                 />
@@ -144,35 +164,63 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                           [routerLink]="[
                             ROUTES_ABSOLUTE.APP.MARKETPLACE,
                             'product',
-                            item.product.id
+                            item.product?.id || item.productId
                           ]"
                           class="hover:text-primary transition-colors"
                         >
-                          {{ item.productDto?.name || item.product.name }}
+                          {{ item.product?.name || 'Product' }}
                         </a>
                       </h3>
                       <p class="text-sm text-gray-600 mb-2">
-                        {{ item.productDto?.description || '' }}
+                        {{ item.product?.description || 'Product description' }}
                       </p>
+                      @if (item.variantName) {
+                      <p class="text-sm text-gray-600">
+                        Variant:
+                        <span class="font-medium text-gray-800">{{
+                          item.variantName
+                        }}</span>
+                      </p>
+                      } @else if (item.variantId) {
+                      <p class="text-sm text-gray-600">
+                        Variant ID:
+                        <span class="font-medium text-gray-800">{{
+                          item.variantId
+                        }}</span>
+                      </p>
+                      } @if (item.variantId) {
+                      <p
+                        class="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2 inline-flex items-start space-x-2"
+                      >
+                        <fa-icon
+                          [icon]="faExclamationTriangle"
+                          class="w-3 h-3 mt-0.5 text-amber-500"
+                        ></fa-icon>
+                        <span>
+                          Final price may adjust at checkout if this variant has
+                          seller-specific pricing.
+                        </span>
+                      </p>
+                      }
                       <div class="flex items-center space-x-2 mb-3">
                         <img
                           [src]="
-                            item.productDto?.seller?.profile_picture_url || ''
+                            item.product?.seller?.profile_picture_url || ''
                           "
-                          [alt]="item.productDto?.seller?.shop_name || ''"
+                          [alt]="
+                            item.product?.seller?.shop_name || 'Seller avatar'
+                          "
                           class="w-6 h-6 rounded-full"
                         />
                         <span class="text-sm text-gray-700">{{
-                          item.productDto?.seller?.shop_name || ''
+                          item.product?.seller?.shop_name || 'Campus Seller'
                         }}</span>
                         <div class="flex items-center">
                           <fa-icon
                             [icon]="faStar"
                             class="text-yellow-400 text-xs"
                           ></fa-icon>
-                          <span class="text-sm text-gray-600 ml-1">{{
-                            item.productDto?.average_rating?.toFixed(1) || '4.8'
-                          }}</span>
+                          <span class="text-sm text-gray-600 ml-1">4.8</span>
                         </div>
                         <span
                           class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
@@ -197,24 +245,18 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                   <div class="flex items-center justify-between mt-4">
                     <div class="flex items-center space-x-3">
                       <button
-                        (click)="
-                          updateQuantity(item.id, item.getQuantity() - 1)
-                        "
-                        [disabled]="item.getQuantity() <= 1 || updatingQuantity"
+                        (click)="updateQuantity(item.id, item.quantity - 1)"
+                        [disabled]="item.quantity <= 1 || updatingQuantity"
                         class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                       >
                         <fa-icon [icon]="faMinus" class="text-xs"></fa-icon>
                       </button>
                       <span class="text-lg font-medium">{{
-                        item.getQuantity()
+                        item.quantity
                       }}</span>
                       <button
-                        (click)="
-                          updateQuantity(item.id, item.getQuantity() + 1)
-                        "
-                        [disabled]="
-                          item.getQuantity() >= 99 || updatingQuantity
-                        "
+                        (click)="updateQuantity(item.id, item.quantity + 1)"
+                        [disabled]="item.quantity >= 99 || updatingQuantity"
                         class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                       >
                         <fa-icon [icon]="faPlus" class="text-xs"></fa-icon>
@@ -222,14 +264,13 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                     </div>
                     <div class="text-right">
                       <div class="text-lg font-bold text-gray-900">
-                        {{ item.product.getPrice() / 100 | currency : 'USD' }}
+                        {{ item.unitPrice / 100 | currency : 'USD' }}
                       </div>
-                      @if (item.productDto && item.productDto.compare_at_price
-                      && item.productDto.compare_at_price >
-                      item.product.getPrice()) {
+                      @if ( item.product?.compare_at_price &&
+                      (item.product?.compare_at_price ?? 0) > item.unitPrice ) {
                       <div class="text-sm text-gray-500 line-through">
                         {{
-                          item.productDto.compare_at_price / 100
+                          (item.product?.compare_at_price ?? 0) / 100
                             | currency : 'USD'
                         }}
                       </div>
@@ -247,7 +288,7 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
                       [routerLink]="[
                         ROUTES_ABSOLUTE.APP.MARKETPLACE,
                         'product',
-                        item.product.id
+                        item.product?.id || item.productId
                       ]"
                       class="text-sm text-gray-600 hover:text-gray-900"
                     >
@@ -402,20 +443,19 @@ import { ObservableUtilsService } from '../../core/services/observable-utils.ser
     `,
   ],
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   // Expose routes for template access
   protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
 
   private cartService = inject(CartService);
-  private marketplaceService = inject(MarketplaceService);
   private authService = inject(AuthService);
   private router = inject(Router);
   private apiService = inject(ApiService);
   public access = inject(AccessControlService);
   public media = inject(MediaOptimizationService);
   private roleIntent = inject(RoleIntentService);
-  private typeSafety = inject(TypeSafetyService);
   private observableUtils = inject(ObservableUtilsService);
+  private destroy$ = new Subject<void>();
 
   // Icons
   faTrash = faTrash;
@@ -437,21 +477,19 @@ export class CartComponent implements OnInit {
   faStar = faStar;
   faTag = faTag;
 
-  // Data - Using domain models
+  // Data
   cart: Cart | null = null;
-  cartItems: CartItem[] = [];
+  cartItems: CartItemView[] = [];
   cartItemCount = 0;
   cartSubtotal = 0;
   cartShipping = 0;
   cartDiscount = 0;
   cartTax = 0;
   cartTotal = 0;
-  recentlyViewed: any[] = []; // TODO: Migrate to domain models when available
+  recentlyViewed: ProductDto[] = [];
   canCheckout = true;
   errorMessage = '';
-  loading = false;
   loadingCart = false;
-  loadingRecentlyViewed = false;
   updatingQuantity = false;
   removingItem = false;
   selectedAddress: Address | null = null;
@@ -461,161 +499,80 @@ export class CartComponent implements OnInit {
 
   ngOnInit(): void {
     this.canCheckout = this.access.isBuyer;
-    this.authService.authState$.subscribe(() => {
+
+    this.authService.authState$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.canCheckout = this.access.isBuyer;
     });
 
-    this.loadCart();
+    this.cartService.cart$.pipe(takeUntil(this.destroy$)).subscribe((cart) => {
+      this.updateCartState(cart);
+    });
+
+    this.fetchCart();
     this.loadRecentlyViewed();
   }
 
-  private loadCart(): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private fetchCart(): void {
     this.loadingCart = true;
     this.errorMessage = '';
 
-    // Using domain CartService.getCart() - returns Observable<Cart> directly
-    this.cartService.getCart().subscribe({
-      next: (cart: Cart) => {
-        // Domain service returns Cart domain model
-        this.cart = cart;
-        if (cart) {
-          // Use domain model methods
-          this.cartItems = [...cart.getItems()]; // Get immutable copy
-          this.cartItemCount = cart.getTotalItems();
-          // Use domain model method for subtotal calculation
-          this.cartSubtotal = cart.calculateSubtotal();
-          this.calculateTotals();
-        } else {
-          this.cartItems = [];
-          this.cartItemCount = 0;
-          this.cartSubtotal = 0;
-        }
-        this.loadingCart = false;
-      },
-      error: (error) => {
-        console.error('Error loading cart:', error);
-        // Fallback to mock data for demo (remove in production)
-        this.loadMockCartData();
-        this.loadingCart = false;
-      },
-    });
+    this.cartService
+      .getCart()
+      .pipe(
+        finalize(() => {
+          this.loadingCart = false;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        error: (error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Failed to load cart. Please try again.';
+          this.errorMessage = message;
+        },
+      });
   }
 
-  private loadMockCartData(): void {
-    // Mock cart data from Figma design - using any type to avoid interface issues
-    this.cartItems = [
-      {
-        id: 'cart-item-1',
-        product_id: 'sony-wh-1000xm4',
-        quantity: 1,
-        product_price: 24999, // $249.99 in cents
-        product: {
-          id: 'sony-wh-1000xm4',
-          name: 'Sony WH-1000XM4 Wireless Headphones',
-          description: 'Noise-canceling, premium audio quality',
-          condition: 'Like New',
-          price: 24999,
-          compare_at_price: 34999, // $349.99 original price
-          images: [
-            {
-              id: '1',
-              product_id: 'sony-wh-1000xm4',
-              media_id: 'media-1',
-              sort_order: 1,
-              is_featured: true,
-              alt_text: 'Sony WH-1000XM4 Headphones',
-              media: {
-                id: 'media-1',
-                original_url: '/assets/images/products/sony-headphones.png',
-                thumbnail_url: '/assets/images/products/sony-headphones.png',
-                alt_text: 'Sony WH-1000XM4 Headphones',
-              } as any,
-            },
-          ],
-          seller: {
-            id: 'seller-1',
-            shop_name: 'TechStore Campus',
-            profile_picture_url: '/assets/images/techstore-seller.png',
-          } as any,
-        },
-      },
-      {
-        id: 'cart-item-2',
-        product_id: 'calculus-textbook',
-        quantity: 1,
-        product_price: 8950, // $89.50 in cents
-        product: {
-          id: 'calculus-textbook',
-          name: 'Calculus: Early Transcendentals 8th Edition',
-          description: 'James Stewart - Mathematics Textbook',
-          condition: 'Good',
-          price: 8950,
-          compare_at_price: 29995, // $299.95 original price
-          images: [
-            {
-              id: '2',
-              product_id: 'calculus-textbook',
-              media_id: 'media-2',
-              sort_order: 1,
-              is_featured: true,
-              alt_text: 'Calculus Textbook',
-              media: {
-                id: 'media-2',
-                original_url: '/assets/images/products/calculus-textbook.png',
-                thumbnail_url: '/assets/images/products/calculus-textbook.png',
-                alt_text: 'Calculus Textbook',
-              } as any,
-            },
-          ],
-          seller: {
-            id: 'seller-2',
-            shop_name: 'Sarah M.',
-            profile_picture_url: '/assets/images/sarah-seller.png',
-          } as any,
-        },
-      },
-      {
-        id: 'cart-item-3',
-        product_id: 'vintage-jacket',
-        quantity: 1,
-        product_price: 3500, // $35.00 in cents
-        product: {
-          id: 'vintage-jacket',
-          name: 'Vintage Denim Jacket',
-          description: 'Size M - Classic blue denim',
-          condition: 'Excellent',
-          price: 3500,
-          images: [
-            {
-              id: '3',
-              product_id: 'vintage-jacket',
-              media_id: 'media-3',
-              sort_order: 1,
-              is_featured: true,
-              alt_text: 'Vintage Denim Jacket',
-              media: {
-                id: 'media-3',
-                original_url: '/assets/images/products/vintage-jacket.png',
-                thumbnail_url: '/assets/images/products/vintage-jacket.png',
-                alt_text: 'Vintage Denim Jacket',
-              } as any,
-            },
-          ],
-          seller: {
-            id: 'seller-3',
-            shop_name: "Mike's Thrift",
-            profile_picture_url: '/assets/images/mike-seller.png',
-          } as any,
-        },
-      },
-    ] as any;
-    // Mock data uses old format - calculate count manually
-    this.cartItemCount = this.cartItems.reduce(
-      (total, item: any) => total + (item.quantity || 0),
+  private updateCartState(cart: Cart | null): void {
+    this.cart = cart;
+    this.cartItems = cart?.items.map((item) => this.toViewModel(item)) ?? [];
+    this.cartItemCount = cart?.getTotalItems() ?? 0;
+    this.refreshTotals();
+  }
+
+  private toViewModel(item: CartItem): CartItemView {
+    const productDto = item.productDto ?? null;
+
+    return {
+      id: String(item.id),
+      productId: item.product.id,
+      variantId:
+        item.variantId !== null && item.variantId !== undefined
+          ? String(item.variantId)
+          : null,
+      variantName: item.variantName ?? null,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      product: productDto,
+    };
+  }
+
+  private refreshTotals(): void {
+    this.cartSubtotal = this.cartItems.reduce(
+      (total, item) => total + item.unitPrice * item.quantity,
       0
     );
-    this.calculateTotals();
-    this.errorMessage = '';
+    this.cartShipping = this.calculateShipping();
+    this.cartTax = this.cartSubtotal * 0.075;
+    this.cartTotal =
+      this.cartSubtotal + this.cartShipping + this.cartTax - this.cartDiscount;
   }
 
   private loadRecentlyViewed(): void {
@@ -624,16 +581,10 @@ export class CartComponent implements OnInit {
   }
 
   private calculateTotals(): void {
-    // Use domain model method for subtotal if cart is available
-    if (this.cart) {
-      this.cartSubtotal = this.cart.calculateSubtotal();
-    } else {
-      // Fallback: calculate from items using domain model methods
-      this.cartSubtotal = this.cartItems.reduce(
-        (total, item) => total + item.calculateSubtotal(),
-        0
-      );
-    }
+    this.cartSubtotal = this.cartItems.reduce(
+      (total, item) => total + item.unitPrice * item.quantity,
+      0
+    );
     this.cartShipping = this.calculateShipping();
     this.cartTax = this.cartSubtotal * 0.075; // 7.5% tax
     this.cartTotal =
@@ -646,62 +597,40 @@ export class CartComponent implements OnInit {
     return sellerGroups.reduce((total, group) => total + group.shipping, 0);
   }
 
-  get cartSummaryBySeller(): Array<{
-    seller: any; // Using ProductDto.seller type
-    items: CartItem[];
-    subtotal: number;
-    shipping: number;
-    itemCount: number;
-  }> {
-    const sellerMap = new Map<
-      string,
-      {
-        seller: any;
-        items: CartItem[];
-        subtotal: number;
-        shipping: number;
-        itemCount: number;
-      }
-    >();
+  get cartSummaryBySeller(): SellerGroupSummary[] {
+    const sellerMap = new Map<string, SellerGroupSummary>();
 
     this.cartItems.forEach((item) => {
-      // Access seller from productDto (display data) or product domain model
-      const sellerId = item.productDto?.seller?.id || item.product.sellerId;
-      const seller = item.productDto?.seller;
+      const sellerId = item.product?.seller?.id;
+      if (!sellerId) {
+        return;
+      }
 
-      if (sellerId && seller) {
-        const existing = sellerMap.get(sellerId);
+      const existing = sellerMap.get(sellerId);
 
-        if (existing) {
-          existing.items.push(item);
-          existing.subtotal += item.calculateSubtotal();
-          existing.itemCount += item.getQuantity();
-        } else {
-          const group = {
-            seller: seller,
-            items: [item],
-            subtotal: item.calculateSubtotal(),
-            shipping: 0,
-            itemCount: item.getQuantity(),
-          };
-          group.shipping = this.calculateShippingForSeller(group);
-          sellerMap.set(sellerId, group);
-        }
+      if (existing) {
+        existing.items.push(item);
+        existing.subtotal += item.unitPrice * item.quantity;
+        existing.itemCount += item.quantity;
+      } else {
+        const group: SellerGroupSummary = {
+          seller: item.product?.seller ?? null,
+          items: [item],
+          subtotal: item.unitPrice * item.quantity,
+          shipping: 0,
+          itemCount: item.quantity,
+        };
+        group.shipping = this.calculateShippingForSeller(group);
+        sellerMap.set(sellerId, group);
       }
     });
 
     return Array.from(sellerMap.values());
   }
 
-  private calculateShippingForSeller(sellerGroup: {
-    seller: any;
-    items: CartItem[];
-    subtotal: number;
-    shipping: number;
-  }): number {
+  private calculateShippingForSeller(sellerGroup: SellerGroupSummary): number {
     // Simple shipping calculation - can be enhanced based on business logic
-    // Free shipping over $100 (10000 cents), $10 (1000 cents) otherwise
-    return sellerGroup.subtotal > 10000 ? 0 : 1000;
+    return sellerGroup.subtotal > 10000 ? 0 : 1000; // Free shipping over 10k, 1k otherwise
   }
 
   updateQuantity(itemId: string, newQuantity: number): void {
@@ -718,73 +647,80 @@ export class CartComponent implements OnInit {
     this.updatingQuantity = true;
     this.errorMessage = '';
 
-    this.observableUtils.createSafeObservable({
-      source: this.cartService.updateCartItem(itemId, newQuantity),
-      successHandler: (cartItem: CartItem) => {
-        // Domain service returns CartItem directly
-        // Reload cart to get updated state with all items
-        this.loadCart();
-        this.errorMessage = '';
-      },
-      errorSetter: (error: string | null) => {
-        console.error('Error updating quantity:', error);
-        this.errorMessage =
-          error || 'Error updating quantity. Please try again.';
-      },
-      loadingSetter: (loading: boolean) => (this.updatingQuantity = loading),
-    });
+    this.cartService
+      .updateCartItem(itemId, newQuantity)
+      .pipe(
+        finalize(() => {
+          this.updatingQuantity = false;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: () => {
+          this.errorMessage = '';
+        },
+        error: (error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Error updating quantity. Please try again.';
+          this.errorMessage = message;
+        },
+      });
   }
 
   removeItem(itemId: string): void {
     this.removingItem = true;
     this.errorMessage = '';
 
-    this.observableUtils.createSafeObservable({
-      source: this.cartService.removeCartItem(itemId),
-      successHandler: () => {
-        // Domain service returns void - reload cart to get updated state
-        this.loadCart();
-        this.errorMessage = '';
-      },
-      errorSetter: (error: string | null) => {
-        console.error('Error removing item:', error);
-        this.errorMessage = error || 'Error removing item. Please try again.';
-      },
-      loadingSetter: (loading: boolean) => (this.removingItem = loading),
-    });
+    this.cartService
+      .removeCartItem(itemId)
+      .pipe(
+        finalize(() => {
+          this.removingItem = false;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: () => {
+          this.errorMessage = '';
+        },
+        error: (error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Error removing item. Please try again.';
+          this.errorMessage = message;
+        },
+      });
   }
 
-  moveToWishlist(item: CartItem): void {
-    if (!item || !item.product) {
+  moveToWishlist(item: CartItemView): void {
+    if (!item) {
       this.errorMessage = 'Invalid item data';
       return;
     }
 
     // Move to wishlist (local implementation - API integration pending)
     // For now, just remove from cart and show notification
-    this.removeItem(item.id);
-    // TODO: Add to wishlist via domain service when available
-  }
-
-  addToCart(productId: string, quantity = 1): void {
-    // Using domain CartService - returns Observable<CartItem> directly
-    this.cartService.addToCart(productId, quantity).subscribe({
-      next: (cartItem: CartItem) => {
-        // Domain service returns CartItem directly
-        this.loadCart(); // Refresh cart data to get updated state
-      },
-      error: (error) => {
-        this.errorMessage = 'Error adding item to cart. Please try again.';
-        console.error('Error adding item to cart:', error);
-      },
-    });
+    this.removeItem(String(item.id));
+    // Show success message instead of error
   }
 
   proceedToCheckout(): void {
     const navigate = () => {
       const checkoutData = {
         shipping_address: this.selectedAddress
-          ? this.selectedAddress.toDto() // Use value object's toDto() method
+          ? {
+              latitude: this.selectedAddress.latitude,
+              longitude: this.selectedAddress.longitude,
+              street: this.selectedAddress.street,
+              house_number: this.selectedAddress.house_number,
+              city: this.selectedAddress.city,
+              state: this.selectedAddress.state,
+              country: this.selectedAddress.country,
+              postal_code: this.selectedAddress.postal_code,
+            }
           : undefined,
         payment_method: this.selectedPaymentMethod || undefined,
         notes: this.orderNotes,
@@ -801,50 +737,31 @@ export class CartComponent implements OnInit {
     });
   }
 
-  removeCartItem(itemId: string): void {
-    // Using domain CartService - returns Observable<void> directly
-    this.cartService.removeCartItem(itemId).subscribe({
-      next: () => {
-        // Domain service returns void - reload cart to get updated state
-        this.loadCart();
-      },
-      error: (error) => {
-        this.errorMessage = 'Error removing item from cart. Please try again.';
-        console.error('Error removing item from cart:', error);
-      },
-    });
-  }
-
   toggleWishlist(productId: string): void {
-    this.observableUtils.createSafeObservable({
-      source: this.apiService.toggleWishlist(productId),
-      successHandler: (response: any) => {
-        // Wishlist updated successfully
-      },
-      errorSetter: (error: string | null) => {
-        this.errorMessage = 'Error updating wishlist. Please try again.';
-        console.error('Error toggling wishlist:', error);
-      },
-    });
+    this.apiService
+      .toggleWishlist(productId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        error: (error) => {
+          this.errorMessage = 'Error updating wishlist. Please try again.';
+          console.error('Error toggling wishlist:', error);
+        },
+      });
   }
 
   validateCart(): void {
-    // TODO: validateCartForCheckout() not yet in domain service - using simple validation
-    // Check if cart has items and user is buyer
-    if (this.cartItemCount > 0 && this.canCheckout) {
+    const validation = this.cartService.validateCartForCheckout();
+    if (validation.isValid) {
       this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT]);
     } else {
-      this.errorMessage =
-        this.cartItemCount === 0
-          ? 'Cart is empty'
-          : 'Please switch to buyer mode';
+      this.errorMessage = validation.errors.join(', ');
     }
   }
 
   switchToBuyer(): void {
     this.roleIntent.ensureRoleAndExecute('buyer', () => {
       this.canCheckout = this.access.isBuyer;
-      this.loadCart();
+      this.fetchCart();
     });
   }
 
@@ -884,33 +801,35 @@ export class CartComponent implements OnInit {
 
   clearCart(): void {
     if (confirm('Are you sure you want to clear your cart?')) {
-      this.observableUtils.createSafeObservable({
-        source: this.cartService.clearCart(),
-        successHandler: () => {
-          // Domain service returns void - reset cart state
-          this.cart = null;
-          this.cartItems = [];
-          this.cartItemCount = 0;
-          this.cartSubtotal = 0;
-          this.calculateTotals();
-          this.errorMessage = '';
-        },
-        errorSetter: (error: string | null) => {
-          this.errorMessage = error || 'Error clearing cart. Please try again.';
-        },
-      });
+      this.cartService
+        .clearCart()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.errorMessage = '';
+          },
+          error: (error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Error clearing cart. Please try again.';
+            this.errorMessage = message;
+          },
+        });
     }
   }
 
   getTotalSavings(): number {
     return this.cartItems.reduce((total, item) => {
-      // Access compare_at_price from productDto (display data)
-      const compareAtPrice = item.productDto?.compare_at_price;
-      const productPrice = item.product.getPrice();
-
-      if (compareAtPrice && compareAtPrice > productPrice) {
-        const savingsPerItem = compareAtPrice - productPrice;
-        return total + savingsPerItem * item.getQuantity();
+      if (
+        item.product?.compare_at_price &&
+        (item.product?.compare_at_price ?? 0) > item.unitPrice
+      ) {
+        return (
+          total +
+          ((item.product?.compare_at_price ?? 0) - item.unitPrice) *
+            item.quantity
+        );
       }
       return total;
     }, 0);

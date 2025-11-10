@@ -292,52 +292,6 @@ export interface OrderCreate {
   customer_note?: string;
 }
 
-// Cart Models
-export interface CartItem {
-  id: string;
-  cart_id: string;
-  product_id: string;
-  variant_id?: string;
-  quantity: number;
-  product_price: number;
-  product: Product;
-}
-
-export interface Cart {
-  id: string;
-  buyer_id: string;
-  items: CartItem[];
-  total_items: number;
-  subtotal: number;
-  coupon_code?: string;
-  expires_at: string;
-  // Additional properties for compilation
-  item_count?: number;
-}
-
-export interface AddToCart {
-  product_id: string;
-  variant_id?: string;
-  quantity?: number;
-}
-
-export interface UpdateCartItem {
-  quantity: number;
-}
-
-export interface Checkout {
-  shipping_address: Address;
-  billing_address: Address;
-  notes?: string;
-}
-
-export interface CartSummary {
-  item_count: number;
-  subtotal: number;
-  discount: number;
-  total: number;
-}
-
 // Request Models
 export interface BuyerRequest {
   id: string;

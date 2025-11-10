@@ -4,29 +4,26 @@ import { HttpClient, HttpParams, HttpErrorResponse, HttpHeaders } from '@angular
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TypeSafetyService } from './type-safety.service';
-import { 
-  ApiResponse, 
-  PaginatedResponse, 
-  User, 
-  Product, 
-  Order, 
-  OrderItem, 
-  Cart, 
-  CartItem, 
-  CartSummary,
-  BuyerRequest, 
-  SellerOffer, 
-  Media, 
-  Category, 
-  Niche, 
-  Post, 
-  PostComment, 
-  Story, 
-  Collection, 
-  ChatRoom, 
-  ChatMessage, 
-  Payment, 
-  Notification, 
+import {
+  ApiResponse,
+  PaginatedResponse,
+  User,
+  Product,
+  Order,
+  OrderItem,
+  BuyerRequest,
+  SellerOffer,
+  Media,
+  Category,
+  Niche,
+  Post,
+  PostComment,
+  Story,
+  Collection,
+  ChatRoom,
+  ChatMessage,
+  Payment,
+  Notification,
   Review,
   Tracking,
   RegisterResponse,
@@ -177,31 +174,6 @@ export interface PaymentData {
   currency?: string;
   method?: string;
   metadata?: Record<string, unknown>;
-}
-
-export interface CartData {
-  product_id: string;
-  variant_id?: string;
-  quantity?: number;
-}
-
-export interface CartItemUpdateData {
-  quantity: number;
-}
-
-export interface CheckoutData {
-  shipping_address: {
-    latitude: number;
-    longitude: number;
-    street: string;
-    house_number: string;
-    city: string;
-    state: string;
-    country: string;
-    postal_code: string;
-  };
-  payment_method: string;
-  customer_note?: string;
 }
 
 export interface RequestData {
@@ -368,10 +340,6 @@ export interface ReviewData {
   rating: number;
   title?: string;
   content: string;
-}
-
-export interface CouponData {
-  code: string;
 }
 
 @Injectable({
@@ -649,42 +617,6 @@ export class ApiService {
 
   reviewOrder(orderId: string, reviewData: ReviewData): Observable<ApiResponse<Review>> {
     return this.post<Review>(`/orders/${orderId}/review`, reviewData);
-  }
-
-  // ============================================================================
-  // CART ENDPOINTS (8 endpoints)
-  // ============================================================================
-
-  getCart(): Observable<ApiResponse<Cart>> {
-    return this.get<Cart>('/cart/');
-  }
-
-  clearCart(): Observable<ApiResponse<void>> {
-    return this.delete<void>('/cart/');
-  }
-
-  addToCart(cartData: CartData): Observable<ApiResponse<CartItem>> {
-    return this.post<CartItem>('/cart/add', cartData);
-  }
-
-  updateCartItem(itemId: string, quantityData: CartItemUpdateData): Observable<ApiResponse<CartItem>> {
-    return this.put<CartItem>(`/cart/items/${itemId}`, quantityData);
-  }
-
-  removeCartItem(itemId: string): Observable<ApiResponse<void>> {
-    return this.delete<void>(`/cart/items/${itemId}`);
-  }
-
-  checkoutCart(checkoutData: CheckoutData): Observable<ApiResponse<Order>> {
-    return this.post<Order>('/cart/checkout', checkoutData);
-  }
-
-  getCartSummary(): Observable<ApiResponse<CartSummary>> {
-    return this.get<CartSummary>('/cart/summary');
-  }
-
-  applyCoupon(couponData: CouponData): Observable<ApiResponse<{ discount_amount: number; message: string }>> {
-    return this.post<{ discount_amount: number; message: string }>('/cart/coupon', couponData);
   }
 
   // ============================================================================
