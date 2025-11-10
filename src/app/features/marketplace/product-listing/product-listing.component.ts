@@ -18,7 +18,7 @@ import {
   faUserPlus
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../../core/services/api.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 
 interface User {
   id: string;
@@ -119,13 +119,15 @@ export class ProductListingComponent implements OnInit {
 
   private initializeUser(): void {
     // Get current user from auth service
+    // Domain AuthService returns User domain model with camelCase properties
     this.authService.authState$.subscribe(authState => {
       if (authState.user) {
+        // Domain User model uses camelCase: profilePictureUrl, buyerAccount, sellerAccount
         this.currentUser = {
           id: authState.user.id,
-          name: authState.user.buyer_account?.buyername || authState.user.seller_account?.shop_name || 'User',
+          name: authState.user.buyerAccount?.buyername || authState.user.sellerAccount?.shop_name || 'User',
           username: `@${authState.user.username}`,
-          avatar: authState.user.profile_picture_url || '/Logo.png'
+          avatar: authState.user.profilePictureUrl || '/Logo.png'
         };
       }
     });

@@ -1,14 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { AuthService } from './auth.service';
 import { map } from 'rxjs/operators';
-import { UserRole } from '../models/auth.model';
+import { AuthService, UserRole } from '../../domains/authentication';
 
 @Injectable({ providedIn: 'root' })
 export class AccessControlService {
   private auth = inject(AuthService);
 
   get role(): UserRole | null { return this.auth.getCurrentRole(); }
-  role$ = this.auth.authState$.pipe(map(s => (s.user?.current_role ?? null) as UserRole | null));
+  role$ = this.auth.authState$.pipe(map(s => (s.user?.currentRole ?? null) as UserRole | null));
 
   // Core role checking method
   isRole(role: UserRole): boolean { return this.role === role; }

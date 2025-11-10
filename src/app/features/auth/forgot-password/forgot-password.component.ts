@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
@@ -146,10 +146,10 @@ export class ForgotPasswordComponent implements OnInit {
       this.email = this.forgotPasswordForm.value.email;
 
       this.authService.forgotPassword(this.email).subscribe({
-        next: (response: any) => {
+        next: (result) => {
+          // Domain service returns { message: string } directly
           this.loading = false;
           this.emailSent = true;
-          
         },
         error: (error: any) => {
           this.loading = false;
@@ -172,9 +172,9 @@ export class ForgotPasswordComponent implements OnInit {
     this.errorMessage = '';
 
     this.authService.forgotPassword(this.email).subscribe({
-      next: (response: any) => {
+      next: (result) => {
+        // Domain service returns { message: string } directly
         this.resending = false;
-        
       },
       error: (error: any) => {
         this.resending = false;

@@ -73,7 +73,11 @@ describe('CompositeGuard', () => {
     it('should allow access when no auth required', () => {
       mockRoute.data = { auth: false };
       
-      const result = compositeGuard(mockRoute, mockState);
+      // Guard is currently a placeholder that always returns true
+      // This test verifies the basic structure works
+      const result = TestBed.runInInjectionContext(() => 
+        compositeGuard(mockRoute, mockState)
+      );
       
       expect(result).toBe(true);
     });
@@ -81,24 +85,29 @@ describe('CompositeGuard', () => {
     it('should allow access when auth not specified', () => {
       mockRoute.data = {};
       
-      const result = compositeGuard(mockRoute, mockState);
+      // Guard is currently a placeholder that always returns true
+      const result = TestBed.runInInjectionContext(() => 
+        compositeGuard(mockRoute, mockState)
+      );
       
       expect(result).toBe(true);
     });
     
-    it('should allow access when authenticated', (done) => {
+    it('should allow access when authenticated', () => {
       mockRoute.data = { auth: true };
-      mockAuthService.isAuthenticated.and.returnValue(true);
       
-      // We need to mock the service injection
-      // For actual tests, we'd set this up properly with TestBed
-      // This is a simplified version
+      // Guard is currently a placeholder that always returns true
+      // TODO: Update this test when guard is fully implemented
+      const result = TestBed.runInInjectionContext(() => 
+        compositeGuard(mockRoute, mockState)
+      );
       
-      // Since the guard uses dynamic requires, we'll test the guard presets instead
+      expect(result).toBe(true);
+      
+      // Test that presets work correctly
       const meta = GuardPresets.authOnly();
       expect(meta.auth).toBe(true);
       expect(meta.role).toBeUndefined();
-      done();
     });
   });
   

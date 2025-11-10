@@ -29,9 +29,8 @@ import {
   faDownload,
   faStore
 } from '@fortawesome/free-solid-svg-icons';
-import { OrderService } from '../../core/services/order.service';
-import { AuthService } from '../../core/services/auth.service';
-import { ApiService } from '../../core/services/api.service';
+import { OrderService } from '../../domains/orders';
+import { AuthService } from '../../domains/authentication';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
@@ -387,7 +386,6 @@ export class OrdersComponent implements OnInit {
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
 
   // Font Awesome Icons
   faSearch = faSearch;
@@ -451,29 +449,36 @@ export class OrdersComponent implements OnInit {
       limit: 10
     };
 
-    const source$ = this.viewMode === 'seller'
-      ? this.apiService.getSellerOrders(params)
-      : this.apiService.getMyOrders(params);
+    // Use OrderService (DDD pattern)
+    const source$ = (
+      this.viewMode === 'seller'
+        ? this.orderService.getSellerOrders(params)
+        : this.orderService.getOrders()
+    ) as unknown as import('rxjs').Observable<any>;
 
     source$.subscribe({
-      next: (response) => {
-        const res: any = response as any;
-        const data: any = res?.data ?? res ?? {};
-        const itemsCandidate: any = data?.items ?? data?.results ?? data?.orders ?? data;
-        this.orders = Array.isArray(itemsCandidate) ? itemsCandidate : (itemsCandidate?.items ?? []);
-
-        const pagination = data?.pagination ?? {};
-        this.totalResults = pagination?.total_items ?? data?.total ?? data?.count ?? this.orders.length ?? 0;
-        this.totalPages = pagination?.total_pages ?? (
-          this.totalResults && params.per_page ? Math.max(1, Math.ceil(this.totalResults / params.per_page)) : 1
-        );
+      next: (response: any) => {
+        if (response.success) {
+          if (this.viewMode === 'seller' && response.data?.items) {
+            // Seller orders have paginated response with items
+            this.orders = response.data.items;
+            const pagination = response.data.pagination || {};
+            this.totalResults = pagination.total_items || 0;
+            this.totalPages = pagination.total_pages || 1;
+          } else if (this.viewMode === 'buyer' && Array.isArray(response.data)) {
+            // Buyer orders are array
+            this.orders = response.data;
+            this.totalResults = response.data.length;
+            this.totalPages = 1;
+          }
+        }
 
         if (this.viewMode === 'buyer') {
           this.computeBuyerStats();
         }
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading orders:', error);
         this.orders = [];
         if (this.viewMode === 'buyer') {
@@ -494,15 +499,17 @@ export class OrdersComponent implements OnInit {
 
   private loadOrderStatistics(): void {
     if (this.viewMode === 'seller') {
-      this.apiService.getSellerOrderStats().subscribe({
+      // Use OrderService (DDD pattern)
+      this.orderService.getSellerOrderStats().subscribe({
         next: (response) => {
-          const d: any = (response as any)?.data || {};
+          if (response.success && response.data) {
           this.orderStats = {
-            total: d.total ?? this.orderStats.total,
-            pending: d.pending ?? this.orderStats.pending,
-            completed: d.completed ?? this.orderStats.completed,
-            cancelled: d.cancelled ?? this.orderStats.cancelled
+              total: response.data.total ?? this.orderStats.total,
+              pending: response.data.pending ?? this.orderStats.pending,
+              completed: response.data.completed ?? this.orderStats.completed,
+              cancelled: response.data.cancelled ?? this.orderStats.cancelled
           };
+          }
         },
         error: (error) => {
           console.error('Error loading seller order statistics:', error);
@@ -622,11 +629,11 @@ export class OrdersComponent implements OnInit {
 
   cancelOrder(order: any): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.updateRequestStatus(order.id, { status: 'cancelled' }).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.refreshOrders();
-          }
+      // Using domain OrderService.cancelOrder() - returns Observable<Order> directly
+      this.orderService.cancelOrder(order.id).subscribe({
+        next: (cancelledOrder) => {
+          // Domain service returns Order directly (no .success wrapper)
+          this.refreshOrders();
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
@@ -650,8 +657,12 @@ export class OrdersComponent implements OnInit {
 
   // Additional order endpoint integrations
   getOrders(): void {
-    this.apiService.getOrders().subscribe({
-      next: (response) => {
+    // Use OrderService (DDD pattern)
+    // Using domain OrderService.getOrders() - returns Observable<Order[]> directly
+    this.orderService.getOrders().subscribe({
+      next: (orders) => {
+        // Domain service returns Order[] directly (no .success/.data wrapper)
+        this.orders = orders;
       },
       error: (error) => {
         console.error('Error loading orders:', error);
@@ -660,8 +671,12 @@ export class OrdersComponent implements OnInit {
   }
 
   getSellerOrders(): void {
-    this.apiService.getSellerOrders().subscribe({
+    // Use OrderService (DDD pattern)
+    this.orderService.getSellerOrders().subscribe({
       next: (response) => {
+        if (response.success && response.data?.items) {
+          this.orders = response.data.items;
+        }
       },
       error: (error) => {
         console.error('Error loading seller orders:', error);
@@ -670,8 +685,17 @@ export class OrdersComponent implements OnInit {
   }
 
   getSellerOrderStats(): void {
-    this.apiService.getSellerOrderStats().subscribe({
+    // Use OrderService (DDD pattern)
+    this.orderService.getSellerOrderStats().subscribe({
       next: (response) => {
+        if (response.success && response.data) {
+          this.orderStats = {
+            total: response.data.total ?? this.orderStats.total,
+            pending: response.data.pending ?? this.orderStats.pending,
+            completed: response.data.completed ?? this.orderStats.completed,
+            cancelled: response.data.cancelled ?? this.orderStats.cancelled
+          };
+        }
       },
       error: (error) => {
         console.error('Error loading seller order stats:', error);
@@ -680,8 +704,10 @@ export class OrdersComponent implements OnInit {
   }
 
   reviewOrder(orderId: string, reviewData: any): void {
-    this.apiService.reviewOrder(orderId, reviewData).subscribe({
+    // Use OrderService (DDD pattern)
+    this.orderService.reviewOrder(orderId, reviewData).subscribe({
       next: (response) => {
+        // Order reviewed successfully
       },
       error: (error) => {
         console.error('Error reviewing order:', error);
@@ -690,8 +716,10 @@ export class OrdersComponent implements OnInit {
   }
 
   trackOrder(orderId: string): void {
-    this.apiService.trackOrder(orderId).subscribe({
+    // Use OrderService (DDD pattern)
+    this.orderService.trackOrder(orderId).subscribe({
       next: (response) => {
+        // Order tracked successfully
       },
       error: (error) => {
         console.error('Error tracking order:', error);

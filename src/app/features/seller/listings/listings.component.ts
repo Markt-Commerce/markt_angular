@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE, buildPath, RouteParams } from '../../../core/config/routes.config';
-import { ApiService } from '../../../core/services/api.service';
+import { MarketplaceService } from '../../../domains/marketplace/services/marketplace.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for operations not yet migrated
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faStar, 
@@ -24,6 +25,7 @@ import {
   faRefresh
 } from '@fortawesome/free-solid-svg-icons';
 
+// TODO: Migrate to Product domain model from domains/marketplace/models/product.model when domain model includes all properties (images, seller, category, description, etc.)
 import { Product } from '../../../core/models';
 import { RoleIntentService } from '../../../core/services/role-intent.service';
 import { TypeSafetyService } from '../../../core/services/type-safety.service';
@@ -37,7 +39,8 @@ import { TypeSafetyService } from '../../../core/services/type-safety.service';
 })
 export class ListingsComponent implements OnInit {
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private marketplaceService = inject(MarketplaceService);
+  private apiService = inject(ApiService); // Still needed for operations not yet migrated
   private roleIntent = inject(RoleIntentService);
   private typeSafety = inject(TypeSafetyService);
 
@@ -451,7 +454,8 @@ export class ListingsComponent implements OnInit {
   private resumeProduct(productId: string): void {
     const product = this.products().find(p => p.id === productId);
     if (product) {
-      this.apiService.updateProduct(productId, {
+      // Domain service returns Product directly, not wrapped in ApiResponse
+      this.marketplaceService.updateProduct(productId, {
         name: product.name,
         description: product.description,
         price: product.price,
@@ -490,7 +494,8 @@ export class ListingsComponent implements OnInit {
 
   deleteProduct(productId: string): void {
     if (confirm('Are you sure you want to delete this product?')) {
-      this.apiService.deleteProduct(productId).subscribe({
+      // Domain service returns void directly, not wrapped in ApiResponse
+      this.marketplaceService.deleteProduct(productId).subscribe({
         next: () => {
           const updatedProducts = this.products().filter(p => p.id !== productId);
           this.products.set(updatedProducts);
@@ -508,11 +513,11 @@ export class ListingsComponent implements OnInit {
   bulkActivate(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0) {
-      // Use API to bulk update product status
+      // Domain service returns Product directly, not wrapped in ApiResponse
       const updatePromises = selected.map(productId => {
         const product = this.products().find(p => p.id === productId);
         if (product) {
-          return this.apiService.updateProduct(productId, {
+          return this.marketplaceService.updateProduct(productId, {
             name: product.name,
             description: product.description,
             price: product.price,
@@ -536,11 +541,11 @@ export class ListingsComponent implements OnInit {
   bulkPause(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0) {
-      // Use API to bulk update product status
+      // Domain service returns Product directly, not wrapped in ApiResponse
       const updatePromises = selected.map(productId => {
         const product = this.products().find(p => p.id === productId);
         if (product) {
-          return this.apiService.updateProduct(productId, {
+          return this.marketplaceService.updateProduct(productId, {
             name: product.name,
             description: product.description,
             price: product.price,
@@ -572,9 +577,9 @@ export class ListingsComponent implements OnInit {
   bulkDelete(): void {
     const selected = this.selectedProducts();
     if (selected.length > 0 && confirm(`Are you sure you want to delete ${selected.length} products?`)) {
-      // Use API to bulk delete products
+      // Domain service returns void directly, not wrapped in ApiResponse
       const deletePromises = selected.map(productId =>
-        this.apiService.deleteProduct(productId).toPromise()
+        this.marketplaceService.deleteProduct(productId).toPromise()
       );
       
       Promise.all(deletePromises).then(() => {

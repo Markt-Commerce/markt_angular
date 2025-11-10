@@ -2,7 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { OrderService } from '../../../domains/orders';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for updateOrderItemStatus (not yet migrated to domain service)
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
@@ -796,7 +797,8 @@ export class OrderDetailComponent implements OnInit {
   
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private orderService = inject(OrderService);
+  private apiService = inject(ApiService); // Still needed for updateOrderItemStatus
   private titleMeta = inject(TitleMetaService);
 
   loading = true;
@@ -814,50 +816,11 @@ export class OrderDetailComponent implements OnInit {
     const orderId = this.route.snapshot.paramMap.get('id');
     
     if (orderId) {
-      this.apiService.getOrder(orderId).subscribe({
-        next: (response) => {
-          // Transform API response to match local Order interface
-          const apiOrder = response.data;
-          this.order = {
-            id: apiOrder.id,
-            orderNumber: apiOrder.order_number,
-            customerName: apiOrder.buyer?.buyername || 'Unknown',
-            customerEmail: '',
-            customerPhone: '',
-            total: apiOrder.total,
-            subtotal: apiOrder.subtotal,
-            tax: apiOrder.tax || 0,
-            shipping: apiOrder.shipping_fee || 0,
-            discount: apiOrder.discount || 0,
-            status: this.mapOrderStatus(apiOrder.status),
-            paymentStatus: 'paid', // Default assumption
-            paymentMethod: apiOrder.payment_method || 'Unknown',
-            date: apiOrder.created_at,
-            shippingAddress: {
-              street: apiOrder.shipping_address?.street || '',
-              city: apiOrder.shipping_address?.city || '',
-              state: apiOrder.shipping_address?.state || '',
-              postalCode: apiOrder.shipping_address?.postal_code || '',
-              country: apiOrder.shipping_address?.country || ''
-            },
-            billingAddress: {
-              street: apiOrder.shipping_address?.street || '',
-              city: apiOrder.shipping_address?.city || '',
-              state: apiOrder.shipping_address?.state || '',
-              postalCode: apiOrder.shipping_address?.postal_code || '',
-              country: apiOrder.shipping_address?.country || ''
-            },
-            items: apiOrder.items?.map((item: any) => ({
-              id: item.id,
-              productId: item.product_id,
-              productName: item.product?.name || 'Unknown Product',
-              productImage: item.product?.images?.[0]?.media?.url || '',
-              price: item.price,
-              quantity: item.quantity,
-              total: item.price * item.quantity,
-              status: item.status
-            })) || []
-          };
+      // Domain service returns Order directly, not wrapped in ApiResponse
+      this.orderService.getOrder(orderId).subscribe({
+        next: (order) => {
+          // Convert domain Order to component format
+          this.order = this.convertDomainOrderToComponentFormat(order);
           this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
           this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
           this.loading = false;
@@ -872,6 +835,65 @@ export class OrderDetailComponent implements OnInit {
       this.loading = false;
       this.order = null;
     }
+  }
+
+  /**
+   * Convert domain Order model to component format
+   * Domain Order model has different structure than component interface
+   */
+  private convertDomainOrderToComponentFormat(domainOrder: any): Order {
+    // If it's already in component format, return as-is
+    if (domainOrder && domainOrder.customerName && domainOrder.orderNumber) {
+      return domainOrder;
+    }
+
+    // Convert domain Order to component format
+    // Domain Order has: id, orderNumber, buyerId, sellerId, shippingAddress (Address value object),
+    // paymentMethod, subtotal, shippingFee, tax, discount, total, status, createdAt, items (OrderItem[]), customerNote
+    return {
+      id: domainOrder.id,
+      orderNumber: domainOrder.orderNumber || domainOrder.order_number,
+      customerName: domainOrder.buyer?.buyername || domainOrder.buyer?.name || 'Unknown',
+      customerEmail: domainOrder.buyer?.email || '',
+      customerPhone: domainOrder.buyer?.phone_number || '',
+      total: domainOrder.total,
+      subtotal: domainOrder.subtotal,
+      tax: domainOrder.tax || 0,
+      shipping: domainOrder.shippingFee || domainOrder.shipping_fee || 0,
+      discount: domainOrder.discount || 0,
+      status: this.mapOrderStatus(domainOrder.status),
+      paymentStatus: 'paid', // Default assumption - domain model doesn't have payment status
+      paymentMethod: domainOrder.paymentMethod || domainOrder.payment_method || 'Unknown',
+      date: domainOrder.createdAt || domainOrder.created_at,
+      shippingAddress: {
+        street: domainOrder.shippingAddress?.street || '',
+        city: domainOrder.shippingAddress?.city || '',
+        state: domainOrder.shippingAddress?.state || '',
+        postalCode: domainOrder.shippingAddress?.postalCode || domainOrder.shippingAddress?.postal_code || '',
+        country: domainOrder.shippingAddress?.country || ''
+      },
+      billingAddress: {
+        // Use shipping address as billing address if not provided
+        street: domainOrder.billingAddress?.street || domainOrder.shippingAddress?.street || '',
+        city: domainOrder.billingAddress?.city || domainOrder.shippingAddress?.city || '',
+        state: domainOrder.billingAddress?.state || domainOrder.shippingAddress?.state || '',
+        postalCode: domainOrder.billingAddress?.postalCode || domainOrder.billingAddress?.postal_code || domainOrder.shippingAddress?.postalCode || domainOrder.shippingAddress?.postal_code || '',
+        country: domainOrder.billingAddress?.country || domainOrder.shippingAddress?.country || ''
+      },
+      trackingNumber: domainOrder.trackingNumber || domainOrder.tracking_number,
+      estimatedDelivery: domainOrder.estimatedDelivery || domainOrder.estimated_delivery,
+      items: (domainOrder.items || []).map((item: any) => ({
+        id: item.id,
+        productId: item.product?.id || item.product_id,
+        productName: item.product?.name || 'Unknown Product',
+        productImage: item.product?.images?.[0]?.media?.url || item.product?.images?.[0]?.media?.thumbnail_url || '',
+        price: item.price,
+        quantity: item.quantity,
+        total: item.calculateTotal ? item.calculateTotal() : (item.price * item.quantity),
+        status: item.status
+      })),
+      notes: domainOrder.customerNote || domainOrder.customer_note || domainOrder.notes
+    };
   }
 
   getStatusLabel(status: string): string {
@@ -933,9 +955,10 @@ export class OrderDetailComponent implements OnInit {
 
   processOrder(): void {
     if (this.order) {
-      // Use updateOrderItemStatus for each item in the order
+      // Order item status updates - using OrderService (temporarily delegates to ApiService)
+      // TODO: Migrate to OrderItemRepository when created
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'processing' }).toPromise()
+        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'processing' }).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -950,9 +973,10 @@ export class OrderDetailComponent implements OnInit {
 
   shipOrder(): void {
     if (this.order) {
-      // Use updateOrderItemStatus for each item in the order
+      // Order item status updates - using OrderService (temporarily delegates to ApiService)
+      // TODO: Migrate to OrderItemRepository when created
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'shipped' }).toPromise()
+        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'shipped' }).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -972,9 +996,10 @@ export class OrderDetailComponent implements OnInit {
 
   markDelivered(): void {
     if (this.order) {
-      // Use updateOrderItemStatus for each item in the order
+      // Order item status updates - using OrderService (temporarily delegates to ApiService)
+      // TODO: Migrate to OrderItemRepository when created
       const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'delivered' }).toPromise()
+        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'delivered' }).toPromise()
       );
       
       Promise.all(updatePromises).then(() => {
@@ -989,17 +1014,16 @@ export class OrderDetailComponent implements OnInit {
 
   cancelOrder(): void {
     if (this.order && confirm('Are you sure you want to cancel this order?')) {
-      // Use updateOrderItemStatus for each item in the order
-      const updatePromises = this.order.items.map(item => 
-        this.apiService.updateOrderItemStatus(parseInt(item.id), { status: 'cancelled' }).toPromise()
-      );
-      
-      Promise.all(updatePromises).then(() => {
-        alert('Order cancelled successfully!');
-        this.loadOrder(); // Reload the order to get updated status
-      }).catch(error => {
-        console.error('Error cancelling order:', error);
-        alert('Failed to cancel order.');
+      // Domain service has cancelOrder() method - use it instead of updating item statuses
+      this.orderService.cancelOrder(this.order.id).subscribe({
+        next: () => {
+          alert('Order cancelled successfully!');
+          this.loadOrder(); // Reload the order to get updated status
+        },
+        error: (error) => {
+          console.error('Error cancelling order:', error);
+          alert('Failed to cancel order.');
+        }
       });
     }
   }

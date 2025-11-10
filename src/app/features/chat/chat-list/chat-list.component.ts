@@ -1,7 +1,9 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs/operators';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -9,22 +11,17 @@ import {
   faSearch,
   faEllipsisH,
   faTimes,
-  faCheck,
-  faClock,
   faUser,
   faStore,
   faPrint,
   faRulerVertical,
   faVolumeMute,
-  faThumbtack,
   faTrash,
-  faArchive,
-  faEllipsisV,
-  faCircle
+  faArchive
 } from '@fortawesome/free-solid-svg-icons';
-import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { ChatRoom, ChatMessage } from '../../../core/models';
+import { ChatService } from '../../../domains/chat/services/chat.service';
+import { AuthService, User, UserRole } from '../../../domains/authentication';
+import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
 
 @Component({
   selector: 'app-chat-list',
@@ -132,14 +129,14 @@ import { ChatRoom, ChatMessage } from '../../../core/models';
                     <fa-icon [icon]="faPrint" class="w-3 h-3"></fa-icon>
                   </span>
                   <span class="text-xs text-gray-500">
-                    {{ formatTimestamp(chat.last_message?.created_at) }}
+                    {{ formatTimestamp(getLastMessageTimestamp(chat)) }}
                   </span>
                 </div>
               </div>
               
               <div class="flex items-center justify-between mt-1">
                 <p class="text-sm text-gray-500 truncate">
-                  <span *ngIf="chat.last_message?.sender_id === user?.id" class="text-gray-400">You: </span>
+                  <span *ngIf="isLastMessageFromCurrentUser(chat)" class="text-gray-400">You: </span>
                   {{ getLastMessagePreview(chat) }}
                 </p>
                 <div class="flex items-center space-x-2">
@@ -161,14 +158,14 @@ import { ChatRoom, ChatMessage } from '../../../core/models';
               <!-- Chat Type Indicator -->
               <div class="flex items-center space-x-2 mt-1">
                 <span 
-                  *ngIf="chat.type === 'product'"
+                  *ngIf="chat.productId"
                   class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                 >
                   <fa-icon [icon]="faStore" class="w-3 h-3 mr-1"></fa-icon>
                   Product Chat
                 </span>
                 <span 
-                  *ngIf="chat.type === 'order'"
+                  *ngIf="chat.requestId"
                   class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
                 >
                   <fa-icon [icon]="faRulerVertical" class="w-3 h-3 mr-1"></fa-icon>
@@ -236,29 +233,26 @@ export class ChatListComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   // Icons
   faComments = faComments;
   faSearch = faSearch;
   faEllipsisH = faEllipsisH;
   faTimes = faTimes;
-  faCheck = faCheck;
-  faClock = faClock;
   faUser = faUser;
   faStore = faStore;
   faPrint = faPrint;
   faRulerVertical = faRulerVertical;
   faVolumeMute = faVolumeMute;
-  faThumbtack = faThumbtack;
   faTrash = faTrash;
   faArchive = faArchive;
-  faEllipsisV = faEllipsisV;
-  faCircle = faCircle;
 
   // Data
-  chatRooms: any[] = [];
-  user: any = null;
-  currentRole: 'buyer' | 'seller' | null = null;
+  chatRooms: ChatRoom[] = [];
+  private lastMessages = new Map<string, ChatMessage>();
+  user: User | null = null;
+  currentRole: UserRole | null = null;
   isLoading = false;
   private deeplinkHandled = false;
   
@@ -267,10 +261,10 @@ export class ChatListComponent implements OnInit {
   searchQuery = '';
   selectedChatId: string | null = null;
   showMenu = false;
-  selectedChat: any = null;
+  selectedChat: ChatRoom | null = null;
   menuPosition = { x: 0, y: 0 };
 
-  get filteredChatRooms(): any[] {
+  get filteredChatRooms(): ChatRoom[] {
     if (!this.searchQuery) {
       return this.chatRooms;
     }
@@ -282,81 +276,120 @@ export class ChatListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadUserData();
+    this.observeAuthState();
+    this.observeNewMessages();
+    this.observeRouteParams();
     this.loadChatList();
+  }
 
-    // Live update chat list on new messages
-    this.chatService.newMessage$.subscribe(message => {
-      const room = this.chatRooms.find(r => r.id === message.room_id);
-      if (room) {
-        room.last_message = {
-          id: message.id,
-          content: message.content,
-          message_type: message.message_type,
-          sender_id: message.sender_id,
-          created_at: message.created_at
-        };
-        // Increment unread count for current user
-        if (this.user) {
-          if (this.user.id === room.buyer_id) {
-            room.unread_count_buyer = (room.unread_count_buyer || 0) + 1;
-          } else if (this.user.id === room.seller_id) {
-            room.unread_count_seller = (room.unread_count_seller || 0) + 1;
-          }
+  private observeAuthState(): void {
+    this.authService.authState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(authState => {
+        this.user = authState.user;
+        this.currentRole = authState.user?.currentRole ?? null;
+      });
+  }
+
+  private observeNewMessages(): void {
+    this.chatService.newMessage$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(message => {
+        this.lastMessages.set(message.roomId, message);
+        this.loadChatList(false);
+      });
+  }
+
+  private observeRouteParams(): void {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        if (this.deeplinkHandled || !this.user) {
+          return;
         }
-        // Move room to top
-        this.chatRooms = [room, ...this.chatRooms.filter(r => r.id !== room.id)];
-      }
-    });
 
-    // Handle deep-links like /app/chat?user=<sellerId>&product=<productId>
-    this.route.queryParamMap.subscribe(params => {
-      if (this.deeplinkHandled) return;
-      const otherUserId = params.get('user');
-      const productId = params.get('product') || undefined;
-      if (!otherUserId || !this.user) return;
-      // Determine buyer/seller roles for room creation
-      const buyerId = this.currentRole === 'buyer' ? this.user.id : this.user?.buyer_account?.id || this.user?.id;
-      const sellerId = otherUserId;
-      if (!buyerId || !sellerId) return;
-      this.deeplinkHandled = true;
-      this.chatService.getOrCreateRoom(String(buyerId), String(sellerId), productId).subscribe({
-        next: (response) => {
-          const roomId = response?.data?.id || response?.id;
-          if (roomId) {
-            this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
+        const otherUserId = params.get('user');
+        const productId = params.get('product') || undefined;
+
+        if (!otherUserId) {
+          return;
+        }
+
+        const buyerId = this.currentRole === 'buyer'
+          ? this.user.id
+          : this.user.buyerAccount?.id ?? this.user.id;
+        const sellerId = otherUserId;
+
+        this.deeplinkHandled = true;
+
+        this.chatService.getOrCreateRoom(String(buyerId), String(sellerId), productId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (room) => {
+              this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, room.id]);
+            },
+            error: () => {
+              this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
+            }
+          });
+      });
+  }
+
+  private loadChatList(showSpinner = true): void {
+    if (showSpinner) {
+      this.isLoading = true;
+    }
+
+    this.chatService.getChatRooms()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          if (showSpinner) {
+            this.isLoading = false;
           }
+        })
+      )
+      .subscribe({
+        next: (rooms) => {
+          this.chatRooms = rooms;
+
+          const validRoomIds = new Set(rooms.map(room => room.id));
+          Array.from(this.lastMessages.keys()).forEach(id => {
+            if (!validRoomIds.has(id)) {
+              this.lastMessages.delete(id);
+            }
+          });
+
+          if (rooms.length === 0) {
+            this.lastMessages.clear();
+            return;
+          }
+
+          this.fetchLastMessages(rooms);
         },
-        error: () => {
-          // Fallback to chat list
-          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
+        error: (error) => {
+          console.error('Error loading chat list:', error);
+          this.chatRooms = [];
         }
       });
-    });
   }
 
-  private loadUserData(): void {
-    this.authService.authState$.subscribe(authState => {
-      this.user = authState.user;
-      this.currentRole = (authState as any)?.current_role || (authState.user?.current_role as any) || null;
-    });
-  }
-
-  private loadChatList(): void {
-    this.isLoading = true;
-    
-    this.chatService.getChatRooms().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.chatRooms = (response.data?.rooms) || [];
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading chat list:', error);
-        this.chatRooms = [];
-        this.isLoading = false;
+  private fetchLastMessages(rooms: ChatRoom[]): void {
+    rooms.forEach(room => {
+      const knownLastMessage = this.lastMessages.get(room.id);
+      if (knownLastMessage && knownLastMessage.createdAt === room.lastMessageAt) {
+        return;
       }
+
+      this.chatService.getMessages(room.id, { limit: 1 })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (messages) => {
+            if (messages.length > 0) {
+              this.lastMessages.set(room.id, messages[messages.length - 1]);
+            }
+          }
+        });
     });
   }
 
@@ -371,8 +404,9 @@ export class ChatListComponent implements OnInit {
     // Search is handled by the filteredChatRooms getter
   }
 
-  selectChat(chat: any): void {
+  selectChat(chat: ChatRoom): void {
     this.selectedChatId = chat.id;
+    this.chatService.selectRoom(chat.id);
     this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, chat.id]);
   }
 
@@ -380,51 +414,69 @@ export class ChatListComponent implements OnInit {
     this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHAT, 'start')]);
   }
 
-  // Helpers adapted to Ife's response shape
-  getChatAvatar(chat: any): string {
-    const other = chat.other_user;
-    if (other) {
-      return other.profile_picture || other.profile_picture_url || '""';
+  getChatAvatar(_chat: ChatRoom): string {
+    return 'assets/images/default-avatar.png';
+  }
+
+  getChatName(chat: ChatRoom): string {
+    if (!this.user) {
+      return `Conversation ${chat.id}`;
     }
-    return '""';
-  }
 
-  getChatName(chat: any): string {
-    const other = chat.other_user;
-    if (other) {
-      return other.username || 'Unknown User';
+    const isBuyer = this.user.id === chat.buyerId;
+    const counterpartId = isBuyer ? chat.sellerId : chat.buyerId;
+
+    if (chat.productId) {
+      return `Product chat with ${counterpartId}`;
     }
-    return 'Unknown User';
+
+    if (chat.requestId) {
+      return `Order chat with ${counterpartId}`;
+    }
+
+    return `Conversation with ${counterpartId}`;
   }
 
-  getOtherUser(chat: any): any {
-    if (!this.user) return null;
-    
-    return chat.participants.find((participant: any) => participant.id !== this.user.id);
-  }
-
-  getChatOnlineStatus(_chat: any): boolean {
+  getChatOnlineStatus(_chat: ChatRoom): boolean {
     return false; // backend may provide presence later
   }
 
-  getLastMessagePreview(chat: any): string {
-    const lm = chat.last_message;
-    if (!lm) return 'No messages yet';
-    switch (lm.message_type) {
+  getLastMessagePreview(chat: ChatRoom): string {
+    const lastMessage = this.lastMessages.get(chat.id);
+
+    if (!lastMessage) {
+      return 'No messages yet';
+    }
+
+    switch (lastMessage.messageType) {
       case 'text':
-        return lm.content;
+        return lastMessage.content;
       case 'image':
-        return '📷 Image';
-      case 'video':
-        return '🎥 Video';
+        return 'Image shared';
       case 'file':
-        return '📎 File';
+        return 'File shared';
+      case 'system':
+        return 'System update';
       default:
-        return 'Message';
+        return 'New message';
     }
   }
 
-  formatTimestamp(timestamp: string): string {
+  getLastMessageTimestamp(chat: ChatRoom): string | undefined {
+    const lastMessage = this.lastMessages.get(chat.id);
+    return lastMessage?.createdAt ?? chat.lastMessageAt;
+  }
+
+  isLastMessageFromCurrentUser(chat: ChatRoom): boolean {
+    if (!this.user) {
+      return false;
+    }
+
+    const lastMessage = this.lastMessages.get(chat.id);
+    return lastMessage?.senderId === this.user.id;
+  }
+
+  formatTimestamp(timestamp?: string): string {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
@@ -436,14 +488,16 @@ export class ChatListComponent implements OnInit {
     return date.toLocaleDateString();
   }
 
-  // Unread badge helper for either role
-  get unreadCountGetter() { return (chat: any) => {
-    if (this.user?.id === chat?.buyer_id) return chat.unread_count_buyer || 0;
-    if (this.user?.id === chat?.seller_id) return chat.unread_count_seller || 0;
-    return 0;
-  }}
+  get unreadCountGetter() {
+    return (chat: ChatRoom) => {
+      if (!this.user) {
+        return 0;
+      }
+      return chat.getUnreadCount(this.user.id);
+    };
+  }
 
-  showChatMenu(chat: any, event: MouseEvent): void {
+  showChatMenu(chat: ChatRoom, event: MouseEvent): void {
     event.stopPropagation();
     
     this.selectedChat = chat;
@@ -459,59 +513,73 @@ export class ChatListComponent implements OnInit {
     this.selectedChat = null;
   }
 
-  pinChat(chat: any): void {
-    if (!chat) return;
-    
-    this.chatService.pinChat(chat.id).subscribe({
-      next: (response) => {
-        if (response.success) {
-          chat.pinned = !chat.pinned;
+  pinChat(chat: ChatRoom | null): void {
+    if (!chat) {
+      return;
+    }
+
+    this.chatService.pinChat(chat.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadChatList(false);
           this.hideChatMenu();
+        },
+        error: (error) => {
+          console.error('Error pinning chat:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error pinning chat:', error);
-      }
-    });
+      });
   }
 
-  muteChat(chat: any): void {
-    if (!chat) return;
-    
-    this.chatService.muteChat(chat.id).subscribe({
-      next: (response) => {
-        if (response.success) {
-          chat.muted = !chat.muted;
+  muteChat(chat: ChatRoom | null): void {
+    if (!chat) {
+      return;
+    }
+
+    this.chatService.muteChat(chat.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadChatList(false);
           this.hideChatMenu();
+        },
+        error: (error) => {
+          console.error('Error muting chat:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error muting chat:', error);
-      }
-    });
+      });
   }
 
-  archiveChat(chat: any): void {
-    if (!chat) return;
-    
-    this.chatService.archiveChat(chat.id).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.chatRooms = this.chatRooms.filter(c => c.id !== chat.id);
+  archiveChat(chat: ChatRoom | null): void {
+    if (!chat) {
+      return;
+    }
+
+    this.chatService.archiveChat(chat.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadChatList(false);
           this.hideChatMenu();
+        },
+        error: (error) => {
+          console.error('Error archiving chat:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error archiving chat:', error);
-      }
-    });
+      });
   }
 
-  deleteChat(chat: any): void {
-    if (!chat) return;
-    
-    if (confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-      this.chatService.deleteChat(chat.id).subscribe({
+  deleteChat(chat: ChatRoom | null): void {
+    if (!chat) {
+      return;
+    }
+
+    const confirmed = window.confirm('Delete this conversation? This action cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    this.chatService.deleteChat(chat.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           this.chatRooms = this.chatRooms.filter(c => c.id !== chat.id);
           this.hideChatMenu();
@@ -520,6 +588,5 @@ export class ChatListComponent implements OnInit {
           console.error('Error deleting chat:', error);
         }
       });
-    }
   }
-} 
+}

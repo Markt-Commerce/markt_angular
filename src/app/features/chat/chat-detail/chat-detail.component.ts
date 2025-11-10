@@ -26,8 +26,8 @@ import {
   faStar,
   faCheckDouble
 } from '@fortawesome/free-solid-svg-icons';
-import { ChatService } from '../../../core/services/chat.service';
-import { CartService } from '../../../core/services/cart.service';
+import { ChatService } from '../../../domains/chat/services/chat.service';
+import { CartService } from '../../../domains/orders/services/cart.service';
 
 interface ChatMessage {
   id: string;

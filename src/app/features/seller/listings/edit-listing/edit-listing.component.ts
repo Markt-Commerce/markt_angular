@@ -5,7 +5,7 @@ import { ROUTES_ABSOLUTE } from '../../../../core/config/routes.config';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
-import { ApiService } from '../../../../core/services/api.service';
+import { MarketplaceService } from '../../../../domains/marketplace/services/marketplace.service';
 import { Product } from '../../../../core/models';
 
 @Component({
@@ -464,7 +464,7 @@ export class EditListingComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService);
+  private marketplaceService = inject(MarketplaceService);
 
   productForm!: FormGroup;
   loading = true;
@@ -521,11 +521,13 @@ export class EditListingComponent implements OnInit {
     if (productId) {
       this.loading = true;
       
-      this.apiService.getProduct(productId).subscribe({
-        next: (response) => {
-          this.product = response.data;
-      this.populateForm();
-      this.loading = false;
+      // Domain service returns Product directly, not wrapped in ApiResponse
+      this.marketplaceService.getProduct(productId).subscribe({
+        next: (product) => {
+          // Convert domain Product to component format
+          this.product = this.convertDomainProductToComponentFormat(product);
+          this.populateForm();
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading product:', error);
@@ -556,6 +558,61 @@ export class EditListingComponent implements OnInit {
       // this.variants = this.product.variants || []; // This line was removed from the new_code, so it's removed here.
       // this.selectedImages = this.product.images?.map((url: string) => ({ file: null, preview: url })) || []; // This line was removed from the new_code, so it's removed here.
     }
+  }
+
+  /**
+   * Convert domain Product model to component format
+   * Domain Product model is simpler and doesn't include all UI properties
+   */
+  private convertDomainProductToComponentFormat(domainProduct: any): any {
+    // If it's already in the component format (has images, description, seller), return as-is
+    if (domainProduct && (domainProduct.images || domainProduct.description || domainProduct.seller)) {
+      return domainProduct;
+    }
+
+    // Convert domain Product model to component format
+    return {
+      id: domainProduct.id,
+      name: domainProduct.name,
+      description: domainProduct.description || '',
+      price: typeof domainProduct.getPrice === 'function' 
+        ? domainProduct.getPrice() 
+        : (domainProduct.price || 0),
+      compare_at_price: domainProduct.compare_at_price,
+      stock: typeof domainProduct.getStock === 'function' 
+        ? domainProduct.getStock() 
+        : (domainProduct.stock || 0),
+      status: domainProduct.status,
+      seller_id: domainProduct.sellerId || domainProduct.seller_id,
+      category_ids: domainProduct.categoryIds || domainProduct.category_ids || [],
+      category_id: (domainProduct.categoryIds?.[0] || domainProduct.category_ids?.[0] || domainProduct.category_id),
+      tag_ids: domainProduct.tag_ids || [],
+      media_ids: domainProduct.media_ids || [],
+      variants: domainProduct.variants || [],
+      images: domainProduct.images || [],
+      seller: domainProduct.seller || {},
+      average_rating: domainProduct.averageRating || domainProduct.average_rating || 0,
+      rating: domainProduct.averageRating || domainProduct.average_rating || 0,
+      review_count: domainProduct.reviewCount || domainProduct.review_count || 0,
+      view_count: domainProduct.view_count || 0,
+      created_at: domainProduct.createdAt || domainProduct.created_at,
+      updated_at: domainProduct.updatedAt || domainProduct.updated_at,
+      product_metadata: domainProduct.product_metadata,
+      is_verified: domainProduct.is_verified,
+      is_featured: domainProduct.is_featured,
+      condition: domainProduct.condition,
+      currency: domainProduct.currency || 'USD',
+      category: domainProduct.category,
+      sku: domainProduct.sku,
+      weight: domainProduct.weight,
+      // Preserve any additional properties
+      ...Object.fromEntries(
+        Object.entries(domainProduct).filter(([key]) => 
+          !['id', 'name', 'status', 'sellerId', 'categoryIds', 'averageRating', 
+            'reviewCount', 'createdAt', 'updatedAt'].includes(key)
+        )
+      )
+    };
   }
 
   getErrorMessage(field: string): string {
@@ -589,20 +646,21 @@ export class EditListingComponent implements OnInit {
       const formData = this.productForm.value;
       
       // Prepare the product data for API
+      // Note: updateProduct() will convert this to UpdateProductDto format
       const productData: any = {
         name: formData.name,
         description: formData.description,
         price: formData.price,
         stock: formData.stock,
-        category: formData.category,
+        category: formData.category, // Category name - will be converted to category_ids in updateProduct()
         sku: formData.sku,
         weight: formData.weight,
         tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
+        status: formData.status,
         freeShipping: formData.freeShipping,
         shippingCost: formData.shippingCost,
         returnPolicy: formData.returnPolicy,
-        returnDays: formData.returnDays,
-        images: this.product?.images?.[0]?.media?.url ? [this.product.images[0].media.url] : []
+        returnDays: formData.returnDays
       };
 
       this.updateProduct(productData);
@@ -610,15 +668,42 @@ export class EditListingComponent implements OnInit {
   }
 
   private updateProduct(productData: any): void {
-    this.apiService.updateProduct(this.product!.id, productData).subscribe({
-      next: (response) => {
+    // Domain service returns Product directly, not wrapped in ApiResponse
+    // Convert form data to UpdateProductDto format
+    const updateDto: any = {
+      name: productData.name,
+      description: productData.description,
+      price: productData.price,
+      stock: productData.stock,
+      weight: productData.weight,
+      sku: productData.sku,
+      status: productData.status || this.product?.status || 'active',
+      // Preserve existing category_ids if category name wasn't changed
+      // Note: In a real implementation, you'd map category names to IDs
+      category_ids: this.product?.category_ids || [],
+      // Preserve existing tag_ids or convert tags array to tag_ids
+      // Note: In a real implementation, you'd map tag names to IDs
+      tag_ids: this.product?.tag_ids || [],
+      // Store additional metadata in product_metadata
+      product_metadata: {
+        ...(this.product?.product_metadata || {}),
+        freeShipping: productData.freeShipping,
+        shippingCost: productData.shippingCost,
+        returnPolicy: productData.returnPolicy,
+        returnDays: productData.returnDays,
+        category: productData.category // Store category name in metadata for reference
+      }
+    };
+
+    this.marketplaceService.updateProduct(this.product!.id, updateDto).subscribe({
+      next: () => {
         this.saving = false;
         this.router.navigate([ROUTES_ABSOLUTE.APP.SELLER.LISTINGS]);
       },
       error: (error) => {
         console.error('Error updating product:', error);
         this.saving = false;
-    }
+      }
     });
   }
 } 

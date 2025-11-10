@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { AuthService } from '../services/auth.service';
+import { AuthService, UserRole } from '../../domains/authentication';
 import { AccessControlService } from '../services/access-control.service';
 import { AppStateService } from '../services/app-state.service';
 import { ErrorHandlerService } from '../services/error-handler.service';
@@ -39,7 +39,7 @@ export const RoleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const appState = inject(AppStateService);
   const errorHandler = inject(ErrorHandlerService);
-  const required = (route.data?.['requiredRole'] as 'buyer' | 'seller' | 'either') || 'either';
+  const required = (route.data?.['requiredRole'] as UserRole | 'either') || 'either';
 
   try {
     // First check if user is authenticated
@@ -54,9 +54,9 @@ export const RoleGuard: CanActivateFn = (route, state) => {
     if (required === 'either') return true;
     if (access.role === required) return true;
 
-    const user = auth.getCurrentUser?.();
-    const hasBuyer = !!user?.is_buyer;
-    const hasSeller = !!user?.is_seller;
+    const user = auth.getCurrentUser();
+    const hasBuyer = user?.isBuyer() ?? false;
+    const hasSeller = user?.isSeller() ?? false;
     const canSwitch = (required === 'buyer' && hasBuyer) || (required === 'seller' && hasSeller);
 
     if (!canSwitch) {
@@ -74,7 +74,9 @@ export const RoleGuard: CanActivateFn = (route, state) => {
       message: `Switching to ${required} mode to continue...` 
     });
     
-    return auth.switchRole(required).pipe(
+    const targetRole = required as UserRole;
+
+    return auth.switchRole(targetRole).pipe(
       map(() => true as boolean | UrlTree),
       catchError((error) => {
         errorHandler.logError(error, 'RoleGuard switch error');

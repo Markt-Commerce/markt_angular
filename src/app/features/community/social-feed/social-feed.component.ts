@@ -19,7 +19,7 @@ import {
   faHandshake
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../../core/services/api.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
 
 interface User {
   id: string;
@@ -233,9 +233,9 @@ export class SocialFeedComponent implements OnInit {
       if (authState.user) {
         this.currentUser = {
           id: authState.user.id,
-          name: authState.user.buyer_account?.buyername || authState.user.seller_account?.shop_name || 'User',
+          name: authState.user.buyerAccount?.buyername || authState.user.sellerAccount?.shop_name || 'User',
           username: `@${authState.user.username}`,
-          avatar: authState.user.profile_picture_url || '/Logo.png',
+          avatar: authState.user.profilePictureUrl || '/Logo.png',
           following: 127,
           followers: 89
         };

@@ -15,8 +15,7 @@ import {
   faHeadset,
   faCreditCard
 } from '@fortawesome/free-solid-svg-icons';
-import { OrderService } from '../../core/services/order.service';
-import { ApiService } from '../../core/services/api.service';
+import { OrderService } from '../../domains/orders/services/order.service';
 
 interface OrderItem {
   id: string;
@@ -292,7 +291,6 @@ export class OrderConfirmationComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService);
 
   // Icons
   faCheck = faCheck;
@@ -359,9 +357,11 @@ export class OrderConfirmationComponent implements OnInit {
     
     if (orderId) {
       this.loading = true;
-      this.apiService.getOrder(orderId).subscribe({
-        next: (response) => {
-          this.orderData = this.transformOrderData(response.data);
+      // Domain service returns Order directly, not wrapped in ApiResponse
+      this.orderService.getOrder(orderId).subscribe({
+        next: (order) => {
+          // Convert domain Order to component format
+          this.orderData = this.transformOrderData(order);
           this.loading = false;
         },
         error: (error) => {
@@ -377,41 +377,60 @@ export class OrderConfirmationComponent implements OnInit {
     }
   }
 
-  private transformOrderData(apiData: any): OrderData {
+  /**
+   * Transform domain Order model to component format
+   * Domain Order model has different structure (Address value object, OrderItem domain models, etc.)
+   */
+  private transformOrderData(domainOrder: any): OrderData {
+    // If it's already in component format, return as-is
+    if (domainOrder && domainOrder.orderNumber && domainOrder.items && !domainOrder.shippingAddress?.street) {
+      return domainOrder;
+    }
+
+    // Convert domain Order to component format
+    // Domain Order has: id, orderNumber, buyerId, sellerId, shippingAddress (Address value object),
+    // paymentMethod, subtotal, shippingFee, tax, discount, total, status, createdAt, items (OrderItem[]), customerNote
     return {
-      id: apiData.id,
-      orderNumber: apiData.order_number || `MKT-${apiData.id}`,
-      items: apiData.items?.map((item: any) => ({
+      id: domainOrder.id,
+      orderNumber: domainOrder.orderNumber || domainOrder.order_number || `MKT-${domainOrder.id}`,
+      items: (domainOrder.items || []).map((item: any) => ({
         id: item.id,
         product: {
-          id: item.product?.id,
-          name: item.product?.name,
-          images: item.product?.images || []
+          id: item.product?.id || item.product_id,
+          name: item.product?.name || 'Unknown Product',
+          images: item.product?.images || item.product?.productDto?.images || []
         },
         quantity: item.quantity,
-        price: item.price / 100, // Convert from cents
-        seller: { name: item.seller?.name || 'Unknown Seller' }
-      })) || [],
-      subtotal: (apiData.subtotal || 0) / 100,
-      shipping: (apiData.shipping_cost || 0) / 100,
-      tax: (apiData.tax_amount || 0) / 100,
-      discount: (apiData.discount_amount || 0) / 100,
-      total: (apiData.total_amount || 0) / 100,
+        price: item.price, // Domain model already has price as number, not cents
+        seller: { 
+          name: item.product?.seller?.shop_name || item.product?.seller?.name || item.seller?.name || 'Unknown Seller' 
+        }
+      })),
+      subtotal: domainOrder.subtotal || 0,
+      shipping: domainOrder.shippingFee || domainOrder.shipping_fee || 0,
+      tax: domainOrder.tax || 0,
+      discount: domainOrder.discount || 0,
+      total: domainOrder.total || 0,
       shippingAddress: {
-        firstName: apiData.shipping_address?.first_name || '',
-        lastName: apiData.shipping_address?.last_name || '',
-        address: apiData.shipping_address?.address || '',
-        city: apiData.shipping_address?.city || '',
-        state: apiData.shipping_address?.state || '',
-        postalCode: apiData.shipping_address?.postal_code || ''
+        // Domain Order uses Address value object with camelCase properties
+        firstName: domainOrder.shippingAddress?.firstName || domainOrder.shippingAddress?.first_name || 
+                   domainOrder.shipping_address?.first_name || '',
+        lastName: domainOrder.shippingAddress?.lastName || domainOrder.shippingAddress?.last_name || 
+                 domainOrder.shipping_address?.last_name || '',
+        address: domainOrder.shippingAddress?.street || domainOrder.shippingAddress?.address || 
+                 domainOrder.shipping_address?.address || '',
+        city: domainOrder.shippingAddress?.city || domainOrder.shipping_address?.city || '',
+        state: domainOrder.shippingAddress?.state || domainOrder.shipping_address?.state || '',
+        postalCode: domainOrder.shippingAddress?.postalCode || domainOrder.shippingAddress?.postal_code || 
+                    domainOrder.shipping_address?.postal_code || ''
       },
       paymentMethod: {
-        type: apiData.payment_method?.type || 'Visa',
-        lastFour: apiData.payment_method?.last_four || '4242'
+        type: domainOrder.paymentMethod || domainOrder.payment_method || 'Visa',
+        lastFour: domainOrder.paymentMethod?.lastFour || domainOrder.payment_method?.last_four || '4242'
       },
-      status: apiData.status || 'Processing',
-      estimatedDelivery: apiData.estimated_delivery || 'March 28-30, 2024',
-      carrier: apiData.carrier || 'Campus Express Delivery'
+      status: domainOrder.status || 'Processing',
+      estimatedDelivery: domainOrder.estimatedDelivery || domainOrder.estimated_delivery || 'March 28-30, 2024',
+      carrier: domainOrder.carrier || 'Campus Express Delivery'
     };
   }
 

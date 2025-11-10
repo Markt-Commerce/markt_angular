@@ -2,8 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
-import { AuthService } from '../../../core/services/auth.service';
-import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for operations not yet migrated to ProfileService
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faGear, 
@@ -440,7 +441,8 @@ interface UserProfile {
 export class AccountComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
+  private apiService = inject(ApiService); // Still needed for operations not yet migrated to ProfileService
 
   // FontAwesome icons
   faGear = faGear;
@@ -561,7 +563,8 @@ export class AccountComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.apiService.getProfile().subscribe({
+    // Migrated to ProfileService.getProfile() - uses DDD pattern with UserRepository
+    this.profileService.getProfile().subscribe({
       next: (response) => {
         // Transform API response to match our UserProfile interface
         // This ensures type safety and consistent data structure

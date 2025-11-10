@@ -14,9 +14,12 @@ import {
   faHeart
 } from '@fortawesome/free-solid-svg-icons';
 import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { map } from 'rxjs/operators';
+import { MarketplaceService } from '../../domains/marketplace';
+import { RequestService } from '../../domains/requests';
+import { SocialService } from '../../domains/social';
 
 @Component({
   selector: 'app-landing',
@@ -460,6 +463,9 @@ export class LandingComponent implements OnInit {
   readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
   
   private apiService = inject(ApiService);
+  private marketplaceService = inject(MarketplaceService);
+  private requestService = inject(RequestService);
+  private socialService = inject(SocialService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -509,10 +515,11 @@ export class LandingComponent implements OnInit {
     this.errorMessage = '';
     
     // Load featured products
+    // TODO: getFeaturedProducts() not yet migrated to MarketplaceService - keeping ApiService for now
     this.loadingFeaturedProducts = true;
-    this.apiService.getFeaturedProducts().subscribe({
-      next: (response) => {
-        this.featuredProducts = response.data || [];
+    this.marketplaceService.getTrendingProducts().subscribe({
+      next: (products) => {
+        this.featuredProducts = products as any;
         this.loadingFeaturedProducts = false;
       },
       error: (error) => {
@@ -524,10 +531,12 @@ export class LandingComponent implements OnInit {
     });
 
     // Load trending requests
+    // TODO: getTrendingRequests() not yet migrated to RequestService - keeping ApiService for now
     this.loadingTrendingRequests = true;
-    this.apiService.getTrendingRequests().subscribe({
-      next: (response) => {
-        this.trendingRequests = response.data || [];
+    this.requestService.getRequests({ per_page: 5 }).subscribe({
+      next: (response: any) => {
+        const items = response?.data?.items ?? response?.items ?? [];
+        this.trendingRequests = items as any;
         this.loadingTrendingRequests = false;
       },
       error: (error) => {
@@ -539,10 +548,11 @@ export class LandingComponent implements OnInit {
     });
 
     // Load community highlights
+    // TODO: getCommunityHighlights() not yet migrated to SocialService - keeping ApiService for now
     this.loadingCommunityHighlights = true;
-    this.apiService.getCommunityHighlights().subscribe({
-      next: (response) => {
-        this.communityHighlights = response.data || [];
+    this.socialService.getPosts().subscribe({
+      next: (posts) => {
+        this.communityHighlights = posts as any;
         this.loadingCommunityHighlights = false;
       },
       error: (error) => {

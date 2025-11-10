@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,8 +14,9 @@ import {
   faBell,
   faComment
 } from '@fortawesome/free-solid-svg-icons';
-import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChatService } from '../../../domains/chat/services/chat.service';
+import { AuthService, User } from '../../../domains/authentication';
 import { SearchService } from '../../../core/services/search.service';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
@@ -75,7 +76,7 @@ interface GroupChatForm {
               <fa-icon [icon]="faBell" class="w-5 h-5"></fa-icon>
             </button>
             <img 
-              [src]="currentUser?.profile_picture_url || '/Logo.png'" 
+              [src]="currentUser?.profilePictureUrl || '/Logo.png'" 
               alt="Profile" 
               class="w-8 h-8 rounded-full object-cover"
             >
@@ -316,6 +317,7 @@ export class StartChatComponent implements OnInit {
   private chatService = inject(ChatService);
   private authService = inject(AuthService);
   private searchService = inject(SearchService);
+  private destroyRef = inject(DestroyRef);
   
   // Search subject for debouncing
   private searchSubject = new Subject<string>();
@@ -331,7 +333,7 @@ export class StartChatComponent implements OnInit {
   faComment = faComment;
 
   // Component State
-  currentUser: any = null;
+  currentUser: User | null = null;
   searchQuery = '';
   selectedUserFilter = 'all';
   isLoadingContacts = false;
@@ -415,6 +417,7 @@ export class StartChatComponent implements OnInit {
    */
   private setupSearchDebounce(): void {
     this.searchSubject.pipe(
+      takeUntilDestroyed(this.destroyRef),
       debounceTime(300),
       distinctUntilChanged()
     ).subscribe(query => {
@@ -434,7 +437,9 @@ export class StartChatComponent implements OnInit {
     
     this.isLoadingContacts = true;
     
-    this.searchService.searchUsers(query).subscribe({
+    this.searchService.searchUsers(query)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (response) => {
         this.suggestedContacts = response.items.map(user => ({
           id: user.id,
@@ -470,9 +475,11 @@ export class StartChatComponent implements OnInit {
    * Uses the AuthService to get the current authenticated user
    */
   private loadCurrentUser(): void {
-    this.authService.authState$.subscribe(authState => {
-      this.currentUser = authState.user;
-    });
+    this.authService.authState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(authState => {
+        this.currentUser = authState.user;
+      });
   }
 
   /**
@@ -617,18 +624,16 @@ export class StartChatComponent implements OnInit {
     const sellerId = contact.id;
 
     // Use existing chat service to create or get chat room
-    this.chatService.getOrCreateRoom(String(buyerId), String(sellerId)).subscribe({
-      next: (response) => {
-        const roomId = response?.data?.id || response?.id;
-        if (roomId) {
-          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
+    this.chatService.getOrCreateRoom(String(buyerId), String(sellerId))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (room) => {
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, room.id]);
+        },
+        error: (error) => {
+          console.error('Error creating chat room:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error creating chat room:', error);
-        // Show error message to user
-      }
-    });
+      });
   }
 
   /**
@@ -640,7 +645,7 @@ export class StartChatComponent implements OnInit {
    * This may need to be updated when the backend adds dedicated group chat support.
    */
   createGroupChat(): void {
-    if (!this.groupChat.name.trim()) {
+    if (!this.groupChat.name.trim() || !this.currentUser) {
       return;
     }
 
@@ -652,28 +657,24 @@ export class StartChatComponent implements OnInit {
       name: this.groupChat.name,
       description: this.groupChat.description,
       type: 'group', // This may need backend support
-      buyer_id: this.currentUser?.id,
-      seller_id: this.currentUser?.id, // For now, use same user as creator
+      buyer_id: this.currentUser.id,
+      seller_id: this.currentUser.id, // For now, use same user as creator
       is_group: true
     };
 
-    this.chatService.createChatRoom(roomData).subscribe({
-      next: (response) => {
-        if (response.success) {
-          const roomId = response?.data?.id || response?.id;
-          if (roomId) {
-            this.resetGroupForm();
-            this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, roomId]);
-          }
+    this.chatService.createChatRoom(roomData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (room) => {
+          this.resetGroupForm();
+          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, room.id]);
+          this.isCreatingGroup = false;
+        },
+        error: (error) => {
+          console.error('Error creating group chat:', error);
+          this.isCreatingGroup = false;
         }
-        this.isCreatingGroup = false;
-      },
-      error: (error) => {
-        console.error('Error creating group chat:', error);
-        this.isCreatingGroup = false;
-        // TODO: Show error message to user
-      }
-    });
+      });
   }
 
   /**

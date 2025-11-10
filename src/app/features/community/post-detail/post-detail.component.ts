@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { SocialService } from '../../../domains/social/services/social.service';
 
 @Component({
   selector: 'app-post-detail',
@@ -417,7 +417,7 @@ import { ApiService } from '../../../core/services/api.service';
 export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private socialService = inject(SocialService);
 
   post = {
     id: 1,
@@ -468,9 +468,24 @@ export class PostDetailComponent implements OnInit {
     if (postId) {
       this.loading = true;
       
-      this.apiService.getPost(postId).subscribe({
-        next: (response) => {
-          this.post = response.data;
+      // Migrated to SocialService.getPost() - uses DDD pattern with PostRepository
+      this.socialService.getPost(postId).subscribe({
+        next: (post: any) => {
+          // Convert SocialService Post format to component's expected format
+          this.post = {
+            id: Number(post.id) || 0,
+            author: {
+              name: post.seller?.shop_name || 'Unknown',
+              avatar: post.seller?.profile_picture_url || ''
+            },
+            content: post.caption || '',
+            image: (post as any).social_media?.[0]?.media?.url || '',
+            likes: post.like_count || 0,
+            comments: post.comment_count || 0,
+            shares: 0,
+            createdAt: new Date(post.created_at || Date.now()),
+            isLiked: false
+          };
           this.loading = false;
         },
         error: (error) => {
@@ -479,10 +494,20 @@ export class PostDetailComponent implements OnInit {
         }
       });
 
-      // Load post comments
-      this.apiService.getPostComments(postId).subscribe({
+      // Migrated to SocialService.getPostComments() - uses DDD pattern with PostRepository
+      this.socialService.getPostComments(postId).subscribe({
         next: (response) => {
-          this.comments = response.data || [];
+          // SocialService returns PaginatedResponse<PostComment>
+          // Map PostComment[] to component's expected format
+          this.comments = (response.items || []).map((comment: any) => ({
+            id: parseInt(comment.id) || 0,
+            author: {
+              name: comment.user?.username || 'Unknown',
+              avatar: comment.user?.profile_picture_url || ''
+            },
+            content: comment.content,
+            createdAt: new Date(comment.created_at)
+          }));
         },
         error: (error) => {
           console.error('Error loading post comments:', error);
@@ -498,10 +523,11 @@ export class PostDetailComponent implements OnInit {
 
   likePost(): void {
     if (this.post) {
-      this.apiService.likePost(this.post.id.toString()).subscribe({
-        next: (response) => {
-          this.post!.isLiked = !this.post!.isLiked;
-          this.post!.likes += this.post!.isLiked ? 1 : -1;
+      // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
+      this.socialService.likePost(this.post.id.toString()).subscribe({
+        next: (updatedPost) => {
+          this.post!.isLiked = true;
+          this.post!.likes = updatedPost.like_count || this.post!.likes + 1;
         },
         error: (error) => {
           console.error('Error liking post:', error);
@@ -512,9 +538,20 @@ export class PostDetailComponent implements OnInit {
 
   addComment(): void {
     if (this.newComment.trim() && this.post) {
-      this.apiService.commentOnPost(this.post.id.toString(), { content: this.newComment }).subscribe({
-        next: (response) => {
-          this.comments.push(response.data);
+      // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
+      this.socialService.addComment(this.post.id.toString(), { content: this.newComment }).subscribe({
+        next: (newComment: any) => {
+          // Map returned PostComment to component comment format
+          const mapped = {
+            id: parseInt(newComment.id) || 0,
+            author: {
+              name: newComment.user?.username || 'Unknown',
+              avatar: newComment.user?.profile_picture_url || ''
+            },
+            content: newComment.content,
+            createdAt: new Date(newComment.created_at)
+          };
+          this.comments.push(mapped);
           this.post!.comments += 1;
           this.newComment = '';
         },

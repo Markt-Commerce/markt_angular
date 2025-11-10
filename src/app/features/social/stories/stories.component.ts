@@ -19,10 +19,11 @@ import {
   faTrash,
   faEdit
 } from '@fortawesome/free-solid-svg-icons';
-import { SocialService } from '../../../core/services/social.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { SocialService } from '../../../domains/social/services/social.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+// TODO: Create Story domain model in domains/social/models/story.model and migrate when available
+// Currently using old interface from core/models as domain model doesn't exist yet
 import { Story, StoryCreate } from '../../../core/models';
-import { ApiService } from '../../../core/services/api.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -336,13 +337,9 @@ export class StoriesComponent implements OnInit, OnDestroy {
   selectedStory: Story | null = null;
   menuPosition = { x: 0, y: 0 };
 
-  private apiService = inject(ApiService);
+  private socialService = inject(SocialService);
+  private authService = inject(AuthService);
   private router = inject(Router);
-
-  constructor(
-    private socialService: SocialService,
-    private authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.loadStories();
@@ -358,9 +355,11 @@ export class StoriesComponent implements OnInit, OnDestroy {
   private loadStories(): void {
     this.isLoading = true;
     
-    this.apiService.getStories().subscribe({
-      next: (response) => {
-        this.stories = response.data || [];
+    // Migrated to SocialService.getStories() - uses DDD pattern
+    this.socialService.getStories().subscribe({
+      next: (stories) => {
+        // SocialService returns Story[] directly
+        this.stories = stories || [];
         this.isLoading = false;
       },
       error: (error) => {
@@ -552,7 +551,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
 
   // Additional social collection and story endpoint integrations
   createCollection(collectionData: any): void {
-    this.apiService.createCollection(collectionData).subscribe({
+    // Migrated to SocialService.createCollection() - uses DDD pattern
+    this.socialService.createCollection(collectionData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -562,7 +562,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   deleteCollection(collectionId: string): void {
-    this.apiService.deleteCollection(collectionId).subscribe({
+    // Migrated to SocialService.deleteCollection() - uses DDD pattern
+    this.socialService.deleteCollection(collectionId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -572,7 +573,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   getCollection(collectionId: string): void {
-    this.apiService.getCollection(collectionId).subscribe({
+    // Migrated to SocialService.getCollection() - uses DDD pattern
+    this.socialService.getCollection(collectionId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -582,7 +584,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   getCollections(): void {
-    this.apiService.getCollections().subscribe({
+    // Migrated to SocialService.getCollections() - uses DDD pattern
+    this.socialService.getCollections().subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -592,7 +595,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   createStoryViaApi(storyData: any): void {
-    this.apiService.createStory(storyData).subscribe({
+    // Migrated to SocialService.createStory() - uses DDD pattern
+    this.socialService.createStory(storyData).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -602,7 +606,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   deleteStoryViaApi(storyId: string): void {
-    this.apiService.deleteStory(storyId).subscribe({
+    // Migrated to SocialService.deleteStory() - uses DDD pattern
+    this.socialService.deleteStory(storyId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -612,7 +617,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   getStory(storyId: string): void {
-    this.apiService.getStory(storyId).subscribe({
+    // Migrated to SocialService.getStory() - uses DDD pattern
+    this.socialService.getStory(storyId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -622,7 +628,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   removeBookmark(postId: string): void {
-    this.apiService.removeBookmark(postId).subscribe({
+    // Migrated to SocialService.removeBookmark() - uses DDD pattern
+    this.socialService.removeBookmark(postId).subscribe({
       next: (response) => {
       },
       error: (error) => {
@@ -632,7 +639,8 @@ export class StoriesComponent implements OnInit, OnDestroy {
   }
 
   updateCollection(collectionId: string, collectionData: any): void {
-    this.apiService.updateCollection(collectionId, collectionData).subscribe({
+    // Migrated to SocialService.updateCollection() - uses DDD pattern
+    this.socialService.updateCollection(collectionId, collectionData).subscribe({
       next: (response) => {
       },
       error: (error) => {

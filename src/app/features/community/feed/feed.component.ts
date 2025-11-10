@@ -4,11 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faHeart, faComment, faShare, faPlus, faImage, faMapMarkerAlt, faStore, faCheckCircle, faEllipsisV } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../../core/services/auth.service';
-import { SocialService } from '../../../core/services/social.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+import { SocialService } from '../../../domains/social/services/social.service';
 import { Observable } from 'rxjs';
-import { User } from '../../../core/models/auth.model';
-import { ApiService } from '../../../core/services/api.service';
+import { User } from '../../../domains/authentication/models/user.model';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for getCommunityFeed fallback (not yet in SocialService)
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 
 interface FeedPost {
@@ -261,12 +261,17 @@ export class FeedComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading community feed:', error);
-        // Fallback to community feed
-        this.apiService.getCommunityFeed().subscribe({
-          next: (fallback) => {
-            const items = fallback.data?.items || fallback.data || [];
-            this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
-            this.hasMorePosts = fallback.data?.pagination?.has_next || false;
+        // Fallback to community feed - TODO: getCommunityFeed() not yet in SocialService
+        this.socialService.getPosts().subscribe({
+          next: (fallback: any) => {
+            const fallbackItems = Array.isArray(fallback)
+              ? fallback
+              : fallback?.items ?? fallback?.data ?? [];
+            this.posts = (fallbackItems || []).map((post: any) => this.mapPostToFeedPost(post));
+            const fallbackPagination = Array.isArray(fallback)
+              ? undefined
+              : fallback?.pagination ?? fallback?.data?.pagination;
+            this.hasMorePosts = fallbackPagination?.has_next ?? false;
             this.loading = false;
           },
           error: () => {
@@ -342,12 +347,13 @@ export class FeedComponent implements OnInit {
   }
 
   likePost(postId: string): void {
-    this.apiService.likePost(postId).subscribe({
-      next: () => {
+    // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
+    this.socialService.likePost(postId).subscribe({
+      next: (updatedPost) => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
           post.isLiked = true;
-          post.likes += 1;
+          post.likes = updatedPost.like_count || post.likes + 1;
         }
       },
       error: (error) => {
@@ -357,8 +363,9 @@ export class FeedComponent implements OnInit {
   }
 
   commentOnPost(postId: string, comment: string): void {
-    this.apiService.addComment(postId, { content: comment }).subscribe({
-      next: () => {
+    // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
+    this.socialService.addComment(postId, { content: comment }).subscribe({
+      next: (newComment) => {
         const post = this.posts.find(p => p.id === postId);
         if (post) {
           post.comments += 1;

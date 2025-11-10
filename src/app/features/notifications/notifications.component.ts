@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { NotificationService } from '../../core/services/notification.service';
+import { NotificationService } from '../../domains/notifications/services/notification.service';
 
 interface UINotification {
   id: string;

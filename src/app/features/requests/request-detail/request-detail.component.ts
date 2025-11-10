@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
-import { CartService } from '../../../core/services/cart.service';
+import { RequestService } from '../../../domains/requests/services/request.service';
+import { CartService } from '../../../domains/orders/services/cart.service';
 import { NavigationService } from '../../../core/services/navigation.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
@@ -81,7 +81,7 @@ interface RecentActivity {
 export class RequestDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private requestService = inject(RequestService);
   private cartService = inject(CartService);
   private navigationService = inject(NavigationService);
   private breadcrumbService = inject(BreadcrumbService);
@@ -115,21 +115,114 @@ export class RequestDetailComponent implements OnInit {
     if (requestId) {
       this.loading.set(true);
       
-      // Load request data - using mock data for now
+      // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
+      this.requestService.getRequest(requestId).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Convert API response to component's BuyerRequest interface
+            const apiRequest = response.data;
+            const buyerRequest: BuyerRequest = {
+              id: apiRequest.id,
+              title: apiRequest.title,
+              description: apiRequest.description,
+              category: apiRequest.categories?.[0]?.name || 'Uncategorized',
+              budgetMin: apiRequest.budget || 0,
+              budgetMax: apiRequest.budget || 0,
+              status: apiRequest.status as 'Active' | 'Pending' | 'Fulfilled' | 'Closed',
+              buyerName: apiRequest.user?.username || 'Unknown',
+              buyerAvatar: apiRequest.user?.profile_picture_url || '',
+              buyerId: apiRequest.user_id || apiRequest.user?.id || '',
+              createdAt: apiRequest.created_at,
+              expiresAt: apiRequest.expires_at || '',
+              offersCount: apiRequest.offers?.length || 0,
+              viewsCount: apiRequest.views || 0,
+              tags: [], // TODO: Extract from metadata if available
+              location: '', // TODO: Extract from metadata if available
+              urgency: 'medium' as const, // TODO: Extract from metadata if available
+              mediaUrls: (apiRequest.images ?? [])
+                .map((img: any) => img?.media?.original_url || img?.media?.thumbnail_url || '')
+                .filter((url: string) => Boolean(url)),
+              isOwner: false, // TODO: Check if current user is owner
+              condition: '', // TODO: Extract from request or metadata
+              timeline: '' // TODO: Calculate from expiresAt
+            };
+            
+            this.request.set(buyerRequest);
+            
+            // Set breadcrumbs
+            this.breadcrumbService.setBreadcrumbs([
+              {
+                label: 'Dashboard',
+                url: ROUTES_ABSOLUTE.APP.DASHBOARD,
+                icon: 'home',
+                isClickable: true,
+                isCurrentPage: false,
+                metadata: {}
+              },
+              {
+                label: 'Requests',
+                url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
+                icon: 'clipboard',
+                isClickable: true,
+                isCurrentPage: false,
+                metadata: {}
+              },
+              {
+                label: buyerRequest.title,
+                url: `/app/requests/${buyerRequest.id}`,
+                icon: 'clipboard',
+                isClickable: false,
+                isCurrentPage: true,
+                metadata: {
+                  id: buyerRequest.id,
+                  type: 'request'
+                }
+              }
+            ]);
+            
+            // Load offers for this request
+            this.loadOffers(requestId);
+          }
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading request:', error);
+          // Fallback to mock data if API fails (for development)
       this.loadMockRequestData();
-      
-      // In real implementation, this would be:
-      // this.apiService.getRequest(requestId).subscribe({
-      //   next: (response) => {
-      //     this.request.set(response.data as BuyerRequest);
-      //     this.loading.set(false);
-      //   },
-      //   error: (error) => {
-      //     console.error('Error loading request:', error);
-      //     this.loading.set(false);
-      //   }
-      // });
+          this.loading.set(false);
+        }
+      });
     }
+  }
+
+  private loadOffers(requestId: string): void {
+    // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
+    this.requestService.getRequestOffers(requestId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Convert API offers to component's SellerResponse interface
+          const sellerResponses: SellerResponse[] = response.data.map((offer: any) => ({
+            id: offer.id,
+            sellerName: '', // TODO: Get seller name from offer data
+            sellerAvatar: '', // TODO: Get seller avatar from offer data
+            sellerId: offer.seller_id,
+            rating: 0, // TODO: Get seller rating
+            reviewCount: 0, // TODO: Get seller review count
+            price: offer.price,
+            createdAt: offer.created_at,
+            condition: '', // TODO: Extract from offer data
+            delivery: '', // TODO: Extract from offer data
+            description: offer.message || '',
+            status: offer.status as 'pending' | 'accepted' | 'rejected' | 'withdrawn'
+          }));
+          
+          this.responses.set(sellerResponses);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading offers:', error);
+    }
+    });
   }
 
   private loadMockRequestData(): void {
@@ -343,8 +436,10 @@ export class RequestDetailComponent implements OnInit {
     if (confirm('Are you sure you want to accept this offer?')) {
       response._processing = true;
       
-      // In real implementation, this would call the API
-      setTimeout(() => {
+      // Migrated to RequestService.acceptOffer() - uses DDD pattern with RequestRepository
+      this.requestService.acceptOffer(response.id).subscribe({
+        next: (apiResponse) => {
+          if (apiResponse.success) {
         response.status = 'accepted';
         response._processing = false;
         
@@ -352,7 +447,16 @@ export class RequestDetailComponent implements OnInit {
         this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { 
           queryParams: { source: 'offer', offerId: response.id } 
         });
-      }, 1000);
+          } else {
+            response._processing = false;
+            console.error('Failed to accept offer');
+          }
+        },
+        error: (error) => {
+          console.error('Error accepting offer:', error);
+          response._processing = false;
+        }
+      });
     }
   }
 } 

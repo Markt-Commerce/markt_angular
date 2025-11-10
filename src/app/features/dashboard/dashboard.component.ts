@@ -15,11 +15,11 @@ import {
   faSearch,
   faHandshake
 } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
 import { AppStateService } from '../../core/services/app-state.service';
-import { CartService } from '../../core/services/cart.service';
-import { NotificationService } from '../../core/services/notification.service';
-import { ChatService } from '../../core/services/chat.service';
+import { CartService } from '../../domains/orders/services/cart.service';
+import { NotificationService } from '../../domains/notifications/services/notification.service';
+import { ChatService } from '../../domains/chat/services/chat.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({

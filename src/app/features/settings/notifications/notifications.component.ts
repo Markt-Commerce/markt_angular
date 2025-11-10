@@ -8,12 +8,13 @@ import { ToggleSwitchComponent } from '../../../shared/components/toggle-switch/
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { 
-  faMobileScreen, 
-  faEnvelope, 
-  faCommentSms, 
-  faList, 
-  faMoon, 
+import { NotificationService } from '../../../domains/notifications';
+import {
+  faMobileScreen,
+  faEnvelope,
+  faCommentSms,
+  faList,
+  faMoon,
   faEye,
   faShoppingBag,
   faMessage,
@@ -24,7 +25,7 @@ import {
   faBullhorn,
   faCalendar,
   faUserPlus,
-  faExclamationTriangle
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface NotificationSetting {
@@ -40,7 +41,13 @@ interface NotificationSetting {
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ToggleSwitchComponent, ButtonComponent, FontAwesomeModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ToggleSwitchComponent,
+    ButtonComponent,
+    FontAwesomeModule,
+  ],
   template: `
     <div class="notification-settings-container">
       <!-- Header -->
@@ -48,7 +55,9 @@ interface NotificationSetting {
         <div class="header-content">
           <div>
             <h1 class="page-title">Notification Settings</h1>
-            <p class="page-description">Manage your communication preferences and notification settings</p>
+            <p class="page-description">
+              Manage your communication preferences and notification settings
+            </p>
           </div>
           <div class="header-actions">
             <app-button
@@ -73,14 +82,13 @@ interface NotificationSetting {
 
       <!-- Success/Error Messages -->
       @if (successMessage) {
-        <div class="success-message">
-          {{ successMessage }}
-        </div>
-      }
-      @if (errorMessage) {
-        <div class="error-message">
-          {{ errorMessage }}
-        </div>
+      <div class="success-message">
+        {{ successMessage }}
+      </div>
+      } @if (errorMessage) {
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
       }
 
       <!-- Content -->
@@ -92,17 +100,22 @@ interface NotificationSetting {
               <div class="section-header">
                 <div>
                   <h2 class="section-title">
-                    <fa-icon [icon]="faMobileScreen" class="section-icon"></fa-icon>
+                    <fa-icon
+                      [icon]="faMobileScreen"
+                      class="section-icon"
+                    ></fa-icon>
                     Push Notifications
                   </h2>
-                  <p class="section-description">Control how you receive push notifications on your device</p>
+                  <p class="section-description">
+                    Control how you receive push notifications on your device
+                  </p>
                 </div>
                 <app-toggle-switch
                   formControlName="push_notifications_enabled"
                   ariaLabel="Enable push notifications"
                 ></app-toggle-switch>
               </div>
-              
+
               <div class="settings-grid">
                 <div class="settings-column">
                   <div class="setting-item">
@@ -161,21 +174,28 @@ interface NotificationSetting {
                     <fa-icon [icon]="faEnvelope" class="section-icon"></fa-icon>
                     Email Notifications
                   </h2>
-                  <p class="section-description">Configure your email notification preferences</p>
+                  <p class="section-description">
+                    Configure your email notification preferences
+                  </p>
                 </div>
                 <app-toggle-switch
                   formControlName="email_notifications_enabled"
                   ariaLabel="Enable email notifications"
                 ></app-toggle-switch>
               </div>
-              
+
               <div class="settings-list">
                 <div class="setting-item">
                   <div>
                     <span class="setting-label">Email Frequency</span>
-                    <p class="setting-hint">How often you receive email notifications</p>
+                    <p class="setting-hint">
+                      How often you receive email notifications
+                    </p>
                   </div>
-                  <select formControlName="email_frequency" class="frequency-select">
+                  <select
+                    formControlName="email_frequency"
+                    class="frequency-select"
+                  >
                     <option value="instant">Instant</option>
                     <option value="daily">Daily Digest</option>
                     <option value="weekly">Weekly Digest</option>
@@ -204,17 +224,22 @@ interface NotificationSetting {
               <div class="section-header">
                 <div>
                   <h2 class="section-title">
-                    <fa-icon [icon]="faCommentSms" class="section-icon"></fa-icon>
+                    <fa-icon
+                      [icon]="faCommentSms"
+                      class="section-icon"
+                    ></fa-icon>
                     SMS Notifications
                   </h2>
-                  <p class="section-description">Manage SMS notification settings and preferences</p>
+                  <p class="section-description">
+                    Manage SMS notification settings and preferences
+                  </p>
                 </div>
                 <app-toggle-switch
                   formControlName="sms_notifications_enabled"
                   ariaLabel="Enable SMS notifications"
                 ></app-toggle-switch>
               </div>
-              
+
               <div class="settings-list">
                 <div class="setting-item">
                   <span class="setting-label">Emergency Alerts Only</span>
@@ -241,15 +266,20 @@ interface NotificationSetting {
                     <fa-icon [icon]="faList" class="section-icon"></fa-icon>
                     Notification Categories
                   </h2>
-                  <p class="section-description">Choose which types of notifications you want to receive</p>
+                  <p class="section-description">
+                    Choose which types of notifications you want to receive
+                  </p>
                 </div>
               </div>
-              
+
               <div class="settings-grid">
                 <div class="settings-column">
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faShoppingBag" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faShoppingBag"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Order Updates</span>
                     </div>
                     <app-toggle-switch
@@ -259,7 +289,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faMessage" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faMessage"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Messages</span>
                     </div>
                     <app-toggle-switch
@@ -269,7 +302,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faHandshake" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faHandshake"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Offers & Requests</span>
                     </div>
                     <app-toggle-switch
@@ -289,7 +325,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faShieldHalved" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faShieldHalved"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Security Alerts</span>
                     </div>
                     <app-toggle-switch
@@ -311,7 +350,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faBullhorn" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faBullhorn"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Marketing</span>
                     </div>
                     <app-toggle-switch
@@ -321,7 +363,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faCalendar" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faCalendar"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Events</span>
                     </div>
                     <app-toggle-switch
@@ -331,7 +376,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faUserPlus" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faUserPlus"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Friend Activity</span>
                     </div>
                     <app-toggle-switch
@@ -341,7 +389,10 @@ interface NotificationSetting {
                   </div>
                   <div class="setting-item">
                     <div class="setting-with-icon">
-                      <fa-icon [icon]="faExclamationTriangle" class="category-icon"></fa-icon>
+                      <fa-icon
+                        [icon]="faExclamationTriangle"
+                        class="category-icon"
+                      ></fa-icon>
                       <span class="setting-label">Emergency Alerts</span>
                     </div>
                     <app-toggle-switch
@@ -361,10 +412,12 @@ interface NotificationSetting {
                     <fa-icon [icon]="faMoon" class="section-icon"></fa-icon>
                     Quiet Hours
                   </h2>
-                  <p class="section-description">Set times when you don't want to receive notifications</p>
+                  <p class="section-description">
+                    Set times when you don't want to receive notifications
+                  </p>
                 </div>
               </div>
-              
+
               <div class="time-inputs">
                 <div class="time-input-group">
                   <label class="time-label">Start Time</label>
@@ -385,7 +438,7 @@ interface NotificationSetting {
                   />
                 </div>
               </div>
-              
+
               <div class="settings-list">
                 <div class="setting-item">
                   <span class="setting-label">Apply to Weekends</span>
@@ -412,20 +465,34 @@ interface NotificationSetting {
                     <fa-icon [icon]="faEye" class="section-icon"></fa-icon>
                     Test Notifications
                   </h2>
-                  <p class="section-description">Preview how your notifications will appear</p>
+                  <p class="section-description">
+                    Preview how your notifications will appear
+                  </p>
                 </div>
               </div>
-              
+
               <div class="test-buttons">
-                <button type="button" class="test-button" (click)="testNotification('push')">
+                <button
+                  type="button"
+                  class="test-button"
+                  (click)="testNotification('push')"
+                >
                   <fa-icon [icon]="faMobileScreen" class="test-icon"></fa-icon>
                   Test Push
                 </button>
-                <button type="button" class="test-button" (click)="testNotification('email')">
+                <button
+                  type="button"
+                  class="test-button"
+                  (click)="testNotification('email')"
+                >
                   <fa-icon [icon]="faEnvelope" class="test-icon"></fa-icon>
                   Test Email
                 </button>
-                <button type="button" class="test-button" (click)="testNotification('sms')">
+                <button
+                  type="button"
+                  class="test-button"
+                  (click)="testNotification('sms')"
+                >
                   <fa-icon [icon]="faCommentSms" class="test-icon"></fa-icon>
                   Test SMS
                 </button>
@@ -436,300 +503,303 @@ interface NotificationSetting {
       </div>
     </div>
   `,
-  styles: [`
-    .notification-settings-container {
-      min-height: 100vh;
-      background-color: #F4F1F0;
-    }
+  styles: [
+    `
+      .notification-settings-container {
+        min-height: 100vh;
+        background-color: #f4f1f0;
+      }
 
-    .notification-header {
-      background: white;
-      border-bottom: 1px solid #E5DDDC;
-      padding: 2rem;
-    }
-
-    .header-content {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .page-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #181211;
-      margin: 0 0 0.5rem 0;
-    }
-
-    .page-description {
-      color: #886A63;
-      margin: 0;
-      font-size: 0.875rem;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .success-message {
-      background: #f0f9ff;
-      border: 1px solid #0ea5e9;
-      color: #0c4a6e;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin: 1rem 2rem;
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .error-message {
-      background: #fef2f2;
-      border: 1px solid #ef4444;
-      color: #991b1b;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin: 1rem 2rem;
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .notification-content {
-      padding: 2rem;
-    }
-
-    .notification-section {
-      background: white;
-      border-radius: 0.75rem;
-      border: 1px solid #E5DDDC;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-    }
-
-    .section-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #181211;
-      display: flex;
-      align-items: center;
-      margin: 0 0 0.25rem 0;
-    }
-
-    .section-icon {
-      color: #E94C2A;
-      margin-right: 0.75rem;
-      width: 1.25rem;
-      height: 1.25rem;
-    }
-
-    .section-description {
-      color: #886A63;
-      font-size: 0.875rem;
-      margin: 0;
-    }
-
-    .settings-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .settings-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .settings-column {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .setting-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .setting-label {
-      color: #181211;
-      font-weight: 500;
-      font-size: 0.875rem;
-    }
-
-    .setting-hint {
-      color: #886A63;
-      font-size: 0.75rem;
-      margin: 0.25rem 0 0 0;
-    }
-
-    .setting-with-icon {
-      display: flex;
-      align-items: center;
-    }
-
-    .category-icon {
-      color: #E94C2A;
-      margin-right: 0.75rem;
-      width: 1.25rem;
-      height: 1.25rem;
-    }
-
-    .frequency-select {
-      padding: 0.5rem 0.75rem;
-      border: 1px solid #E5DDDC;
-      border-radius: 0.5rem;
-      background: white;
-      color: #181211;
-      font-size: 0.875rem;
-      min-width: 120px;
-    }
-
-    .frequency-select:focus {
-      outline: none;
-      border-color: #E94C2A;
-      box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
-    }
-
-    .time-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .time-input-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .time-label {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: #181211;
-      margin-bottom: 0.5rem;
-    }
-
-    .time-input {
-      padding: 0.5rem 0.75rem;
-      border: 1px solid #E5DDDC;
-      border-radius: 0.5rem;
-      background: white;
-      color: #181211;
-      font-size: 0.875rem;
-    }
-
-    .time-input:focus {
-      outline: none;
-      border-color: #E94C2A;
-      box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
-    }
-
-    .test-buttons {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-    }
-
-    .test-button {
-      padding: 0.75rem 1rem;
-      border: 1px solid #E5DDDC;
-      border-radius: 0.5rem;
-      background: white;
-      color: #181211;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .test-button:hover {
-      background: #F4F1F0;
-      border-color: #E94C2A;
-    }
-
-    .test-icon {
-      width: 1rem;
-      height: 1rem;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
       .notification-header {
-        padding: 1rem;
+        background: white;
+        border-bottom: 1px solid #e5dddc;
+        padding: 2rem;
       }
 
       .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #181211;
+        margin: 0 0 0.5rem 0;
+      }
+
+      .page-description {
+        color: #886a63;
+        margin: 0;
+        font-size: 0.875rem;
       }
 
       .header-actions {
-        width: 100%;
-        justify-content: flex-end;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .success-message {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        color: #0c4a6e;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 2rem;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .error-message {
+        background: #fef2f2;
+        border: 1px solid #ef4444;
+        color: #991b1b;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 2rem;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
       }
 
       .notification-content {
-        padding: 1rem;
+        padding: 2rem;
       }
 
-      .settings-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .time-inputs {
-        grid-template-columns: 1fr;
-      }
-
-      .test-buttons {
-        grid-template-columns: 1fr;
+      .notification-section {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid #e5dddc;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
       }
 
       .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #181211;
+        display: flex;
+        align-items: center;
+        margin: 0 0 0.25rem 0;
+      }
+
+      .section-icon {
+        color: #e94c2a;
+        margin-right: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .section-description {
+        color: #886a63;
+        font-size: 0.875rem;
+        margin: 0;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+
+      .settings-list {
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
         gap: 1rem;
       }
-    }
 
-    @media (max-width: 480px) {
-      .page-title {
-        font-size: 1.5rem;
-      }
-
-      .header-actions {
+      .settings-column {
+        display: flex;
         flex-direction: column;
-        width: 100%;
+        gap: 1rem;
       }
 
-      .header-actions app-button {
-        width: 100%;
+      .setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
-    }
-  `]
+
+      .setting-label {
+        color: #181211;
+        font-weight: 500;
+        font-size: 0.875rem;
+      }
+
+      .setting-hint {
+        color: #886a63;
+        font-size: 0.75rem;
+        margin: 0.25rem 0 0 0;
+      }
+
+      .setting-with-icon {
+        display: flex;
+        align-items: center;
+      }
+
+      .category-icon {
+        color: #e94c2a;
+        margin-right: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .frequency-select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e5dddc;
+        border-radius: 0.5rem;
+        background: white;
+        color: #181211;
+        font-size: 0.875rem;
+        min-width: 120px;
+      }
+
+      .frequency-select:focus {
+        outline: none;
+        border-color: #e94c2a;
+        box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
+      }
+
+      .time-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .time-input-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .time-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #181211;
+        margin-bottom: 0.5rem;
+      }
+
+      .time-input {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e5dddc;
+        border-radius: 0.5rem;
+        background: white;
+        color: #181211;
+        font-size: 0.875rem;
+      }
+
+      .time-input:focus {
+        outline: none;
+        border-color: #e94c2a;
+        box-shadow: 0 0 0 3px rgba(233, 76, 42, 0.1);
+      }
+
+      .test-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .test-button {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e5dddc;
+        border-radius: 0.5rem;
+        background: white;
+        color: #181211;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .test-button:hover {
+        background: #f4f1f0;
+        border-color: #e94c2a;
+      }
+
+      .test-icon {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .notification-header {
+          padding: 1rem;
+        }
+
+        .header-content {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        .header-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+
+        .notification-content {
+          padding: 1rem;
+        }
+
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .time-inputs {
+          grid-template-columns: 1fr;
+        }
+
+        .test-buttons {
+          grid-template-columns: 1fr;
+        }
+
+        .section-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .page-title {
+          font-size: 1.5rem;
+        }
+
+        .header-actions {
+          flex-direction: column;
+          width: 100%;
+        }
+
+        .header-actions app-button {
+          width: 100%;
+        }
+      }
+    `,
+  ],
 })
 export class NotificationsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private notificationService = inject(NotificationService);
   private messageTimer?: Subscription;
 
   // FontAwesome icons
@@ -754,7 +824,6 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   loading = false;
   errorMessage = '';
   successMessage = '';
-
 
   ngOnInit(): void {
     this.initForm();
@@ -805,7 +874,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       quiet_hours_start: ['22:00'],
       quiet_hours_end: ['08:00'],
       apply_to_weekends: [true],
-      emergency_override: [true]
+      emergency_override: [true],
     };
 
     this.notificationsForm = this.fb.group(formControls);
@@ -813,16 +882,16 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   private loadSettings(): void {
     this.loading = true;
-    
-    this.apiService.getNotificationSettings().subscribe({
-      next: (response) => {
-        this.notificationsForm.patchValue(response.data);
+
+    this.notificationService.getSettings().subscribe({
+      next: (response: any) => {
+        this.notificationsForm.patchValue(response?.data || {});
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading notification settings:', error);
         this.loading = false;
-      }
+      },
     });
   }
 
@@ -830,10 +899,10 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
-    
+
     const formData = this.notificationsForm.value;
-    
-    this.apiService.updateNotificationSettings(formData).subscribe({
+
+    this.notificationService.updateSettings(formData).subscribe({
       next: (response) => {
         this.loading = false;
         this.successMessage = 'Notification settings updated successfully!';
@@ -844,7 +913,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.errorMessage = 'Failed to update notification settings.';
         this.clearMessageAfterDelay();
-      }
+      },
     });
   }
 
@@ -859,7 +928,11 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   resetSettings(): void {
-    if (confirm('Are you sure you want to reset all notification settings to defaults?')) {
+    if (
+      confirm(
+        'Are you sure you want to reset all notification settings to defaults?'
+      )
+    ) {
       this.loadSettings();
       // TODO: Replace with actual backend call
     }
@@ -875,4 +948,4 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.successMessage = `Test ${type} notification sent successfully!`;
     this.clearMessageAfterDelay();
   }
-} 
+}

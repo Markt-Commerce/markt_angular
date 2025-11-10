@@ -14,7 +14,7 @@ import {
   faStar,
   faSpinner
 } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../domains/authentication';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
@@ -332,7 +332,8 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     // Check if user is already logged in
-    if (this.authService.isAuthenticated()) {
+    const authState = this.authService.getAuthState();
+    if (authState.isAuthenticated) {
       this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
     }
   }
@@ -359,16 +360,10 @@ export class LoginComponent implements OnInit {
       const { email, password, rememberMe } = this.loginForm.value;
       
       this.authService.login({ email, password }).subscribe({
-        next: (response: any) => {
-          // The AuthService handles the response and updates auth state
-          // If we reach here, login was successful (AuthService would have thrown error otherwise)
-          // Check if user is now authenticated
-          if (this.authService.isAuthenticated()) {
+        next: (user) => {
+          // Domain AuthService.login() returns User directly and handles state internally
+          // If we reach here, login was successful
             this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
-          } else {
-            this.errorMessage.set('Login failed. Please check your credentials.');
-            this.isSubmitting.set(false);
-          }
         },
         error: (error: any) => {
           // Handle network or server errors
@@ -391,20 +386,11 @@ export class LoginComponent implements OnInit {
    * Initiates the Google authentication flow
    */
   loginWithGoogle(): void {
+    // TODO: OAuth methods not yet migrated to domain service - keeping core service for now
+    // This will be migrated when OAuth domain methods are implemented
     this.isSubmitting.set(true);
-    
-    this.authService.loginWithGoogle().subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
-        } else {
-          this.isSubmitting.set(false);
-        }
-      },
-      error: (error: any) => {
+    this.errorMessage.set('Google login not yet available');
         this.isSubmitting.set(false);
-      }
-    });
   }
 
   /**
@@ -412,19 +398,10 @@ export class LoginComponent implements OnInit {
    * Initiates the Facebook authentication flow
    */
   loginWithFacebook(): void {
+    // TODO: OAuth methods not yet migrated to domain service - keeping core service for now
+    // This will be migrated when OAuth domain methods are implemented
     this.isSubmitting.set(true);
-    
-    this.authService.loginWithFacebook().subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          this.router.navigate([this.ROUTES_ABSOLUTE.APP.DASHBOARD]);
-        } else {
-          this.isSubmitting.set(false);
-        }
-      },
-      error: (error: any) => {
+    this.errorMessage.set('Facebook login not yet available');
         this.isSubmitting.set(false);
-      }
-    });
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { SwPush, SwUpdate } from '@angular/service-worker';
-import { BehaviorSubject, Observable, interval, fromEvent } from 'rxjs';
-import { filter, switchMap, tap, catchError } from 'rxjs/operators';
-import { ApiService } from './api.service';
+import { BehaviorSubject, Observable, interval, fromEvent, of } from 'rxjs';
+import { filter, switchMap, tap, catchError, map } from 'rxjs/operators';
+import { NotificationRepository } from '../../domains/notifications/repositories/notification.repository';
 import type { Notification } from '../models';
 
 export interface BackgroundNotificationState {
@@ -17,7 +17,7 @@ export interface BackgroundNotificationState {
   providedIn: 'root'
 })
 export class BackgroundNotificationService {
-  private apiService = inject(ApiService);
+  private notificationRepository = inject(NotificationRepository);
   private swPush = inject(SwPush);
   private swUpdate = inject(SwUpdate);
 
@@ -88,19 +88,15 @@ export class BackgroundNotificationService {
 
   /**
    * Get VAPID public key from server
+   * Uses NotificationRepository (DDD pattern)
    */
   private async getVapidPublicKey(): Promise<string> {
-    try {
-      // Get VAPID key from server instead of hardcoding
-      const response = await this.apiService.getVapidPublicKey().toPromise();
-      if (!response) {
-        throw new Error('No response from server');
-      }
-      return response.data.publicKey;
-    } catch (error) {
-      console.error('Failed to get VAPID public key:', error);
-      throw new Error('Unable to get VAPID public key from server');
-    }
+    return new Promise((resolve, reject) => {
+      this.notificationRepository.getVapidPublicKey().subscribe({
+        next: (response) => resolve(response.publicKey),
+        error: (error) => reject(error)
+      });
+    });
   }
 
   /**
@@ -139,10 +135,11 @@ export class BackgroundNotificationService {
 
   /**
    * Send subscription to server
+   * Uses NotificationRepository (DDD pattern)
    */
   private async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
     try {
-      const subscriptionData = {
+      const subscriptionData: PushSubscriptionJSON = {
         endpoint: subscription.endpoint,
         keys: {
           p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
@@ -150,16 +147,18 @@ export class BackgroundNotificationService {
         }
       };
 
-      // Send to your API endpoint
-      this.apiService.updatePushSubscription(subscriptionData).subscribe({
-        next: (response) => {
-        },
+      return new Promise((resolve, reject) => {
+        this.notificationRepository.updatePushSubscription(subscriptionData).subscribe({
+          next: () => resolve(),
         error: (error) => {
           console.error('Failed to send subscription to server:', error);
+            reject(error);
         }
+        });
       });
     } catch (error) {
-      console.error('Failed to send subscription to server:', error);
+      console.error('Failed to prepare subscription data:', error);
+      throw error;
     }
   }
 
@@ -264,21 +263,22 @@ export class BackgroundNotificationService {
 
   /**
    * Check for new notifications in background
+   * Uses NotificationRepository (DDD pattern)
    */
   checkForNewNotifications(): Observable<any> {
-    return this.apiService.getUnreadCount().pipe(
-      tap((response) => {
-        if (response.success && response.data.count > 0) {
+    return this.notificationRepository.getUnreadCount().pipe(
+      map((count: number) => {
+        if (count > 0) {
           this.showBackgroundNotification({
-                             // title: 'New Notifications', // Removed - title is first parameter
-            body: `You have ${response.data.count} new notification(s)`,
+            body: `You have ${count} new notification(s)`,
             icon: '/assets/icons/notification-icon.png'
           });
         }
+        return { success: true, data: { count } };
       }),
       catchError((error) => {
         console.error('Background notification check failed:', error);
-        return [];
+        return of({ success: false, data: { count: 0 } });
       })
     );
   }

@@ -32,10 +32,9 @@ import {
   faArrowRight,
   faComments
 } from '@fortawesome/free-solid-svg-icons';
-import { RequestService } from '../../core/services/request.service';
-import { AuthService } from '../../core/services/auth.service';
-import { MarketplaceService } from '../../core/services/marketplace.service';
-import { ApiService } from '../../core/services/api.service';
+import { RequestService } from '../../domains/requests/services/request.service';
+import { AuthService } from '../../domains/authentication/services/auth.service';
+import { MarketplaceService } from '../../domains/marketplace/services/marketplace.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 
 @Component({
@@ -249,14 +248,14 @@ import { AccessControlService } from '../../core/services/access-control.service
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="request.buyer?.profile_picture_url || '/markt-text-logo.png'" 
-                  [alt]="request.buyer?.username"
+                  [src]="request.user?.profile_picture_url || '/markt-text-logo.png'" 
+                  [alt]="request.user?.username"
                   class="w-10 h-10 rounded-full object-cover"
                 >
                 <div>
                   <div class="flex items-center space-x-2">
-                    <h3 class="font-medium text-gray-900">{{ request.buyer?.username }}</h3>
-                    <span *ngIf="request.buyer?.verified" class="text-blue-500">
+                    <h3 class="font-medium text-gray-900">{{ request.user?.username }}</h3>
+                    <span *ngIf="request.user?.email_verified" class="text-blue-500">
                       <fa-icon [icon]="faStar" class="w-4 h-4"></fa-icon>
                     </span>
                   </div>
@@ -265,7 +264,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                     <span>•</span>
                     <span class="flex items-center">
                       <fa-icon [icon]="faMapMarkerAlt" class="w-3 h-3 mr-1"></fa-icon>
-                      {{ request.buyer?.location || 'Location not specified' }}
+                      Location not specified
                     </span>
                   </div>
                 </div>
@@ -435,7 +434,6 @@ export class RequestsComponent implements OnInit {
   private requestService = inject(RequestService);
   private authService = inject(AuthService);
   private marketplaceService = inject(MarketplaceService);
-  private apiService = inject(ApiService);
   private router = inject(Router);
   public access = inject(AccessControlService);
 
@@ -508,16 +506,23 @@ export class RequestsComponent implements OnInit {
   private loadRequests(): void {
     this.isLoading = true;
     
-    const params = {
+    // Parse sortBy (e.g., 'created_at_desc') to extract field and order
+    const sortParts = this.sortBy.split('_');
+    const sortField = sortParts.slice(0, -1).join('_') as 'created_at' | 'budget' | 'expires_at';
+    const sortOrder = sortParts[sortParts.length - 1] as 'asc' | 'desc';
+    
+    const params: any = {
       page: this.currentPage,
       search: this.searchQuery,
       category_ids: this.categoryFilter ? [this.categoryFilter] : undefined,
       status: this.statusFilter as 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED' | undefined,
       budget_range: this.budgetFilter,
-      sort_by: this.sortBy
+      sort_by: sortField,
+      sort_order: sortOrder
     };
 
-    this.apiService.getRequests(params).subscribe({
+    // Migrated to RequestService.getRequests() - uses DDD pattern with RequestRepository
+    this.requestService.getRequests(params).subscribe({
       next: (response) => {
         if (response.success) {
           this.requests = response.data.items;
@@ -649,8 +654,10 @@ export class RequestsComponent implements OnInit {
   }
 
   // Additional request endpoint integrations
+  // Migrated to RequestService - uses DDD pattern with RequestRepository
   deleteRequest(requestId: string): void {
-    this.apiService.deleteRequest(requestId).subscribe({
+    // Migrated to RequestService.deleteRequest() - uses RequestRepository for DDD pattern
+    this.requestService.deleteRequest(requestId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -661,7 +668,8 @@ export class RequestsComponent implements OnInit {
   }
 
   updateRequest(requestId: string, requestData: any): void {
-    this.apiService.updateRequest(requestId, requestData).subscribe({
+    // Migrated to RequestService.updateRequest() - uses RequestRepository for DDD pattern
+    this.requestService.updateRequest(requestId, requestData).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -672,8 +680,9 @@ export class RequestsComponent implements OnInit {
   }
 
   updateRequestStatus(requestId: string, status: string): void {
-    const statusData = { status };
-    this.apiService.updateRequestStatus(requestId, statusData).subscribe({
+    // Migrated to RequestService.updateRequestStatus() - uses RequestRepository for DDD pattern
+    const statusData = { status: status as any };
+    this.requestService.updateRequestStatus(requestId, statusData).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },
@@ -689,8 +698,9 @@ export class RequestsComponent implements OnInit {
       return;
     }
 
+    // Migrated to RequestService.upvoteRequest() - uses RequestRepository for DDD pattern
     this.upvotingRequest = true;
-    this.apiService.upvoteRequest(requestId).subscribe({
+    this.requestService.upvoteRequest(requestId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
         this.upvotingRequest = false;
@@ -704,7 +714,8 @@ export class RequestsComponent implements OnInit {
   }
 
   withdrawOffer(offerId: string): void {
-    this.apiService.withdrawOffer(offerId).subscribe({
+    // Migrated to RequestService.withdrawOffer() - uses RequestRepository for DDD pattern
+    this.requestService.withdrawOffer(offerId).subscribe({
       next: (response) => {
         this.loadRequests(); // Refresh requests list
       },

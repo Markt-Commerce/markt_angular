@@ -21,9 +21,7 @@ import {
   faChevronLeft,
   faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
-import { OrderService } from '../../core/services/order.service';
-import { ApiService } from '../../core/services/api.service';
-import { Order, OrderStatus } from '../../core/models';
+import { OrderService, Order, OrderStatus } from '../../domains/orders';
 
 interface OrderStatusTab {
   key: string;
@@ -207,8 +205,8 @@ interface OrderFilters {
               </fa-icon>
             </div>
             <div>
-              <h3 class="font-semibold text-dark">Order #{{ order.order_number }}</h3>
-              <p class="text-sm text-muted">Placed on {{ order.created_at | date:'mediumDate' }}</p>
+              <h3 class="font-semibold text-dark">Order #{{ order.orderNumber }}</h3>
+              <p class="text-sm text-muted">Placed on {{ order.createdAt | date:'mediumDate' }}</p>
             </div>
           </div>
           <span 
@@ -229,7 +227,7 @@ interface OrderFilters {
                   class="w-16 h-16 rounded-lg object-cover">
                 <div class="flex-1">
                   <h4 class="font-medium text-dark mb-1">{{ item.product.name }}</h4>
-                  <p class="text-sm text-muted mb-2">Sold by {{ item.product.seller.shop_name || 'Unknown Seller' }}</p>
+                  <p class="text-sm text-muted mb-2">Sold by {{ getSellerName(item.product) || 'Unknown Seller' }}</p>
                   <div class="flex items-center space-x-2 text-sm">
                     <span class="text-muted">Qty: {{ item.quantity }}</span>
                     <span class="text-muted">•</span>
@@ -246,7 +244,7 @@ interface OrderFilters {
                   class="w-16 h-16 rounded-lg object-cover">
                 <div class="flex-1">
                   <h4 class="font-medium text-dark mb-1">{{ order.items[0].product.name }}</h4>
-                  <p class="text-sm text-muted mb-2">Sold by {{ order.items[0].product.seller.shop_name || 'Unknown Seller' }}</p>
+                  <p class="text-sm text-muted mb-2">Sold by {{ getSellerName(order.items[0].product) || 'Unknown Seller' }}</p>
                   <div class="flex items-center space-x-2 text-sm">
                     <span class="text-muted">Qty: {{ order.items[0].quantity }}</span>
                     <span class="text-muted">•</span>
@@ -402,7 +400,6 @@ interface OrderFilters {
 })
 export class OrderHistoryComponent implements OnInit {
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService);
   private router = inject(Router);
 
   // Font Awesome Icons
@@ -447,8 +444,10 @@ export class OrderHistoryComponent implements OnInit {
   ]);
 
   ngOnInit(): void {
-    this.loadMockOrders(); // Load mock data for development
-    // this.loadOrders(); // Uncomment this when you want to use real API data
+    // Use domain OrderService to load real orders
+    this.loadOrders();
+    // Uncomment below to use mock data for development/testing
+    // this.loadMockOrders();
   }
 
   /**
@@ -460,7 +459,7 @@ export class OrderHistoryComponent implements OnInit {
     
     // Simulate API delay
     setTimeout(() => {
-      const mockOrders: Order[] = [
+      const mockOrdersData: any[] = [
         {
           id: '1',
           order_number: 'MKT-2024-001',
@@ -488,7 +487,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item1',
-              order_id: '1',
+              orderId: '1',
               product_id: 'prod1',
               seller_id: 'seller1',
               quantity: 1,
@@ -561,8 +560,8 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 150,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-15T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
@@ -597,7 +596,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item2',
-              order_id: '2',
+              orderId: '2',
               product_id: 'prod2',
               seller_id: 'seller2',
               quantity: 1,
@@ -670,11 +669,11 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 300,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-18T00:00:00Z'
-              }
+              } as any
             },
             {
               id: 'item3',
-              order_id: '2',
+              orderId: '2',
               product_id: 'prod3',
               seller_id: 'seller3',
               quantity: 1,
@@ -747,8 +746,8 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 200,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-18T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
@@ -783,7 +782,7 @@ export class OrderHistoryComponent implements OnInit {
           items: [
             {
               id: 'item4',
-              order_id: '3',
+              orderId: '3',
               product_id: 'prod4',
               seller_id: 'seller4',
               quantity: 1,
@@ -856,16 +855,18 @@ export class OrderHistoryComponent implements OnInit {
                 view_count: 180,
                 created_at: '2024-03-01T00:00:00Z',
                 updated_at: '2024-03-20T00:00:00Z'
-              }
-            }
+              } as any
+            } as any
           ],
           buyer: {
             id: 'buyer1',
             buyername: 'John Doe',
             profile_picture_url: '/assets/images/mike-seller.png'
-          }
+            } as any
         }
       ];
+
+      const mockOrders = mockOrdersData as Order[];
 
       this.orders.set(mockOrders);
       this.updateStatusCounts();
@@ -875,19 +876,18 @@ export class OrderHistoryComponent implements OnInit {
   }
 
   /**
-   * Load orders from the API service
-   * Uses the existing order service to fetch buyer orders
+   * Load orders from the domain OrderService
+   * Domain service returns Observable<Order[]> directly (no wrapper)
    */
   private loadOrders(): void {
     this.isLoading.set(true);
     
     this.orderService.getOrders().subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          this.orders.set(response.data || []);
-          this.updateStatusCounts();
-          this.calculatePagination();
-        }
+      next: (orders: Order[]) => {
+        // Domain service returns Order[] directly
+        this.orders.set(orders || []);
+        this.updateStatusCounts();
+        this.calculatePagination();
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -940,10 +940,10 @@ export class OrderHistoryComponent implements OnInit {
     if (this.filters.search.trim()) {
       const searchTerm = this.filters.search.toLowerCase();
       filtered = filtered.filter(order => 
-        order.order_number.toLowerCase().includes(searchTerm) ||
+        order.orderNumber.toLowerCase().includes(searchTerm) ||
         order.items.some(item => 
           item.product?.name.toLowerCase().includes(searchTerm) ||
-          item.product?.seller?.shop_name.toLowerCase().includes(searchTerm)
+          this.getSellerName(item.product)?.toLowerCase().includes(searchTerm)
         )
       );
     }
@@ -964,9 +964,9 @@ export class OrderHistoryComponent implements OnInit {
   private applySorting(orders: Order[]): Order[] {
     switch (this.filters.sortBy) {
       case 'date_desc':
-        return orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       case 'date_asc':
-        return orders.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        return orders.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       case 'amount_desc':
         return orders.sort((a, b) => b.total - a.total);
       case 'amount_asc':
@@ -975,8 +975,8 @@ export class OrderHistoryComponent implements OnInit {
         return orders.sort((a, b) => a.status.localeCompare(b.status));
       case 'seller':
         return orders.sort((a, b) => {
-          const aSeller = a.items[0]?.product?.seller?.shop_name || '';
-          const bSeller = b.items[0]?.product?.seller?.shop_name || '';
+          const aSeller = this.getSellerName(a.items[0]?.product) || '';
+          const bSeller = this.getSellerName(b.items[0]?.product) || '';
           return aSeller.localeCompare(bSeller);
         });
       default:
@@ -1082,6 +1082,24 @@ export class OrderHistoryComponent implements OnInit {
   }
 
   /**
+   * Get seller name from product
+   * Domain Product model may not have seller property directly accessible
+   * This helper safely extracts seller information
+   */
+  getSellerName(product: any): string | null {
+    // Try to get seller name from various possible structures
+    if (product?.seller?.shop_name) {
+      return product.seller.shop_name;
+    }
+    if (product?.seller?.name) {
+      return product.seller.name;
+    }
+    // If seller info is not available in product, return null
+    // The template will show 'Unknown Seller' as fallback
+    return null;
+  }
+
+  /**
    * Get product image with fallback
    */
   getProductImage(product: any): string {
@@ -1109,7 +1127,7 @@ export class OrderHistoryComponent implements OnInit {
    * Get estimated delivery date
    */
   getEstimatedDelivery(order: Order): string {
-    const orderDate = new Date(order.created_at);
+    const orderDate = new Date(order.createdAt);
     const estimatedDate = new Date(orderDate.getTime() + (4 * 24 * 60 * 60 * 1000)); // 4 days
     return estimatedDate.toLocaleDateString();
   }
@@ -1182,7 +1200,7 @@ export class OrderHistoryComponent implements OnInit {
    * Contact seller
    */
   contactSeller(order: Order): void {
-    const sellerId = order.items[0].product.seller.id;
+    const sellerId = order.sellerId;
     if (sellerId) {
       this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT], { queryParams: { seller: sellerId } });
     }
@@ -1190,17 +1208,20 @@ export class OrderHistoryComponent implements OnInit {
 
   /**
    * Cancel order
+   * Uses domain OrderService.cancelOrder() which includes business logic validation
    */
   cancelOrder(order: Order): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.updateRequestStatus(order.id, { status: 'cancelled' }).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadOrders(); // Refresh orders
-          }
+      this.orderService.cancelOrder(order.id).subscribe({
+        next: (cancelledOrder) => {
+          // Domain service returns the updated Order directly
+          // Refresh orders to get updated list
+          this.loadOrders();
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
+          // Domain service throws error if order cannot be cancelled (business rule)
+          alert(error.message || 'Failed to cancel order. Order may not be cancellable.');
         }
       });
     }

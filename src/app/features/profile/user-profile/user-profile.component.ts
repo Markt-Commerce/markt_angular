@@ -2,12 +2,16 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { ApiService } from '../../../core/services/api.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import { SocialService } from '../../../domains/social/services/social.service';
+import { ApiService } from '../../../core/services/api.service'; // Still needed for getUserProducts, getUserReviews (methods not migrated yet)
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar, faUserPlus, faEnvelope, faShare, faCheckCircle, faGraduationCap, faCalendar, faMapMarkerAlt, faBook, faClock, faHandshake, faFlag, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
 import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { MarketplaceService } from '../../../domains/marketplace';
+import { AuthService } from '../../../domains/authentication';
 
 interface UserProfile {
   id: string;
@@ -71,7 +75,11 @@ interface Activity {
 export class UserProfileComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
+  private socialService = inject(SocialService);
+  private apiService = inject(ApiService); // Still needed for getUserProducts, getUserReviews
+  private marketplaceService = inject(MarketplaceService);
+  private authService = inject(AuthService);
   private titleMeta = inject(TitleMetaService);
   public media = inject(MediaOptimizationService);
 
@@ -108,7 +116,7 @@ export class UserProfileComponent implements OnInit {
     if (userId) {
       this.loading = true;
       
-      this.apiService.getUserProfile(userId).subscribe({
+      this.profileService.getPublicProfile(userId).subscribe({
         next: (response) => {
           this.profile = response.data as any;
           const titleHandle = this.profile?.username ? `@${this.profile.username}` : (this.profile?.full_name || 'User');
@@ -124,9 +132,9 @@ export class UserProfileComponent implements OnInit {
       });
 
       // Load user's products
-      this.apiService.getUserProducts(userId).subscribe({
-        next: (response) => {
-          this.products = (response.data?.items || []) as any;
+      this.marketplaceService.getUserProducts(userId).subscribe({
+        next: (products) => {
+          this.products = products as any;
         },
         error: (error) => {
           console.error('Error loading user products:', error);
@@ -135,9 +143,9 @@ export class UserProfileComponent implements OnInit {
       });
 
       // Load user's reviews
-      this.apiService.getUserReviews(userId).subscribe({
-        next: (response) => {
-          this.reviews = response.data || [];
+      this.authService.getUserReviews(userId).subscribe({
+        next: (response: any) => {
+          this.reviews = response?.data || [];
         },
         error: (error) => {
           console.error('Error loading user reviews:', error);
@@ -256,12 +264,14 @@ export class UserProfileComponent implements OnInit {
     if (!this.profile?.id) return;
     const userId = this.profile.id;
     if (this.isFollowing) {
-      this.apiService.unfollowUser(userId).subscribe({
+      // Use SocialService (DDD pattern)
+      this.socialService.unfollowUser(userId).subscribe({
         next: () => { this.isFollowing = false; },
         error: () => { /* keep old state on error */ }
       });
     } else {
-      this.apiService.followUser(userId).subscribe({
+      // Use SocialService (DDD pattern)
+      this.socialService.followUser(userId).subscribe({
         next: () => { this.isFollowing = true; },
         error: () => { /* keep old state on error */ }
       });

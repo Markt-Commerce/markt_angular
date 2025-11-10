@@ -4,8 +4,8 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
-import { AuthService } from '../../../core/services/auth.service';
-import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../domains/authentication/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
@@ -449,7 +449,7 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 export class EditProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private profileService = inject(ProfileService);
 
   profileForm!: FormGroup;
   loading = false;
@@ -483,7 +483,7 @@ export class EditProfileComponent implements OnInit {
   private loadProfile(): void {
     this.loading = true;
     
-    this.apiService.getProfile().subscribe({
+    this.profileService.getProfile().subscribe({
       next: (response) => {
         this.profile = response.data;
         this.populateForm();
@@ -519,16 +519,18 @@ export class EditProfileComponent implements OnInit {
 
       const formData = this.profileForm.value;
       
-      this.apiService.updateProfile(formData).subscribe({
+      this.profileService.updateProfile(formData).subscribe({
         next: (response) => {
-          this.loading = false;
-          this.successMessage = 'Profile updated successfully!';
-          this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE]);
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            this.successMessage = '';
-          }, 3000);
+          if (response.success) {
+            this.loading = false;
+            this.successMessage = 'Profile updated successfully!';
+            this.router.navigate([ROUTES_ABSOLUTE.APP.PROFILE]);
+            
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+              this.successMessage = '';
+            }, 3000);
+          }
         },
         error: (error) => {
           console.error('Error updating profile:', error);
