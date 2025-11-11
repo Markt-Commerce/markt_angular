@@ -822,9 +822,17 @@ export class FeedComponent implements OnInit {
   }
 
   addMessageReaction(messageId: string, reactionData: any): void {
-    this.chatService.addMessageReaction(messageId, reactionData).subscribe({
-      next: (response) => {
-      },
+    const reactionType =
+      typeof reactionData === 'string'
+        ? reactionData
+        : reactionData?.reaction_type ?? reactionData?.type ?? '';
+
+    if (!reactionType) {
+      console.warn('Reaction type is required to add a reaction');
+      return;
+    }
+
+    this.chatService.addMessageReaction(messageId, reactionType).subscribe({
       error: (error) => {
         console.error('Error adding message reaction:', error);
       }
@@ -842,11 +850,15 @@ export class FeedComponent implements OnInit {
   }
 
   archiveChatRoom(roomId: string): void {
-    this.apiService.archiveChatRoom(roomId).subscribe({
-      next: (response) => {
-      },
-      error: (error) => {
-        console.error('Error archiving chat room:', error);
+    const numericId = Number(roomId);
+    if (Number.isNaN(numericId)) {
+      console.warn('Cannot archive chat room: invalid identifier');
+      return;
+    }
+
+    this.chatService.deleteRoom(numericId).subscribe({
+      error: (err: unknown) => {
+        console.error('Error archiving chat room:', err);
       }
     });
   }

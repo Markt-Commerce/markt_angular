@@ -299,6 +299,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private setupSubscriptions(): void {
+    void this.chatService.loadRooms().subscribe();
     this.chatService.getUnreadCount$().subscribe(count => {
       this.unreadMessages = count;
     });

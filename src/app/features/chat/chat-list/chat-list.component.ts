@@ -13,15 +13,16 @@ import {
   faTimes,
   faUser,
   faStore,
-  faPrint,
   faRulerVertical,
-  faVolumeMute,
   faTrash,
-  faArchive
 } from '@fortawesome/free-solid-svg-icons';
 import { ChatService } from '../../../domains/chat/services/chat.service';
 import { AuthService, User, UserRole } from '../../../domains/authentication';
-import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
+import {
+  ChatRoomSummary,
+  ChatMessageType,
+  LastMessagePreview,
+} from '../../../domains/chat';
 
 @Component({
   selector: 'app-chat-list',
@@ -34,17 +35,19 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-xl font-bold text-gray-900">Messages</h1>
-            <p class="text-sm text-gray-500">{{ chatRooms.length }} conversations</p>
+            <p class="text-sm text-gray-500">
+              {{ chatRooms.length }} conversations
+            </p>
           </div>
           <div class="flex items-center space-x-3">
-            <button 
+            <button
               (click)="startNewChat()"
               class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
               title="New Chat"
             >
               <fa-icon [icon]="faComments" class="w-5 h-5"></fa-icon>
             </button>
-            <button 
+            <button
               (click)="toggleSearch()"
               class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
               title="Search"
@@ -57,17 +60,22 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
         <!-- Search Bar -->
         <div *ngIf="showSearch" class="mt-4">
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
+            <div
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+            >
+              <fa-icon
+                [icon]="faSearch"
+                class="w-5 h-5 text-gray-400"
+              ></fa-icon>
             </div>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search conversations..."
               [(ngModel)]="searchQuery"
               (input)="onSearchInput()"
               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
-            >
-            <button 
+            />
+            <button
               (click)="toggleSearch()"
               class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
@@ -81,15 +89,27 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
       <div class="flex-1 overflow-y-auto">
         <!-- Loading State -->
         <div *ngIf="isLoading" class="flex items-center justify-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"></div>
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-markt-primary"
+          ></div>
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!isLoading && chatRooms.length === 0" class="text-center py-12">
-          <fa-icon [icon]="faUser" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
-          <h2 class="text-xl font-medium text-gray-900 mb-2">No conversations yet</h2>
-          <p class="text-gray-500 mb-6">Start a conversation with other users or sellers</p>
-          <button 
+        <div
+          *ngIf="!isLoading && chatRooms.length === 0"
+          class="text-center py-12"
+        >
+          <fa-icon
+            [icon]="faUser"
+            class="w-16 h-16 text-gray-400 mx-auto mb-4"
+          ></fa-icon>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">
+            No conversations yet
+          </h2>
+          <p class="text-gray-500 mb-6">
+            Start a conversation with other users or sellers
+          </p>
+          <button
             (click)="startNewChat()"
             class="bg-markt-primary text-white px-6 py-3 rounded-md hover:bg-markt-secondary transition-colors font-medium"
           >
@@ -99,7 +119,7 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
 
         <!-- Chat Rooms -->
         <div class="divide-y divide-gray-200">
-          <div 
+          <div
             *ngFor="let chat of filteredChatRooms"
             (click)="selectChat(chat)"
             class="flex items-center space-x-3 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -107,12 +127,12 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
           >
             <!-- Avatar -->
             <div class="relative flex-shrink-0">
-              <img 
-                [src]="getChatAvatar(chat)" 
+              <img
+                [src]="getChatAvatar(chat)"
                 [alt]="getChatName(chat)"
                 class="w-12 h-12 rounded-full object-cover"
-              >
-              <div 
+              />
+              <div
                 *ngIf="getChatOnlineStatus(chat)"
                 class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"
               ></div>
@@ -125,28 +145,31 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
                   {{ getChatName(chat) }}
                 </h3>
                 <div class="flex items-center space-x-2">
-                  <span *ngIf="chat.pinned" class="text-yellow-500">
-                    <fa-icon [icon]="faPrint" class="w-3 h-3"></fa-icon>
-                  </span>
                   <span class="text-xs text-gray-500">
                     {{ formatTimestamp(getLastMessageTimestamp(chat)) }}
                   </span>
                 </div>
               </div>
-              
+
               <div class="flex items-center justify-between mt-1">
                 <p class="text-sm text-gray-500 truncate">
-                  <span *ngIf="isLastMessageFromCurrentUser(chat)" class="text-gray-400">You: </span>
+                  <span
+                    *ngIf="isLastMessageFromCurrentUser(chat)"
+                    class="text-gray-400"
+                    >You:
+                  </span>
                   {{ getLastMessagePreview(chat) }}
                 </p>
                 <div class="flex items-center space-x-2">
-                  <span 
-                    *ngIf="unreadCountGetter(chat) > 0"
+                  <span
+                    *ngIf="getUnreadCount(chat) > 0"
                     class="inline-flex items-center justify-center w-5 h-5 bg-markt-primary text-white text-xs rounded-full"
                   >
-                    {{ unreadCountGetter(chat) > 99 ? '99+' : unreadCountGetter(chat) }}
+                    {{
+                      getUnreadCount(chat) > 99 ? '99+' : getUnreadCount(chat)
+                    }}
                   </span>
-                  <button 
+                  <button
                     (click)="showChatMenu(chat, $event)"
                     class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                   >
@@ -157,18 +180,21 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
 
               <!-- Chat Type Indicator -->
               <div class="flex items-center space-x-2 mt-1">
-                <span 
-                  *ngIf="chat.productId"
+                <span
+                  *ngIf="chat.product"
                   class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                 >
                   <fa-icon [icon]="faStore" class="w-3 h-3 mr-1"></fa-icon>
                   Product Chat
                 </span>
-                <span 
-                  *ngIf="chat.requestId"
+                <span
+                  *ngIf="chat.request"
                   class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
                 >
-                  <fa-icon [icon]="faRulerVertical" class="w-3 h-3 mr-1"></fa-icon>
+                  <fa-icon
+                    [icon]="faRulerVertical"
+                    class="w-3 h-3 mr-1"
+                  ></fa-icon>
                   Order Chat
                 </span>
               </div>
@@ -178,40 +204,18 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
       </div>
 
       <!-- Chat Menu Dropdown -->
-      <div 
+      <div
         *ngIf="showMenu"
         class="fixed inset-0 z-50"
         (click)="hideChatMenu()"
       ></div>
-      <div 
+      <div
         *ngIf="showMenu"
         class="fixed z-50 bg-white rounded-md shadow-lg py-1 min-w-[160px]"
         [style.left.px]="menuPosition.x"
         [style.top.px]="menuPosition.y"
       >
-        <button 
-          (click)="pinChat(selectedChat)"
-          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <fa-icon [icon]="faPrint" class="w-4 h-4 mr-2"></fa-icon>
-          {{ selectedChat?.pinned ? 'Unpin' : 'Pin' }}
-        </button>
-        <button 
-          (click)="muteChat(selectedChat)"
-          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <fa-icon [icon]="faVolumeMute" class="w-4 h-4 mr-2"></fa-icon>
-          {{ selectedChat?.muted ? 'Unmute' : 'Mute' }}
-        </button>
-        <button 
-          (click)="archiveChat(selectedChat)"
-          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <fa-icon [icon]="faArchive" class="w-4 h-4 mr-2"></fa-icon>
-          Archive
-        </button>
-        <hr class="my-1">
-        <button 
+        <button
           (click)="deleteChat(selectedChat)"
           class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
         >
@@ -221,12 +225,14 @@ import { ChatRoom, ChatMessage } from '../../../domains/chat/models/chat.model';
       </div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      height: 100%;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100%;
+      }
+    `,
+  ],
 })
 export class ChatListComponent implements OnInit {
   private chatService = inject(ChatService);
@@ -242,41 +248,42 @@ export class ChatListComponent implements OnInit {
   faTimes = faTimes;
   faUser = faUser;
   faStore = faStore;
-  faPrint = faPrint;
   faRulerVertical = faRulerVertical;
-  faVolumeMute = faVolumeMute;
   faTrash = faTrash;
-  faArchive = faArchive;
 
   // Data
-  chatRooms: ChatRoom[] = [];
-  private lastMessages = new Map<string, ChatMessage>();
+  chatRooms: ChatRoomSummary[] = [];
   user: User | null = null;
   currentRole: UserRole | null = null;
   isLoading = false;
   private deeplinkHandled = false;
-  
+
   // UI State
   showSearch = false;
   searchQuery = '';
-  selectedChatId: string | null = null;
+  selectedChatId: number | null = null;
   showMenu = false;
-  selectedChat: ChatRoom | null = null;
+  selectedChat: ChatRoomSummary | null = null;
   menuPosition = { x: 0, y: 0 };
 
-  get filteredChatRooms(): ChatRoom[] {
+  get filteredChatRooms(): ChatRoomSummary[] {
     if (!this.searchQuery) {
       return this.chatRooms;
     }
-    
-    return this.chatRooms.filter(chat => 
-      this.getChatName(chat).toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-      this.getLastMessagePreview(chat).toLowerCase().includes(this.searchQuery.toLowerCase())
-    );
+
+    const query = this.searchQuery.toLowerCase();
+    return this.chatRooms.filter((chat) => {
+      const nameMatch = this.getChatName(chat).toLowerCase().includes(query);
+      const lastMessageMatch = this.getLastMessagePreview(chat)
+        .toLowerCase()
+        .includes(query);
+      return nameMatch || lastMessageMatch;
+    });
   }
 
   ngOnInit(): void {
     this.observeAuthState();
+    this.observeRooms();
     this.observeNewMessages();
     this.observeRouteParams();
     this.loadChatList();
@@ -285,17 +292,24 @@ export class ChatListComponent implements OnInit {
   private observeAuthState(): void {
     this.authService.authState$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(authState => {
+      .subscribe((authState) => {
         this.user = authState.user;
         this.currentRole = authState.user?.currentRole ?? null;
+      });
+  }
+
+  private observeRooms(): void {
+    this.chatService.rooms$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rooms) => {
+        this.chatRooms = rooms;
       });
   }
 
   private observeNewMessages(): void {
     this.chatService.newMessage$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(message => {
-        this.lastMessages.set(message.roomId, message);
+      .subscribe(() => {
         this.loadChatList(false);
       });
   }
@@ -303,7 +317,7 @@ export class ChatListComponent implements OnInit {
   private observeRouteParams(): void {
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
+      .subscribe((params) => {
         if (this.deeplinkHandled || !this.user) {
           return;
         }
@@ -315,14 +329,16 @@ export class ChatListComponent implements OnInit {
           return;
         }
 
-        const buyerId = this.currentRole === 'buyer'
-          ? this.user.id
-          : this.user.buyerAccount?.id ?? this.user.id;
+        const buyerId =
+          this.currentRole === 'buyer'
+            ? this.user.id
+            : this.user.buyerAccount?.id ?? this.user.id;
         const sellerId = otherUserId;
 
         this.deeplinkHandled = true;
 
-        this.chatService.getOrCreateRoom(String(buyerId), String(sellerId), productId)
+        this.chatService
+          .getOrCreateRoom(String(buyerId), String(sellerId), productId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (room) => {
@@ -330,7 +346,7 @@ export class ChatListComponent implements OnInit {
             },
             error: () => {
               this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT]);
-            }
+            },
           });
       });
   }
@@ -340,7 +356,8 @@ export class ChatListComponent implements OnInit {
       this.isLoading = true;
     }
 
-    this.chatService.getChatRooms()
+    this.chatService
+      .loadRooms()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -350,47 +367,13 @@ export class ChatListComponent implements OnInit {
         })
       )
       .subscribe({
-        next: (rooms) => {
-          this.chatRooms = rooms;
-
-          const validRoomIds = new Set(rooms.map(room => room.id));
-          Array.from(this.lastMessages.keys()).forEach(id => {
-            if (!validRoomIds.has(id)) {
-              this.lastMessages.delete(id);
-            }
-          });
-
-          if (rooms.length === 0) {
-            this.lastMessages.clear();
-            return;
-          }
-
-          this.fetchLastMessages(rooms);
-        },
         error: (error) => {
           console.error('Error loading chat list:', error);
-          this.chatRooms = [];
-        }
-      });
-  }
-
-  private fetchLastMessages(rooms: ChatRoom[]): void {
-    rooms.forEach(room => {
-      const knownLastMessage = this.lastMessages.get(room.id);
-      if (knownLastMessage && knownLastMessage.createdAt === room.lastMessageAt) {
-        return;
-      }
-
-      this.chatService.getMessages(room.id, { limit: 1 })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (messages) => {
-            if (messages.length > 0) {
-              this.lastMessages.set(room.id, messages[messages.length - 1]);
-            }
+          if (showSpinner) {
+            this.chatRooms = [];
           }
-        });
-    });
+        },
+      });
   }
 
   toggleSearch(): void {
@@ -404,7 +387,7 @@ export class ChatListComponent implements OnInit {
     // Search is handled by the filteredChatRooms getter
   }
 
-  selectChat(chat: ChatRoom): void {
+  selectChat(chat: ChatRoomSummary): void {
     this.selectedChatId = chat.id;
     this.chatService.selectRoom(chat.id);
     this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, chat.id]);
@@ -414,65 +397,56 @@ export class ChatListComponent implements OnInit {
     this.router.navigate([buildPath(ROUTES_ABSOLUTE.APP.CHAT, 'start')]);
   }
 
-  getChatAvatar(_chat: ChatRoom): string {
-    return 'assets/images/default-avatar.png';
+  getChatAvatar(chat: ChatRoomSummary): string {
+    return chat.otherUser.profilePicture ?? '/Logo.png';
   }
 
-  getChatName(chat: ChatRoom): string {
-    if (!this.user) {
-      return `Conversation ${chat.id}`;
-    }
-
-    const isBuyer = this.user.id === chat.buyerId;
-    const counterpartId = isBuyer ? chat.sellerId : chat.buyerId;
-
-    if (chat.productId) {
-      return `Product chat with ${counterpartId}`;
-    }
-
-    if (chat.requestId) {
-      return `Order chat with ${counterpartId}`;
-    }
-
-    return `Conversation with ${counterpartId}`;
+  getChatName(chat: ChatRoomSummary): string {
+    return chat.otherUser.displayName();
   }
 
-  getChatOnlineStatus(_chat: ChatRoom): boolean {
+  getChatOnlineStatus(_chat: ChatRoomSummary): boolean {
     return false; // backend may provide presence later
   }
 
-  getLastMessagePreview(chat: ChatRoom): string {
-    const lastMessage = this.lastMessages.get(chat.id);
-
+  getLastMessagePreview(chat: ChatRoomSummary): string {
+    const lastMessage = chat.lastMessage;
     if (!lastMessage) {
       return 'No messages yet';
     }
 
-    switch (lastMessage.messageType) {
+    return this.describeLastMessage(lastMessage);
+  }
+
+  private describeLastMessage(lastMessage: LastMessagePreview): string {
+    switch (lastMessage.messageType as ChatMessageType) {
       case 'text':
         return lastMessage.content;
       case 'image':
         return 'Image shared';
-      case 'file':
-        return 'File shared';
-      case 'system':
-        return 'System update';
+      case 'offer':
+        return 'Offer shared';
+      case 'product':
+        return 'Product shared';
+      case 'discount':
+        return 'Discount offer';
+      case 'discount_response':
+        return 'Discount update';
       default:
         return 'New message';
     }
   }
 
-  getLastMessageTimestamp(chat: ChatRoom): string | undefined {
-    const lastMessage = this.lastMessages.get(chat.id);
-    return lastMessage?.createdAt ?? chat.lastMessageAt;
+  getLastMessageTimestamp(chat: ChatRoomSummary): string | undefined {
+    return chat.lastMessage?.createdAt ?? chat.lastMessageAt ?? undefined;
   }
 
-  isLastMessageFromCurrentUser(chat: ChatRoom): boolean {
+  isLastMessageFromCurrentUser(chat: ChatRoomSummary): boolean {
     if (!this.user) {
       return false;
     }
 
-    const lastMessage = this.lastMessages.get(chat.id);
+    const lastMessage = chat.lastMessage;
     return lastMessage?.senderId === this.user.id;
   }
 
@@ -488,22 +462,17 @@ export class ChatListComponent implements OnInit {
     return date.toLocaleDateString();
   }
 
-  get unreadCountGetter() {
-    return (chat: ChatRoom) => {
-      if (!this.user) {
-        return 0;
-      }
-      return chat.getUnreadCount(this.user.id);
-    };
+  getUnreadCount(chat: ChatRoomSummary): number {
+    return chat.unreadCount;
   }
 
-  showChatMenu(chat: ChatRoom, event: MouseEvent): void {
+  showChatMenu(chat: ChatRoomSummary, event: MouseEvent): void {
     event.stopPropagation();
-    
+
     this.selectedChat = chat;
     this.menuPosition = {
       x: event.clientX,
-      y: event.clientY
+      y: event.clientY,
     };
     this.showMenu = true;
   }
@@ -513,80 +482,29 @@ export class ChatListComponent implements OnInit {
     this.selectedChat = null;
   }
 
-  pinChat(chat: ChatRoom | null): void {
+  deleteChat(chat: ChatRoomSummary | null): void {
     if (!chat) {
       return;
     }
 
-    this.chatService.pinChat(chat.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.loadChatList(false);
-          this.hideChatMenu();
-        },
-        error: (error) => {
-          console.error('Error pinning chat:', error);
-        }
-      });
-  }
-
-  muteChat(chat: ChatRoom | null): void {
-    if (!chat) {
-      return;
-    }
-
-    this.chatService.muteChat(chat.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.loadChatList(false);
-          this.hideChatMenu();
-        },
-        error: (error) => {
-          console.error('Error muting chat:', error);
-        }
-      });
-  }
-
-  archiveChat(chat: ChatRoom | null): void {
-    if (!chat) {
-      return;
-    }
-
-    this.chatService.archiveChat(chat.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.loadChatList(false);
-          this.hideChatMenu();
-        },
-        error: (error) => {
-          console.error('Error archiving chat:', error);
-        }
-      });
-  }
-
-  deleteChat(chat: ChatRoom | null): void {
-    if (!chat) {
-      return;
-    }
-
-    const confirmed = window.confirm('Delete this conversation? This action cannot be undone.');
+    const confirmed = window.confirm(
+      'Delete this conversation? This action cannot be undone.'
+    );
     if (!confirmed) {
       return;
     }
 
-    this.chatService.deleteChat(chat.id)
+    this.chatService
+      .deleteRoom(chat.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.chatRooms = this.chatRooms.filter(c => c.id !== chat.id);
+          this.chatRooms = this.chatRooms.filter((c) => c.id !== chat.id);
           this.hideChatMenu();
         },
         error: (error) => {
           console.error('Error deleting chat:', error);
-        }
+        },
       });
   }
 }

@@ -24,8 +24,6 @@ import {
   PostComment,
   Story,
   Collection,
-  ChatRoom,
-  ChatMessage,
   Payment,
   Notification,
   Review,
@@ -1071,32 +1069,6 @@ export class ApiService {
   }
 
   // ============================================================================
-  // CHAT ENDPOINTS (referenced in schemas)
-  // ============================================================================
-
-  getChatRooms(params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>('/chats/rooms', params);
-  }
-
-  createChatRoom(roomData: any): Observable<ApiResponse<ChatRoom>> {
-    return this.post<ChatRoom>('/chats/rooms', roomData);
-  }
-
-  getChatMessages(roomId: string, params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>(`/chats/rooms/${roomId}/messages`, params);
-  }
-
-  sendMessage(
-    roomId: string,
-    messageData: any
-  ): Observable<ApiResponse<ChatMessage>> {
-    return this.post<ChatMessage>(
-      `/chats/rooms/${roomId}/messages`,
-      messageData
-    );
-  }
-
-  // ============================================================================
   // SOCIAL ENDPOINTS - STORIES (4 endpoints)
   // ============================================================================
 
@@ -1186,53 +1158,6 @@ export class ApiService {
 
   removeBookmark(postId: string): Observable<ApiResponse<void>> {
     return this.delete<void>(`/socials/posts/${postId}/bookmark`);
-  }
-
-  // ============================================================================
-  // CHAT ENDPOINTS - ROOM MANAGEMENT (4 endpoints)
-  // ============================================================================
-
-  pinChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chats/rooms/${roomId}/pin`);
-  }
-
-  muteChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chats/rooms/${roomId}/mute`);
-  }
-
-  archiveChatRoom(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chats/rooms/${roomId}/archive`);
-  }
-
-  deleteChatRoom(roomId: string): Observable<ApiResponse<void>> {
-    return this.delete<void>(`/chats/rooms/${roomId}`);
-  }
-
-  // ============================================================================
-  // CHAT ENDPOINTS - MESSAGE REACTIONS (3 endpoints)
-  // ============================================================================
-
-  getMessageReactions(messageId: string): Observable<ApiResponse<any[]>> {
-    return this.get<any[]>(`/chat/messages/${messageId}/reactions`);
-  }
-
-  addMessageReaction(
-    messageId: string,
-    reactionData: ReactionData
-  ): Observable<ApiResponse<any>> {
-    return this.post<any>(
-      `/chat/messages/${messageId}/reactions`,
-      reactionData
-    );
-  }
-
-  removeMessageReaction(
-    messageId: string,
-    reactionType: string
-  ): Observable<ApiResponse<void>> {
-    return this.delete<void>(
-      `/chat/messages/${messageId}/reactions/${reactionType}`
-    );
   }
 
   // ============================================================================
@@ -1647,10 +1572,6 @@ export class ApiService {
     );
   }
 
-  markMessagesAsRead(roomId: string): Observable<ApiResponse<any>> {
-    return this.post<any>(`/chats/rooms/${roomId}/read`);
-  }
-
   // ============================================================================
   // ADDITIONAL MISSING ENDPOINTS
   // ============================================================================
@@ -1770,15 +1691,6 @@ export class ApiService {
       `/socials/community/posts/${postId}/comments`,
       commentData
     );
-  }
-
-  // Chat - Missing methods
-  getChatList(): Observable<ApiResponse<any>> {
-    return this.get<any>('/chats/list');
-  }
-
-  getChatRoom(roomId: string): Observable<ApiResponse<ChatRoom>> {
-    return this.get<ChatRoom>(`/chats/rooms/${roomId}`);
   }
 
   // Orders - Missing methods

@@ -575,19 +575,11 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     map((cart) => cart?.getTotalItems() ?? 0)
   );
   unreadNotifications$ = this.notificationService.getUnreadCount();
-  unreadMessages$ = this.chatService
-    .getRooms()
-    .pipe(
-      map((rooms) =>
-        rooms.reduce(
-          (total, room) =>
-            total +
-            (room.unreadCountBuyer ?? 0) +
-            (room.unreadCountSeller ?? 0),
-          0
-        )
-      )
-    );
+  unreadMessages$ = this.chatService.rooms$.pipe(
+    map((rooms) =>
+      rooms.reduce((total, room) => total + room.unreadCount, 0)
+    )
+  );
 
   // Local state
   cartItemCount = 0;
@@ -616,15 +608,15 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
 
   private setupSubscriptions(): void {
     // Subscribe to cart, notification and message counts
-    this.cartItemCount$.subscribe((count) => {
+    this.cartItemCount$.subscribe((count: number) => {
       this.cartItemCount = count;
     });
 
-    this.unreadNotifications$.subscribe((count) => {
+    this.unreadNotifications$.subscribe((count: number) => {
       this.unreadNotifications = count;
     });
 
-    this.unreadMessages$.subscribe((count) => {
+    this.unreadMessages$.subscribe((count: number) => {
       this.unreadMessages = count;
     });
 
@@ -642,6 +634,12 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     if (this.authService.getCurrentRole() === 'buyer') {
       this.cartService.getCart().subscribe();
     }
+
+    this.chatService.loadRooms().subscribe({
+      error: (error: unknown) => {
+        console.error('Error loading chat rooms:', error);
+      }
+    });
   }
 
   toggleSidebar(): void {

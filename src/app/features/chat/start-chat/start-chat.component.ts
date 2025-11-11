@@ -649,32 +649,8 @@ export class StartChatComponent implements OnInit {
       return;
     }
 
-    this.isCreatingGroup = true;
-
-    // Create group chat room data
-    // TODO: Update this when backend adds proper group chat support
-    const roomData = {
-      name: this.groupChat.name,
-      description: this.groupChat.description,
-      type: 'group', // This may need backend support
-      buyer_id: this.currentUser.id,
-      seller_id: this.currentUser.id, // For now, use same user as creator
-      is_group: true
-    };
-
-    this.chatService.createChatRoom(roomData)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (room) => {
-          this.resetGroupForm();
-          this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT, room.id]);
-          this.isCreatingGroup = false;
-        },
-        error: (error) => {
-          console.error('Error creating group chat:', error);
-          this.isCreatingGroup = false;
-        }
-      });
+    this.isCreatingGroup = false;
+    console.warn('Group chat creation is not supported by the current backend implementation.');
   }
 
   /**

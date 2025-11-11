@@ -1,242 +1,269 @@
 /**
  * Chat Domain Service
+ *
+ * Coordinates chat-specific business logic on top of the repository layer.
+ * Uses immutable domain models and internal subjects for simple state caching.
  */
 
 import { Injectable, inject } from '@angular/core';
-import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { ChatRepository } from '../repositories/chat.repository';
-import { ChatMessage, ChatRoom } from '../models/chat.model';
-import { SendMessageDto, CreateChatRoomDto } from '../models/chat.dto';
-import { ApiService } from '../../../core/services/api.service';
+import {
+  ChatDiscount,
+  ChatDiscountResponse,
+  ChatMessage,
+  ChatMessageType,
+  ChatMessagesResult,
+  ChatRoom,
+  ChatRoomSummary,
+  ChatRoomsResult,
+  DiscountApplicationResult,
+  DiscountCancellationResult
+} from '../models/chat.model';
+import {
+  CreateChatDiscountDto,
+  CreateChatRoomDto,
+  DiscountResponseRequestDto,
+  SendMessageDto,
+  SendOfferDto
+} from '../models/chat.dto';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private chatRepository = inject(ChatRepository);
-  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
-  
-  // Temporary observables for real-time features
-  public typing$ = new BehaviorSubject<{ roomId: string; isTyping: boolean }>({ roomId: '', isTyping: false });
-  public newMessage$ = new Subject<ChatMessage>();
-  private selectedRoomId: string | null = null;
+  private readonly chatRepository = inject(ChatRepository);
 
-  getRooms(params?: Record<string, unknown>): Observable<ChatRoom[]> {
-    return this.chatRepository.getRooms(params);
+  private readonly roomsSubject = new BehaviorSubject<ChatRoomSummary[]>([]);
+  readonly rooms$ = this.roomsSubject.asObservable();
+
+  private readonly roomsPaginationSubject = new BehaviorSubject<ChatRoomsResult['pagination'] | null>(null);
+  readonly roomsPagination$ = this.roomsPaginationSubject.asObservable();
+
+  private readonly messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
+  readonly messages$ = this.messagesSubject.asObservable();
+
+  private readonly messagesPaginationSubject = new BehaviorSubject<ChatMessagesResult['pagination'] | null>(null);
+  readonly messagesPagination$ = this.messagesPaginationSubject.asObservable();
+
+  private readonly unreadCountSubject = new BehaviorSubject<number>(0);
+  readonly unreadCount$ = this.unreadCountSubject.asObservable();
+
+  readonly typing$ = new BehaviorSubject<{ roomId: number | null; isTyping: boolean }>({
+    roomId: null,
+    isTyping: false
+  });
+  readonly newMessage$ = new Subject<ChatMessage>();
+
+  private selectedRoomId: number | null = null;
+
+  loadRooms(page = 1, perPage = 20): Observable<ChatRoomSummary[]> {
+    return this.chatRepository.getRooms(page, perPage).pipe(
+      tap(result => this.persistRooms(result)),
+      map(result => result.rooms)
+    );
   }
 
-  createRoom(data: CreateChatRoomDto): Observable<ChatRoom> {
-    if (!data.buyer_id || !data.seller_id) {
-      throw new Error('Buyer and seller IDs are required');
+  getRoomsSnapshot(): ChatRoomSummary[] {
+    return this.roomsSubject.value;
+  }
+
+  createRoom(payload: CreateChatRoomDto): Observable<ChatRoom> {
+    if (!payload.buyer_id && !payload.seller_id) {
+      throw new Error('Either buyer_id or seller_id must be provided to create a chat room');
     }
 
-    return this.chatRepository.createRoom(data);
-  }
-
-  /**
-   * Temporary helper for legacy components that expect createChatRoom API shape
-   * Delegates to ApiService until dedicated repository method is available
-   */
-  createChatRoom(roomData: Record<string, unknown>): Observable<ChatRoom> {
-    return this.apiService.createChatRoom(roomData).pipe(
-      map(response => {
-        const dto = response.data;
-
-        if (!dto) {
-          throw new Error('Failed to create chat room');
-        }
-
-        return new ChatRoom(
-          dto.id,
-          dto.buyer_id,
-          dto.seller_id,
-          dto.pinned ?? false,
-          dto.muted ?? false,
-          dto.archived ?? false,
-          dto.product_id,
-          dto.request_id,
-          dto.last_message_at,
-          dto.unread_count_buyer,
-          dto.unread_count_seller
-        );
+    return this.chatRepository.createRoom(payload).pipe(
+      tap(room => {
+        this.selectedRoomId = room.id;
+        void this.loadRooms().subscribe();
       })
     );
   }
 
-  getMessages(roomId: string, params?: Record<string, unknown>): Observable<ChatMessage[]> {
-    return this.chatRepository.getMessages(roomId, params);
+  getMessages(roomId: number | string, page = 1, perPage = 50): Observable<ChatMessage[]> {
+    const resolvedRoomId = this.ensureRoomId(roomId);
+    this.selectedRoomId = resolvedRoomId;
+
+    return this.chatRepository.getMessages(resolvedRoomId, page, perPage).pipe(
+      tap(result => {
+        this.messagesSubject.next(result.messages);
+        this.messagesPaginationSubject.next(result.pagination);
+      }),
+      map(result => result.messages)
+    );
   }
 
-  sendMessage(roomId: string, content: string): Observable<ChatMessage> {
-    if (!content || content.trim().length === 0) {
+  sendMessage(
+    roomId: number | string,
+    content: string,
+    messageType: ChatMessageType = 'text',
+    messageData?: Record<string, unknown>
+  ): Observable<ChatMessage> {
+    if (!content?.trim()) {
       throw new Error('Message content is required');
     }
 
-    const data: SendMessageDto = {
+    const resolvedRoomId = this.ensureRoomId(roomId);
+    const payload: SendMessageDto = {
       content: content.trim(),
-      message_type: 'text'
+      message_type: messageType,
+      message_data: messageData ?? null
     };
 
-    return this.chatRepository.sendMessage(roomId, data);
+    return this.chatRepository.sendMessage(resolvedRoomId, payload).pipe(
+      tap(message => {
+        if (this.selectedRoomId === resolvedRoomId) {
+          this.messagesSubject.next([...this.messagesSubject.value, message]);
+        }
+        this.newMessage$.next(message);
+        void this.loadRooms().subscribe();
+      })
+    );
   }
 
-  /**
-   * Alias for getRooms (for backward compatibility)
-   * TODO: Remove when all components use getRooms()
-   */
-  getChatRooms(params?: Record<string, unknown>): Observable<ChatRoom[]> {
-    return this.getRooms(params);
+  markMessagesAsRead(roomId: number | string): Observable<string> {
+    const resolvedRoomId = this.ensureRoomId(roomId);
+    return this.chatRepository.markMessagesAsRead(resolvedRoomId).pipe(
+      tap(() => {
+        const updatedRooms = this.roomsSubject.value.map(room =>
+          room.id === resolvedRoomId
+            ? new ChatRoomSummary(
+                room.id,
+                room.otherUser,
+                0,
+                room.lastMessageAt,
+                room.lastMessage,
+                room.product,
+                room.request
+              )
+            : room
+        );
+        this.roomsSubject.next(updatedRooms);
+        this.recalculateUnread();
+      })
+    );
   }
 
-  /**
-   * Select room (for state management)
-   * TODO: Migrate to proper state management
-   */
-  selectRoom(roomId: string): void {
-    this.selectedRoomId = roomId;
-  }
-
-  /**
-   * Get messages as observable
-   * TODO: Migrate to proper reactive stream
-   */
-  getMessages$(roomId?: string): Observable<ChatMessage[]> {
-    const targetRoomId = roomId || this.selectedRoomId;
-    if (!targetRoomId) {
-      return new Observable(observer => observer.next([]));
-    }
-    return this.getMessages(targetRoomId);
-  }
-
-  /**
-   * Load messages (alias for getMessages)
-   * TODO: Remove when components use getMessages directly
-   */
-  loadMessages(roomId: string): void {
-    this.getMessages(roomId).subscribe();
-  }
-
-  /**
-   * Mark messages as read
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  markMessagesAsRead(roomId: string): Observable<any> {
-    return this.apiService.markMessagesAsRead(roomId);
-  }
-
-  /**
-   * Get unread chat count - compatibility helper for dashboard widgets.
-   */
   getUnreadCount$(): Observable<number> {
-    return this.apiService.getUnreadCount().pipe(
-      map(response => {
-        const payload = response.data ?? response;
-        if (typeof payload === 'number') {
-          return payload;
+    return this.unreadCount$;
+  }
+
+  sendOffer(roomId: number | string, payload: SendOfferDto): Observable<ChatMessage> {
+    const resolvedRoomId = this.ensureRoomId(roomId);
+    return this.chatRepository.sendOffer(resolvedRoomId, payload).pipe(
+      tap(message => {
+        if (this.selectedRoomId === resolvedRoomId) {
+          this.messagesSubject.next([...this.messagesSubject.value, message]);
         }
-        if (typeof payload?.count === 'number') {
-          return payload.count;
-        }
-        if (typeof payload?.total === 'number') {
-          return payload.total;
-        }
-        return 0;
+        void this.loadRooms().subscribe();
       })
     );
   }
 
-  /**
-   * Send text message (alias for sendMessage)
-   * TODO: Remove when components use sendMessage directly
-   */
-  sendTextMessage(roomId: string, content: string): Observable<ChatMessage> {
-    return this.sendMessage(roomId, content);
+  getMessageReactions(messageId: number | string) {
+    return this.chatRepository.getMessageReactions(this.ensureNumericId(messageId));
   }
 
-  /**
-   * Start typing indicator
-   * TODO: Migrate to proper real-time service
-   */
-  startTyping(roomId: string): void {
-    this.typing$.next({ roomId, isTyping: true });
+  addMessageReaction(messageId: number | string, reactionType: string) {
+    return this.chatRepository.addMessageReaction(this.ensureNumericId(messageId), {
+      reaction_type: reactionType
+    });
   }
 
-  /**
-   * Stop typing indicator
-   * TODO: Migrate to proper real-time service
-   */
-  stopTyping(roomId: string): void {
-    this.typing$.next({ roomId, isTyping: false });
+  removeMessageReaction(messageId: number | string, reactionType: string) {
+    return this.chatRepository.removeMessageReaction(this.ensureNumericId(messageId), reactionType);
   }
 
-  /**
-   * Get or create room
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: tries to get existing room first, then creates if not found
-   */
-  getOrCreateRoom(buyerId: string, sellerId: string, productId?: string): Observable<ChatRoom> {
-    // First try to find existing room
-    return this.getRooms({ buyer_id: buyerId, seller_id: sellerId }).pipe(
-      switchMap((rooms: ChatRoom[]) => {
-        if (rooms.length > 0) {
-          return of(rooms[0]);
-        }
-        // Create new room if none exists
-        const roomData: CreateChatRoomDto = { 
-          buyer_id: buyerId, 
-          seller_id: sellerId, 
-          product_id: productId 
-        };
-        return this.createRoom(roomData);
+  getRoomDiscounts(roomId: number | string): Observable<ChatDiscount[]> {
+    return this.chatRepository.getRoomDiscounts(this.ensureRoomId(roomId));
+  }
+
+  createDiscountOffer(roomId: number | string, payload: CreateChatDiscountDto): Observable<ChatDiscount> {
+    return this.chatRepository.createDiscount(this.ensureRoomId(roomId), payload);
+  }
+
+  respondToDiscount(discountId: number | string, payload: DiscountResponseRequestDto): Observable<ChatDiscountResponse> {
+    return this.chatRepository.respondToDiscount(this.ensureNumericId(discountId), payload);
+  }
+
+  applyDiscount(discountId: number | string, orderAmount: number): Observable<DiscountApplicationResult> {
+    return this.chatRepository.applyDiscount(this.ensureNumericId(discountId), { order_amount: orderAmount });
+  }
+
+  cancelDiscount(discountId: number | string): Observable<DiscountCancellationResult> {
+    return this.chatRepository.cancelDiscount(this.ensureNumericId(discountId));
+  }
+
+  getMyActiveDiscounts(): Observable<ChatDiscount[]> {
+    return this.chatRepository.getMyActiveDiscounts();
+  }
+
+  getOrCreateRoom(
+    buyerId: string,
+    sellerId: string,
+    productId?: string,
+    requestId?: string
+  ): Observable<ChatRoom> {
+    const payload: CreateChatRoomDto = {
+      buyer_id: buyerId,
+      seller_id: sellerId,
+      product_id: productId,
+      request_id: requestId
+    };
+    return this.createRoom(payload);
+  }
+
+  deleteRoom(roomId: number | string): Observable<void> {
+    const resolvedRoomId = this.ensureRoomId(roomId);
+    return this.chatRepository.deleteRoom(resolvedRoomId).pipe(
+      tap(() => {
+        const remainingRooms = this.roomsSubject.value.filter(
+          room => room.id !== resolvedRoomId
+        );
+        this.roomsSubject.next(remainingRooms);
+        this.recalculateUnread();
       })
     );
   }
 
-  /**
-   * Pin chat
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  pinChat(roomId: string): Observable<any> {
-    return this.apiService.pinChatRoom(roomId);
+  selectRoom(roomId: number | string): void {
+    this.selectedRoomId = this.ensureRoomId(roomId);
   }
 
-  /**
-   * Mute chat
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  muteChat(roomId: string): Observable<any> {
-    return this.apiService.muteChatRoom(roomId);
+  startTyping(roomId: number | string): void {
+    this.typing$.next({ roomId: this.ensureRoomId(roomId), isTyping: true });
   }
 
-  /**
-   * Archive chat
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  archiveChat(roomId: string): Observable<any> {
-    return this.apiService.archiveChatRoom(roomId);
+  stopTyping(roomId: number | string): void {
+    this.typing$.next({ roomId: this.ensureRoomId(roomId), isTyping: false });
   }
 
-  /**
-   * Delete chat
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  deleteChat(roomId: string): Observable<any> {
-    return this.apiService.deleteChatRoom(roomId);
+  private persistRooms(result: ChatRoomsResult): void {
+    this.roomsSubject.next(result.rooms);
+    this.roomsPaginationSubject.next(result.pagination);
+    this.recalculateUnread();
   }
 
-  /**
-   * Add message reaction
-   * TODO: Migrate to ChatRepository when method is added
-   * Temporary: delegates to ApiService
-   */
-  addMessageReaction(messageId: string, reactionData: any): Observable<any> {
-    return this.apiService.addMessageReaction(messageId, reactionData);
+  private recalculateUnread(): void {
+    const totalUnread = this.roomsSubject.value.reduce((total, room) => total + room.unreadCount, 0);
+    this.unreadCountSubject.next(totalUnread);
+  }
+
+  private ensureRoomId(roomId: number | string): number {
+    return this.ensureNumericId(roomId, 'Invalid chat room identifier');
+  }
+
+  private ensureNumericId(value: number | string, message = 'Invalid identifier'): number {
+    if (typeof value === 'number') {
+      return value;
+    }
+    const parsed = Number(value);
+    if (Number.isNaN(parsed)) {
+      throw new Error(message);
+    }
+    return parsed;
   }
 }
 
