@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { OrderService } from '../../../domains/orders';
-import { ApiService } from '../../../core/services/api.service'; // Still needed for updateOrderItemStatus (not yet migrated to domain service)
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faGear, faTriangleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
 
 interface OrderItem {
   id: string;
@@ -798,7 +799,6 @@ export class OrderDetailComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService); // Still needed for updateOrderItemStatus
   private titleMeta = inject(TitleMetaService);
 
   loading = true;
@@ -817,20 +817,23 @@ export class OrderDetailComponent implements OnInit {
     
     if (orderId) {
       // Domain service returns Order directly, not wrapped in ApiResponse
-      this.orderService.getOrder(orderId).subscribe({
-        next: (order) => {
-          // Convert domain Order to component format
-          this.order = this.convertDomainOrderToComponentFormat(order);
-          this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
-          this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Error loading order:', error);
-          this.loading = false;
-          this.order = null;
-        }
-      });
+      this.orderService
+        .loadOrder(orderId)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: (order) => {
+            // Convert domain Order to component format
+            this.order = this.convertDomainOrderToComponentFormat(order);
+            this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
+            this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error loading order:', error);
+            this.loading = false;
+            this.order = null;
+          }
+        });
     } else {
       this.loading = false;
       this.order = null;
@@ -886,7 +889,7 @@ export class OrderDetailComponent implements OnInit {
         id: item.id,
         productId: item.product?.id || item.product_id,
         productName: item.product?.name || 'Unknown Product',
-        productImage: item.product?.images?.[0]?.media?.url || item.product?.images?.[0]?.media?.thumbnail_url || '',
+        productImage: item.product?.thumbnailUrl || item.product?.images?.[0]?.url || '',
         price: item.price,
         quantity: item.quantity,
         total: item.calculateTotal ? item.calculateTotal() : (item.price * item.quantity),
@@ -955,37 +958,43 @@ export class OrderDetailComponent implements OnInit {
 
   processOrder(): void {
     if (this.order) {
-      // Order item status updates - using OrderService (temporarily delegates to ApiService)
-      // TODO: Migrate to OrderItemRepository when created
-      const updatePromises = this.order.items.map(item => 
-        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'processing' }).toPromise()
+      const updates = this.order.items.map((item) =>
+        this.orderService.updateOrderItemStatus(Number(item.id), { status: 'processing' })
       );
-      
-      Promise.all(updatePromises).then(() => {
-        alert('Order processed successfully!');
-        this.loadOrder(); // Reload the order to get updated status
-      }).catch(error => {
-        console.error('Error processing order:', error);
-        alert('Failed to process order.');
-      });
+
+      forkJoin(updates)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: () => {
+            alert('Order processed successfully!');
+            this.loadOrder();
+          },
+          error: (error) => {
+            console.error('Error processing order:', error);
+            alert('Failed to process order.');
+          },
+        });
     }
   }
 
   shipOrder(): void {
     if (this.order) {
-      // Order item status updates - using OrderService (temporarily delegates to ApiService)
-      // TODO: Migrate to OrderItemRepository when created
-      const updatePromises = this.order.items.map(item => 
-        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'shipped' }).toPromise()
+      const updates = this.order.items.map((item) =>
+        this.orderService.updateOrderItemStatus(Number(item.id), { status: 'shipped' })
       );
-      
-      Promise.all(updatePromises).then(() => {
-        alert('Order shipped successfully!');
-        this.loadOrder(); // Reload the order to get updated status
-      }).catch(error => {
-        console.error('Error shipping order:', error);
-        alert('Failed to ship order.');
-      });
+
+      forkJoin(updates)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: () => {
+            alert('Order shipped successfully!');
+            this.loadOrder();
+          },
+          error: (error) => {
+            console.error('Error shipping order:', error);
+            alert('Failed to ship order.');
+          },
+        });
     }
   }
 
@@ -996,35 +1005,41 @@ export class OrderDetailComponent implements OnInit {
 
   markDelivered(): void {
     if (this.order) {
-      // Order item status updates - using OrderService (temporarily delegates to ApiService)
-      // TODO: Migrate to OrderItemRepository when created
-      const updatePromises = this.order.items.map(item => 
-        this.orderService.updateOrderItemStatus(parseInt(item.id), { status: 'delivered' }).toPromise()
+      const updates = this.order.items.map((item) =>
+        this.orderService.updateOrderItemStatus(Number(item.id), { status: 'delivered' })
       );
-      
-      Promise.all(updatePromises).then(() => {
-        alert('Order marked as delivered successfully!');
-        this.loadOrder(); // Reload the order to get updated status
-      }).catch(error => {
-        console.error('Error marking order as delivered:', error);
-        alert('Failed to mark order as delivered.');
-      });
+
+      forkJoin(updates)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: () => {
+            alert('Order marked as delivered successfully!');
+            this.loadOrder();
+          },
+          error: (error) => {
+            console.error('Error marking order as delivered:', error);
+            alert('Failed to mark order as delivered.');
+          },
+        });
     }
   }
 
   cancelOrder(): void {
     if (this.order && confirm('Are you sure you want to cancel this order?')) {
       // Domain service has cancelOrder() method - use it instead of updating item statuses
-      this.orderService.cancelOrder(this.order.id).subscribe({
-        next: () => {
-          alert('Order cancelled successfully!');
-          this.loadOrder(); // Reload the order to get updated status
-        },
-        error: (error) => {
-          console.error('Error cancelling order:', error);
-          alert('Failed to cancel order.');
-        }
-      });
+      this.orderService
+        .cancelOrder(this.order.id)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: () => {
+            alert('Order cancelled successfully!');
+            this.loadOrder(); // Reload the order to get updated status
+          },
+          error: (error) => {
+            console.error('Error cancelling order:', error);
+            alert('Failed to cancel order.');
+          }
+        });
     }
   }
 

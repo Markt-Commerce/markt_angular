@@ -2,7 +2,6 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ApiService } from '../../../core/services/api.service';
 import { timer, Subscription } from 'rxjs';
 import { ToggleSwitchComponent } from '../../../shared/components/toggle-switch/toggle-switch.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -798,7 +797,6 @@ interface NotificationSetting {
 export class NotificationsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  private apiService = inject(ApiService);
   private notificationService = inject(NotificationService);
   private messageTimer?: Subscription;
 
@@ -884,8 +882,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.loading = true;
 
     this.notificationService.getSettings().subscribe({
-      next: (response: any) => {
-        this.notificationsForm.patchValue(response?.data || {});
+      next: (settings) => {
+        this.notificationsForm.patchValue(settings || {});
         this.loading = false;
       },
       error: (error) => {
@@ -903,7 +901,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     const formData = this.notificationsForm.value;
 
     this.notificationService.updateSettings(formData).subscribe({
-      next: (response) => {
+      next: () => {
         this.loading = false;
         this.successMessage = 'Notification settings updated successfully!';
         this.clearMessageAfterDelay();

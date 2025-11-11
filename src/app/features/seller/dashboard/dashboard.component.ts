@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../../domains/orders/services/order.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for getSellerAnalytics (not yet migrated)
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -239,42 +240,33 @@ export class DashboardComponent implements OnInit {
       },
     });
 
-    // Domain service returns Order[] directly, not wrapped in ApiResponse
-    // Domain Order model has: id, orderNumber, buyerId (not full buyer object), total, status, createdAt, etc.
-    this.orderService.getOrders().subscribe({
-      next: (orders) => {
-        // Take first 3 orders and map to RecentOrder format
-        // Note: Domain Order model has buyerId, not full buyer object
-        // If buyer data is needed, it would need to be fetched separately or included in the API response
-        const recentOrders: RecentOrder[] = orders
-          .slice(0, 3)
-          .map((order: any) => ({
-            id: order.id,
-            orderNumber: order.orderNumber || order.order_number || order.id,
-            // Domain model has buyerId, not buyer object - use buyerId or check if buyer data is preserved
+    this.orderService
+      .loadSellerOrders({ per_page: 5 })
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          const sellerItems = this.orderService.sellerOrderItemsSnapshot ?? [];
+          const recentOrders: RecentOrder[] = sellerItems.slice(0, 3).map((item) => ({
+            id: item.orderId,
+            orderNumber: item.order.orderNumber,
             customerName:
-              order.buyer?.buyername ||
-              order.buyer?.name ||
-              order.buyer?.username ||
-              (order.buyerId
-                ? `Customer ${order.buyerId}`
-                : 'Unknown Customer'),
+              item.order.buyer?.buyername ||
+              item.order.buyer?.username ||
+              `Order ${item.orderId}`,
             customerAvatar:
-              order.buyer?.profile_picture_url ||
-              order.buyer?.profilePictureUrl ||
+              item.order.buyer?.profilePictureUrl ||
+              item.order.buyer?.profile_picture_url ||
               '/assets/images/default-avatar.png',
-            total: order.total || 0,
-            status: order.status || 'pending',
-            date:
-              order.createdAt || order.created_at || new Date().toISOString(),
+            total: item.price * item.quantity,
+            status: item.status,
+            date: item.order.createdAt,
           }));
-        this.recentOrders.set(recentOrders);
-      },
-      error: (error) => {
-        console.error('Error loading recent orders:', error);
-        // Keep mock data on error
-      },
-    });
+          this.recentOrders.set(recentOrders);
+        },
+        error: (error) => {
+          console.error('Error loading recent orders:', error);
+        },
+      });
   }
 
   /**

@@ -1,139 +1,226 @@
-/**
- * Order Domain Models
- *
- * Domain entities for orders with business logic.
- */
-
-import { Address } from '../../authentication/models/user.model';
-import { Product } from '../../marketplace/models/product.model';
-
 export type OrderStatus =
   | 'pending'
-  | 'confirmed'
+  | 'processing'
   | 'shipped'
   | 'delivered'
   | 'cancelled'
-  | 'refunded';
-export type OrderItemStatus =
-  | 'pending'
+  | 'returned'
   | 'confirmed'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled'
   | 'refunded';
 
-/**
- * Order Item - Value Object
- */
+export type OrderItemStatus =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'returned';
+
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'refunded';
+
+export interface OrderAddress {
+  street?: string | null;
+  houseNumber?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  phoneNumber?: string | null;
+  recipientName?: string | null;
+}
+
+export interface OrderProductSummary {
+  id: string;
+  name: string;
+  price: number;
+  thumbnailUrl?: string | null;
+  slug?: string | null;
+}
+
+export interface OrderVariantSummary {
+  id: number;
+  name: string;
+  sku?: string | null;
+  options?: Record<string, string> | null;
+}
+
+export interface BuyerSummary {
+  id: string;
+  buyername: string;
+  email?: string | null;
+  phone?: string | null;
+  profilePictureUrl?: string | null;
+}
+
 export class OrderItem {
   constructor(
-    public readonly id: string,
+    public readonly id: number,
     public readonly orderId: string,
-    public readonly product: Product,
     public readonly quantity: number,
     public readonly price: number,
     public readonly status: OrderItemStatus,
-    public readonly variantId?: string
+    public readonly createdAt: string,
+    public readonly product?: OrderProductSummary | null,
+    public readonly variant?: OrderVariantSummary | null
   ) {}
 
-  /**
-   * Business Rule: Calculate item total
-   */
   calculateTotal(): number {
     return this.price * this.quantity;
   }
 
-  /**
-   * Business Rule: Check if item can be cancelled
-   */
   canCancel(): boolean {
-    return this.status === 'pending' || this.status === 'confirmed';
+    return this.status === 'pending' || this.status === 'processing';
   }
 
-  /**
-   * Business Rule: Check if item is delivered
-   */
   isDelivered(): boolean {
     return this.status === 'delivered';
   }
 
-  /**
-   * Business Rule: Check if item can be refunded
-   */
   canRefund(): boolean {
     return this.status === 'delivered' || this.status === 'shipped';
   }
 }
 
-/**
- * Order - Aggregate Root
- */
+export class OrderPayment {
+  constructor(
+    public readonly id: number,
+    public readonly amount: number,
+    public readonly method: string,
+    public readonly status: PaymentStatus,
+    public readonly createdAt: string,
+    public readonly transactionId?: string | null,
+    public readonly paidAt?: string | null
+  ) {}
+
+  isSuccessful(): boolean {
+    return this.status === 'completed';
+  }
+}
+
+export class OrderShipment {
+  constructor(
+    public readonly id: number,
+    public readonly carrier: string | null,
+    public readonly trackingNumber: string | null,
+    public readonly trackingUrl: string | null,
+    public readonly status: string | null,
+    public readonly shippedAt: string | null,
+    public readonly deliveredAt: string | null
+  ) {}
+
+  isDelivered(): boolean {
+    return Boolean(this.deliveredAt);
+  }
+}
+
 export class Order {
   constructor(
     public readonly id: string,
     public readonly orderNumber: string,
     public readonly buyerId: string,
-    public readonly sellerId: string,
-    public readonly shippingAddress: Address,
-    public readonly paymentMethod: string,
     public readonly subtotal: number,
-    public readonly shippingFee: number,
-    public readonly tax: number,
-    public readonly discount: number,
+    public readonly shippingFee: number | null,
+    public readonly tax: number | null,
+    public readonly discount: number | null,
     public readonly total: number,
     public readonly status: OrderStatus,
     public readonly createdAt: string,
     public readonly items: OrderItem[],
-    public readonly customerNote?: string
+    public readonly shippingAddress: OrderAddress | null,
+    public readonly billingAddress: OrderAddress | null,
+    public readonly paymentMethod?: string | null,
+    public readonly customerNote?: string | null,
+    public readonly payments: OrderPayment[] = [],
+    public readonly shipments: OrderShipment[] = [],
+    public readonly buyer?: BuyerSummary | null,
+    public readonly updatedAt?: string | null,
+    public readonly metadata?: Record<string, unknown> | null
   ) {}
 
-  /**
-   * Business Rule: Calculate total amount
-   */
+  calculateItemTotal(): number {
+    return this.items.reduce((total, item) => total + item.calculateTotal(), 0);
+  }
+
   calculateTotal(): number {
-    return this.subtotal + this.shippingFee + this.tax - this.discount;
+    const shipping = this.shippingFee ?? 0;
+    const tax = this.tax ?? 0;
+    const discount = this.discount ?? 0;
+    return this.subtotal + shipping + tax - discount;
   }
 
-  /**
-   * Business Rule: Check if order can be cancelled
-   */
   canCancel(): boolean {
-    return this.status === 'pending' || this.status === 'confirmed';
+    return this.status === 'pending' || this.status === 'processing' || this.status === 'confirmed';
   }
 
-  /**
-   * Business Rule: Check if order is completed
-   */
   isCompleted(): boolean {
     return this.status === 'delivered';
   }
 
-  /**
-   * Business Rule: Check if order can be refunded
-   */
   canRefund(): boolean {
     return this.status === 'delivered' || this.status === 'shipped';
   }
 
-  /**
-   * Business Rule: Get total items count
-   */
   getTotalItems(): number {
-    return this.items.reduce((total, item) => total + item.quantity, 0);
+    return this.items.reduce((sum, item) => sum + item.quantity, 0);
   }
 
-  /**
-   * Business Rule: Check if all items are delivered
-   */
   allItemsDelivered(): boolean {
     return this.items.every((item) => item.isDelivered());
   }
 
-  /**
-   * Business Rule: Validate order total matches calculation
-   */
-  isValid(): boolean {
-    const calculatedTotal = this.calculateTotal();
-    return Math.abs(calculatedTotal - this.total) < 0.01; // Allow small floating point differences
+  hasOutstandingBalance(): boolean {
+    const successfulPayments = this.payments
+      .filter((payment) => payment.isSuccessful())
+      .reduce((sum, payment) => sum + payment.amount, 0);
+    return successfulPayments < this.total;
   }
+
+  getPrimaryShipment(): OrderShipment | undefined {
+    if (!this.shipments.length) {
+      return undefined;
+    }
+    return this.shipments[0];
+  }
+}
+
+export class SellerOrderItem {
+  constructor(
+    public readonly id: number,
+    public readonly orderId: string,
+    public readonly quantity: number,
+    public readonly price: number,
+    public readonly status: OrderItemStatus,
+    public readonly createdAt: string,
+    public readonly order: SellerOrderSummary,
+    public readonly product?: OrderProductSummary | null,
+    public readonly variant?: OrderVariantSummary | null
+  ) {}
+
+  calculateTotal(): number {
+    return this.price * this.quantity;
+  }
+}
+
+export class SellerOrderSummary {
+  constructor(
+    public readonly id: string,
+    public readonly orderNumber: string,
+    public readonly createdAt: string,
+    public readonly buyer?: BuyerSummary | null
+  ) {}
+}
+
+export interface SellerOrderStats {
+  totalOrders: number;
+  pendingOrders: number;
+  monthlyEarnings: number;
+  completedOrders?: number;
+  cancelledOrders?: number;
 }

@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   faSearch,
   faFilter,
@@ -27,11 +28,58 @@ import {
   faRefresh,
   faTimes,
   faDownload,
-  faStore
+  faStore,
 } from '@fortawesome/free-solid-svg-icons';
-import { OrderService } from '../../domains/orders';
+import { OrderService, Order, SellerOrderItem } from '../../domains/orders';
 import { AuthService } from '../../domains/authentication';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+
+type OrderStatusView =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'returned'
+  | 'confirmed'
+  | 'refunded';
+type OrderItemStatusView =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'returned';
+
+interface OrderItemView {
+  id: number;
+  quantity: number;
+  price: number;
+  status: OrderItemStatusView;
+  product: {
+    id: string;
+    name: string;
+    images: Array<{ url: string }>;
+    seller?: {
+      shop_name?: string;
+      location?: string;
+    };
+  };
+}
+
+interface OrderView {
+  id: string;
+  order_number: string;
+  created_at: string;
+  status: OrderStatusView;
+  total: number;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  shipping_fee: number;
+  items: OrderItemView[];
+  currency: string;
+}
 
 @Component({
   selector: 'app-orders',
@@ -41,37 +89,41 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     RouterLink,
     FormsModule,
     FontAwesomeModule,
-    ButtonComponent
+    ButtonComponent,
   ],
   template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">{{ viewMode==='seller' ? 'Seller Orders' : 'My Orders' }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {{ viewMode === 'seller' ? 'Seller Orders' : 'My Orders' }}
+          </h1>
           <p class="mt-1 text-sm text-gray-500">
             Track your orders and view order history
           </p>
         </div>
         <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-          <div class="inline-flex rounded-md border border-gray-200 overflow-hidden">
+          <div
+            class="inline-flex rounded-md border border-gray-200 overflow-hidden"
+          >
             <button
               (click)="setViewMode('buyer')"
               class="px-3 py-2 text-sm font-medium focus:outline-none"
-              [class.bg-white]="viewMode==='buyer'"
-              [class.text-gray-900]="viewMode==='buyer'"
-              [class.bg-gray-50]="viewMode!=='buyer'"
-              [class.text-gray-600]="viewMode!=='buyer'"
+              [class.bg-white]="viewMode === 'buyer'"
+              [class.text-gray-900]="viewMode === 'buyer'"
+              [class.bg-gray-50]="viewMode !== 'buyer'"
+              [class.text-gray-600]="viewMode !== 'buyer'"
             >
               My Orders
             </button>
             <button
               (click)="setViewMode('seller')"
               class="px-3 py-2 text-sm font-medium border-l border-gray-200 focus:outline-none"
-              [class.bg-white]="viewMode==='seller'"
-              [class.text-gray-900]="viewMode==='seller'"
-              [class.bg-gray-50]="viewMode!=='seller'"
-              [class.text-gray-600]="viewMode!=='seller'"
+              [class.bg-white]="viewMode === 'seller'"
+              [class.text-gray-900]="viewMode === 'seller'"
+              [class.bg-gray-50]="viewMode !== 'seller'"
+              [class.text-gray-600]="viewMode !== 'seller'"
             >
               Seller Orders
             </button>
@@ -95,7 +147,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Total Orders</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.total }}</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {{ orderStats.total }}
+              </p>
             </div>
           </div>
         </div>
@@ -107,7 +161,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Pending</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.pending }}</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {{ orderStats.pending }}
+              </p>
             </div>
           </div>
         </div>
@@ -119,7 +175,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Completed</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.completed }}</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {{ orderStats.completed }}
+              </p>
             </div>
           </div>
         </div>
@@ -131,7 +189,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Cancelled</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ orderStats.cancelled }}</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {{ orderStats.cancelled }}
+              </p>
             </div>
           </div>
         </div>
@@ -139,12 +199,19 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 
       <!-- Filters -->
       <div class="card p-4">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+        <div
+          class="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-4 lg:space-y-0"
+        >
           <!-- Search -->
           <div class="flex-1">
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <fa-icon [icon]="faSearch" class="w-5 h-5 text-gray-400"></fa-icon>
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <fa-icon
+                  [icon]="faSearch"
+                  class="w-5 h-5 text-gray-400"
+                ></fa-icon>
               </div>
               <input
                 type="text"
@@ -152,7 +219,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 [(ngModel)]="searchQuery"
                 (input)="onSearchInput()"
                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
-              >
+              />
             </div>
           </div>
 
@@ -194,40 +261,78 @@ import { ButtonComponent } from '../../shared/components/button/button.component
       <div class="space-y-4">
         <!-- Loading State -->
         <div *ngIf="isLoading" class="grid grid-cols-1 gap-4 md:gap-6">
-          <div class="card p-0 overflow-hidden" *ngFor="let s of [1,2,3]">
+          <div class="card p-0 overflow-hidden" *ngFor="let s of [1, 2, 3]">
             <div class="px-6 py-4 border-b border-gray-200">
               <div class="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
-              <div class="mt-2 h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div
+                class="mt-2 h-4 w-32 bg-gray-200 rounded animate-pulse"
+              ></div>
             </div>
             <div class="px-6 py-4 space-y-3">
-              <div class="flex items-center space-x-4" *ngFor="let i of [1,2]">
-                <div class="w-16 h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div class="flex items-center space-x-4" *ngFor="let i of [1, 2]">
+                <div
+                  class="w-16 h-16 bg-gray-200 rounded-lg animate-pulse"
+                ></div>
                 <div class="flex-1">
                   <div class="h-4 w-56 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="mt-2 h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div
+                    class="mt-2 h-3 w-24 bg-gray-200 rounded animate-pulse"
+                  ></div>
                 </div>
                 <div class="text-right">
-                  <div class="h-4 w-20 bg-gray-200 rounded animate-pulse ml-auto"></div>
-                  <div class="mt-2 h-3 w-16 bg-gray-200 rounded animate-pulse ml-auto"></div>
+                  <div
+                    class="h-4 w-20 bg-gray-200 rounded animate-pulse ml-auto"
+                  ></div>
+                  <div
+                    class="mt-2 h-3 w-16 bg-gray-200 rounded animate-pulse ml-auto"
+                  ></div>
                 </div>
               </div>
             </div>
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-              <div class="h-8 w-28 bg-gray-200 rounded animate-pulse ml-auto"></div>
+              <div
+                class="h-8 w-28 bg-gray-200 rounded animate-pulse ml-auto"
+              ></div>
             </div>
           </div>
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!isLoading && orders.length === 0" class="text-center py-12">
-          <fa-icon [icon]="faBox" class="w-16 h-16 text-gray-400 mx-auto mb-4"></fa-icon>
-          <h2 class="text-xl font-medium text-gray-900 mb-2">{{ viewMode==='seller' ? 'No seller orders yet' : 'No orders found' }}</h2>
+        <div
+          *ngIf="!isLoading && orders.length === 0"
+          class="text-center py-12"
+        >
+          <fa-icon
+            [icon]="faBox"
+            class="w-16 h-16 text-gray-400 mx-auto mb-4"
+          ></fa-icon>
+          <h2 class="text-xl font-medium text-gray-900 mb-2">
+            {{
+              viewMode === 'seller' ? 'No seller orders yet' : 'No orders found'
+            }}
+          </h2>
           <p class="text-gray-500 mb-6">
-            {{ viewMode==='seller' ? 'You have not received any orders.' : 'You have not placed any orders yet.' }}
+            {{
+              viewMode === 'seller'
+                ? 'You have not received any orders.'
+                : 'You have not placed any orders yet.'
+            }}
           </p>
           <div class="flex items-center justify-center gap-3">
-            <app-button *ngIf="viewMode==='buyer'" routerLink=ROUTES_ABSOLUTE.APP.MARKETPLACE variant="primary" size="md">Start Shopping</app-button>
-            <app-button *ngIf="viewMode==='seller'" routerLink="/app/seller/listings" variant="primary" size="md">View Listings</app-button>
+            <app-button
+              *ngIf="viewMode === 'buyer'"
+              routerLink="ROUTES_ABSOLUTE.APP.MARKETPLACE"
+              variant="primary"
+              size="md"
+              >Start Shopping</app-button
+            >
+            <app-button
+              *ngIf="viewMode === 'seller'"
+              routerLink="/app/seller/listings"
+              variant="primary"
+              size="md"
+              >View Listings</app-button
+            >
           </div>
         </div>
 
@@ -238,8 +343,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-4">
                 <div>
-                  <h3 class="text-lg font-medium text-gray-900">Order #{{ order.order_number }}</h3>
-                  <p class="text-sm text-gray-500">{{ order.created_at | date:'medium' }}</p>
+                  <h3 class="text-lg font-medium text-gray-900">
+                    Order #{{ order.order_number }}
+                  </h3>
+                  <p class="text-sm text-gray-500">
+                    {{ order.created_at | date : 'medium' }}
+                  </p>
                 </div>
               </div>
               <div class="flex items-center space-x-3">
@@ -279,29 +388,45 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           <!-- Order Items -->
           <div class="px-6 py-4">
             <div class="space-y-3">
-              <div *ngFor="let item of order.items" class="flex items-center space-x-4">
+              <div
+                *ngFor="let item of order.items"
+                class="flex items-center space-x-4"
+              >
                 <img
-                  [src]="item.product?.images[0]?.url || '/markt-text-logo.png'"
-                  [alt]="item.product?.name"
+                  [src]="item.product.images[0]?.url || '/markt-text-logo.png'"
+                  [alt]="item.product.name || 'Product image'"
                   class="w-16 h-16 object-cover rounded-lg"
-                >
+                />
                 <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">{{ item.product?.name }}</h4>
+                  <h4 class="font-medium text-gray-900">
+                    {{ item.product.name }}
+                  </h4>
                   <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
-                  <div class="flex items-center space-x-4 text-sm text-gray-500">
+                  <div
+                    class="flex items-center space-x-4 text-sm text-gray-500"
+                  >
                     <span class="flex items-center">
                       <fa-icon [icon]="faStore" class="w-4 h-4 mr-1"></fa-icon>
-                      {{ item.product?.seller?.shop_name }}
+                      {{ item.product.seller?.shop_name || 'Unknown Seller' }}
                     </span>
                     <span class="flex items-center">
-                      <fa-icon [icon]="faMapMarkerAlt" class="w-4 h-4 mr-1"></fa-icon>
-                      {{ item.product?.seller?.location }}
+                      <fa-icon
+                        [icon]="faMapMarkerAlt"
+                        class="w-4 h-4 mr-1"
+                      ></fa-icon>
+                      {{ item.product.seller?.location || '' }}
                     </span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="font-medium text-gray-900">{{ item.price * item.quantity | currency:getCurrency(order) }}</p>
-                  <p class="text-sm text-gray-500">{{ item.price | currency:getCurrency(order) }} each</p>
+                  <p class="font-medium text-gray-900">
+                    {{
+                      item.price * item.quantity | currency : getCurrency(order)
+                    }}
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    {{ item.price | currency : getCurrency(order) }} each
+                  </p>
                 </div>
               </div>
             </div>
@@ -311,11 +436,13 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-4">
-                                  <div class="text-sm text-gray-500">
-                    <span class="font-medium">Total:</span> {{ order.total | currency:getCurrency(order) }}
-                  </div>
                 <div class="text-sm text-gray-500">
-                  <span class="font-medium">Items:</span> {{ order.items.length }}
+                  <span class="font-medium">Total:</span>
+                  {{ order.total | currency : getCurrency(order) }}
+                </div>
+                <div class="text-sm text-gray-500">
+                  <span class="font-medium">Items:</span>
+                  {{ order.items.length }}
                 </div>
               </div>
               <div class="flex items-center space-x-3">
@@ -333,7 +460,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
                 >
                   Cancel Order
                 </button>
-                <app-button [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id]" variant="primary" size="sm">View Details</app-button>
+                <app-button
+                  [routerLink]="[ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id]"
+                  variant="primary"
+                  size="sm"
+                  >View Details</app-button
+                >
               </div>
             </div>
           </div>
@@ -373,16 +505,18 @@ import { ButtonComponent } from '../../shared/components/button/button.component
       </div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class OrdersComponent implements OnInit {
   // Expose routes for template access
   protected readonly ROUTES_ABSOLUTE = ROUTES_ABSOLUTE;
-  
+
   private orderService = inject(OrderService);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -413,7 +547,9 @@ export class OrdersComponent implements OnInit {
   faStore = faStore;
 
   // Data
-  orders: any[] = [];
+  orders: OrderView[] = [];
+  private buyerOrders: Order[] = [];
+  private sellerOrderItems: SellerOrderItem[] = [];
   isLoading = false;
 
   // View mode: buyer vs seller
@@ -432,7 +568,7 @@ export class OrdersComponent implements OnInit {
     total: 0,
     pending: 0,
     completed: 0,
-    cancelled: 0
+    cancelled: 0,
   };
 
   ngOnInit(): void {
@@ -441,83 +577,215 @@ export class OrdersComponent implements OnInit {
   }
 
   private loadOrders(): void {
-    this.isLoading = true;
-    const params: any = {
-      status: this.statusFilter,
+    const params: Record<string, unknown> = {
+      status: this.statusFilter || undefined,
       page: this.currentPage,
       per_page: 10,
-      limit: 10
     };
 
-    // Use OrderService (DDD pattern)
-    const source$ = (
-      this.viewMode === 'seller'
-        ? this.orderService.getSellerOrders(params)
-        : this.orderService.getOrders()
-    ) as unknown as import('rxjs').Observable<any>;
+    this.isLoading = true;
 
-    source$.subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          if (this.viewMode === 'seller' && response.data?.items) {
-            // Seller orders have paginated response with items
-            this.orders = response.data.items;
-            const pagination = response.data.pagination || {};
-            this.totalResults = pagination.total_items || 0;
-            this.totalPages = pagination.total_pages || 1;
-          } else if (this.viewMode === 'buyer' && Array.isArray(response.data)) {
-            // Buyer orders are array
-            this.orders = response.data;
-            this.totalResults = response.data.length;
+    if (this.viewMode === 'seller') {
+      this.orderService
+        .loadSellerOrders(params)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: () => {
+            this.sellerOrderItems =
+              this.orderService.sellerOrderItemsSnapshot ?? [];
+            const pagination = this.orderService.sellerPaginationSnapshot;
+            this.totalResults =
+              pagination?.totalItems ?? this.sellerOrderItems.length;
+            this.totalPages = pagination?.totalPages ?? 1;
+            this.refreshOrdersFromState();
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error loading seller orders:', error);
+            this.sellerOrderItems = [];
+            this.orders = [];
+            this.totalResults = 0;
             this.totalPages = 1;
-          }
-        }
+            this.isLoading = false;
+          },
+        });
 
-        if (this.viewMode === 'buyer') {
+      return;
+    }
+
+    this.orderService
+      .loadBuyerOrders(params)
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          this.buyerOrders = this.orderService.buyerOrders;
+          this.totalResults = this.buyerOrders.length;
+          this.totalPages = 1;
+          this.refreshOrdersFromState();
           this.computeBuyerStats();
-        }
-        this.isLoading = false;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading buyer orders:', error);
+          this.buyerOrders = [];
+          this.orders = [];
+          this.totalResults = 0;
+          this.totalPages = 1;
+          this.orderStats = {
+            total: 0,
+            pending: 0,
+            completed: 0,
+            cancelled: 0,
+          };
+          this.isLoading = false;
+        },
+      });
+  }
+
+  private refreshOrdersFromState(): void {
+    if (this.viewMode === 'seller') {
+      this.orders = this.sellerOrderItems.map((item) =>
+        this.mapSellerOrderItemToView(item)
+      );
+      return;
+    }
+
+    this.orders = this.buyerOrders.map((order) =>
+      this.mapBuyerOrderToView(order)
+    );
+  }
+
+  private mapBuyerOrderToView(order: Order): OrderView {
+    const currency = 'NGN';
+    const items: OrderItemView[] = order.items.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      status: item.status as OrderItemStatusView,
+      product: {
+        id: item.product?.id ?? '',
+        name: item.product?.name ?? 'Product',
+        images: item.product?.thumbnailUrl
+          ? [{ url: item.product.thumbnailUrl }]
+          : [],
+        seller: {
+          shop_name: order.buyer?.buyername ?? 'Buyer',
+          location: this.formatAddressLocation(order.shippingAddress),
+        },
       },
-      error: (error: any) => {
-        console.error('Error loading orders:', error);
-        this.orders = [];
-        if (this.viewMode === 'buyer') {
-          this.computeBuyerStats();
-        }
-        this.isLoading = false;
-      }
-    });
+    }));
+
+    return {
+      id: order.id,
+      order_number: order.orderNumber,
+      created_at: order.createdAt,
+      status: order.status as OrderStatusView,
+      total: order.total,
+      subtotal: order.subtotal,
+      tax: order.tax ?? 0,
+      discount: order.discount ?? 0,
+      shipping_fee: order.shippingFee ?? 0,
+      items,
+      currency,
+    };
+  }
+
+  private mapSellerOrderItemToView(item: SellerOrderItem): OrderView {
+    const currency = 'NGN';
+    const productName = item.product?.name ?? 'Product';
+    const productImages = item.product?.thumbnailUrl
+      ? [{ url: item.product.thumbnailUrl }]
+      : [];
+    const total = item.price * item.quantity;
+
+    const viewItem: OrderItemView = {
+      id: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      status: item.status as OrderItemStatusView,
+      product: {
+        id: item.product?.id ?? '',
+        name: productName,
+        images: productImages,
+        seller: {
+          shop_name: item.order.buyer?.buyername ?? 'Buyer',
+          location: '',
+        },
+      },
+    };
+
+    return {
+      id: item.orderId,
+      order_number: item.order.orderNumber,
+      created_at: item.order.createdAt,
+      status: item.status as OrderStatusView,
+      total,
+      subtotal: total,
+      tax: 0,
+      discount: 0,
+      shipping_fee: 0,
+      items: [viewItem],
+      currency,
+    };
+  }
+
+  private formatAddressLocation(
+    address?: {
+      city?: string | null;
+      state?: string | null;
+      country?: string | null;
+    } | null
+  ): string {
+    if (!address) {
+      return '';
+    }
+
+    const parts = [address.city, address.state, address.country].filter(
+      (part): part is string => Boolean(part && part.trim().length > 0)
+    );
+
+    return parts.join(', ');
   }
 
   private computeBuyerStats(): void {
-    const total = this.orders.length;
-    const pending = this.orders.filter(o => o.status === 'pending').length;
-    const completed = this.orders.filter(o => o.status === 'delivered').length;
-    const cancelled = this.orders.filter(o => o.status === 'cancelled').length;
+    const total = this.buyerOrders.length;
+    const pending = this.buyerOrders.filter(
+      (order) =>
+        order.status === 'pending' ||
+        order.status === 'processing' ||
+        order.status === 'confirmed'
+    ).length;
+    const completed = this.buyerOrders.filter(
+      (order) => order.status === 'delivered'
+    ).length;
+    const cancelled = this.buyerOrders.filter(
+      (order) => order.status === 'cancelled' || order.status === 'returned'
+    ).length;
     this.orderStats = { total, pending, completed, cancelled };
   }
 
   private loadOrderStatistics(): void {
     if (this.viewMode === 'seller') {
-      // Use OrderService (DDD pattern)
-      this.orderService.getSellerOrderStats().subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-          this.orderStats = {
-              total: response.data.total ?? this.orderStats.total,
-              pending: response.data.pending ?? this.orderStats.pending,
-              completed: response.data.completed ?? this.orderStats.completed,
-              cancelled: response.data.cancelled ?? this.orderStats.cancelled
-          };
-          }
-        },
-        error: (error) => {
-          console.error('Error loading seller order statistics:', error);
-        }
-      });
-    } else {
-      this.computeBuyerStats();
+      this.orderService
+        .loadSellerStats()
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: (stats) => {
+            this.orderStats = {
+              total: stats.totalOrders ?? this.orderStats.total,
+              pending: stats.pendingOrders ?? this.orderStats.pending,
+              completed: stats.completedOrders ?? this.orderStats.completed,
+              cancelled: stats.cancelledOrders ?? this.orderStats.cancelled,
+            };
+          },
+          error: (error) => {
+            console.error('Error loading seller order statistics:', error);
+          },
+        });
+      return;
     }
+
+    this.computeBuyerStats();
   }
 
   onSearchInput(): void {
@@ -591,58 +859,67 @@ export class OrdersComponent implements OnInit {
 
   getOrderStatusDisplay(status: string): string {
     const statusMap: Record<string, string> = {
-      'pending': 'Pending',
-      'confirmed': 'Confirmed',
-      'shipped': 'Shipped',
-      'delivered': 'Delivered',
-      'cancelled': 'Cancelled'
+      pending: 'Pending',
+      processing: 'Processing',
+      confirmed: 'Confirmed',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+      returned: 'Returned',
     };
     return statusMap[status] || status;
   }
 
   getOrderStatusClasses(status: string): string {
     const classMap: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'confirmed': 'bg-blue-100 text-blue-800',
-      'shipped': 'bg-purple-100 text-purple-800',
-      'delivered': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800'
+      pending: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-blue-100 text-blue-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      shipped: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      returned: 'bg-gray-100 text-gray-800',
     };
     return classMap[status] || 'bg-gray-100 text-gray-800';
   }
 
-  getCurrency(order: any): string {
-    return order?.currency || order?.items?.[0]?.currency || 'NGN';
+  getCurrency(order: OrderView): string {
+    return order.currency || 'NGN';
   }
 
-  canReviewOrder(order: any): boolean {
+  canReviewOrder(order: OrderView): boolean {
     return order.status === 'delivered';
   }
 
-  canCancelOrder(order: any): boolean {
-    return ['pending', 'confirmed'].includes(order.status);
+  canCancelOrder(order: OrderView): boolean {
+    return ['pending', 'processing', 'confirmed'].includes(order.status);
   }
 
-  navigateToReview(order: any): void {
+  navigateToReview(order: OrderView): void {
     this.router.navigate([ROUTES_ABSOLUTE.APP.ORDERS.ROOT, order.id, 'review']);
   }
 
-  cancelOrder(order: any): void {
-    if (confirm('Are you sure you want to cancel this order?')) {
-      // Using domain OrderService.cancelOrder() - returns Observable<Order> directly
-      this.orderService.cancelOrder(order.id).subscribe({
-        next: (cancelledOrder) => {
-          // Domain service returns Order directly (no .success wrapper)
-          this.refreshOrders();
+  cancelOrder(order: OrderView): void {
+    if (!confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    this.orderService
+      .cancelOrder(order.id)
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          this.buyerOrders = this.orderService.buyerOrders;
+          this.refreshOrdersFromState();
+          this.computeBuyerStats();
         },
         error: (error) => {
           console.error('Error cancelling order:', error);
-        }
+        },
       });
-    }
   }
 
-  downloadInvoice(order: any): void {
+  downloadInvoice(order: OrderView): void {
     if (!order || !order.id) {
       console.error('Invalid order data for invoice download');
       return;
@@ -650,80 +927,43 @@ export class OrdersComponent implements OnInit {
 
     // TODO: Implement invoice download when backend endpoint is available
     // For now, show a message that this feature is coming soon
-    
+
     // You can show a toast notification here instead
     // this.notificationService.show('Invoice download feature coming soon!');
   }
 
-  // Additional order endpoint integrations
-  getOrders(): void {
-    // Use OrderService (DDD pattern)
-    // Using domain OrderService.getOrders() - returns Observable<Order[]> directly
-    this.orderService.getOrders().subscribe({
-      next: (orders) => {
-        // Domain service returns Order[] directly (no .success/.data wrapper)
-        this.orders = orders;
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-      }
-    });
-  }
-
-  getSellerOrders(): void {
-    // Use OrderService (DDD pattern)
-    this.orderService.getSellerOrders().subscribe({
-      next: (response) => {
-        if (response.success && response.data?.items) {
-          this.orders = response.data.items;
-        }
-      },
-      error: (error) => {
-        console.error('Error loading seller orders:', error);
-      }
-    });
-  }
-
-  getSellerOrderStats(): void {
-    // Use OrderService (DDD pattern)
-    this.orderService.getSellerOrderStats().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.orderStats = {
-            total: response.data.total ?? this.orderStats.total,
-            pending: response.data.pending ?? this.orderStats.pending,
-            completed: response.data.completed ?? this.orderStats.completed,
-            cancelled: response.data.cancelled ?? this.orderStats.cancelled
-          };
-        }
-      },
-      error: (error) => {
-        console.error('Error loading seller order stats:', error);
-      }
-    });
-  }
-
-  reviewOrder(orderId: string, reviewData: any): void {
-    // Use OrderService (DDD pattern)
-    this.orderService.reviewOrder(orderId, reviewData).subscribe({
-      next: (response) => {
-        // Order reviewed successfully
-      },
-      error: (error) => {
-        console.error('Error reviewing order:', error);
-      }
-    });
+  reviewOrder(
+    orderId: string,
+    reviewData: { rating: number; comment?: string }
+  ): void {
+    this.orderService
+      .reviewOrder(orderId, {
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+      })
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          console.info('Review submitted for order:', orderId);
+        },
+        error: (error) => {
+          console.error('Error submitting review:', error);
+        },
+      });
   }
 
   trackOrder(orderId: string): void {
-    // Use OrderService (DDD pattern)
-    this.orderService.trackOrder(orderId).subscribe({
-      next: (response) => {
-        // Order tracked successfully
-      },
-      error: (error) => {
-        console.error('Error tracking order:', error);
-      }
-    });
+    this.orderService
+      .trackOrder(orderId)
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: (tracking) => {
+          // TODO: Surface tracking modal when UI is ready
+          console.info('Order tracking update:', tracking);
+        },
+        error: (error) => {
+          console.error('Error tracking order:', error);
+        },
+      });
   }
-} 
+}

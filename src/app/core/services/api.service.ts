@@ -14,8 +14,6 @@ import {
   PaginatedResponse,
   User,
   Product,
-  Order,
-  OrderItem,
   BuyerRequest,
   SellerOffer,
   Media,
@@ -26,8 +24,6 @@ import {
   Collection,
   Payment,
   Notification,
-  Review,
-  Tracking,
   RegisterResponse,
   UserRole,
 } from '../models';
@@ -154,30 +150,6 @@ export interface ProductData {
   product_metadata?: Record<string, unknown>;
 }
 
-export interface OrderData {
-  cart_id: string;
-  shipping_address: {
-    latitude: number;
-    longitude: number;
-    street: string;
-    house_number: string;
-    city: string;
-    state: string;
-    country: string;
-    postal_code: string;
-  };
-  payment_method: string;
-  customer_note?: string;
-}
-
-export interface PaymentData {
-  order_id: string;
-  amount: number;
-  currency?: string;
-  method?: string;
-  metadata?: Record<string, unknown>;
-}
-
 export interface RequestData {
   title: string;
   description: string;
@@ -288,30 +260,6 @@ export interface WebhookData {
   event: string;
   data: Record<string, unknown>;
   signature?: string;
-}
-
-export interface OrderParams {
-  page?: number;
-  per_page?: number;
-  status?: string;
-  sort_by?: string;
-  sort_order?: 'asc' | 'desc';
-  [key: string]: unknown;
-}
-
-export interface OrderStats {
-  total_orders: number;
-  pending_orders: number;
-  completed_orders: number;
-  cancelled_orders: number;
-  total_revenue: number;
-  average_order_value: number;
-}
-
-export interface ReviewData {
-  rating: number;
-  title?: string;
-  content: string;
 }
 
 @Injectable({
@@ -520,25 +468,6 @@ export class ApiService {
     );
   }
 
-  /**
-   * Get VAPID public key for push notifications
-   */
-  getVapidPublicKey(): Observable<ApiResponse<{ publicKey: string }>> {
-    return this.get<{ publicKey: string }>('/notifications/vapid-public-key');
-  }
-
-  /**
-   * Update push notification subscription
-   */
-  updatePushSubscription(
-    subscription: any
-  ): Observable<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>(
-      '/users/push-subscription',
-      subscription
-    );
-  }
-
   // ============================================================================
   // PRODUCT ENDPOINTS (15 endpoints)
   // ============================================================================
@@ -633,64 +562,6 @@ export class ApiService {
       '/products/seller/my-products',
       params
     );
-  }
-
-  // ============================================================================
-  // ORDER ENDPOINTS (10 endpoints)
-  // ============================================================================
-
-  getOrders(): Observable<ApiResponse<Order[]>> {
-    return this.get<Order[]>('/orders/');
-  }
-
-  createOrder(orderData: OrderData): Observable<ApiResponse<Order>> {
-    return this.post<Order>('/orders/', orderData);
-  }
-
-  payOrder(
-    orderId: string,
-    paymentData: PaymentData
-  ): Observable<ApiResponse<Order>> {
-    return this.post<Order>(`/orders/${orderId}/pay`, paymentData);
-  }
-
-  getOrder(orderId: string): Observable<ApiResponse<Order>> {
-    return this.get<Order>(`/orders/${orderId}`);
-  }
-
-  getSellerOrders(
-    params?: OrderParams
-  ): Observable<ApiResponse<PaginatedResponse<Order>>> {
-    return this.get<PaginatedResponse<Order>>('/orders/seller', params);
-  }
-
-  getSellerOrderStats(): Observable<ApiResponse<OrderStats>> {
-    return this.get<OrderStats>('/orders/seller/stats');
-  }
-
-  updateOrderItemStatus(
-    orderItemId: number,
-    statusData: StatusUpdateData
-  ): Observable<ApiResponse<OrderItem>> {
-    return this.patch<OrderItem>(
-      `/orders/seller/items/${orderItemId}`,
-      statusData
-    );
-  }
-
-  trackOrder(orderId: string): Observable<ApiResponse<Tracking[]>> {
-    return this.get<Tracking[]>(`/orders/${orderId}/track`);
-  }
-
-  getOrderTracking(orderId: string): Observable<ApiResponse<any>> {
-    return this.get<any>(`/orders/${orderId}/tracking`);
-  }
-
-  reviewOrder(
-    orderId: string,
-    reviewData: ReviewData
-  ): Observable<ApiResponse<Review>> {
-    return this.post<Review>(`/orders/${orderId}/review`, reviewData);
   }
 
   // ============================================================================
@@ -912,24 +783,6 @@ export class ApiService {
 
   getPaymentStats(): Observable<ApiResponse<any>> {
     return this.get<any>('/payments/admin/stats');
-  }
-
-  // ============================================================================
-  // NOTIFICATION ENDPOINTS (3 endpoints)
-  // ============================================================================
-
-  getNotifications(params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>('/notifications/', params);
-  }
-
-  getUnreadCount(): Observable<ApiResponse<any>> {
-    return this.get<any>('/notifications/unread/count');
-  }
-
-  markAsRead(notificationIds: number[]): Observable<ApiResponse<any>> {
-    return this.post<any>('/notifications/mark-read', {
-      notification_ids: notificationIds,
-    });
   }
 
   // ============================================================================
@@ -1558,10 +1411,6 @@ export class ApiService {
   }
 
   // Orders - Missing methods
-  getMyOrders(params?: any): Observable<ApiResponse<PaginatedResponse<Order>>> {
-    return this.get<PaginatedResponse<Order>>('/orders/my-orders', params);
-  }
-
   // Additional missing methods
   getSimilarProducts(productId: string): Observable<ApiResponse<Product[]>> {
     return this.get<Product[]>(`/products/${productId}/similar`);

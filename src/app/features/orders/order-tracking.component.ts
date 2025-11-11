@@ -13,8 +13,8 @@ import {
   faComments,
   faShieldAlt
 } from '@fortawesome/free-solid-svg-icons';
-import { ApiService } from '../../core/services/api.service'; // Using ApiService for trackOrder (not yet migrated to domain service)
 import { OrderService } from '../../domains/orders';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface TrackingEvent {
   id: string;
@@ -286,7 +286,6 @@ interface TrackingData {
 export class OrderTrackingComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private apiService = inject(ApiService); // Using ApiService for trackOrder (not yet migrated to domain service)
   private orderService = inject(OrderService);
 
   // Icons
@@ -380,67 +379,56 @@ export class OrderTrackingComponent implements OnInit {
     
     if (orderId) {
       this.loading = true;
-      // Order tracking - using OrderService (temporarily delegates to ApiService)
-      // TODO: Migrate to OrderTrackingRepository when created
-      this.orderService.trackOrder(orderId).subscribe({
-        next: (response: any) => {
-          if (response?.success && response?.data) {
-            // ApiService returns Tracking[] array, transform to component format
-            this.trackingData = this.transformTrackingData(response.data);
-          } else {
-            // Use mock data if response format is unexpected
+      this.orderService
+        .trackOrder(orderId)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: (tracking) => {
+            this.trackingData = this.transformTrackingData(orderId, tracking);
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error loading tracking data:', error);
             this.trackingData = this.getMockTrackingData();
-          }
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Error loading tracking data:', error);
-          // Use mock data if API fails
-          this.trackingData = this.getMockTrackingData();
-          this.loading = false;
-        }
-      });
+            this.loading = false;
+          },
+        });
     } else {
       // Use mock data if no order ID
       this.trackingData = this.getMockTrackingData();
     }
   }
 
-  private transformTrackingData(apiData: any): TrackingData {
+  private transformTrackingData(orderId: string, tracking: any): TrackingData {
+    const checkpoints = Array.isArray(tracking?.checkpoints) ? tracking.checkpoints : [];
+    const timeline: TrackingEvent[] = checkpoints.map((checkpoint: any, index: number) => ({
+      id: `${orderId}-checkpoint-${index}`,
+      status: checkpoint.status ?? 'In Transit',
+      description: checkpoint.description ?? 'Status update received',
+      timestamp: checkpoint.occurred_at ?? new Date().toISOString(),
+      isCurrent: index === checkpoints.length - 1,
+      icon: 'check',
+    }));
+
     return {
-      orderNumber: apiData.order_number || 'MK-2024-001847',
-      placementDate: apiData.placement_date || 'March 15, 2024',
-      currentStatus: apiData.current_status || 'Out for Delivery',
-      deliveryProgress: apiData.delivery_progress || 80,
-      expectedDelivery: apiData.expected_delivery || 'Today by 6:00 PM',
-      trackingNumber: apiData.tracking_number || '1Z999AA1234567890',
-      carrier: apiData.carrier || 'UPS Ground',
-      serviceType: apiData.service_type || 'Standard Delivery',
-      weight: apiData.weight || '2.5 lbs',
-      timeline: apiData.timeline?.map((event: any) => ({
-        id: event.id,
-        status: event.status,
-        description: event.description,
-        timestamp: event.timestamp,
-        isCurrent: event.is_current || false,
-        icon: event.icon || 'check'
-      })) || this.mockTimeline,
-      packageContents: apiData.package_contents?.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        details: item.details,
-        price: item.price / 100, // Convert from cents
-        quantity: item.quantity,
-        seller: item.seller,
-        image: item.image
-      })) || this.mockPackageContents,
+      orderNumber: tracking?.order_number ?? orderId,
+      placementDate: tracking?.placed_at ?? 'March 15, 2024',
+      currentStatus: tracking?.status ?? 'Processing',
+      deliveryProgress: Math.min(100, (checkpoints.length / 4) * 100 || 20),
+      expectedDelivery: tracking?.estimated_delivery ?? 'Today by 6:00 PM',
+      trackingNumber: tracking?.tracking_number ?? '1Z999AA1234567890',
+      carrier: tracking?.carrier ?? 'UPS Ground',
+      serviceType: tracking?.service_type ?? 'Standard Delivery',
+      weight: tracking?.package_weight ?? '2.5 lbs',
+      timeline: timeline.length ? timeline : this.mockTimeline,
+      packageContents: this.mockPackageContents,
       deliveryAddress: {
-        name: apiData.delivery_address?.name || 'Emma Johnson',
-        institution: apiData.delivery_address?.institution || 'Northwestern University',
-        address: apiData.delivery_address?.address || '1840 Sheridan Road',
-        city: apiData.delivery_address?.city || 'Evanston, IL 60208',
-        building: apiData.delivery_address?.building || 'Building: Willard Hall, Room 312'
-      }
+        name: tracking?.recipient_name ?? 'Michael Johnson',
+        institution: tracking?.delivery_address?.institution ?? 'UC Berkeley - Haas School of Business',
+        address: tracking?.delivery_address?.address ?? '2220 Piedmont Ave',
+        city: tracking?.delivery_address?.city ?? 'Berkeley, CA 94720',
+        building: tracking?.delivery_address?.building ?? 'Haas Courtyard',
+      },
     };
   }
 

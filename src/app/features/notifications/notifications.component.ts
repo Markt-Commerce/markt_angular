@@ -1,8 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { NotificationService } from '../../domains/notifications/services/notification.service';
+import { Notification as NotificationEntity } from '../../domains/notifications';
 
 interface UINotification {
   id: string;
@@ -499,7 +501,10 @@ export class NotificationsComponent implements OnInit {
     this.errorMessage = '';
     
     // initial load
-    this.notificationService.getNotifications().subscribe({
+    this.notificationService
+      .getNotifications()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: () => {
         this.loading = false;
       },
@@ -510,14 +515,28 @@ export class NotificationsComponent implements OnInit {
       }
     });
     
-    this.notificationService.getUnreadCount().subscribe({
-      error: (error) => {
-        console.error('Error loading unread count:', error);
-      }
-    });
+    this.notificationService
+      .getUnreadCount()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {},
+        error: (error) => {
+          console.error('Error loading unread count:', error);
+        }
+      });
+
+    this.notificationService
+      .unreadCount$
+      .pipe(takeUntilDestroyed())
+      .subscribe((count) => {
+        this.hasUnreadNotifications = count > 0;
+      });
 
     // subscribe to realtime/state
-    this.notificationService.getNotifications$().subscribe({
+    this.notificationService
+      .getNotifications$()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
       next: (list) => {
         this.notifications = (list || []).map(n => this.mapNotification(n));
         this.hasUnreadNotifications = this.unreadCount > 0;
@@ -534,61 +553,91 @@ export class NotificationsComponent implements OnInit {
   }
 
   toggleRead(notification: UINotification): void {
-    // Mark single notification as read via service if we had ids; simulate local for now
-    notification.read = !notification.read;
-    this.hasUnreadNotifications = this.unreadCount > 0;
+    if (notification.read) {
+      return;
+    }
+
+    this.notificationService
+      .markAsRead([notification.id])
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        error: (error) => {
+          console.error('Error marking notification as read:', error);
+        }
+      });
   }
 
   markAllAsRead(): void {
-    const unreadIds = this.notifications.filter(n => !n.read).map(n => n.id);
-    if (unreadIds.length === 0) return;
-    this.notificationService.markAllAsRead().subscribe({
-      next: () => {
-        this.notifications = this.notifications.map(n => ({ ...n, read: true }));
-        this.hasUnreadNotifications = false;
-      },
-      error: () => {
-        // fallback to local update
-        this.notifications = this.notifications.map(n => ({ ...n, read: true }));
-        this.hasUnreadNotifications = false;
-      }
-    });
+    this.notificationService
+      .markAllAsRead()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        error: (error) => {
+          console.error('Error marking all notifications as read:', error);
+        }
+      });
   }
 
   deleteNotification(id: string): void {
-    // No backend delete; remove locally
+    this.notificationService.removeNotificationLocally(id);
     this.notifications = this.notifications.filter(n => n.id !== id);
     this.hasUnreadNotifications = this.unreadCount > 0;
   }
 
   clearAllNotifications(): void {
+    this.notificationService.clearNotificationsLocally();
     this.notifications = [];
     this.hasUnreadNotifications = false;
   }
 
-  private mapNotification(n: any): UINotification {
-    let actionUrl = '';
-    // Prefer service mapping; else derive common patterns
-    const mapped = this.notificationService.getNotificationActionUrl(n);
-    if (mapped) {
-      actionUrl = mapped;
-    } else if (n.context?.type && n.context?.id) {
-      const t = String(n.context.type);
-      const id = String(n.context.id);
-      if (t === 'order') actionUrl = `/app/orders/${id}`;
-      else if (t === 'offer') actionUrl = `/app/offers/${id}`;
-      else if (t === 'request') actionUrl = `/app/requests/${id}`;
-      else if (t === 'product') actionUrl = `/app/marketplace/product/${id}`;
-      else if (t === 'chat') actionUrl = `/app/chat/${id}`;
-    }
+  private mapNotification(notification: NotificationEntity | any): UINotification {
+    const actionUrl = this.notificationService.getNotificationActionUrl(notification);
+
+    const isDomainNotification = notification instanceof NotificationEntity;
+
+    const id = isDomainNotification ? notification.id : notification?.id;
+    const title = isDomainNotification
+      ? notification.title ?? 'Notification'
+      : notification?.title ?? 'Notification';
+    const message = isDomainNotification
+      ? notification.message
+      : notification?.message ?? '';
+    const createdAt = isDomainNotification
+      ? notification.createdAt
+      : notification?.created_at ?? new Date().toISOString();
+    const isRead = isDomainNotification ? !notification.isUnread() : Boolean(notification?.is_read);
+    const typeSource = isDomainNotification ? notification.type : notification?.type;
+
     return {
-      id: String(n.id),
-      type: (n.type as any) || 'info',
-      title: n.title || 'Notification',
-      message: n.message || '',
-      timestamp: n.created_at || new Date().toISOString(),
-      read: !!n.is_read,
-      action_url: actionUrl
+      id: String(id ?? ''),
+      type: this.resolveUiType(typeSource),
+      title,
+      message,
+      timestamp: createdAt,
+      read: isRead,
+      action_url: actionUrl,
     };
+  }
+
+  private resolveUiType(type: string | undefined): UINotification['type'] {
+    if (!type) {
+      return 'info';
+    }
+
+    const normalized = type.toLowerCase();
+
+    if (normalized.includes('success') || normalized.includes('approved') || normalized.includes('new_follower') || normalized.includes('order_placed') || normalized.includes('payment_success')) {
+      return 'success';
+    }
+
+    if (normalized.includes('failed') || normalized.includes('rejected') || normalized.includes('moderation')) {
+      return 'error';
+    }
+
+    if (normalized.includes('alert') || normalized.includes('expired') || normalized.includes('payment_failed')) {
+      return 'warning';
+    }
+
+    return 'info';
   }
 } 

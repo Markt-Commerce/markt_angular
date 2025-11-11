@@ -22,6 +22,7 @@ import {
   faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { OrderService, Order, OrderStatus } from '../../domains/orders';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface OrderStatusTab {
   key: string;
@@ -881,21 +882,24 @@ export class OrderHistoryComponent implements OnInit {
    */
   private loadOrders(): void {
     this.isLoading.set(true);
-    
-    this.orderService.getOrders().subscribe({
-      next: (orders: Order[]) => {
-        // Domain service returns Order[] directly
-        this.orders.set(orders || []);
-        this.updateStatusCounts();
-        this.calculatePagination();
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-        this.orders.set([]);
-        this.isLoading.set(false);
-      }
-    });
+
+    this.orderService
+      .loadBuyerOrders()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: () => {
+          const orders = this.orderService.buyerOrders;
+          this.orders.set(orders || []);
+          this.updateStatusCounts();
+          this.calculatePagination();
+          this.isLoading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading orders:', error);
+          this.orders.set([]);
+          this.isLoading.set(false);
+        },
+      });
   }
 
   /**
@@ -1094,6 +1098,9 @@ export class OrderHistoryComponent implements OnInit {
     if (product?.seller?.name) {
       return product.seller.name;
     }
+    if (product?.seller_name) {
+      return product.seller_name;
+    }
     // If seller info is not available in product, return null
     // The template will show 'Unknown Seller' as fallback
     return null;
@@ -1104,6 +1111,9 @@ export class OrderHistoryComponent implements OnInit {
    */
   getProductImage(product: any): string {
     // Try different image URL paths
+    if (product?.thumbnailUrl) {
+      return product.thumbnailUrl;
+    }
     if (product?.images?.[0]?.media?.original_url) {
       return product.images[0].media.original_url;
     }
@@ -1200,9 +1210,12 @@ export class OrderHistoryComponent implements OnInit {
    * Contact seller
    */
   contactSeller(order: Order): void {
-    const sellerId = order.sellerId;
+    const metadata = (order as unknown as { metadata?: Record<string, unknown> | null }).metadata;
+    const sellerId = metadata?.['seller_id'] as string | undefined;
     if (sellerId) {
       this.router.navigate([ROUTES_ABSOLUTE.APP.CHAT], { queryParams: { seller: sellerId } });
+    } else {
+      console.warn('Seller information is not available for this order yet.');
     }
   }
 
@@ -1212,18 +1225,21 @@ export class OrderHistoryComponent implements OnInit {
    */
   cancelOrder(order: Order): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.cancelOrder(order.id).subscribe({
-        next: (cancelledOrder) => {
-          // Domain service returns the updated Order directly
-          // Refresh orders to get updated list
-          this.loadOrders();
-        },
-        error: (error) => {
-          console.error('Error cancelling order:', error);
-          // Domain service throws error if order cannot be cancelled (business rule)
-          alert(error.message || 'Failed to cancel order. Order may not be cancellable.');
-        }
-      });
+      this.orderService
+        .cancelOrder(order.id)
+        .pipe(takeUntilDestroyed())
+        .subscribe({
+          next: (cancelledOrder) => {
+            // Domain service returns the updated Order directly
+            // Refresh orders to get updated list
+            this.loadOrders();
+          },
+          error: (error) => {
+            console.error('Error cancelling order:', error);
+            // Domain service throws error if order cannot be cancelled (business rule)
+            alert(error.message || 'Failed to cancel order. Order may not be cancellable.');
+          }
+        });
     }
   }
 
