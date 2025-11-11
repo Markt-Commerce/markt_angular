@@ -3,7 +3,11 @@
  */
 
 export { Media, MediaVariant } from './models/media.model';
-export type { MediaType, ProcessingStatus } from './models/media.model';
+export type {
+  MediaType,
+  MediaVariantType,
+  ProcessingStatus
+} from './models/media.model';
 export type {
   MediaDto,
   MediaVariantDto,
@@ -12,7 +16,17 @@ export type {
   MediaStatsDto,
   SocialMediaOptimizationDto,
   SocialMediaOptimizationResponseDto,
-  UploadOptionsDto
+  UploadOptionsDto,
+  MediaUrlsDto,
+  MediaStatusDto,
+  MediaDeleteResponseDto,
+  MediaDownloadResponseDto,
+  ProductImageDto,
+  SocialMediaPostDto,
+  RequestImageDto,
+  MediaVariantRequestDto,
+  MediaBackgroundRemovalResponseDto,
+  MediaVariantGenerationResponseDto
 } from './models/media.dto';
 export { MediaService } from './services/media.service';
 export type { MediaState } from './services/media.service';

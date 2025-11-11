@@ -4,24 +4,41 @@
  * Domain entities for media management.
  */
 
-export type MediaType = 'image' | 'video';
-export type ProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type MediaType = 'image' | 'video' | 'document' | 'audio';
+export type ProcessingStatus =
+  | 'pending'
+  | 'processing'
+  | 'uploaded'
+  | 'completed'
+  | 'failed';
+export type MediaVariantType =
+  | 'original'
+  | 'thumbnail'
+  | 'small'
+  | 'medium'
+  | 'large'
+  | 'mobile'
+  | 'tablet'
+  | 'desktop'
+  | 'social_square'
+  | 'social_story'
+  | 'social_post';
 
 /**
  * Media Variant - Value Object
  */
 export class MediaVariant {
   constructor(
-    public readonly id: string,
-    public readonly variantType: string,
-    public readonly quality: string,
-    public readonly width: number,
-    public readonly height: number,
-    public readonly format: string,
-    public readonly fileSize: number,
-    public readonly url: string,
+    public readonly id: number,
+    public readonly variantType: MediaVariantType,
     public readonly storageKey: string,
-    public readonly processingTime: number
+    public readonly width: number | null,
+    public readonly height: number | null,
+    public readonly fileSize: number | null,
+    public readonly quality: number | null,
+    public readonly format: string | null,
+    public readonly url: string | null,
+    public readonly processingTime: number | null
   ) {}
 
   /**
@@ -35,6 +52,9 @@ export class MediaVariant {
    * Business Rule: Get file size in MB
    */
   getFileSizeMB(): number {
+    if (!this.fileSize) {
+      return 0;
+    }
     return this.fileSize / (1024 * 1024);
   }
 
@@ -42,7 +62,9 @@ export class MediaVariant {
    * Business Rule: Get aspect ratio
    */
   getAspectRatio(): number {
-    if (this.height === 0) return 0;
+    if (!this.width || !this.height || this.height === 0) {
+      return 0;
+    }
     return this.width / this.height;
   }
 }
@@ -52,34 +74,35 @@ export class MediaVariant {
  */
 export class Media {
   constructor(
-    public readonly id: string,
+    public readonly id: number,
     public readonly userId: string,
-    public readonly originalFilename: string,
-    public readonly originalUrl: string,
-    public readonly mediaType: MediaType,
-    public readonly width: number,
-    public readonly height: number,
-    public readonly fileSize: number,
-    public readonly mimeType: string,
-    public readonly processingStatus: ProcessingStatus,
     public readonly storageKey: string,
+    public readonly mediaType: MediaType,
+    public readonly mimeType: string,
+    public readonly width: number | null,
+    public readonly height: number | null,
+    public readonly fileSize: number,
+    public readonly originalUrl: string | null,
+    public readonly processingStatus: ProcessingStatus,
     public readonly createdAt: string,
-    public readonly updatedAt: string,
-    public readonly thumbnailUrl?: string,
-    public readonly mobileUrl?: string,
-    public readonly tabletUrl?: string,
-    public readonly desktopUrl?: string,
-    public readonly socialSquareUrl?: string,
-    public readonly socialPostUrl?: string,
-    public readonly socialStoryUrl?: string,
-    public readonly duration?: number,
-    public readonly altText?: string,
-    public readonly caption?: string,
-    public readonly isPublic: boolean = false,
-    public readonly backgroundRemoved: boolean = false,
-    public readonly compressionQuality?: number,
+    public readonly updatedAt: string | null,
+    public readonly thumbnailUrl: string | null,
+    public readonly mobileUrl: string | null,
+    public readonly tabletUrl: string | null,
+    public readonly desktopUrl: string | null,
+    public readonly socialSquareUrl: string | null,
+    public readonly socialPostUrl: string | null,
+    public readonly socialStoryUrl: string | null,
+    public readonly duration: number | null,
+    public readonly altText: string | null,
+    public readonly caption: string | null,
+    public readonly isPublic: boolean,
+    public readonly backgroundRemoved: boolean,
+    public readonly compressionQuality: number | null,
+    public readonly originalFilename: string | null,
+    public readonly processingError: string | null,
     public readonly variants: MediaVariant[] = [],
-    public readonly exifData?: Record<string, unknown>
+    public readonly exifData?: Record<string, unknown> | null
   ) {}
 
   /**
@@ -106,24 +129,33 @@ export class Media {
   /**
    * Business Rule: Get best URL for display context
    */
-  getBestUrl(context: 'thumbnail' | 'mobile' | 'tablet' | 'desktop' | 'social-square' | 'social-post' | 'social-story' = 'desktop'): string {
+  getBestUrl(
+    context:
+      | 'thumbnail'
+      | 'mobile'
+      | 'tablet'
+      | 'desktop'
+      | 'social-square'
+      | 'social-post'
+      | 'social-story' = 'desktop'
+  ): string {
     switch (context) {
       case 'thumbnail':
-        return this.thumbnailUrl || this.originalUrl;
+        return this.thumbnailUrl ?? this.originalUrl ?? '';
       case 'mobile':
-        return this.mobileUrl || this.originalUrl;
+        return this.mobileUrl ?? this.originalUrl ?? '';
       case 'tablet':
-        return this.tabletUrl || this.originalUrl;
+        return this.tabletUrl ?? this.originalUrl ?? '';
       case 'desktop':
-        return this.desktopUrl || this.originalUrl;
+        return this.desktopUrl ?? this.originalUrl ?? '';
       case 'social-square':
-        return this.socialSquareUrl || this.originalUrl;
+        return this.socialSquareUrl ?? this.originalUrl ?? '';
       case 'social-post':
-        return this.socialPostUrl || this.originalUrl;
+        return this.socialPostUrl ?? this.originalUrl ?? '';
       case 'social-story':
-        return this.socialStoryUrl || this.originalUrl;
+        return this.socialStoryUrl ?? this.originalUrl ?? '';
       default:
-        return this.originalUrl;
+        return this.originalUrl ?? '';
     }
   }
 
@@ -138,7 +170,9 @@ export class Media {
    * Business Rule: Get aspect ratio
    */
   getAspectRatio(): number {
-    if (this.height === 0) return 0;
+    if (!this.width || !this.height || this.height === 0) {
+      return 0;
+    }
     return this.width / this.height;
   }
 

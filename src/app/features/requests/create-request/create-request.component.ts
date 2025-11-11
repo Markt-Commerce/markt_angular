@@ -5,7 +5,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { RequestService } from '../../../domains/requests/services/request.service';
-import { ApiService } from '../../../core/services/api.service'; // Still needed for image operations (addRequestImage, deleteRequestImage, getRequestImages - not yet migrated)
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { MediaService } from '../../../domains/media';
 import { CategoryService, Category as CategoryModel } from '../../../domains/categories';
@@ -437,7 +436,6 @@ export class CreateRequestComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private requestService = inject(RequestService);
-  private apiService = inject(ApiService); // Still needed for image operations (not yet migrated)
   private mediaService = inject(MediaService);
   private categoryService = inject(CategoryService);
 
@@ -596,7 +594,7 @@ export class CreateRequestComponent implements OnInit {
           if (response.success && response.data) {
             // Upload images if any were selected
             if (this.selectedMedia.length > 0) {
-              // TODO: Upload images using MediaService or ApiService
+              // TODO: Upload images via MediaService once backend flow is finalized
               // For now, navigate to the request detail page
             }
           this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, response.data.id]);
@@ -610,9 +608,7 @@ export class CreateRequestComponent implements OnInit {
     }
   }
 
-  // Request image endpoint integrations
-  // TODO: These methods still use ApiService - image operations may need MediaService or stay in ApiService
-  // for cross-domain operations (request images are part of media domain)
+  // Request image endpoint integrations via MediaService
   addRequestImage(requestId: string, imageFile: File): void {
     this.mediaService.uploadRequestImage(requestId, imageFile).subscribe({
       next: (response) => {

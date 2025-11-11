@@ -6,15 +6,25 @@
 
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { tap, switchMap, map } from 'rxjs/operators';
+import { tap, switchMap } from 'rxjs/operators';
 import { MediaRepository } from '../repositories/media.repository';
 import { Media } from '../models/media.model';
 import {
   UploadOptionsDto,
-  SocialMediaOptimizationDto
+  SocialMediaOptimizationDto,
+  MediaDeleteResponseDto,
+  MediaBackgroundRemovalResponseDto,
+  MediaDownloadResponseDto,
+  MediaStatusDto,
+  MediaUrlsDto,
+  MediaVariantTypeDto,
+  MediaVariantGenerationResponseDto,
+  ProductImageDto,
+  SocialMediaPostDto,
+  RequestImageDto,
+  MediaUpdateDto
 } from '../models/media.dto';
 import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
-import { ApiService } from '../../../core/services/api.service';
 
 export interface MediaState {
   media: Media[];
@@ -29,7 +39,6 @@ export interface MediaState {
 })
 export class MediaService {
   private mediaRepository = inject(MediaRepository);
-  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
   
   private mediaStateSubject = new BehaviorSubject<MediaState>({
     media: [],
@@ -133,11 +142,41 @@ export class MediaService {
     return this.mediaRepository.findPaginated(params);
   }
 
+  getMediaUrls(id: string, includeVariants = true): Observable<MediaUrlsDto> {
+    return this.mediaRepository.getUrls(id, includeVariants);
+  }
+
+  getMediaStatus(id: string): Observable<MediaStatusDto> {
+    return this.mediaRepository.getStatus(id);
+  }
+
+  generateVariants(
+    id: string,
+    request?: {
+      platform?: SocialMediaOptimizationDto['platform'];
+      postType?: SocialMediaOptimizationDto['post_type'];
+      variantTypes?: MediaVariantTypeDto[];
+    }
+  ): Observable<MediaVariantGenerationResponseDto> {
+    const payload = request
+      ? {
+          platform: request.platform,
+          post_type: request.postType,
+          variant_types: request.variantTypes
+        }
+      : undefined;
+    return this.mediaRepository.generateVariants(id, payload);
+  }
+
+  downloadMedia(id: string): Observable<MediaDownloadResponseDto> {
+    return this.mediaRepository.download(id);
+  }
+
   /**
    * Delete media
    * Business logic: Check if media can be deleted
    */
-  deleteMedia(id: string): Observable<void> {
+  deleteMedia(id: string): Observable<MediaDeleteResponseDto> {
     // Business rule: Check if media is still processing
     return this.getMedia(id).pipe(
       tap((media) => {
@@ -155,8 +194,22 @@ export class MediaService {
         error: (error) => {
           this.setError(error.message || 'Failed to delete media');
         }
-      }),
-      map(() => undefined)
+      })
+    );
+  }
+
+  updateMedia(id: string, data: MediaUpdateDto): Observable<Media> {
+    return this.mediaRepository.update(id, data).pipe(
+      tap((media) => {
+        const currentMedia = this.getState().media;
+        const updatedMedia = currentMedia.map((item) =>
+          item.id === media.id ? media : item
+        );
+        this.updateState({
+          media: updatedMedia,
+          currentMedia: media
+        });
+      })
     );
   }
 
@@ -179,50 +232,35 @@ export class MediaService {
    * Remove background from image
    */
   removeBackground(id: string): Observable<Media> {
-    return this.getMedia(id).pipe(
-      tap({
-        next: (media) => {
-          if (!media.isImage()) {
-            throw new Error('Background removal is only available for images');
-          }
+    return this.mediaRepository.findById(id).pipe(
+      tap((media) => {
+        if (!media.isImage()) {
+          throw new Error('Background removal is only available for images');
         }
-      })
-    ).pipe(
-      // Switch to remove background operation
-      tap(() => {
-        return this.mediaRepository.removeBackground(id);
-      })
-    ) as Observable<Media>;
-
-    // Simplified version
-    return this.mediaRepository.removeBackground(id).pipe(
-      tap({
-        next: (media) => {
-          this.updateState({ currentMedia: media });
-        }
+      }),
+      switchMap(() => this.mediaRepository.removeBackground(id)),
+      switchMap(() => this.mediaRepository.findById(id)),
+      tap((media) => {
+        this.updateState({ currentMedia: media });
       })
     );
   }
 
   /**
-   * Request-specific media helpers (temporary delegations to ApiService)
+   * Buyer request media helpers
    */
-  uploadRequestImage(requestId: string, file: File): Observable<any> {
-    return this.apiService.addRequestImage(requestId, file).pipe(
-      map(response => response.data ?? response)
-    );
+  uploadRequestImage(requestId: string, file: File, options?: { isPrimary?: boolean }): Observable<RequestImageDto> {
+    return this.mediaRepository.uploadRequestImage(requestId, file, {
+      is_primary: options?.isPrimary
+    });
   }
 
-  deleteRequestImage(requestId: string, imageId: number): Observable<any> {
-    return this.apiService.deleteRequestImage(requestId, imageId).pipe(
-      map(response => response.data ?? response)
-    );
+  deleteRequestImage(requestId: string, imageId: number): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.mediaRepository.deleteRequestImage(requestId, imageId);
   }
 
-  getRequestImages(requestId: string): Observable<any> {
-    return this.apiService.getRequestImages(requestId).pipe(
-      map(response => response.data ?? response)
-    );
+  getRequestImages(requestId: string): Observable<RequestImageDto[]> {
+    return this.mediaRepository.getRequestImages(requestId);
   }
 
   /**
@@ -230,6 +268,26 @@ export class MediaService {
    */
   getStats(): Observable<any> {
     return this.mediaRepository.getStats();
+  }
+
+  uploadProductImage(
+    productId: string,
+    file: File,
+    options?: { sortOrder?: number; isFeatured?: boolean; altText?: string }
+  ): Observable<ProductImageDto> {
+    return this.mediaRepository.uploadProductImage(productId, file, {
+      sort_order: options?.sortOrder,
+      is_featured: options?.isFeatured,
+      alt_text: options?.altText
+    });
+  }
+
+  getProductImages(productId: string): Observable<ProductImageDto[]> {
+    return this.mediaRepository.getProductImages(productId);
+  }
+
+  deleteProductImage(productId: string, imageId: number): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.mediaRepository.deleteProductImage(productId, imageId);
   }
 
   /**
@@ -259,33 +317,22 @@ export class MediaService {
   }
 
   /**
-   * Upload media for social post
-   * TODO: Migrate to MediaRepository when method is added
-   * Temporary: delegates to ApiService
-   * Note: This overloads the existing uploadMedia method for social posts
+   * Social post media helpers
    */
-  uploadSocialPostMedia(postId: string, file: File): Observable<any> {
-    return this.apiService.addSocialPostMedia(postId, file);
+  uploadSocialPostMedia(postId: string, file: File, options?: { platform?: string; postType?: string; aspectRatio?: string }): Observable<SocialMediaPostDto> {
+    return this.mediaRepository.uploadSocialPostMedia(postId, file, {
+      platform: options?.platform,
+      post_type: options?.postType,
+      aspect_ratio: options?.aspectRatio
+    });
   }
 
-  /**
-   * Delete media for social post
-   * TODO: Migrate to MediaRepository when method is added
-   * Temporary: delegates to ApiService
-   * Note: This is separate from deleteMedia(id) which deletes by media ID
-   */
-  deleteSocialPostMedia(postId: string, mediaId: number): Observable<any> {
-    return this.apiService.deleteSocialPostMedia(postId, mediaId);
+  deleteSocialPostMedia(postId: string, mediaId: number): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.mediaRepository.deleteSocialPostMedia(postId, mediaId);
   }
 
-  /**
-   * Get media list for social post
-   * TODO: Migrate to MediaRepository when method is added
-   * Temporary: delegates to ApiService
-   * Note: This overloads the existing getMediaList method for social posts
-   */
-  getSocialPostMediaList(postId: string): Observable<any> {
-    return this.apiService.getSocialPostMedia(postId);
+  getSocialPostMediaList(postId: string): Observable<SocialMediaPostDto[]> {
+    return this.mediaRepository.getSocialPostMedia(postId);
   }
 }
 

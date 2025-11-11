@@ -1,158 +1,193 @@
 /**
  * Media Repository
- * 
+ *
  * Handles all media-related API calls.
  */
 
 import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiClientService } from '../../../core/infrastructure/http/api-client.service';
-import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
+import {
+  ApiResponse,
+  PaginatedResponse,
+} from '../../../core/infrastructure/http/api-response.types';
 import { Media, MediaVariant } from '../models/media.model';
 import {
+  MediaBackgroundRemovalResponseDto,
+  MediaDeleteResponseDto,
+  MediaDownloadResponseDto,
   MediaDto,
-  MediaVariantDto,
-  MediaUploadResponseDto,
   MediaListDto,
+  MediaStatusDto,
   MediaStatsDto,
+  MediaUploadResponseDto,
+  MediaUpdateDto,
+  MediaUrlsDto,
+  MediaVariantDto,
+  MediaVariantRequestDto,
+  MediaVariantGenerationResponseDto,
+  ProductImageDto,
+  RequestImageDto,
   SocialMediaOptimizationDto,
   SocialMediaOptimizationResponseDto,
+  SocialMediaPostDto,
   UploadOptionsDto,
-  MediaUpdateDto,
-  MediaVariantGenerateDto
 } from '../models/media.dto';
-import { HttpClient, HttpEvent } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MediaRepository {
-  private apiClient = inject(ApiClientService);
-  private http = inject(HttpClient);
-  private readonly baseEndpoint = '/api/v1/media';
+  private readonly baseEndpoint = '/media';
+  private readonly apiClient = inject(ApiClientService);
+  private readonly http = inject(HttpClient);
 
-  /**
-   * Convert MediaVariantDto to MediaVariant domain model
-   */
+  private resolveApiBaseUrl(): string {
+    const apiBaseUrl = environment.apiBaseUrl;
+    const isAbsolute = /^https?:\/\//i.test(apiBaseUrl);
+    return isAbsolute ? apiBaseUrl : apiBaseUrl;
+  }
+
   private variantToDomain(dto: MediaVariantDto): MediaVariant {
     return new MediaVariant(
       dto.id,
       dto.variant_type,
-      dto.quality,
-      dto.width,
-      dto.height,
-      dto.format,
-      dto.file_size,
-      dto.url,
       dto.storage_key,
-      dto.processing_time
+      dto.width ?? null,
+      dto.height ?? null,
+      dto.file_size ?? null,
+      dto.quality ?? null,
+      dto.format ?? null,
+      dto.url ?? null,
+      dto.processing_time ?? null
     );
   }
 
-  /**
-   * Convert MediaDto to Media domain model
-   */
   private toDomain(dto: MediaDto): Media {
-    const variants = dto.variants.map(variantDto => this.variantToDomain(variantDto));
+    const variants = (dto.variants ?? []).map((variantDto) =>
+      this.variantToDomain(variantDto)
+    );
 
     return new Media(
       dto.id,
       dto.user_id,
-      dto.original_filename,
-      dto.original_url,
-      dto.media_type,
-      dto.width,
-      dto.height,
-      dto.file_size,
-      dto.mime_type,
-      dto.processing_status,
       dto.storage_key,
+      dto.media_type,
+      dto.mime_type,
+      dto.width ?? null,
+      dto.height ?? null,
+      dto.file_size,
+      dto.original_url ?? null,
+      dto.processing_status,
       dto.created_at,
-      dto.updated_at,
-      dto.thumbnail_url,
-      dto.mobile_url,
-      dto.tablet_url,
-      dto.desktop_url,
-      dto.social_square_url,
-      dto.social_post_url,
-      dto.social_story_url,
-      dto.duration,
-      dto.alt_text,
-      dto.caption,
+      dto.updated_at ?? null,
+      dto.thumbnail_url ?? null,
+      dto.mobile_url ?? null,
+      dto.tablet_url ?? null,
+      dto.desktop_url ?? null,
+      dto.social_square_url ?? null,
+      dto.social_post_url ?? null,
+      dto.social_story_url ?? null,
+      dto.duration ?? null,
+      dto.alt_text ?? null,
+      dto.caption ?? null,
       dto.is_public,
       dto.background_removed,
-      dto.compression_quality,
+      dto.compression_quality ?? null,
+      dto.original_filename ?? null,
+      dto.processing_error ?? null,
       variants,
-      dto.exif_data
+      dto.exif_data ?? null
     );
   }
 
-  /**
-   * Upload media file
-   * Uses HttpClient directly for file upload with progress tracking
-   */
-  upload(file: File, options?: UploadOptionsDto): Observable<Media> {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    if (options) {
-      if (options.compression !== undefined) {
-        formData.append('compression', options.compression.toString());
-      }
-      if (options.remove_background !== undefined) {
-        formData.append('remove_background', options.remove_background.toString());
-      }
-      if (options.generate_variants !== undefined) {
-        formData.append('generate_variants', options.generate_variants.toString());
-      }
-      if (options.is_public !== undefined) {
-        formData.append('is_public', options.is_public.toString());
-      }
+  private appendUploadOptions(
+    formData: FormData,
+    options?: UploadOptionsDto
+  ): void {
+    if (!options) return;
+
+    if (options.alt_text) {
+      formData.append('alt_text', options.alt_text);
     }
 
-    const apiBaseUrl = environment.apiBaseUrl;
-    const isAbsolute = /^https?:\/\//i.test(apiBaseUrl);
-    const baseUrl = isAbsolute ? apiBaseUrl : apiBaseUrl;
+    if (options.caption) {
+      formData.append('caption', options.caption);
+    }
 
-    return this.http.post<ApiResponse<MediaUploadResponseDto>>(
-      `${baseUrl}${this.baseEndpoint}/upload`,
-      formData,
-      {
-        withCredentials: true,
-        reportProgress: true
-      }
-    ).pipe(
-      map(response => this.toDomain(response.data.media))
-    );
+    if (options.is_public !== undefined) {
+      formData.append('is_public', String(options.is_public));
+    }
+
+    if (options.remove_background !== undefined) {
+      formData.append('remove_background', String(options.remove_background));
+    }
+
+    if (options.compression_quality !== undefined) {
+      formData.append(
+        'compression_quality',
+        String(options.compression_quality)
+      );
+    }
+
+    if (options.optimize_for_social !== undefined) {
+      formData.append(
+        'optimize_for_social',
+        String(options.optimize_for_social)
+      );
+    }
   }
 
-  /**
-   * Get media by ID
-   */
-  findById(id: string): Observable<Media> {
-    return this.apiClient.get<MediaDto>(`${this.baseEndpoint}/${id}`).pipe(
-      map(response => this.toDomain(response.data))
-    );
+  private toFormData(
+    file: File,
+    extraFields?: Record<string, string | Blob>
+  ): FormData {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (extraFields) {
+      Object.entries(extraFields).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+    }
+    return formData;
   }
 
-  /**
-   * Get all media with pagination
-   */
+  upload(file: File, options?: UploadOptionsDto): Observable<Media> {
+    const formData = this.toFormData(file);
+    this.appendUploadOptions(formData, options);
+
+    const baseUrl = this.resolveApiBaseUrl();
+
+    return this.http
+      .post<ApiResponse<MediaUploadResponseDto>>(
+        `${baseUrl}${this.baseEndpoint}/upload`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      )
+      .pipe(map((response) => this.toDomain(response.data.media)));
+  }
+
+  findById(id: string | number): Observable<Media> {
+    return this.apiClient
+      .get<MediaDto>(`${this.baseEndpoint}/${id}`)
+      .pipe(map((response) => this.toDomain(response.data)));
+  }
+
   findAll(params?: Record<string, unknown>): Observable<Media[]> {
-    return this.apiClient.get<MediaDto[]>(this.baseEndpoint, params).pipe(
-      map(response => response.data.map(dto => this.toDomain(dto)))
-    );
+    return this.findPaginated(params).pipe(map((result) => result.items));
   }
 
-  /**
-   * Get media with pagination
-   */
-  findPaginated(params?: Record<string, unknown>): Observable<PaginatedResponse<Media>> {
+  findPaginated(
+    params?: Record<string, unknown>
+  ): Observable<PaginatedResponse<Media>> {
     return this.apiClient.get<MediaListDto>(this.baseEndpoint, params).pipe(
-      map(response => ({
-        items: response.data.media.map(dto => this.toDomain(dto)),
+      map((response) => ({
+        items: response.data.media.map((dto) => this.toDomain(dto)),
         pagination: {
           page: response.data.page,
           per_page: response.data.per_page,
@@ -163,102 +198,226 @@ export class MediaRepository {
           previous_page: response.data.has_prev ? response.data.page - 1 : null,
           next_page: response.data.has_next ? response.data.page + 1 : null,
           has_next: response.data.has_next,
-          has_prev: response.data.has_prev
-        }
+          has_prev: response.data.has_prev,
+        },
       }))
     );
   }
 
-  /**
-   * Delete media
-   */
-  delete(id: string): Observable<void> {
-    return this.apiClient.delete<void>(`${this.baseEndpoint}/${id}`).pipe(
-      map(() => undefined)
-    );
+  getUrls(
+    id: string | number,
+    includeVariants = true
+  ): Observable<MediaUrlsDto> {
+    const params = {
+      include_variants: String(includeVariants),
+    };
+    return this.apiClient
+      .get<MediaUrlsDto>(`${this.baseEndpoint}/${id}/urls`, params)
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Get media statistics
-   */
+  delete(id: string | number): Observable<MediaDeleteResponseDto> {
+    return this.apiClient
+      .delete<MediaDeleteResponseDto>(`${this.baseEndpoint}/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
   getStats(): Observable<MediaStatsDto> {
-    return this.apiClient.get<MediaStatsDto>(`${this.baseEndpoint}/stats`).pipe(
-      map(response => response.data)
-    );
+    return this.apiClient
+      .get<MediaStatsDto>(`${this.baseEndpoint}/stats`)
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Optimize for social media
-   */
-  optimizeForSocial(id: string, optimization: SocialMediaOptimizationDto): Observable<SocialMediaOptimizationResponseDto> {
-    return this.apiClient.post<SocialMediaOptimizationResponseDto>(
-      `${this.baseEndpoint}/${id}/optimize-social`,
-      optimization
-    ).pipe(
-      map(response => response.data)
-    );
+  optimizeForSocial(
+    id: string | number,
+    optimization: SocialMediaOptimizationDto
+  ): Observable<SocialMediaOptimizationResponseDto> {
+    return this.apiClient
+      .post<SocialMediaOptimizationResponseDto>(
+        `${this.baseEndpoint}/${id}/social-optimize`,
+        optimization
+      )
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Remove background
-   */
-  removeBackground(id: string): Observable<Media> {
-    return this.apiClient.post<MediaDto>(`${this.baseEndpoint}/${id}/remove-background`).pipe(
-      map(response => this.toDomain(response.data))
-    );
+  removeBackground(
+    id: string | number
+  ): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.apiClient
+      .post<MediaBackgroundRemovalResponseDto>(
+        `${this.baseEndpoint}/${id}/remove-background`
+      )
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Get media status
-   */
-  getStatus(id: string): Observable<{ processing_status: string }> {
-    return this.apiClient.get<{ processing_status: string }>(`${this.baseEndpoint}/${id}/status`).pipe(
-      map(response => response.data)
-    );
+  getStatus(id: string | number): Observable<MediaStatusDto> {
+    return this.apiClient
+      .get<MediaStatusDto>(`${this.baseEndpoint}/${id}/status`)
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Download media file
-   */
-  download(id: string): Observable<Blob> {
-    const apiBaseUrl = environment.apiBaseUrl;
-    const isAbsolute = /^https?:\/\//i.test(apiBaseUrl);
-    const baseUrl = isAbsolute ? apiBaseUrl : apiBaseUrl;
-
-    return this.http.get(
-      `${baseUrl}${this.baseEndpoint}/${id}/download`,
-      {
-        responseType: 'blob',
-        withCredentials: true
-      }
-    );
+  download(id: string | number): Observable<MediaDownloadResponseDto> {
+    return this.apiClient
+      .get<MediaDownloadResponseDto>(`${this.baseEndpoint}/${id}/download`)
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Get media variants
-   */
-  getVariants(id: string): Observable<MediaVariant[]> {
-    return this.apiClient.get<MediaVariantDto[]>(`${this.baseEndpoint}/${id}/variants`).pipe(
-      map(response => response.data.map(dto => this.variantToDomain(dto)))
-    );
+  generateVariants(
+    id: string | number,
+    request?: MediaVariantRequestDto
+  ): Observable<MediaVariantGenerationResponseDto> {
+    return this.apiClient
+      .post<MediaVariantGenerationResponseDto>(
+        `${this.baseEndpoint}/${id}/generate-variants`,
+        request ?? {}
+      )
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Generate media variants
-   */
-  generateVariants(id: string, variantData: MediaVariantGenerateDto): Observable<MediaVariant[]> {
-    return this.apiClient.post<MediaVariantDto[]>(`${this.baseEndpoint}/${id}/variants`, variantData).pipe(
-      map(response => response.data.map(dto => this.variantToDomain(dto)))
-    );
+  update(id: string | number, data: MediaUpdateDto): Observable<Media> {
+    return this.apiClient
+      .put<MediaDto>(`${this.baseEndpoint}/${id}`, data)
+      .pipe(map((response) => this.toDomain(response.data)));
   }
 
-  /**
-   * Update media metadata
-   */
-  update(id: string, data: MediaUpdateDto): Observable<Media> {
-    return this.apiClient.put<MediaDto>(`${this.baseEndpoint}/${id}`, data).pipe(
-      map(response => this.toDomain(response.data))
-    );
+  uploadProductImage(
+    productId: string,
+    file: File,
+    options?: { sort_order?: number; is_featured?: boolean; alt_text?: string }
+  ): Observable<ProductImageDto> {
+    const extra: Record<string, string> = {};
+    if (options?.sort_order !== undefined) {
+      extra['sort_order'] = String(options.sort_order);
+    }
+    if (options?.is_featured !== undefined) {
+      extra['is_featured'] = String(options.is_featured);
+    }
+    if (options?.alt_text) {
+      extra['alt_text'] = options.alt_text;
+    }
+
+    const formData = this.toFormData(file, extra);
+    const baseUrl = this.resolveApiBaseUrl();
+
+    return this.http
+      .post<ApiResponse<ProductImageDto>>(
+        `${baseUrl}${this.baseEndpoint}/products/${productId}/images`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  getProductImages(productId: string): Observable<ProductImageDto[]> {
+    return this.apiClient
+      .get<ProductImageDto[]>(
+        `${this.baseEndpoint}/products/${productId}/images`
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  deleteProductImage(
+    productId: string,
+    imageId: number
+  ): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.apiClient
+      .delete<MediaBackgroundRemovalResponseDto>(
+        `${this.baseEndpoint}/products/${productId}/images/${imageId}`
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  uploadSocialPostMedia(
+    postId: string,
+    file: File,
+    options?: { platform?: string; post_type?: string; aspect_ratio?: string }
+  ): Observable<SocialMediaPostDto> {
+    const extra: Record<string, string> = {};
+    if (options?.platform) {
+      extra['platform'] = options.platform;
+    }
+    if (options?.post_type) {
+      extra['post_type'] = options.post_type;
+    }
+    if (options?.aspect_ratio) {
+      extra['aspect_ratio'] = options.aspect_ratio;
+    }
+
+    const formData = this.toFormData(file, extra);
+    const baseUrl = this.resolveApiBaseUrl();
+
+    return this.http
+      .post<ApiResponse<SocialMediaPostDto>>(
+        `${baseUrl}${this.baseEndpoint}/social-posts/${postId}/media`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  getSocialPostMedia(postId: string): Observable<SocialMediaPostDto[]> {
+    return this.apiClient
+      .get<SocialMediaPostDto[]>(
+        `${this.baseEndpoint}/social-posts/${postId}/media`
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  deleteSocialPostMedia(
+    postId: string,
+    mediaId: number
+  ): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.apiClient
+      .delete<MediaBackgroundRemovalResponseDto>(
+        `${this.baseEndpoint}/social-posts/${postId}/media/${mediaId}`
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  uploadRequestImage(
+    requestId: string,
+    file: File,
+    options?: { is_primary?: boolean }
+  ): Observable<RequestImageDto> {
+    const extra: Record<string, string> = {};
+    if (options?.is_primary !== undefined) {
+      extra['is_primary'] = String(options.is_primary);
+    }
+
+    const formData = this.toFormData(file, extra);
+    const baseUrl = this.resolveApiBaseUrl();
+
+    return this.http
+      .post<ApiResponse<RequestImageDto>>(
+        `${baseUrl}${this.baseEndpoint}/requests/${requestId}/images`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  getRequestImages(requestId: string): Observable<RequestImageDto[]> {
+    return this.apiClient
+      .get<RequestImageDto[]>(
+        `${this.baseEndpoint}/requests/${requestId}/images`
+      )
+      .pipe(map((response) => response.data));
+  }
+
+  deleteRequestImage(
+    requestId: string,
+    imageId: number
+  ): Observable<MediaBackgroundRemovalResponseDto> {
+    return this.apiClient
+      .delete<MediaBackgroundRemovalResponseDto>(
+        `${this.baseEndpoint}/requests/${requestId}/images/${imageId}`
+      )
+      .pipe(map((response) => response.data));
   }
 }
-
