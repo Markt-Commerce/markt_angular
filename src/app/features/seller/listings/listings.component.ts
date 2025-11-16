@@ -551,7 +551,7 @@ export class ListingsComponent implements OnInit {
             price: product.price,
             stock: product.stock,
             category_ids: product.category_ids,
-            status: 'inactive'
+            status: 'draft'
           }).toPromise();
         }
         return Promise.resolve();

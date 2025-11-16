@@ -1,15 +1,19 @@
+import type {
+  PaymentDto,
+  PaymentMethodDto,
+  PaymentStatusDto,
+} from './payment.dto';
+
 /**
  * Payment Domain Models
- * 
- * Domain entities for payment processing.
+ *
+ * Domain entities and value objects for payment processing.
  */
 
-export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type PaymentMethod = 'paystack' | 'flutterwave' | 'bank_transfer' | 'wallet' | 'crypto';
+export type PaymentStatus = PaymentStatusDto;
 
-/**
- * Payment - Domain Entity
- */
+export type PaymentMethod = PaymentMethodDto;
+
 export class Payment {
   constructor(
     public readonly id: string,
@@ -20,102 +24,145 @@ export class Payment {
     public readonly status: PaymentStatus,
     public readonly createdAt: string,
     public readonly updatedAt: string,
-    public readonly transactionId?: string,
-    public readonly gatewayResponse?: Record<string, unknown>,
-    public readonly paidAt?: string
+    public readonly transactionId: string | null,
+    public readonly gatewayResponse: Record<string, unknown> | null,
+    public readonly paidAt: string | null
   ) {}
 
-  /**
-   * Business Rule: Check if payment is successful
-   */
+  static fromDto(dto: PaymentDto): Payment {
+    return new Payment(
+      dto.id,
+      dto.order_id,
+      dto.amount,
+      dto.currency,
+      dto.method,
+      dto.status,
+      dto.created_at,
+      dto.updated_at,
+      dto.transaction_id ?? null,
+      dto.gateway_response ?? null,
+      dto.paid_at ?? null
+    );
+  }
+
   isSuccessful(): boolean {
     return this.status === 'completed';
   }
 
-  /**
-   * Business Rule: Check if payment is pending
-   */
   isPending(): boolean {
     return this.status === 'pending';
   }
 
-  /**
-   * Business Rule: Check if payment is processing
-   */
-  isProcessing(): boolean {
-    return this.status === 'processing';
+  isPartiallyRefunded(): boolean {
+    return this.status === 'partially_refunded';
   }
 
-  /**
-   * Business Rule: Check if payment failed
-   */
   hasFailed(): boolean {
     return this.status === 'failed';
   }
 
-  /**
-   * Business Rule: Check if payment is refunded
-   */
   isRefunded(): boolean {
-    return this.status === 'refunded';
+    return this.status === 'refunded' || this.isPartiallyRefunded();
   }
 
-  /**
-   * Business Rule: Check if payment can be refunded
-   */
   canRefund(): boolean {
-    return this.status === 'completed' && !this.isRefunded();
+    return this.status === 'completed';
   }
 
-  /**
-   * Business Rule: Check if payment can be retried
-   */
   canRetry(): boolean {
     return this.status === 'failed';
   }
 
-  /**
-   * Business Rule: Check if payment is verified
-   */
   isVerified(): boolean {
-    return !!this.transactionId && this.isSuccessful();
+    return Boolean(this.transactionId) && this.isSuccessful();
   }
 
-  /**
-   * Business Rule: Get formatted amount
-   */
-  getFormattedAmount(): string {
-    return new Intl.NumberFormat('en-NG', {
+  withStatus(status: PaymentStatus): Payment {
+    return new Payment(
+      this.id,
+      this.orderId,
+      this.amount,
+      this.currency,
+      this.method,
+      status,
+      this.createdAt,
+      this.updatedAt,
+      this.transactionId,
+      this.gatewayResponse,
+      this.paidAt
+    );
+  }
+
+  markAsCompleted(): Payment {
+    return new Payment(
+      this.id,
+      this.orderId,
+      this.amount,
+      this.currency,
+      this.method,
+      'completed',
+      this.createdAt,
+      this.updatedAt,
+      this.transactionId,
+      this.gatewayResponse,
+      this.paidAt
+    );
+  }
+
+  markAsFailed(): Payment {
+    return new Payment(
+      this.id,
+      this.orderId,
+      this.amount,
+      this.currency,
+      this.method,
+      'failed',
+      this.createdAt,
+      this.updatedAt,
+      this.transactionId,
+      this.gatewayResponse,
+      this.paidAt
+    );
+  }
+
+  markAsPending(): Payment {
+    return new Payment(
+      this.id,
+      this.orderId,
+      this.amount,
+      this.currency,
+      this.method,
+      'pending',
+      this.createdAt,
+      this.updatedAt,
+      this.transactionId,
+      this.gatewayResponse,
+      this.paidAt
+    );
+  }
+
+  getFormattedAmount(locale = 'en-NG'): string {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: this.currency || 'NGN'
+      currency: this.currency || 'NGN',
     }).format(this.amount);
   }
 }
 
-/**
- * Payment Method Info - Value Object
- */
 export class PaymentMethodInfo {
   constructor(
-    public readonly id: string,
+    public readonly id: PaymentMethod,
     public readonly name: string,
-    public readonly type: 'card' | 'bank' | 'wallet' | 'crypto',
+    public readonly type: 'card' | 'bank' | 'wallet' | 'mobile_money',
     public readonly icon: string,
     public readonly isAvailable: boolean
   ) {}
 
-  /**
-   * Business Rule: Check if method is available
-   */
   isAvailableMethod(): boolean {
     return this.isAvailable;
   }
 
-  /**
-   * Business Rule: Check if method is card-based
-   */
   isCardBased(): boolean {
     return this.type === 'card';
   }
 }
-

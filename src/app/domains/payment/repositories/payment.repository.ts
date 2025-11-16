@@ -8,16 +8,17 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiClientService } from '../../../core/infrastructure/http/api-client.service';
-import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
-import { Payment, PaymentMethod } from '../models/payment.model';
+import type { PaginatedResponse, Pagination } from '../../../core/infrastructure/http/api-response.types';
+import { Payment } from '../models/payment.model';
 import {
   PaymentDto,
   PaymentCreateDto,
-  PaymentListDto,
-  PaymentInitializeDto,
+  PaymentInitializeRequestDto,
   PaymentInitializeResponseDto,
-  PaymentVerifyDto,
-  PaymentVerifyResponseDto
+  PaymentListDto,
+  PaymentProcessDto,
+  PaymentStatsDto,
+  PaymentVerifyResponseDto,
 } from '../models/payment.dto';
 
 @Injectable({
@@ -25,55 +26,41 @@ import {
 })
 export class PaymentRepository {
   private apiClient = inject(ApiClientService);
-  private readonly baseEndpoint = '/api/v1/payments';
+  private readonly baseEndpoint = '/payments';
 
   /**
    * Convert PaymentDto to Payment domain model
    */
   private toDomain(dto: PaymentDto): Payment {
-    return new Payment(
-      dto.id,
-      dto.order_id,
-      dto.amount,
-      dto.currency,
-      dto.method,
-      dto.status,
-      dto.created_at,
-      dto.updated_at,
-      dto.transaction_id,
-      dto.gateway_response,
-      dto.paid_at
-    );
+    return Payment.fromDto(dto);
   }
 
   /**
-   * Get all payments
+   * Convert pagination payload to shared pagination contract
    */
-  findAll(params?: Record<string, unknown>): Observable<Payment[]> {
-    return this.apiClient.get<PaymentDto[]>(this.baseEndpoint, params).pipe(
-      map(response => response.data.map(dto => this.toDomain(dto)))
-    );
+  private toPagination(dto: PaymentListDto): Pagination {
+    return {
+      page: dto.page,
+      per_page: dto.per_page,
+      total_items: dto.total,
+      total_pages: dto.pages,
+      first_page: 1,
+      last_page: dto.pages,
+      previous_page: dto.page > 1 ? dto.page - 1 : null,
+      next_page: dto.page < dto.pages ? dto.page + 1 : null,
+      has_next: dto.page < dto.pages,
+      has_prev: dto.page > 1
+    };
   }
 
   /**
-   * Get payments with pagination
+   * List payments for the authenticated user (paginated)
    */
-  findPaginated(params?: Record<string, unknown>): Observable<PaginatedResponse<Payment>> {
+  listUserPayments(params?: Record<string, unknown>): Observable<PaginatedResponse<Payment>> {
     return this.apiClient.get<PaymentListDto>(this.baseEndpoint, params).pipe(
-      map(response => ({
-        items: response.data.payments.map(dto => this.toDomain(dto)),
-        pagination: {
-          page: response.data.page,
-          per_page: response.data.per_page,
-          total_items: response.data.total,
-          total_pages: response.data.pages,
-          first_page: 1,
-          last_page: response.data.pages,
-          previous_page: response.data.page > 1 ? response.data.page - 1 : null,
-          next_page: response.data.page < response.data.pages ? response.data.page + 1 : null,
-          has_next: response.data.page < response.data.pages,
-          has_prev: response.data.page > 1
-        }
+      map((response) => ({
+        items: response.data.payments.map((dto) => this.toDomain(dto)),
+        pagination: this.toPagination(response.data)
       }))
     );
   }
@@ -83,68 +70,73 @@ export class PaymentRepository {
    */
   findById(id: string): Observable<Payment> {
     return this.apiClient.get<PaymentDto>(`${this.baseEndpoint}/${id}`).pipe(
-      map(response => this.toDomain(response.data))
+      map((response) => this.toDomain(response.data))
     );
   }
 
   /**
-   * Create payment
+   * Create payment record (buyer flow)
    */
   create(data: PaymentCreateDto): Observable<Payment> {
-    return this.apiClient.post<PaymentDto>(this.baseEndpoint, data).pipe(
-      map(response => this.toDomain(response.data))
+    return this.apiClient.post<PaymentDto>(`${this.baseEndpoint}/create`, data).pipe(
+      map((response) => this.toDomain(response.data))
     );
   }
 
   /**
-   * Initialize payment (for payment gateways)
+   * Initialize a Paystack transaction (returns redirect URL)
    */
-  initialize(data: PaymentInitializeDto): Observable<PaymentInitializeResponseDto> {
+  initialize(data: PaymentInitializeRequestDto): Observable<PaymentInitializeResponseDto> {
     return this.apiClient.post<PaymentInitializeResponseDto>(
       `${this.baseEndpoint}/initialize`,
       data
-    ).pipe(
-      map(response => response.data)
-    );
+    ).pipe(map((response) => response.data));
   }
 
   /**
-   * Verify payment
+   * Process payment (charge authorization)
    */
-  verify(data: PaymentVerifyDto): Observable<PaymentVerifyResponseDto> {
-    return this.apiClient.post<PaymentVerifyResponseDto>(
-      `${this.baseEndpoint}/verify`,
-      data
-    ).pipe(
-      map(response => response.data)
-    );
+  process(id: string, paymentData: PaymentProcessDto): Observable<Payment> {
+    return this.apiClient
+      .post<PaymentDto>(`${this.baseEndpoint}/${id}/process`, paymentData)
+      .pipe(map((response) => this.toDomain(response.data)));
   }
 
   /**
-   * Process payment
+   * Verify payment status with gateway
    */
-  process(id: string, paymentData: Record<string, unknown>): Observable<Payment> {
-    return this.apiClient.post<PaymentDto>(`${this.baseEndpoint}/${id}/process`, paymentData).pipe(
-      map(response => this.toDomain(response.data))
-    );
+  verify(id: string): Observable<PaymentVerifyResponseDto> {
+    return this.apiClient
+      .get<PaymentVerifyResponseDto>(`${this.baseEndpoint}/${id}/verify`)
+      .pipe(map((response) => response.data));
   }
 
   /**
-   * Refund payment
+   * Fetch payments tied to an order
    */
-  refund(id: string, reason?: string): Observable<Payment> {
-    const body = reason ? { reason } : {};
-    return this.apiClient.post<PaymentDto>(`${this.baseEndpoint}/${id}/refund`, body).pipe(
-      map(response => this.toDomain(response.data))
-    );
+  findByOrder(orderId: string, params?: Record<string, unknown>): Observable<Payment[]> {
+    const query = { ...params, order_id: orderId };
+    return this.apiClient
+      .get<PaymentListDto>(this.baseEndpoint, query)
+      .pipe(map((response) => response.data.payments.map((dto) => this.toDomain(dto))));
   }
 
   /**
-   * Get payments by order
+   * Get seller-facing payment statistics
    */
-  findByOrder(orderId: string): Observable<Payment[]> {
-    return this.apiClient.get<PaymentDto[]>(this.baseEndpoint, { order_id: orderId }).pipe(
-      map(response => response.data.map(dto => this.toDomain(dto)))
+  getStats(): Observable<PaymentStatsDto> {
+    return this.apiClient
+      .get<PaymentStatsDto>(`${this.baseEndpoint}/admin/stats`)
+      .pipe(map((response) => response.data));
+  }
+
+  /**
+   * Retrieve the latest payment snapshot without pagination
+   */
+  listRecent(limit = 5): Observable<Payment[]> {
+    const params = { page: 1, per_page: limit };
+    return this.listUserPayments(params).pipe(
+      map((response) => response.items)
     );
   }
 }

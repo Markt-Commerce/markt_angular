@@ -117,13 +117,13 @@ interface OrderData {
                 @for (item of orderData?.items ?? mockItems; track item.id) {
                   <div class="flex items-center space-x-4 p-4 bg-light rounded-xl">
                     <img 
-                      [src]="(item.product?.images?.[0]?.url) || getDefaultImage(item.product?.name || '')"
-                      [alt]="item.product?.name || ''"
+                      [src]="(item.product.images?.[0]?.url) || getDefaultImage(item.product.name || '')"
+                      [alt]="item.product.name || ''"
                       class="w-16 h-16 rounded-lg object-cover"
                     />
                     <div class="flex-1">
-                      <h3 class="font-semibold text-dark">{{ item.product?.name || '' }}</h3>
-                      <p class="text-sm text-muted">Sold by {{ item.seller?.name || 'TechStore Campus' }}</p>
+                      <h3 class="font-semibold text-dark">{{ item.product.name || '' }}</h3>
+                      <p class="text-sm text-muted">Sold by {{ item.seller.name || 'TechStore Campus' }}</p>
                       <p class="text-sm text-muted">Qty: {{ item.quantity }}</p>
                     </div>
                     <div class="text-right">

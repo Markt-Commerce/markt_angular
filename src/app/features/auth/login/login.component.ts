@@ -386,11 +386,12 @@ export class LoginComponent implements OnInit {
    * Initiates the Google authentication flow
    */
   loginWithGoogle(): void {
-    // TODO: OAuth methods not yet migrated to domain service - keeping core service for now
-    // This will be migrated when OAuth domain methods are implemented
+    // TODO: OAuth methods not yet implemented in backend API
+    // When OAuth endpoints are available, create OAuthRepository and OAuthService
+    // following the same DDD pattern as other domains
     this.isSubmitting.set(true);
     this.errorMessage.set('Google login not yet available');
-        this.isSubmitting.set(false);
+    this.isSubmitting.set(false);
   }
 
   /**
@@ -398,10 +399,11 @@ export class LoginComponent implements OnInit {
    * Initiates the Facebook authentication flow
    */
   loginWithFacebook(): void {
-    // TODO: OAuth methods not yet migrated to domain service - keeping core service for now
-    // This will be migrated when OAuth domain methods are implemented
+    // TODO: OAuth methods not yet implemented in backend API
+    // When OAuth endpoints are available, create OAuthRepository and OAuthService
+    // following the same DDD pattern as other domains
     this.isSubmitting.set(true);
     this.errorMessage.set('Facebook login not yet available');
-        this.isSubmitting.set(false);
+    this.isSubmitting.set(false);
   }
 }

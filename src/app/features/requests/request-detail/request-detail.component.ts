@@ -4,8 +4,6 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { RequestService } from '../../../domains/requests/services/request.service';
-import { CartService } from '../../../domains/cart/services/cart.service';
-import { NavigationService } from '../../../core/services/navigation.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -20,19 +18,23 @@ import {
   faVideo, 
   faHandshake,
   faEye,
-  faClock
+  faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import { NgOptimizedImage } from '@angular/common';
+import {
+  BuyerRequest as BuyerRequestModel,
+  SellerOffer,
+} from '../../../domains/requests/models/request.model';
 
-interface BuyerRequest {
+interface BuyerRequestViewModel {
   id: string;
   title: string;
   description: string;
   category: string;
   budgetMin: number;
   budgetMax: number;
-  status: 'Active' | 'Pending' | 'Fulfilled' | 'Closed';
+  status: 'Active' | 'Pending' | 'Fulfilled' | 'Closed' | 'Expired';
   buyerName: string;
   buyerAvatar: string;
   buyerId: string;
@@ -49,7 +51,7 @@ interface BuyerRequest {
   timeline: string;
 }
 
-interface SellerResponse {
+interface SellerOfferViewModel {
   id: string;
   sellerName: string;
   sellerAvatar: string;
@@ -82,14 +84,12 @@ export class RequestDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private requestService = inject(RequestService);
-  private cartService = inject(CartService);
-  private navigationService = inject(NavigationService);
   private breadcrumbService = inject(BreadcrumbService);
 
   // Component state
   loading = signal(true);
-  request = signal<BuyerRequest | null>(null);
-  responses = signal<SellerResponse[]>([]);
+  request = signal<BuyerRequestViewModel | null>(null);
+  responses = signal<SellerOfferViewModel[]>([]);
   recentActivity = signal<RecentActivity[]>([]);
 
   // FontAwesome icons
@@ -115,244 +115,32 @@ export class RequestDetailComponent implements OnInit {
     if (requestId) {
       this.loading.set(true);
       
-      // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
       this.requestService.getRequest(requestId).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            // Convert API response to component's BuyerRequest interface
-            const apiRequest = response.data;
-            const buyerRequest: BuyerRequest = {
-              id: apiRequest.id,
-              title: apiRequest.title,
-              description: apiRequest.description,
-              category: apiRequest.categories?.[0]?.name || 'Uncategorized',
-              budgetMin: apiRequest.budget || 0,
-              budgetMax: apiRequest.budget || 0,
-              status: apiRequest.status as 'Active' | 'Pending' | 'Fulfilled' | 'Closed',
-              buyerName: apiRequest.user?.username || 'Unknown',
-              buyerAvatar: apiRequest.user?.profile_picture_url || '',
-              buyerId: apiRequest.user_id || apiRequest.user?.id || '',
-              createdAt: apiRequest.created_at,
-              expiresAt: apiRequest.expires_at || '',
-              offersCount: apiRequest.offers?.length || 0,
-              viewsCount: apiRequest.views || 0,
-              tags: [], // TODO: Extract from metadata if available
-              location: '', // TODO: Extract from metadata if available
-              urgency: 'medium' as const, // TODO: Extract from metadata if available
-              mediaUrls: (apiRequest.images ?? [])
-                .map((img: any) => img?.media?.original_url || img?.media?.thumbnail_url || '')
-                .filter((url: string) => Boolean(url)),
-              isOwner: false, // TODO: Check if current user is owner
-              condition: '', // TODO: Extract from request or metadata
-              timeline: '' // TODO: Calculate from expiresAt
-            };
-            
-            this.request.set(buyerRequest);
-            
-            // Set breadcrumbs
-            this.breadcrumbService.setBreadcrumbs([
-              {
-                label: 'Dashboard',
-                url: ROUTES_ABSOLUTE.APP.DASHBOARD,
-                icon: 'home',
-                isClickable: true,
-                isCurrentPage: false,
-                metadata: {}
-              },
-              {
-                label: 'Requests',
-                url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
-                icon: 'clipboard',
-                isClickable: true,
-                isCurrentPage: false,
-                metadata: {}
-              },
-              {
-                label: buyerRequest.title,
-                url: `/app/requests/${buyerRequest.id}`,
-                icon: 'clipboard',
-                isClickable: false,
-                isCurrentPage: true,
-                metadata: {
-                  id: buyerRequest.id,
-                  type: 'request'
-                }
-              }
-            ]);
-            
-            // Load offers for this request
-            this.loadOffers(requestId);
-          }
+        next: (buyerRequest) => {
+          const viewModel = this.toRequestViewModel(buyerRequest);
+          this.request.set(viewModel);
+          this.setupBreadcrumbs(viewModel);
           this.loading.set(false);
+          this.loadOffers(requestId);
         },
         error: (error) => {
           console.error('Error loading request:', error);
-          // Fallback to mock data if API fails (for development)
-      this.loadMockRequestData();
           this.loading.set(false);
-        }
+        },
       });
     }
   }
 
   private loadOffers(requestId: string): void {
-    // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
     this.requestService.getRequestOffers(requestId).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          // Convert API offers to component's SellerResponse interface
-          const sellerResponses: SellerResponse[] = response.data.map((offer: any) => ({
-            id: offer.id,
-            sellerName: '', // TODO: Get seller name from offer data
-            sellerAvatar: '', // TODO: Get seller avatar from offer data
-            sellerId: offer.seller_id,
-            rating: 0, // TODO: Get seller rating
-            reviewCount: 0, // TODO: Get seller review count
-            price: offer.price,
-            createdAt: offer.created_at,
-            condition: '', // TODO: Extract from offer data
-            delivery: '', // TODO: Extract from offer data
-            description: offer.message || '',
-            status: offer.status as 'pending' | 'accepted' | 'rejected' | 'withdrawn'
-          }));
-          
+      next: (offers) => {
+        const sellerResponses = offers.map((offer) => this.toOfferViewModel(offer));
           this.responses.set(sellerResponses);
-        }
       },
       error: (error) => {
         console.error('Error loading offers:', error);
-    }
+      },
     });
-  }
-
-  private loadMockRequestData(): void {
-    // Mock request data matching the Figma design
-    const mockRequest: BuyerRequest = {
-      id: '1',
-      title: 'MacBook Pro 13" M1 Chip',
-      description: 'Looking for a MacBook Pro 13" with M1 chip for coding and design work. Prefer 8GB RAM minimum. Must be in good working condition with original charger.',
-      category: 'Electronics',
-      budgetMin: 800,
-      budgetMax: 1200,
-      status: 'Active',
-      buyerName: 'John Doe',
-      buyerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg',
-      buyerId: '1',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-      offersCount: 5,
-      viewsCount: 124,
-      tags: ['macbook', 'm1', 'coding'],
-      location: 'Campus pickup preferred',
-      urgency: 'medium',
-      mediaUrls: [],
-      isOwner: true,
-      condition: 'Good to Excellent',
-      timeline: 'Within 1 week'
-    };
-
-    const mockResponses: SellerResponse[] = [
-      {
-        id: '1',
-        sellerName: 'Alex Chen',
-        sellerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg',
-        sellerId: '2',
-        rating: 4.9,
-        reviewCount: 23,
-        price: 950,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        condition: 'Excellent - Like New',
-        delivery: 'Campus pickup today',
-        description: 'MacBook Pro 13" M1, 8GB RAM, 256GB SSD. Purchased 6 months ago, barely used. Includes original box, charger, and documentation.',
-        status: 'pending'
-      },
-      {
-        id: '2',
-        sellerName: 'Sarah Martinez',
-        sellerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg',
-        sellerId: '3',
-        rating: 4.7,
-        reviewCount: 15,
-        price: 850,
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-        condition: 'Good - Minor wear',
-        delivery: 'Tomorrow evening',
-        description: 'MacBook Pro 13" M1, 8GB RAM, 512GB SSD. Some minor scratches on lid but perfect working condition. Used for 1 year.',
-        status: 'pending'
-      },
-      {
-        id: '3',
-        sellerName: 'Mike Johnson',
-        sellerAvatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg',
-        sellerId: '4',
-        rating: 5.0,
-        reviewCount: 8,
-        price: 1100,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        condition: 'Excellent - Mint',
-        delivery: 'Immediate pickup',
-        description: 'MacBook Pro 13" M1, 16GB RAM, 512GB SSD. Mint condition, used only for 3 months. Includes AppleCare+ until 2025.',
-        status: 'pending'
-      }
-    ];
-
-    const mockActivity: RecentActivity[] = [
-      {
-        id: '1',
-        type: 'offer',
-        userName: 'Alex Chen',
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '2',
-        type: 'message',
-        userName: 'Sarah Martinez',
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        type: 'offer',
-        userName: 'Mike Johnson',
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-
-    this.request.set(mockRequest);
-    this.responses.set(mockResponses);
-    this.recentActivity.set(mockActivity);
-    
-    // Set custom breadcrumbs using the existing breadcrumb service
-    this.breadcrumbService.setBreadcrumbs([
-      {
-        label: 'Dashboard',
-        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
-        icon: 'home',
-        isClickable: true,
-        isCurrentPage: false,
-        metadata: {}
-      },
-      {
-        label: 'Requests',
-        url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
-        icon: 'clipboard',
-        isClickable: true,
-        isCurrentPage: false,
-        metadata: {}
-      },
-      {
-        label: mockRequest.title,
-        url: `/app/requests/${mockRequest.id}`,
-        icon: 'clipboard',
-        isClickable: false,
-        isCurrentPage: true,
-        metadata: {
-          id: mockRequest.id,
-          type: 'request'
-        }
-      }
-    ]);
-    
-    this.loading.set(false);
   }
 
   // Utility methods
@@ -432,31 +220,158 @@ export class RequestDetailComponent implements OnInit {
     this.responses.set(sorted);
   }
 
-  acceptOffer(response: SellerResponse): void {
+  acceptOffer(response: SellerOfferViewModel): void {
     if (confirm('Are you sure you want to accept this offer?')) {
-      response._processing = true;
+      this.updateOfferProcessing(response.id, true);
       
-      // Migrated to RequestService.acceptOffer() - uses DDD pattern with RequestRepository
       this.requestService.acceptOffer(response.id).subscribe({
-        next: (apiResponse) => {
-          if (apiResponse.success) {
-        response.status = 'accepted';
-        response._processing = false;
-        
-        // Navigate to checkout or show success message
+        next: (updatedOffer) => {
+          this.replaceOffer(updatedOffer, 'accepted');
         this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { 
-          queryParams: { source: 'offer', offerId: response.id } 
+            queryParams: { source: 'offer', offerId: response.id },
         });
-          } else {
-            response._processing = false;
-            console.error('Failed to accept offer');
-          }
         },
         error: (error) => {
           console.error('Error accepting offer:', error);
-          response._processing = false;
-        }
+          this.updateOfferProcessing(response.id, false);
+        },
       });
     }
+  }
+
+  private toRequestViewModel(request: BuyerRequestModel): BuyerRequestViewModel {
+    const firstCategory = request.categories.at(0);
+    const metadata = request.requestMetadata ?? {};
+    const location =
+      (metadata['location'] as string | undefined) ??
+      (metadata['preferred_location'] as string | undefined) ??
+      'Not specified';
+    const urgency =
+      (metadata['urgency'] as 'low' | 'medium' | 'high' | undefined) ?? 'medium';
+    const tags = Array.isArray(metadata['tags'])
+      ? (metadata['tags'] as string[])
+      : [];
+    const timeline =
+      (metadata['timeline'] as string | undefined) ??
+      (request.expiresAt ? this.getTimeRemainingFrom(request.expiresAt) : 'Not specified');
+
+    return {
+      id: request.id,
+      title: request.title,
+      description: request.description,
+      category: firstCategory?.name ?? 'Uncategorized',
+      budgetMin: request.budget ?? 0,
+      budgetMax: request.budget ?? 0,
+      status: this.getStatusLabel(request.status),
+      buyerName: request.user?.username ?? 'Unknown',
+      buyerAvatar: request.user?.profilePictureUrl ?? '/markt-text-logo.png',
+      buyerId: request.userId,
+      createdAt: request.createdAt,
+      expiresAt: request.expiresAt ?? '',
+      offersCount: request.offers.length,
+      viewsCount: request.views,
+      tags,
+      location,
+      urgency,
+      mediaUrls: request.images
+        .map((image) => image.imageUrl)
+        .filter((url): url is string => Boolean(url)),
+      isOwner: false,
+      condition: (metadata['condition'] as string | undefined) ?? 'Not specified',
+      timeline,
+    };
+  }
+
+  private toOfferViewModel(offer: SellerOffer): SellerOfferViewModel {
+    return {
+      id: offer.id,
+      sellerName: offer.seller?.shopName ?? 'Unknown Seller',
+      sellerAvatar: offer.seller?.profilePictureUrl ?? '/markt-text-logo.png',
+      sellerId: offer.sellerId,
+      rating: offer.seller?.rating ?? 0,
+      reviewCount: 0,
+      price: offer.price ?? 0,
+      createdAt: offer.createdAt,
+      condition: offer.product?.name ?? 'Not specified',
+      delivery: 'Not specified',
+      description: offer.message ?? '',
+      status: offer.status,
+      _processing: false,
+    };
+  }
+
+  private setupBreadcrumbs(request: BuyerRequestViewModel): void {
+    this.breadcrumbService.setBreadcrumbs([
+      {
+        label: 'Dashboard',
+        url: ROUTES_ABSOLUTE.APP.DASHBOARD,
+        icon: 'home',
+        isClickable: true,
+        isCurrentPage: false,
+        metadata: {},
+      },
+      {
+        label: 'Requests',
+        url: ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
+        icon: 'clipboard',
+        isClickable: true,
+        isCurrentPage: false,
+        metadata: {},
+      },
+      {
+        label: request.title,
+        url: `/app/requests/${request.id}`,
+        icon: 'clipboard',
+        isClickable: false,
+        isCurrentPage: true,
+        metadata: {
+          id: request.id,
+          type: 'request',
+        },
+      },
+    ]);
+  }
+
+  private getStatusLabel(status: string): BuyerRequestViewModel['status'] {
+    switch (status) {
+      case 'open':
+        return 'Active';
+      case 'fulfilled':
+        return 'Fulfilled';
+      case 'closed':
+        return 'Closed';
+      case 'expired':
+        return 'Expired';
+      default:
+        return 'Pending';
+    }
+  }
+
+  private getTimeRemainingFrom(expiresAt: string): string {
+    const now = new Date();
+    const end = new Date(expiresAt);
+    const diffInMs = end.getTime() - now.getTime();
+    if (diffInMs <= 0) {
+      return 'Expired';
+    }
+    const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+    return `${diffInDays} day${diffInDays === 1 ? '' : 's'} remaining`;
+  }
+
+  private updateOfferProcessing(offerId: string, isProcessing: boolean): void {
+    const updated = this.responses().map((offer) =>
+      offer.id === offerId ? { ...offer, _processing: isProcessing } : offer
+    );
+    this.responses.set(updated);
+  }
+
+  private replaceOffer(offer: SellerOffer, statusOverride?: SellerOfferViewModel['status']): void {
+    const updatedOffer = this.toOfferViewModel(offer);
+    const next = this.responses().map((item) =>
+      item.id === offer.id
+        ? { ...updatedOffer, status: statusOverride ?? updatedOffer.status, _processing: false }
+        : item
+    );
+    this.responses.set(next);
   }
 } 

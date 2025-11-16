@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
+import { ProductSearchParamsDto } from '../../../domains/marketplace/models/product.dto';
 import { MarketplaceService } from '../../../domains/marketplace/services/marketplace.service';
 import { SearchService } from '../../../core/services/search.service';
 // TODO: Migrate to Product domain model from domains/marketplace/models/product.model when domain model includes all properties (images, seller, category, description, etc.)
@@ -13,6 +14,7 @@ import { CartService } from '../../../domains/cart/services/cart.service';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ApiService } from '../../../core/services/api.service'; // Still needed for globalSearch, searchShops, searchRequests, searchNiches, searchUsers (methods not migrated yet)
+import { FavoriteService } from '../../../domains/favorites/services/favorite.service';
 
 @Component({
   selector: 'app-search',
@@ -240,6 +242,7 @@ export class SearchComponent implements OnInit {
   searchService = inject(SearchService);
   private _cartService = inject(CartService);
   appStateService = inject(AppStateService);
+  favoriteService = inject(FavoriteService);
   route = inject(ActivatedRoute);
   router = inject(Router);
   apiService = inject(ApiService);
@@ -309,6 +312,9 @@ export class SearchComponent implements OnInit {
   users: any[] = [];
 
   ngOnInit(): void {
+    // Load user favorites on init
+    this.loadFavorites();
+    
     this.route.queryParams.subscribe(params => {
       this.searchQuery = params['q'] || '';
       this.searchType = params['type'] || 'products';
@@ -373,15 +379,17 @@ export class SearchComponent implements OnInit {
     // Use MarketplaceService for product search (DDD pattern)
     // Domain service returns paginated response directly, not wrapped in ApiResponse
     const page = Math.floor(this.offset / this.limit) + 1;
-    const searchParams = {
+    const sortOption = this.mapProductSortOption(this.sortBy);
+    const searchParams: ProductSearchParamsDto = {
       search: this.searchQuery,
       page: page,
       per_page: this.limit,
-      category_ids: this.selectedCategory ? [parseInt(this.selectedCategory)] : undefined,
+      category_ids: this.selectedCategory
+        ? [Number.parseInt(this.selectedCategory, 10)]
+        : undefined,
       price_min: this.priceRange.min || undefined,
       price_max: this.priceRange.max || undefined,
-      sort_by: this.sortBy as string,
-      sort_order: 'desc' as 'asc' | 'desc'
+      ...(sortOption ? { sort_by: sortOption } : {}),
     };
 
     this.marketplaceService.getProductsPaginated(searchParams).subscribe({
@@ -398,6 +406,27 @@ export class SearchComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private mapProductSortOption(
+    sort: string
+  ): ProductSearchParamsDto['sort_by'] | undefined {
+    switch (sort) {
+      case 'relevance':
+      case 'popular':
+        return 'popular';
+      case 'price_desc':
+      case 'price_high':
+        return 'price_desc';
+      case 'price_asc':
+      case 'price_low':
+        return 'price_asc';
+      case 'newest':
+      case 'created_at':
+        return 'newest';
+      default:
+        return undefined;
+    }
   }
 
   private performShopSearch(): void {
@@ -533,21 +562,36 @@ export class SearchComponent implements OnInit {
   }
 
   toggleFavorite(product: Product): void {
-    // Favorites functionality not yet migrated to domain service - using ApiService
-    // TODO: Migrate to domain service when FavoritesRepository is created
-    if (this.isProductFavorited(product.id)) {
-      // For now, just toggle the local state since favorites service isn't available
-      this.appStateService.showNotification({
-        type: 'success',
-        message: 'Removed from Favorites'
-      });
-    } else {
-      // For now, just toggle the local state since favorites service isn't available
-      this.appStateService.showNotification({
-        type: 'success',
-        message: 'Added to Favorites'
-      });
-    }
+    // Migrated to FavoriteService - uses DDD pattern with FavoriteRepository
+    this.favoriteService.toggleFavorite(product.id).subscribe({
+      next: (favorite) => {
+        if (favorite) {
+          this.appStateService.showNotification({
+            type: 'success',
+            message: 'Added to Favorites'
+          });
+        } else {
+          this.appStateService.showNotification({
+            type: 'success',
+            message: 'Removed from Favorites'
+          });
+        }
+        // Refresh favorites list if needed
+        this.refreshFavorites();
+      },
+      error: (error) => {
+        console.error('Error toggling favorite:', error);
+        this.appStateService.showNotification({
+          type: 'error',
+          message: 'Failed to update favorite. Please try again.'
+        });
+      }
+    });
+  }
+
+  private refreshFavorites(): void {
+    // Refresh favorites state
+    this.loadFavorites();
   }
 
   previousPage() {
@@ -653,9 +697,24 @@ export class SearchComponent implements OnInit {
   }
 
   isProductFavorited(productId: string): boolean {
-    // Favorites not yet migrated to domain service - using local state
-    // TODO: Migrate to domain service when FavoritesRepository is created
-    return false;
+    // Migrated to FavoriteService - check from service
+    // Note: This is synchronous, but actual check should be async via service
+    // For now, return false and update via async check if needed
+    return this.favoriteIds.includes(productId);
+  }
+
+  private favoriteIds: string[] = [];
+
+  private loadFavorites(): void {
+    // Load user favorites on init
+    this.favoriteService.getFavorites().subscribe({
+      next: (response) => {
+        this.favoriteIds = response.items.map(f => f.productId);
+      },
+      error: (error) => {
+        console.error('Error loading favorites:', error);
+      }
+    });
   }
 
   getCategoryName(product: Product): string {

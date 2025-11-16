@@ -36,7 +36,7 @@ interface UserProfile {
   policies?: { returns?: string; shipping?: string; warranty?: string };
 }
 
-interface Review {
+interface ReviewItem {
   id: number;
   reviewer_name: string;
   reviewer_avatar: string;
@@ -424,7 +424,7 @@ export class ProfileComponent implements OnInit {
 
   profile: UserProfile | null = null;
   activeTab: 'about' | 'reviews' | 'listings' = 'about' as 'about' | 'reviews' | 'listings';
-  reviews: Review[] = [];
+  reviews: ReviewItem[] = [];
   listings: Listing[] = [];
   loading = false;
   errorMessage = '';
@@ -506,12 +506,21 @@ export class ProfileComponent implements OnInit {
   }
 
   loadReviews(): void {
-    // TODO: getMyReviews() not yet migrated to domain service - keeping ApiService for now
+    // Migrated to ReviewService - uses DDD pattern with ReviewRepository
     this.authService.getMyReviews().subscribe({
-      next: (response: any) => {
-        this.reviews = response?.data || [];
+      next: (response) => {
+        // AuthService.getMyReviews() now returns PaginatedResponse<Review>
+        // Map domain Review model to ReviewItem for component display
+        this.reviews = (response.items || []).map(review => ({
+          id: Number(review.id),
+          reviewer_name: review.product?.name || 'Unknown Product',
+          reviewer_avatar: review.product?.primaryImageUrl || '/markt-text-logo.png',
+          rating: review.rating,
+          comment: review.content,
+          created_at: review.createdAt,
+        }));
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading reviews:', error);
         this.reviews = [];
         this.errorMessage = 'Failed to load reviews. Please try again.';

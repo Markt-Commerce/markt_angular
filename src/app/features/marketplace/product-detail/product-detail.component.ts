@@ -40,7 +40,6 @@ import {
 import { MarketplaceService } from '../../../domains/marketplace';
 import { CartService } from '../../../domains/cart';
 import { AuthService } from '../../../domains/authentication';
-import { ApiService } from '../../../core/services/api.service'; // Still needed for toggleWishlist, reviews, tracking, and sharing (not yet migrated to domain services)
 import { finalize } from 'rxjs/operators';
 import { AccessControlService } from '../../../core/services/access-control.service';
 import { TitleMetaService } from '../../../core/services/title-meta.service';
@@ -546,7 +545,6 @@ export class ProductDetailComponent implements OnInit {
   private marketplaceService = inject(MarketplaceService);
   private cartService = inject(CartService);
   public authService = inject(AuthService);
-  private apiService = inject(ApiService);
   public accessControl = inject(AccessControlService);
   private titleMeta = inject(TitleMetaService);
   public media = inject(MediaOptimizationService);
@@ -670,15 +668,13 @@ export class ProductDetailComponent implements OnInit {
   private loadReviews(): void {
     if (!this.product) return;
 
-    // Reviews not yet migrated to domain service - using ApiService directly
-    this.apiService.getProductReviews(this.product.id).subscribe({
+    this.marketplaceService.getProductReviews(this.product.id).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.reviews = response.data?.items || response.data || [];
-        }
+        this.reviews = response.items ?? response.reviews ?? [];
       },
       error: (error) => {
         console.error('Error loading reviews:', error);
+        this.reviews = [];
       },
     });
   }
@@ -777,28 +773,26 @@ export class ProductDetailComponent implements OnInit {
   }
 
   // Additional product endpoint integrations
-  createProductReview(reviewData: any): void {
-    // Reviews not yet migrated to domain service - using ApiService directly
-    // TODO: Migrate to domain service when ReviewRepository is created
-    this.apiService.addProductReview(this.product.id, reviewData).subscribe({
-      next: (response: any) => {
-        if (response.success) {
-          this.loadReviews(); // Refresh reviews
-        }
-      },
-      error: (error: any) => {
-        console.error('Error creating product review:', error);
-      },
-    });
+  createProductReview(reviewData: { rating: number; title?: string; content: string }): void {
+    if (!this.product) return;
+
+    this.marketplaceService
+      .addProductReview(this.product.id, reviewData)
+      .subscribe({
+        next: () => {
+          this.loadReviews();
+        },
+        error: (error) => {
+          console.error('Error creating product review:', error);
+        },
+      });
   }
 
   upvoteReview(reviewId: string): void {
-    // Reviews not yet migrated to domain service - using ApiService directly
-    // TODO: Migrate to domain service when ReviewRepository is created
-    this.apiService.upvoteReview(reviewId).subscribe({
+    this.marketplaceService.upvoteReview(reviewId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.loadReviews(); // Refresh reviews
+          this.loadReviews();
         }
       },
       error: (error) => {
@@ -808,9 +802,9 @@ export class ProductDetailComponent implements OnInit {
   }
 
   trackProductView(): void {
-    // Product tracking not yet migrated to domain service - using ApiService directly
-    // TODO: Migrate to domain service when analytics/tracking repository is created
-    this.apiService.trackProductView(this.product.id).subscribe({
+    if (!this.product) return;
+
+    this.marketplaceService.trackProductView(this.product.id).subscribe({
       next: () => {
         // Tracking successful
       },
@@ -906,12 +900,13 @@ export class ProductDetailComponent implements OnInit {
   toggleWishlist(): void {
     if (!this.product) return;
 
-    // Note: toggleWishlist method not in MarketplaceService yet - keeping ApiService for now
-    // TODO: Add toggleWishlist method to MarketplaceService or create WishlistService
-    this.apiService.toggleWishlist(this.product.id).subscribe({
+    this.marketplaceService.toggleWishlist(this.product.id).subscribe({
       next: (response) => {
-        // Optimistically toggle on success
-        this.isInWishlist = !this.isInWishlist;
+        if (typeof response.is_wishlisted === 'boolean') {
+          this.isInWishlist = response.is_wishlisted;
+        } else if (response.success) {
+          this.isInWishlist = !this.isInWishlist;
+        }
       },
       error: (error) => {
         console.error('Error toggling wishlist:', error);
@@ -931,12 +926,10 @@ export class ProductDetailComponent implements OnInit {
   shareProduct(): void {
     if (!this.product) return;
 
-    // Product sharing not yet migrated to domain service - using ApiService directly
-    // TODO: Migrate to domain service when sharing functionality is added
-    this.apiService.shareProduct(this.product.id).subscribe({
+    this.marketplaceService.shareProduct(this.product.id).subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          const shareUrl = response.data.share_url || window.location.href;
+        if (response.status === 'success') {
+          const shareUrl = response.share_url || window.location.href;
           navigator.clipboard.writeText(shareUrl);
         }
       },
@@ -962,18 +955,16 @@ export class ProductDetailComponent implements OnInit {
       content: this.reviewContent,
     };
 
-    // Reviews not yet migrated to domain service - using ApiService directly
-    // TODO: Migrate to domain service when ReviewRepository is created
-    this.apiService.addProductReview(this.product.id, reviewData).subscribe({
-      next: (response) => {
-        if (response.success) {
+    this.marketplaceService
+      .addProductReview(this.product.id, reviewData)
+      .subscribe({
+        next: () => {
           this.showReviewForm = false;
           this.reviewRating = 0;
           this.reviewTitle = '';
           this.reviewContent = '';
           this.loadReviews();
-        }
-      },
+        },
       error: (error) => {
         console.error('Error submitting review:', error);
       },

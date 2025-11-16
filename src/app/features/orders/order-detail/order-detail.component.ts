@@ -821,19 +821,19 @@ export class OrderDetailComponent implements OnInit {
         .loadOrder(orderId)
         .pipe(takeUntilDestroyed())
         .subscribe({
-          next: (order) => {
-            // Convert domain Order to component format
-            this.order = this.convertDomainOrderToComponentFormat(order);
-            this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
-            this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
-            this.loading = false;
-          },
-          error: (error) => {
-            console.error('Error loading order:', error);
-            this.loading = false;
-            this.order = null;
-          }
-        });
+        next: (order) => {
+          // Convert domain Order to component format
+          this.order = this.convertDomainOrderToComponentFormat(order);
+          this.titleMeta.setTitle([`Order #${this.order.orderNumber}`, 'Markt']);
+          this.titleMeta.setMeta(`Order details for ${this.order.orderNumber}`);
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading order:', error);
+          this.loading = false;
+          this.order = null;
+        }
+      });
     } else {
       this.loading = false;
       this.order = null;
@@ -961,19 +961,19 @@ export class OrderDetailComponent implements OnInit {
       const updates = this.order.items.map((item) =>
         this.orderService.updateOrderItemStatus(Number(item.id), { status: 'processing' })
       );
-
+      
       forkJoin(updates)
         .pipe(takeUntilDestroyed())
         .subscribe({
           next: () => {
-            alert('Order processed successfully!');
+        alert('Order processed successfully!');
             this.loadOrder();
           },
           error: (error) => {
-            console.error('Error processing order:', error);
-            alert('Failed to process order.');
+        console.error('Error processing order:', error);
+        alert('Failed to process order.');
           },
-        });
+      });
     }
   }
 
@@ -982,19 +982,19 @@ export class OrderDetailComponent implements OnInit {
       const updates = this.order.items.map((item) =>
         this.orderService.updateOrderItemStatus(Number(item.id), { status: 'shipped' })
       );
-
+      
       forkJoin(updates)
         .pipe(takeUntilDestroyed())
         .subscribe({
           next: () => {
-            alert('Order shipped successfully!');
+        alert('Order shipped successfully!');
             this.loadOrder();
           },
           error: (error) => {
-            console.error('Error shipping order:', error);
-            alert('Failed to ship order.');
+        console.error('Error shipping order:', error);
+        alert('Failed to ship order.');
           },
-        });
+      });
     }
   }
 
@@ -1008,19 +1008,19 @@ export class OrderDetailComponent implements OnInit {
       const updates = this.order.items.map((item) =>
         this.orderService.updateOrderItemStatus(Number(item.id), { status: 'delivered' })
       );
-
+      
       forkJoin(updates)
         .pipe(takeUntilDestroyed())
         .subscribe({
           next: () => {
-            alert('Order marked as delivered successfully!');
+        alert('Order marked as delivered successfully!');
             this.loadOrder();
           },
           error: (error) => {
-            console.error('Error marking order as delivered:', error);
-            alert('Failed to mark order as delivered.');
+        console.error('Error marking order as delivered:', error);
+        alert('Failed to mark order as delivered.');
           },
-        });
+      });
     }
   }
 
@@ -1031,15 +1031,15 @@ export class OrderDetailComponent implements OnInit {
         .cancelOrder(this.order.id)
         .pipe(takeUntilDestroyed())
         .subscribe({
-          next: () => {
-            alert('Order cancelled successfully!');
-            this.loadOrder(); // Reload the order to get updated status
-          },
-          error: (error) => {
-            console.error('Error cancelling order:', error);
-            alert('Failed to cancel order.');
-          }
-        });
+        next: () => {
+          alert('Order cancelled successfully!');
+          this.loadOrder(); // Reload the order to get updated status
+        },
+        error: (error) => {
+          console.error('Error cancelling order:', error);
+          alert('Failed to cancel order.');
+        }
+      });
     }
   }
 

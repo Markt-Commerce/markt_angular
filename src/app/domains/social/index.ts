@@ -2,9 +2,89 @@
  * Social Domain - Public API
  */
 
-export { Post, PostComment } from './models/post.model';
-export type { PostStatus } from './models/post.model';
-export type { PostDto, PostCreateDto, PostCommentDto, CommentCreateDto } from './models/post.dto';
+export {
+  POST_STATUS_VALUES,
+  FOLLOW_TYPE_VALUES,
+  NICHE_STATUS_VALUES,
+  NICHE_VISIBILITY_VALUES,
+  NICHE_MEMBERSHIP_ROLE_VALUES,
+  Post,
+  PostComment,
+  PostUser,
+  PostCategory,
+  PostMedia,
+  PostTaggedProduct,
+  PostLike,
+  ReactionSummary,
+  PostCommentReaction,
+  Follow,
+  Niche,
+  NicheMembership,
+  NichePostSummary,
+  NicheModerationAction,
+  FeedItem,
+  Story,
+  Collection,
+} from './models/post.model';
+export type {
+  PostStatus,
+  FollowType,
+  NicheStatus,
+  NicheVisibility,
+  NicheMembershipRole,
+} from './models/post.model';
+export type {
+  PostDto,
+  PostDetailDto,
+  PostDetailSearchResultDto,
+  PostCreateDto,
+  PostUpdateDto,
+  PostStatusUpdateDto,
+  PostCommentDto,
+  PostCommentCreateDto,
+  PostCommentUpdateDto,
+  PostSearchParamsDto,
+  PostFeedParamsDto,
+  PostCommentSearchParamsDto,
+  FollowDto,
+  FollowListDto,
+  FollowSearchParamsDto,
+  NicheDto,
+  NicheCategoryDto,
+  NicheSearchParamsDto,
+  NicheSearchResultDto,
+  NicheCreateDto,
+  NicheUpdateDto,
+  NicheMembershipDto,
+  NicheMembershipSearchResultDto,
+  NicheModerationActionDto,
+  ModerationActionCreateDto,
+  NichePostDto,
+  NichePostCreateDto,
+  NichePostResponseDto,
+  NichePostListDto,
+  NichePostApprovalDto,
+  PostNicheContextDto,
+  PostLikeDto,
+  PostTaggedProductDto,
+  PostUserSummaryDto,
+  PostCategoryAttachmentDto,
+  PostCommentReactionDto,
+  ReactionSummaryDto,
+  ReactionCreateDto,
+  FeedItemDto,
+  FeedResponseDto,
+  StoryDto,
+  StoryCreateDto,
+  CollectionDto,
+  CollectionCreateDto,
+  CollectionUpdateDto,
+  CommentReactionListDto,
+} from './models/post.dto';
 export { SocialService } from './services/social.service';
 export { PostRepository } from './repositories/post.repository';
+export { NicheRepository } from './repositories/niche.repository';
+export { FollowRepository } from './repositories/follow.repository';
+export { StoryRepository } from './repositories/story.repository';
+export { CollectionRepository } from './repositories/collection.repository';
 

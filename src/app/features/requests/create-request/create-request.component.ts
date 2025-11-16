@@ -7,6 +7,7 @@ import { InputComponent } from '../../../shared/components/input/input.component
 import { RequestService } from '../../../domains/requests/services/request.service';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 import { MediaService } from '../../../domains/media';
+import { BuyerRequestCreateDto } from '../../../domains/requests/models/request.dto';
 import { CategoryService, Category as CategoryModel } from '../../../domains/categories';
 
 interface MediaFile {
@@ -573,12 +574,22 @@ export class CreateRequestComponent implements OnInit {
       // Prepare the request data for RequestService
       // RequestService.createRequest() expects BuyerRequestCreate interface:
       // - title, description, budget (single number), expires_at, category_ids (string[]), media_ids, metadata
-      const requestData = {
+      const categoryValue = formData.category;
+      const resolvedCategoryIds =
+        categoryValue !== '' && categoryValue !== null && categoryValue !== undefined
+          ? [
+              Number.isNaN(Number(categoryValue))
+                ? categoryValue.toString()
+                : Number(categoryValue),
+            ]
+          : undefined;
+
+      const requestData: BuyerRequestCreateDto = {
         title: formData.title,
         description: formData.description,
         budget: formData.budget, // Single budget value (not min/max)
         expires_at: formData.expiresAt, // Use expiresAt from form, not expiryDate
-        category_ids: [formData.category.toString()], // Convert to string array
+        category_ids: resolvedCategoryIds,
         media_ids: formData.mediaIds || [], // Media IDs will be added after request creation
         metadata: {
         location: formData.location,
@@ -587,18 +598,16 @@ export class CreateRequestComponent implements OnInit {
         }
       };
 
-      // Migrated to RequestService.createRequest() - uses DDD pattern with RequestRepository
       this.requestService.createRequest(requestData).subscribe({
-        next: (response) => {
+        next: (createdRequest) => {
           this.submitting = false;
-          if (response.success && response.data) {
-            // Upload images if any were selected
-            if (this.selectedMedia.length > 0) {
-              // TODO: Upload images via MediaService once backend flow is finalized
-              // For now, navigate to the request detail page
-            }
-          this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, response.data.id]);
+          if (this.selectedMedia.length > 0) {
+            // TODO: Upload images via MediaService once backend flow is finalized
           }
+          this.router.navigate([
+            ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
+            createdRequest.id,
+          ]);
         },
         error: (error) => {
           console.error('Error creating request:', error);

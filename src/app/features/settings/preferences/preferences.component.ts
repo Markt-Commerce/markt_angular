@@ -2,7 +2,11 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ApiService } from '../../../core/services/api.service';
+import {
+  UserRepository,
+  UserSettingsDto,
+  UserSettingsUpdateDto,
+} from '../../../domains/authentication';
 import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
 
 @Component({
@@ -14,9 +18,16 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
       <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Preferences</h1>
-          <p class="text-sm text-gray-500">Manage general preferences for your account</p>
+          <p class="text-sm text-gray-500">
+            Manage general preferences for your account
+          </p>
         </div>
-        <button (click)="goBack()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Back</button>
+        <button
+          (click)="goBack()"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Back
+        </button>
       </div>
 
       <form [formGroup]="form" (ngSubmit)="save()" class="space-y-6">
@@ -24,16 +35,28 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
           <h2 class="text-lg font-medium text-gray-900">Display</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-              <select formControlName="theme" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm">
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Theme</label
+              >
+              <select
+                formControlName="theme"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+              >
                 <option value="system">System</option>
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-              <input type="text" formControlName="timezone" placeholder="e.g. Africa/Lagos" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm" />
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Timezone</label
+              >
+              <input
+                type="text"
+                formControlName="timezone"
+                placeholder="e.g. Africa/Lagos"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-markt-primary focus:border-markt-primary sm:text-sm"
+              />
             </div>
           </div>
         </div>
@@ -42,12 +65,24 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
           <h2 class="text-lg font-medium text-gray-900">Privacy</h2>
           <div class="space-y-3">
             <label class="flex items-center gap-2">
-              <input type="checkbox" formControlName="show_email" class="h-4 w-4 text-markt-primary border-gray-300 rounded" />
-              <span class="text-sm text-gray-700">Show my email on profile</span>
+              <input
+                type="checkbox"
+                formControlName="show_email"
+                class="h-4 w-4 text-markt-primary border-gray-300 rounded"
+              />
+              <span class="text-sm text-gray-700"
+                >Show my email on profile</span
+              >
             </label>
             <label class="flex items-center gap-2">
-              <input type="checkbox" formControlName="show_phone" class="h-4 w-4 text-markt-primary border-gray-300 rounded" />
-              <span class="text-sm text-gray-700">Show my phone number on profile</span>
+              <input
+                type="checkbox"
+                formControlName="show_phone"
+                class="h-4 w-4 text-markt-primary border-gray-300 rounded"
+              />
+              <span class="text-sm text-gray-700"
+                >Show my phone number on profile</span
+              >
             </label>
           </div>
         </div>
@@ -56,26 +91,46 @@ import { ROUTES_ABSOLUTE } from '../../../core/config/routes.config';
           <h2 class="text-lg font-medium text-gray-900">Communication</h2>
           <div class="space-y-3">
             <label class="flex items-center gap-2">
-              <input type="checkbox" formControlName="newsletter" class="h-4 w-4 text-markt-primary border-gray-300 rounded" />
+              <input
+                type="checkbox"
+                formControlName="newsletter"
+                class="h-4 w-4 text-markt-primary border-gray-300 rounded"
+              />
               <span class="text-sm text-gray-700">Subscribe to newsletter</span>
             </label>
           </div>
         </div>
 
         <div class="flex items-center justify-end gap-3">
-          <button type="button" (click)="reload()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Reset</button>
-          <button type="submit" [disabled]="loading" class="px-4 py-2 text-sm font-medium text-white bg-markt-primary rounded-md hover:bg-markt-secondary disabled:opacity-50">{{ loading ? 'Saving...' : 'Save Changes' }}</button>
+          <button
+            type="button"
+            (click)="reload()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Reset
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading"
+            class="px-4 py-2 text-sm font-medium text-white bg-markt-primary rounded-md hover:bg-markt-secondary disabled:opacity-50"
+          >
+            {{ loading ? 'Saving...' : 'Save Changes' }}
+          </button>
         </div>
 
-        <div *ngIf="error" class="p-3 bg-red-50 text-red-700 rounded">{{ error }}</div>
-        <div *ngIf="success" class="p-3 bg-green-50 text-green-700 rounded">{{ success }}</div>
+        <div *ngIf="error" class="p-3 bg-red-50 text-red-700 rounded">
+          {{ error }}
+        </div>
+        <div *ngIf="success" class="p-3 bg-green-50 text-green-700 rounded">
+          {{ success }}
+        </div>
       </form>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class PreferencesComponent implements OnInit {
-  private api = inject(ApiService);
+  private userRepository = inject(UserRepository);
   private router = inject(Router);
   private fb = inject(FormBuilder);
 
@@ -90,22 +145,24 @@ export class PreferencesComponent implements OnInit {
       timezone: ['Africa/Lagos'],
       show_email: [false],
       show_phone: [false],
-      newsletter: [true]
+      newsletter: [true],
     });
     this.reload();
   }
 
   reload(): void {
     this.loading = true;
-    this.api.getUserSettings().subscribe({
-      next: (res) => {
-        const data: any = res.data || {};
+    this.userRepository.getUserSettings().subscribe({
+      next: (settings: UserSettingsDto) => {
+        // Map backend settings to form values
+        // Note: Backend returns email_notifications, push_notifications, sms_notifications, privacy_public_profile, preferred_language
+        // Form has theme, timezone, show_email, show_phone, newsletter - these may need to be mapped differently
         this.form.patchValue({
-          theme: data.theme ?? 'system',
-          timezone: data.timezone ?? 'Africa/Lagos',
-          show_email: !!data.show_email,
-          show_phone: !!data.show_phone,
-          newsletter: !!data.newsletter
+          theme: 'system', // Not in backend settings, keep default
+          timezone: 'Africa/Lagos', // Not in backend settings, keep default
+          show_email: settings.privacy_public_profile ?? false,
+          show_phone: false, // Not in backend settings
+          newsletter: settings.email_notifications ?? true,
         });
         this.loading = false;
       },
@@ -113,7 +170,7 @@ export class PreferencesComponent implements OnInit {
         this.loading = false;
         this.error = err.message || 'Failed to load settings';
         setTimeout(() => (this.error = ''), 3000);
-      }
+      },
     });
   }
 
@@ -121,8 +178,18 @@ export class PreferencesComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.success = '';
-    const payload = this.form.value;
-    this.api.updateUserSettings(payload).subscribe({
+    const formValue = this.form.value;
+
+    // Map form values to backend DTO format
+    const payload: UserSettingsUpdateDto = {
+      email_notifications: formValue.newsletter ?? true,
+      push_notifications: true, // Default, could be from form if added
+      sms_notifications: false, // Default, could be from form if added
+      privacy_public_profile: formValue.show_email ?? false,
+      preferred_language: 'en', // Default, could be from form if added
+    };
+
+    this.userRepository.updateUserSettings(payload).subscribe({
       next: () => {
         this.loading = false;
         this.success = 'Preferences saved';
@@ -132,11 +199,11 @@ export class PreferencesComponent implements OnInit {
         this.loading = false;
         this.error = err.message || 'Failed to save settings';
         setTimeout(() => (this.error = ''), 3000);
-      }
+      },
     });
   }
 
   goBack(): void {
     this.router.navigate([ROUTES_ABSOLUTE.APP.SETTINGS]);
   }
-} 
+}

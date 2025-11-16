@@ -4,6 +4,7 @@ import { map } from 'rxjs/operators';
 import { ApiClientService } from '../../../core/infrastructure/http/api-client.service';
 import { ApiResponse } from '../../../core/infrastructure/http/api-response.types';
 import { Product } from '../../marketplace/models/product.model';
+import type { ProductDto } from '../../marketplace/models/product.dto';
 import { Cart, CartItem } from '../models/cart.model';
 import {
   AddToCartDto,
@@ -24,19 +25,7 @@ export class CartRepository {
   private readonly baseEndpoint = '/cart';
 
   private mapCartItem(dto: CartItemDto): CartItem {
-    const product = new Product(
-      dto.product.id,
-      dto.product.name,
-      dto.product.price,
-      dto.product.stock,
-      dto.product.status,
-      String(dto.product.seller_id),
-      dto.product.category_ids?.map(String) ?? [],
-      dto.product.average_rating ?? 0,
-      dto.product.review_count ?? 0,
-      dto.product.created_at,
-      dto.product.updated_at
-    );
+    const product = Product.fromDto(dto.product as ProductDto);
     const variantId = dto.variant_id ?? null;
     const variantName =
       dto.variant?.name ??

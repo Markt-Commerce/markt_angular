@@ -385,14 +385,14 @@ export class OrderTrackingComponent implements OnInit {
         .subscribe({
           next: (tracking) => {
             this.trackingData = this.transformTrackingData(orderId, tracking);
-            this.loading = false;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading tracking data:', error);
+          this.trackingData = this.getMockTrackingData();
+          this.loading = false;
           },
-          error: (error) => {
-            console.error('Error loading tracking data:', error);
-            this.trackingData = this.getMockTrackingData();
-            this.loading = false;
-          },
-        });
+      });
     } else {
       // Use mock data if no order ID
       this.trackingData = this.getMockTrackingData();

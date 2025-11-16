@@ -1,11 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { InputComponent } from '../../shared/components/input/input.component';
 import { SocialService } from '../../domains/social/services/social.service';
-import { ApiService } from '../../core/services/api.service'; // Still needed for operations not yet migrated to SocialService
+import type { Post } from '../../domains/social';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faCommentDots, 
@@ -25,6 +25,8 @@ import {
   faCalendarAlt,
   faThumbtack
 } from '@fortawesome/free-solid-svg-icons';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs/operators';
 
 interface CommunityPost {
   id: string;
@@ -1035,7 +1037,7 @@ export class CommunityComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private socialService = inject(SocialService);
-  private apiService = inject(ApiService); // Still needed for operations not yet migrated to SocialService
+  private destroyRef = inject(DestroyRef);
 
   activeTab = 'posts';
   selectedCategory = 'all';
@@ -1103,40 +1105,70 @@ export class CommunityComponent implements OnInit {
     });
   }
 
+  private mapPostToCommunity(post: Post): CommunityPost {
+    const author = post.author;
+    const authorName =
+      author?.displayName ||
+      author?.username ||
+      [author?.firstName, author?.lastName].filter(Boolean).join(' ') ||
+      'Unknown';
+    const avatar =
+      author?.profilePictureUrl || '/markt-text-logo.png';
+    const username =
+      author?.username ||
+      authorName.toLowerCase().replace(/\s+/g, '') ||
+      'user';
+    const primaryMedia = post.media[0]?.media;
+    const image =
+      primaryMedia?.social_post_url ||
+      primaryMedia?.social_square_url ||
+      primaryMedia?.thumbnail_url ||
+      primaryMedia?.original_url ||
+      '';
+
+    return {
+      id: post.id,
+      author: {
+        id: author?.id || post.userId,
+        name: authorName,
+        avatar,
+        username,
+      },
+      content: post.caption ?? '',
+      image,
+      likes: post.likeCount,
+      comments: post.commentCount,
+      shares: 0,
+      created_at: post.createdAt,
+      is_liked: post.isLiked,
+      tags: post.tags ?? [],
+    };
+  }
+
   loadPosts(): void {
     this.loadingPosts = true;
     this.errorPosts = '';
     
     // Migrated to SocialService.getPersonalizedFeed() - uses DDD pattern with PostRepository
-    this.socialService.getPersonalizedFeed().subscribe({
-      next: (response) => {
-        // SocialService returns PaginatedResponse<Post>, need to map to component's format
-        this.posts = (response.items || []).map((post: any) => ({
-          id: post.id,
-          author: {
-            id: post.seller_id || post.user_id || '',
-            name: post.user?.username || post.seller?.shop_name || 'Unknown',
-            avatar: post.user?.profile_picture_url || post.seller?.profile_picture_url || '',
-            username: post.user?.username || post.seller?.shop_name || 'Unknown'
-          },
-          content: post.caption || post.content || '',
-          image: post.media?.[0]?.url || '',
-          likes: post.like_count || 0,
-          comments: post.comment_count || 0,
-          shares: 0,
-          created_at: post.created_at || '',
-          is_liked: post.is_liked || false,
-          tags: post.tags || []
-        }));
-        this.loadingPosts = false;
-      },
-      error: (error) => {
-        console.error('Error loading posts:', error);
-        this.posts = [];
-        this.loadingPosts = false;
-        this.errorPosts = error.message || 'Failed to load posts. Please try again.';
-      }
-    });
+    this.socialService
+      .getPersonalizedFeed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => (this.loadingPosts = false))
+      )
+      .subscribe({
+        next: (response) => {
+          this.posts = (response.items ?? []).map((post) =>
+            this.mapPostToCommunity(post)
+          );
+        },
+        error: (error) => {
+          console.error('Error loading posts:', error);
+          this.posts = [];
+          this.errorPosts =
+            error.message || 'Failed to load posts. Please try again.';
+        },
+      });
   }
 
   setActiveTab(tab: string): void {
@@ -1162,34 +1194,24 @@ export class CommunityComponent implements OnInit {
     this.loadingPosts = true;
     this.errorPosts = '';
     
-    this.socialService.getPersonalizedFeed(params).subscribe({
-      next: (response) => {
-        // SocialService returns PaginatedResponse<Post>, need to map to component's format
-        this.posts = (response.items || []).map((post: any) => ({
-          id: post.id,
-          author: {
-            id: post.seller_id || post.user_id || '',
-            name: post.user?.username || post.seller?.shop_name || 'Unknown',
-            avatar: post.user?.profile_picture_url || post.seller?.profile_picture_url || '',
-            username: post.user?.username || post.seller?.shop_name || 'Unknown'
-          },
-          content: post.caption || post.content || '',
-          image: post.media?.[0]?.url || '',
-          likes: post.like_count || 0,
-          comments: post.comment_count || 0,
-          shares: 0,
-          created_at: post.created_at || '',
-          is_liked: post.is_liked || false,
-          tags: post.tags || []
-        }));
-        this.loadingPosts = false;
-      },
-      error: (error) => {
-        console.error('Error applying filters:', error);
-        this.loadingPosts = false;
-        this.errorPosts = error.message || 'Failed to apply filters. Please try again.';
-      }
-    });
+    this.socialService
+      .getPersonalizedFeed(params)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => (this.loadingPosts = false))
+      )
+      .subscribe({
+        next: (response) => {
+          this.posts = (response.items ?? []).map((post) =>
+            this.mapPostToCommunity(post)
+          );
+        },
+        error: (error) => {
+          console.error('Error applying filters:', error);
+          this.errorPosts =
+            error.message || 'Failed to apply filters. Please try again.';
+        },
+      });
   }
 
   loadDiscussions(): void {
@@ -1206,15 +1228,18 @@ export class CommunityComponent implements OnInit {
 
   toggleLike(post: CommunityPost): void {
     // Migrated to SocialService.togglePostLike() - uses DDD pattern with PostRepository
-    this.socialService.togglePostLike(post.id).subscribe({
-      next: (updatedPost) => {
-        post.is_liked = !post.is_liked;
-        post.likes = updatedPost.like_count || (post.is_liked ? post.likes + 1 : post.likes - 1);
-      },
-      error: (error) => {
-        console.error('Error toggling like:', error);
-      }
-    });
+    this.socialService
+      .togglePostLike(post.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedPost) => {
+          post.is_liked = updatedPost.isLiked;
+          post.likes = updatedPost.likeCount;
+        },
+        error: (error) => {
+          console.error('Error toggling like:', error);
+        },
+      });
   }
 
   showComments(post: CommunityPost): void {
@@ -1223,14 +1248,17 @@ export class CommunityComponent implements OnInit {
 
   sharePost(post: CommunityPost): void {
     // Migrated to SocialService.sharePost() - uses DDD pattern with PostRepository
-    this.socialService.sharePost(post.id).subscribe({
-      next: (updatedPost) => {
-        post.shares += 1;
-      },
-      error: (error) => {
-        console.error('Error sharing post:', error);
-      }
-    });
+    this.socialService
+      .sharePost(post.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          post.shares += 1;
+        },
+        error: (error) => {
+          console.error('Error sharing post:', error);
+        },
+      });
   }
 
   closeCreatePost(): void {
@@ -1251,17 +1279,24 @@ export class CommunityComponent implements OnInit {
       };
 
       // Migrated to SocialService.createPost() - uses DDD pattern with PostRepository
-      this.socialService.createPost(postData).subscribe({
-        next: (response) => {
-          this.submitting = false;
-          this.closeCreatePost();
-          this.loadPosts();
-        },
-        error: (error) => {
-          console.error('Error creating post:', error);
-          this.submitting = false;
-        }
-      });
+      this.socialService
+        .createPost(postData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => (this.submitting = false))
+        )
+        .subscribe({
+          next: (response) => {
+            this.posts = [
+              this.mapPostToCommunity(response),
+              ...this.posts,
+            ];
+            this.closeCreatePost();
+          },
+          error: (error) => {
+            console.error('Error creating post:', error);
+          },
+        });
     }
   }
 

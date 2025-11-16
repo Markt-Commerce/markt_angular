@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
@@ -8,8 +8,9 @@ import { AuthService } from '../../../domains/authentication/services/auth.servi
 import { SocialService } from '../../../domains/social/services/social.service';
 import { Observable } from 'rxjs';
 import { User } from '../../../domains/authentication/models/user.model';
-import { ApiService } from '../../../core/services/api.service'; // Still needed for getCommunityFeed fallback (not yet in SocialService)
-import { MediaOptimizationService } from '../../../core/services/media-optimization.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs/operators';
+import type { Post, PostMedia } from '../../../domains/social';
 
 interface FeedPost {
   id: string;
@@ -30,7 +31,7 @@ interface FeedPost {
   type: 'text' | 'product' | 'request';
   productInfo?: {
     price: number;
-    category: string;
+    category?: string;
   };
 }
 
@@ -215,8 +216,7 @@ interface FeedPost {
 export class FeedComponent implements OnInit {
   private authService = inject(AuthService);
   private socialService = inject(SocialService);
-  private apiService = inject(ApiService);
-  media = inject(MediaOptimizationService);
+  private destroyRef = inject(DestroyRef);
 
   // Icons
   faHeart = faHeart;
@@ -247,81 +247,80 @@ export class FeedComponent implements OnInit {
 
   private loadFeed(): void {
     this.loading = true;
-    
-    // Use SocialService personalized feed if available; fallback to community feed
-    this.socialService.getPersonalizedFeed({ page: this.currentPage, per_page: 10 }).subscribe({
-      next: (response) => {
-        const items = response.items || [];
-        this.posts = (items || []).map((post: any) => this.mapPostToFeedPost(post));
-        const page = response.pagination?.page || 1;
-        const perPage = response.pagination?.per_page || 10;
-        const totalItems = response.pagination?.total_items || 0;
-        this.hasMorePosts = page * perPage < totalItems;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading community feed:', error);
-        // Fallback to community feed - TODO: getCommunityFeed() not yet in SocialService
-        this.socialService.getPosts().subscribe({
-          next: (fallback: any) => {
-            const fallbackItems = Array.isArray(fallback)
-              ? fallback
-              : fallback?.items ?? fallback?.data ?? [];
-            this.posts = (fallbackItems || []).map((post: any) => this.mapPostToFeedPost(post));
-            const fallbackPagination = Array.isArray(fallback)
-              ? undefined
-              : fallback?.pagination ?? fallback?.data?.pagination;
-            this.hasMorePosts = fallbackPagination?.has_next ?? false;
-            this.loading = false;
-          },
-          error: () => {
-        this.posts = [];
-        this.loading = false;
-          }
-        });
-      }
-    });
+    this.socialService
+      .getPersonalizedFeed({ page: this.currentPage, per_page: 10 })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => (this.loading = false))
+      )
+      .subscribe({
+        next: (response) => {
+          const items = response.items ?? [];
+          this.posts = items.map((post) => this.mapPostToFeedPost(post));
+          const pagination = response.pagination;
+          this.hasMorePosts =
+            (pagination?.page ?? 1) * (pagination?.per_page ?? 10) <
+            (pagination?.total_items ?? 0);
+        },
+        error: (error) => {
+          console.error('Error loading community feed:', error);
+          this.posts = [];
+          this.hasMorePosts = false;
+        },
+      });
   }
 
   loadMorePosts(): void {
     this.currentPage++;
-    this.socialService.getPersonalizedFeed({ page: this.currentPage, per_page: 10 }).subscribe({
-      next: (response) => {
-        const items = response.items || [];
-        this.posts = [...this.posts, ...items.map((p: any) => this.mapPostToFeedPost(p))];
-        const page = response.pagination?.page || this.currentPage;
-        const perPage = response.pagination?.per_page || 10;
-        const totalItems = response.pagination?.total_items || 0;
-        this.hasMorePosts = page * perPage < totalItems;
-      },
-      error: (error) => {
-        console.error('Error loading more posts:', error);
-      }
-    });
+    this.socialService
+      .getPersonalizedFeed({ page: this.currentPage, per_page: 10 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          const items = response.items ?? [];
+          this.posts = [
+            ...this.posts,
+            ...items.map((post) => this.mapPostToFeedPost(post)),
+          ];
+          const pagination = response.pagination;
+          this.hasMorePosts =
+            (pagination?.page ?? this.currentPage) *
+              (pagination?.per_page ?? 10) <
+            (pagination?.total_items ?? 0);
+        },
+        error: (error) => {
+          console.error('Error loading more posts:', error);
+        },
+      });
   }
 
-  private mapPostToFeedPost(post: any): FeedPost {
+  private mapPostToFeedPost(post: Post): FeedPost {
+    const author = post.author;
+    const authorName =
+      author?.displayName ||
+      author?.username ||
+      [author?.firstName, author?.lastName].filter(Boolean).join(' ') ||
+      'Unknown User';
+    const taggedProduct = this.resolveProduct(post.taggedProducts?.[0]?.product);
+
     return {
       id: post.id,
       user: {
-        id: post.user?.id || post.seller?.id || '',
-        name: post.user?.username || post.seller?.shop_name || 'Unknown User',
-        avatar: post.user?.profile_picture_url || post.seller?.profile_picture_url,
-        isVerified: (post.seller?.verification_status === 'verified') || false,
-        isSeller: !!post.seller
+        id: author?.id || post.userId,
+        name: authorName,
+        avatar: author?.profilePictureUrl || undefined,
+        isVerified: author?.emailVerified ?? false,
+        isSeller: author?.isSeller ?? false,
       },
-      content: post.caption || post.content || '',
-      images: (post.social_media || post.media || []).map((m: any) => m?.media?.url || m?.url).filter(Boolean),
-      location: post.location || '',
-      timestamp: new Date(post.created_at),
-      likes: post.like_count || post.likes_count || 0,
-      comments: post.comment_count || post.comments_count || 0,
-      isLiked: !!post.is_liked,
-      type: post.product ? 'product' : 'text',
-      productInfo: post.product ? {
-        price: post.product.price,
-        category: post.product.category?.name || 'Product'
-      } : undefined
+      content: post.caption ?? '',
+      images: this.resolvePostImages(post.media),
+      location: '',
+      timestamp: new Date(post.createdAt),
+      likes: post.likeCount,
+      comments: post.commentCount,
+      isLiked: post.isLiked,
+      type: taggedProduct ? 'product' : 'text',
+      productInfo: taggedProduct,
     };
   }
 
@@ -333,48 +332,85 @@ export class FeedComponent implements OnInit {
           tags: []
       } as any;
 
-        this.socialService.createPost(postData).subscribe({
-          next: (response) => {
-            this.posts.unshift(this.mapPostToFeedPost(response));
-            this.newPostContent = '';
-            this.showCreatePost = false;
-          },
-          error: (error) => {
-            console.error('Error creating post:', error);
-          }
-      });
+        this.socialService
+          .createPost(postData)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (response) => {
+              this.posts.unshift(this.mapPostToFeedPost(response));
+              this.newPostContent = '';
+              this.showCreatePost = false;
+            },
+            error: (error) => {
+              console.error('Error creating post:', error);
+            },
+        });
     }
   }
 
   likePost(postId: string): void {
-    // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
-    this.socialService.likePost(postId).subscribe({
-      next: (updatedPost) => {
-        const post = this.posts.find(p => p.id === postId);
-        if (post) {
-          post.isLiked = true;
-          post.likes = updatedPost.like_count || post.likes + 1;
+    this.socialService
+      .togglePostLike(postId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedPost) => {
+          const post = this.posts.find(p => p.id === postId);
+          if (post) {
+            post.isLiked = updatedPost.isLiked;
+            post.likes = updatedPost.likeCount;
+          }
+        },
+        error: (error) => {
+          console.error('Error toggling post like:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error liking post:', error);
-      }
-    });
+      });
   }
 
   commentOnPost(postId: string, comment: string): void {
     // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
-    this.socialService.addComment(postId, { content: comment }).subscribe({
-      next: (newComment) => {
-        const post = this.posts.find(p => p.id === postId);
-        if (post) {
-          post.comments += 1;
+    this.socialService
+      .addComment(postId, { content: comment })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          const post = this.posts.find(p => p.id === postId);
+          if (post) {
+            post.comments += 1;
+          }
+        },
+        error: (error) => {
+          console.error('Error commenting on post:', error);
         }
-      },
-      error: (error) => {
-        console.error('Error commenting on post:', error);
-      }
-    });
+      });
+  }
+
+  private resolvePostImages(mediaItems: PostMedia[]): string[] {
+    return mediaItems
+      .map((media) => {
+        const source = media.media;
+        return (
+          source?.social_post_url ||
+          source?.social_square_url ||
+          source?.thumbnail_url ||
+          source?.original_url ||
+          null
+        );
+      })
+      .filter((url): url is string => Boolean(url));
+  }
+
+  private resolveProduct(
+    product?: { price: number; description: string | null } | null
+  ):
+    | { price: number; category?: string }
+    | undefined {
+    if (!product) {
+      return undefined;
+    }
+    return {
+      price: product.price,
+      category: product.description ?? undefined,
+    };
   }
 
   getTimeAgo(timestamp: Date): string {

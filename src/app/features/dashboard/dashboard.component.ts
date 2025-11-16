@@ -18,7 +18,6 @@ import {
 import { AuthService } from '../../domains/authentication/services/auth.service';
 import { AppStateService } from '../../core/services/app-state.service';
 import { CartService } from '../../domains/cart/services/cart.service';
-import { NotificationService } from '../../domains/notifications/services/notification.service';
 import { ChatService } from '../../domains/chat/services/chat.service';
 import { AccessControlService } from '../../core/services/access-control.service';
 
@@ -268,7 +267,6 @@ export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private appStateService = inject(AppStateService);
   private cartService = inject(CartService);
-  private notificationService = inject(NotificationService);
   private chatService = inject(ChatService);
   public access = inject(AccessControlService);
 

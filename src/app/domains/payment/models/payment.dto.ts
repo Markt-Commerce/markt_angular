@@ -1,65 +1,97 @@
 /**
  * Payment DTOs
- * 
- * API request/response types for payments.
+ *
+ * Mirrors the backend schemas exposed by the payments service.
  */
 
-export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type PaymentMethod = 'paystack' | 'flutterwave' | 'bank_transfer' | 'wallet' | 'crypto';
+export const PAYMENT_STATUS = [
+  'pending',
+  'completed',
+  'failed',
+  'refunded',
+  'partially_refunded',
+] as const;
+
+export type PaymentStatusDto = (typeof PAYMENT_STATUS)[number];
+
+export const PAYMENT_METHODS = [
+  'card',
+  'bank_transfer',
+  'mobile_money',
+  'wallet',
+] as const;
+
+export type PaymentMethodDto = (typeof PAYMENT_METHODS)[number];
 
 export interface PaymentDto {
-  id: string;
-  order_id: string;
-  amount: number;
-  currency: string;
-  method: PaymentMethod;
-  status: PaymentStatus;
-  transaction_id?: string;
-  gateway_response?: Record<string, unknown>;
-  paid_at?: string;
-  created_at: string;
-  updated_at: string;
+  readonly id: string;
+  readonly order_id: string;
+  readonly amount: number;
+  readonly currency: string;
+  readonly method: PaymentMethodDto;
+  readonly status: PaymentStatusDto;
+  readonly transaction_id: string | null;
+  readonly gateway_response: Record<string, unknown> | null;
+  readonly paid_at: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 export interface PaymentCreateDto {
-  order_id: string;
-  amount: number;
-  currency?: string;
-  method?: PaymentMethod;
-  metadata?: Record<string, unknown>;
+  readonly order_id: string;
+  readonly amount: number;
+  readonly currency?: string;
+  readonly method?: PaymentMethodDto;
+  readonly metadata?: Record<string, unknown> | null;
 }
 
-export interface PaymentListDto {
-  payments: PaymentDto[];
-  total: number;
-  page: number;
-  pages: number;
-  per_page: number;
+export interface PaymentProcessDto {
+  readonly authorization_code?: string;
+  readonly card_token?: string;
+  readonly metadata?: Record<string, unknown> | null;
 }
 
-export interface PaymentInitializeDto {
-  amount: number;
-  email: string;
-  currency?: string;
-  method?: PaymentMethod;
-  metadata?: Record<string, unknown>;
-}
-
-export interface PaymentInitializeResponseDto {
-  authorization_url: string;
-  access_code: string;
-  reference: string;
-}
-
-export interface PaymentVerifyDto {
-  reference: string;
+export interface PaymentCallbackDto {
+  readonly reference: string;
+  readonly status?: string;
+  readonly amount?: number;
+  readonly currency?: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
 export interface PaymentVerifyResponseDto {
-  status: PaymentStatus;
-  amount: number;
-  currency: string;
-  transaction_id: string;
-  paid_at: string;
+  readonly verified: boolean;
+  readonly amount?: number;
+  readonly gateway_response?: Record<string, unknown>;
 }
 
+export interface PaymentListDto {
+  readonly payments: PaymentDto[];
+  readonly total: number;
+  readonly page: number;
+  readonly per_page: number;
+  readonly pages: number;
+}
+
+export interface PaymentInitializeRequestDto {
+  readonly order_id: string;
+  readonly amount: number;
+  readonly currency?: string;
+  readonly method?: PaymentMethodDto;
+  readonly metadata?: Record<string, unknown> | null;
+}
+
+export interface PaymentInitializeResponseDto {
+  readonly payment_id: string;
+  readonly authorization_url: string;
+  readonly reference: string;
+  readonly access_code: string;
+}
+
+export interface PaymentStatsDto {
+  readonly total_payments: number;
+  readonly successful_payments: number;
+  readonly failed_payments: number;
+  readonly total_revenue: number;
+  readonly currency: string;
+}

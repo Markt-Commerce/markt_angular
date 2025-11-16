@@ -22,7 +22,6 @@ import {
   PostComment,
   Story,
   Collection,
-  Payment,
   Notification,
   RegisterResponse,
   UserRole,
@@ -254,12 +253,6 @@ export interface ModerationData {
   reason: string;
   duration?: number;
   target_user_id?: string;
-}
-
-export interface WebhookData {
-  event: string;
-  data: Record<string, unknown>;
-  signature?: string;
 }
 
 @Injectable({
@@ -738,51 +731,6 @@ export class ApiService {
     return this.delete<void>(
       `/socials/comments/${commentId}/reactions/${reactionType}`
     );
-  }
-
-  // ============================================================================
-  // PAYMENT ENDPOINTS (8 endpoints)
-  // ============================================================================
-
-  getPayments(params?: any): Observable<ApiResponse<any>> {
-    return this.get<any>('/payments/', params);
-  }
-
-  createPayment(paymentData: PaymentData): Observable<ApiResponse<Payment>> {
-    return this.post<Payment>('/payments/create', paymentData);
-  }
-
-  processPayment(
-    paymentId: string,
-    paymentData: PaymentData
-  ): Observable<ApiResponse<Payment>> {
-    return this.post<Payment>(`/payments/${paymentId}/process`, paymentData);
-  }
-
-  verifyPayment(paymentId: string): Observable<ApiResponse<any>> {
-    return this.get<any>(`/payments/${paymentId}/verify`);
-  }
-
-  getPayment(paymentId: string): Observable<ApiResponse<Payment>> {
-    return this.get<Payment>(`/payments/${paymentId}`);
-  }
-
-  handlePaystackWebhook(
-    webhookData: WebhookData
-  ): Observable<ApiResponse<any>> {
-    return this.post<any>('/payments/webhook/paystack', webhookData);
-  }
-
-  initializePayment(paymentData: any): Observable<ApiResponse<any>> {
-    return this.post<any>('/payments/initialize', paymentData);
-  }
-
-  handlePaymentCallback(paymentId: string): Observable<ApiResponse<any>> {
-    return this.get<any>(`/payments/callback/${paymentId}`);
-  }
-
-  getPaymentStats(): Observable<ApiResponse<any>> {
-    return this.get<any>('/payments/admin/stats');
   }
 
   // ============================================================================

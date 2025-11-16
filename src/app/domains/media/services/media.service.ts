@@ -188,7 +188,10 @@ export class MediaService {
       tap({
         next: () => {
           const currentMedia = this.getState().media;
-          const updatedMedia = currentMedia.filter(m => m.id !== id);
+          const numericId = Number(id);
+          const updatedMedia = Number.isNaN(numericId)
+            ? currentMedia
+            : currentMedia.filter((mediaItem) => mediaItem.id !== numericId);
           this.updateState({ media: updatedMedia });
         },
         error: (error) => {
@@ -234,14 +237,14 @@ export class MediaService {
   removeBackground(id: string): Observable<Media> {
     return this.mediaRepository.findById(id).pipe(
       tap((media) => {
-        if (!media.isImage()) {
-          throw new Error('Background removal is only available for images');
-        }
+          if (!media.isImage()) {
+            throw new Error('Background removal is only available for images');
+          }
       }),
       switchMap(() => this.mediaRepository.removeBackground(id)),
       switchMap(() => this.mediaRepository.findById(id)),
       tap((media) => {
-        this.updateState({ currentMedia: media });
+          this.updateState({ currentMedia: media });
       })
     );
   }

@@ -1100,23 +1100,31 @@ export class CheckoutComponent implements OnInit {
   paymentMethods = [
     {
       id: 'card',
-      name: 'Credit/Debit Card',
-      shortName: 'Credit Card',
+      name: 'Card (Paystack)',
+      shortName: 'Card',
       icon: this.faCreditCard,
     },
     {
-      id: 'paypal',
-      name: 'PayPal',
-      shortName: 'PayPal',
+      id: 'bank_transfer',
+      name: 'Bank Transfer',
+      shortName: 'Bank Transfer',
       icon: this.faCreditCard,
     },
     {
-      id: 'apple',
-      name: 'Apple Pay',
-      shortName: 'Apple Pay',
+      id: 'mobile_money',
+      name: 'Mobile Money',
+      shortName: 'Mobile Money',
+      icon: this.faCreditCard,
+    },
+    {
+      id: 'wallet',
+      name: 'Markt Wallet',
+      shortName: 'Wallet',
       icon: this.faCreditCard,
     },
   ];
+
+  lastCreatedOrderId: string | null = null;
 
   constructor() {
     this.shippingForm = this.fb.group({
@@ -1252,25 +1260,38 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  initializePayment(): void {
+  initializePayment(orderId?: string): void {
+    const resolvedOrderId = orderId ?? this.lastCreatedOrderId;
+    if (!resolvedOrderId) {
+      this.paymentError =
+        'Create the order before redirecting to the payment gateway.';
+      return;
+    }
     if (!this.cart) {
       this.errorMessage = 'Cart is empty. Please add items to your cart.';
       return;
     }
 
-    const paymentData = {
+    const paymentMethod = (this.paymentForm.get('paymentMethod')?.value ??
+      'card') as 'card' | 'bank_transfer' | 'mobile_money' | 'wallet';
+
+    const metadata: Record<string, unknown> = {};
+    if (this.cart?.id) {
+      metadata['cart_id'] = this.cart.id;
+    }
+    if (this.userId) {
+      metadata['user_id'] = this.userId;
+    }
+
+    const paymentRequest = {
+      order_id: resolvedOrderId,
       amount: this.totalAmount,
       currency: 'NGN',
-      email: this.userEmail,
-      reference: this.generateReference(),
-      callback_url: window.location.origin + '/app/checkout/success',
-      metadata: {
-        cart_id: this.cart.id,
-        user_id: this.userId,
-      },
+      method: paymentMethod,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
     };
 
-    this.paymentService.initializePayment(paymentData).subscribe({
+    this.paymentService.initializePayment(paymentRequest).subscribe({
       next: (response) => {
         window.location.href = response.authorization_url;
       },
@@ -1279,12 +1300,6 @@ export class CheckoutComponent implements OnInit {
         this.paymentError = error.message || 'Payment initialization failed';
       },
     });
-  }
-
-  private generateReference(): string {
-    return (
-      'MARKT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-    );
   }
 
   private calculateTotals(): void {
@@ -1474,6 +1489,7 @@ export class CheckoutComponent implements OnInit {
       next: (order) => {
         this.cartService.clearCart().subscribe();
 
+        this.lastCreatedOrderId = order.id;
         this.router.navigate([
           buildPath(ROUTES_ABSOLUTE.APP.CHECKOUT, 'confirmation', order.id),
         ]);

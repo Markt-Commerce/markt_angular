@@ -1,9 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs/operators';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { SocialService } from '../../../domains/social/services/social.service';
+import { SocialService, Post, PostComment } from '../../../domains/social';
 
 @Component({
   selector: 'app-post-detail',
@@ -22,13 +24,18 @@ import { SocialService } from '../../../domains/social/services/social.service';
           </button>
         </div>
 
+        <!-- Loading State -->
+        <div *ngIf="loading" class="post-card">
+          <div class="loading-state">Loading post...</div>
+        </div>
+
         <!-- Post Content -->
-        <div class="post-card">
+        <div class="post-card" *ngIf="!loading && post">
           <div class="post-header">
             <div class="post-author">
-              <img [src]="post.author.avatar" [alt]="post.author.name" class="author-avatar">
+              <img [src]="post.author?.profilePictureUrl || '/markt-text-logo.png'" [alt]="post.author?.displayName || 'User'" class="author-avatar">
               <div class="author-info">
-                <div class="author-name">{{ post.author.name }}</div>
+                <div class="author-name">{{ post.author?.displayName || post.author?.username || 'Unknown' }}</div>
                 <div class="post-time">{{ post.createdAt | date:'medium' }}</div>
               </div>
             </div>
@@ -42,9 +49,9 @@ import { SocialService } from '../../../domains/social/services/social.service';
           </div>
 
           <div class="post-content">
-            <p class="post-text">{{ post.content }}</p>
-            <div class="post-image" *ngIf="post.image">
-              <img [src]="post.image" [alt]="post.content" class="post-img">
+            <p class="post-text">{{ post.caption || '' }}</p>
+            <div class="post-image" *ngIf="post.media && post.media.length > 0">
+              <img [src]="post.media[0]?.media?.original_url || post.media[0]?.media?.thumbnail_url || post.media[0]?.media?.social_post_url || post.media[0]?.media?.social_square_url || ''" [alt]="post.caption || 'Post image'" class="post-img">
             </div>
           </div>
 
@@ -53,13 +60,13 @@ import { SocialService } from '../../../domains/social/services/social.service';
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
-              {{ post.likes }} likes
+              {{ post.likeCount || 0 }} likes
             </div>
             <div class="stat">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
-              {{ post.comments }} comments
+              {{ post.commentCount || 0 }} comments
             </div>
             <div class="stat">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,12 +74,12 @@ import { SocialService } from '../../../domains/social/services/social.service';
                 <polyline points="16,6 12,2 8,6"></polyline>
                 <line x1="12" y1="2" x2="12" y2="15"></line>
               </svg>
-              {{ post.shares }} shares
+              0 shares
             </div>
           </div>
 
           <div class="post-actions">
-            <button class="action-btn" [class.liked]="post.isLiked">
+            <button class="action-btn" [class.liked]="post.isLiked" (click)="likePost()">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
@@ -96,8 +103,8 @@ import { SocialService } from '../../../domains/social/services/social.service';
         </div>
 
         <!-- Comments Section -->
-        <div class="comments-section">
-          <h3>Comments ({{ post.comments }})</h3>
+        <div class="comments-section" *ngIf="post">
+          <h3>Comments ({{ post?.commentCount || 0 }})</h3>
           
           <!-- Add Comment -->
           <div class="add-comment">
@@ -120,9 +127,9 @@ import { SocialService } from '../../../domains/social/services/social.service';
           <div class="comments-list">
             <div class="comment-item" *ngFor="let comment of comments">
               <div class="comment-author">
-                <img [src]="comment.author.avatar" [alt]="comment.author.name" class="comment-avatar">
+                <img [src]="comment.author?.profilePictureUrl || '/markt-text-logo.png'" [alt]="comment.author?.displayName || comment.author?.username || 'User'" class="comment-avatar">
                 <div class="comment-info">
-                  <div class="comment-author-name">{{ comment.author.name }}</div>
+                  <div class="comment-author-name">{{ comment.author?.displayName || comment.author?.username || 'Unknown' }}</div>
                   <div class="comment-time">{{ comment.createdAt | date:'short' }}</div>
                 </div>
               </div>
@@ -174,6 +181,12 @@ import { SocialService } from '../../../domains/social/services/social.service';
       padding: 2rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       margin-bottom: 2rem;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
     }
 
     .post-header {
@@ -418,47 +431,30 @@ export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private socialService = inject(SocialService);
+  private destroyRef = inject(DestroyRef);
 
-  post = {
-    id: 1,
-    author: {
-              name: 'User',
-      avatar: '""'
-    },
-    content: 'Just found an amazing deal on the marketplace! Check out this vintage camera I scored for a great price. The seller was super helpful and the item was exactly as described. I\'ve been looking for this model for months and finally found it in perfect condition. The community here is really great for finding unique items and connecting with local sellers.',
-    image: '""',
-    likes: 24,
-    comments: 8,
-    shares: 3,
-    isLiked: false,
-    createdAt: new Date('2024-01-15T10:30:00Z')
-  };
-
-  comments = [
-    {
-      id: 1,
-      author: {
-        name: 'Sarah Wilson',
-        avatar: '""'
-      },
-      content: 'That\'s a beautiful camera! I love vintage photography equipment. How much did you get it for?',
-      createdAt: new Date('2024-01-15T11:00:00Z')
-    },
-    {
-      id: 2,
-      author: {
-        name: 'Mike Johnson',
-        avatar: '""'
-      },
-      content: 'Great find! I\'ve been using Markt for a while now and the quality of items is always impressive.',
-      createdAt: new Date('2024-01-15T11:30:00Z')
-    }
-  ];
-
+  post: Post | null = null;
+  comments: PostComment[] = [];
   newComment = '';
   loading = false;
 
   ngOnInit(): void {
+    // Subscribe to selectedPost$ signal for reactive updates
+    this.socialService.selectedPost$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((post) => {
+        if (post) {
+          this.post = post;
+        }
+      });
+
+    // Subscribe to comments$ signal for reactive updates
+    this.socialService.comments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        this.comments = response?.items ?? [];
+      });
+
     this.loadPost();
   }
 
@@ -468,53 +464,32 @@ export class PostDetailComponent implements OnInit {
     if (postId) {
       this.loading = true;
       
-      // Migrated to SocialService.getPost() - uses DDD pattern with PostRepository
-      this.socialService.getPost(postId).subscribe({
-        next: (post: any) => {
-          // Convert SocialService Post format to component's expected format
-          this.post = {
-            id: Number(post.id) || 0,
-            author: {
-              name: post.seller?.shop_name || 'Unknown',
-              avatar: post.seller?.profile_picture_url || ''
-            },
-            content: post.caption || '',
-            image: (post as any).social_media?.[0]?.media?.url || '',
-            likes: post.like_count || 0,
-            comments: post.comment_count || 0,
-            shares: 0,
-            createdAt: new Date(post.created_at || Date.now()),
-            isLiked: false
-          };
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Error loading post:', error);
-          this.loading = false;
-        }
-      });
-
-      // Migrated to SocialService.getPostComments() - uses DDD pattern with PostRepository
-      this.socialService.getPostComments(postId).subscribe({
-        next: (response) => {
-          // SocialService returns PaginatedResponse<PostComment>
-          // Map PostComment[] to component's expected format
-          this.comments = (response.items || []).map((comment: any) => ({
-            id: parseInt(comment.id) || 0,
-            author: {
-              name: comment.user?.username || 'Unknown',
-              avatar: comment.user?.profile_picture_url || ''
-            },
-            content: comment.content,
-            createdAt: new Date(comment.created_at)
-          }));
-        },
-        error: (error) => {
-          console.error('Error loading post comments:', error);
-          this.comments = [];
-        }
-      });
+      // Use SocialService.getPost() - returns Post domain model
+      this.socialService.getPost(postId)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: (post) => {
+            this.post = post;
+            this.loadComments(postId);
+          },
+          error: (error) => {
+            console.error('Error loading post:', error);
+          }
+        });
     }
+  }
+
+  private loadComments(postId: string): void {
+    // Use SocialService.getPostComments() - returns PaginatedResponse<PostComment>
+    this.socialService.getPostComments(postId).subscribe({
+      next: () => {
+        // Comments are automatically updated via comments$ signal
+      },
+      error: (error) => {
+        console.error('Error loading post comments:', error);
+        this.comments = [];
+      }
+    });
   }
 
   goBack(): void {
@@ -523,14 +498,13 @@ export class PostDetailComponent implements OnInit {
 
   likePost(): void {
     if (this.post) {
-      // Migrated to SocialService.likePost() - uses DDD pattern with PostRepository
-      this.socialService.likePost(this.post.id.toString()).subscribe({
+      // Use SocialService.togglePostLike() - returns updated Post domain model
+      this.socialService.togglePostLike(this.post.id).subscribe({
         next: (updatedPost) => {
-          this.post!.isLiked = true;
-          this.post!.likes = updatedPost.like_count || this.post!.likes + 1;
+          this.post = updatedPost; // Update with new Post model
         },
         error: (error) => {
-          console.error('Error liking post:', error);
+          console.error('Error toggling post like:', error);
         }
       });
     }
@@ -538,21 +512,10 @@ export class PostDetailComponent implements OnInit {
 
   addComment(): void {
     if (this.newComment.trim() && this.post) {
-      // Migrated to SocialService.addComment() - uses DDD pattern with PostRepository
-      this.socialService.addComment(this.post.id.toString(), { content: this.newComment }).subscribe({
-        next: (newComment: any) => {
-          // Map returned PostComment to component comment format
-          const mapped = {
-            id: parseInt(newComment.id) || 0,
-            author: {
-              name: newComment.user?.username || 'Unknown',
-              avatar: newComment.user?.profile_picture_url || ''
-            },
-            content: newComment.content,
-            createdAt: new Date(newComment.created_at)
-          };
-          this.comments.push(mapped);
-          this.post!.comments += 1;
+      // Use SocialService.addComment() - returns PostComment domain model
+      this.socialService.addComment(this.post.id, { content: this.newComment }).subscribe({
+        next: () => {
+          // Comments are automatically updated via comments$ signal
           this.newComment = '';
         },
         error: (error) => {

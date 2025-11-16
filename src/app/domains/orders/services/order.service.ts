@@ -196,10 +196,10 @@ export class OrderService {
         const orders = [order, ...this.state().orders];
         this.patchState({
           orders,
-          currentOrder: order,
-          isLoading: false,
-          error: null,
-        });
+            currentOrder: order,
+            isLoading: false,
+            error: null,
+          });
       }),
       finalize(() => {
         this.patchState({ isLoading: false });
@@ -221,7 +221,7 @@ export class OrderService {
 
     if (order && !order.canCancel()) {
       return throwError(() => new Error('Order cannot be cancelled'));
-    }
+        }
 
     this.patchState({ isLoading: true, error: null });
 
@@ -255,8 +255,8 @@ export class OrderService {
             isLoading: false,
           });
           return throwError(() => error);
-        })
-      );
+      })
+    );
   }
 
   updateOrderItemStatus(

@@ -18,7 +18,7 @@ import {
   faShoppingCart,
   faHandshake
 } from '@fortawesome/free-solid-svg-icons';
-import { ApiService } from '../../../core/services/api.service';
+import { SocialService } from '../../../domains/social/services/social.service';
 import { AuthService } from '../../../domains/authentication/services/auth.service';
 
 interface User {
@@ -97,7 +97,7 @@ interface SuggestedUser {
 })
 export class SocialFeedComponent implements OnInit {
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private socialService = inject(SocialService);
   private authService = inject(AuthService);
 
   // FontAwesome Icons

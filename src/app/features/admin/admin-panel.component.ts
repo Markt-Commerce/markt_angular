@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
+import { PaymentService, PaymentStatsDto } from '../../domains/payment';
 
 @Component({
   selector: 'app-admin-panel',
@@ -254,13 +255,20 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class AdminPanelComponent implements OnInit {
   private apiService = inject(ApiService);
+  private paymentService = inject(PaymentService);
 
   // Data properties
   users: any[] = [];
   reports: any[] = [];
   moderationQueue: any[] = [];
   platformAnalytics: any = {};
-  paymentStats: any = {};
+  paymentStats: PaymentStatsDto = {
+    total_payments: 0,
+    successful_payments: 0,
+    failed_payments: 0,
+    total_revenue: 0,
+    currency: 'NGN',
+  };
   systemHealth: any = {};
 
   // State properties
@@ -340,14 +348,13 @@ export class AdminPanelComponent implements OnInit {
 
   private loadPaymentStats(): void {
     this.loadingPaymentStats = true;
-    this.apiService.getPaymentStats().subscribe({
-      next: (response) => {
-        this.paymentStats = response.data || {};
+    this.paymentService.getPaymentStats().subscribe({
+      next: (stats: PaymentStatsDto) => {
+        this.paymentStats = stats;
         this.loadingPaymentStats = false;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading payment stats:', error);
-        this.paymentStats = {};
         this.loadingPaymentStats = false;
       }
     });
@@ -434,17 +441,6 @@ export class AdminPanelComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error taking moderation action:', error);
-      }
-    });
-  }
-
-  // Additional admin endpoint integrations
-  getPaymentStats(): void {
-    this.apiService.getPaymentStats().subscribe({
-      next: (response) => {
-      },
-      error: (error) => {
-        console.error('Error loading payment stats:', error);
       }
     });
   }

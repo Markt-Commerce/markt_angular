@@ -10,9 +10,10 @@ import { map } from 'rxjs/operators';
 import { ApiClientService } from '../../../core/infrastructure/http/api-client.service';
 import { ApiResponse } from '../../../core/infrastructure/http/api-response.types';
 import { User, UserRole, BuyerAccountData, SellerAccountData, Address } from '../models/user.model';
+import { AddressDto } from '../../../core/shared/value-objects/address.value-object';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { Media } from '../../media/models/media.model';
+import { Media, MediaVariant } from '../../media/models/media.model';
 import { MediaDto } from '../../media/models/media.dto';
 import {
   UserDto,
@@ -27,8 +28,14 @@ import {
   PasswordResetDto,
   PasswordResetConfirmDto,
   EmailVerificationDto,
-  RoleSwitchDto
+  RoleSwitchDto,
+  UserSettingsDto,
+  UserSettingsUpdateDto,
+  PublicProfileDto,
+  UserSearchParamsDto,
+  UserPaginationDto
 } from '../models/user.dto';
+import type { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
 
 @Injectable({
   providedIn: 'root'
@@ -255,47 +262,52 @@ export class UserRepository {
       map(response => {
         // Convert MediaDto to Media domain model
         const dto = response.data;
+        const variants = (dto.variants ?? []).map(
+          (variant) =>
+            new MediaVariant(
+              variant.id,
+              variant.variant_type,
+              variant.storage_key,
+              variant.width ?? null,
+              variant.height ?? null,
+              variant.file_size ?? null,
+              variant.quality ?? null,
+              variant.format ?? null,
+              variant.url ?? null,
+              variant.processing_time ?? null
+            )
+        );
+
         return new Media(
           dto.id,
           dto.user_id,
-          dto.original_filename,
-          dto.original_url,
-          dto.media_type,
-          dto.width,
-          dto.height,
-          dto.file_size,
-          dto.mime_type,
-          dto.processing_status,
           dto.storage_key,
+          dto.media_type,
+          dto.mime_type,
+          dto.width ?? null,
+          dto.height ?? null,
+          dto.file_size,
+          dto.original_url ?? null,
+          dto.processing_status,
           dto.created_at,
-          dto.updated_at,
-          dto.thumbnail_url,
-          dto.mobile_url,
-          dto.tablet_url,
-          dto.desktop_url,
-          dto.social_square_url,
-          dto.social_post_url,
-          dto.social_story_url,
-          dto.duration,
-          dto.alt_text,
-          dto.caption,
+          dto.updated_at ?? null,
+          dto.thumbnail_url ?? null,
+          dto.mobile_url ?? null,
+          dto.tablet_url ?? null,
+          dto.desktop_url ?? null,
+          dto.social_square_url ?? null,
+          dto.social_post_url ?? null,
+          dto.social_story_url ?? null,
+          dto.duration ?? null,
+          dto.alt_text ?? null,
+          dto.caption ?? null,
           dto.is_public,
           dto.background_removed,
-          dto.compression_quality,
-          // Variants mapping: cast to domain type for now until a MediaVariant factory is introduced
-          (dto.variants as unknown as any[]).map(v => ({
-            id: v.id,
-            variantType: (v as any).variant_type,
-            quality: v.quality,
-            width: v.width,
-            height: v.height,
-            format: v.format,
-            fileSize: (v as any).file_size,
-            url: v.url,
-            storageKey: (v as any).storage_key,
-            processingTime: (v as any).processing_time
-          })) as unknown as import('../../media/models/media.model').MediaVariant[],
-          dto.exif_data
+          dto.compression_quality ?? null,
+          dto.original_filename ?? null,
+          dto.processing_error ?? null,
+          variants,
+          dto.exif_data ?? null
         );
       })
     );
@@ -304,8 +316,8 @@ export class UserRepository {
   /**
    * Get user settings
    */
-  getUserSettings(): Observable<Record<string, unknown>> {
-    return this.apiClient.get<Record<string, unknown>>(`${this.baseEndpoint}/settings`).pipe(
+  getUserSettings(): Observable<UserSettingsDto> {
+    return this.apiClient.get<UserSettingsDto>(`${this.baseEndpoint}/settings`).pipe(
       map(response => response.data)
     );
   }
@@ -313,10 +325,84 @@ export class UserRepository {
   /**
    * Update user settings
    */
-  updateUserSettings(settings: Record<string, unknown>): Observable<Record<string, unknown>> {
-    return this.apiClient.put<Record<string, unknown>>(`${this.baseEndpoint}/settings`, settings).pipe(
+  updateUserSettings(settings: UserSettingsUpdateDto): Observable<UserSettingsDto> {
+    return this.apiClient.patch<UserSettingsDto>(`${this.baseEndpoint}/settings`, settings).pipe(
       map(response => response.data)
     );
+  }
+
+  /**
+   * Get public profile
+   */
+  getPublicProfile(userId: string): Observable<PublicProfileDto> {
+    return this.apiClient.get<PublicProfileDto>(`${this.baseEndpoint}/${userId}/public`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * List users with pagination and filters
+   */
+  listUsers(params?: UserSearchParamsDto): Observable<PaginatedResponse<User>> {
+    return this.apiClient.get<UserPaginationDto>(this.baseEndpoint, params as Record<string, unknown>).pipe(
+      map(response => ({
+        items: response.data.items.map(user => this.toDomain(user)),
+        pagination: response.data.pagination
+      }))
+    );
+  }
+
+  /**
+   * Get user addresses
+   * Returns list of user shipping addresses
+   */
+  getUserAddresses(): Observable<Address[]> {
+    return this.apiClient.get<{ addresses: AddressDto[] }>(`${this.baseEndpoint}/addresses`).pipe(
+      map(response => (response.data.addresses ?? []).map(addressDto => Address.fromDto(addressDto)))
+    );
+  }
+
+  /**
+   * Add user address
+   */
+  addUserAddress(address: AddressDto): Observable<Address> {
+    return this.apiClient.post<AddressDto>(`${this.baseEndpoint}/addresses`, address).pipe(
+      map(response => Address.fromDto(response.data))
+    );
+  }
+
+  /**
+   * Update user address
+   */
+  updateUserAddress(addressId: string, address: AddressDto): Observable<Address> {
+    return this.apiClient.patch<AddressDto>(`${this.baseEndpoint}/addresses/${addressId}`, address).pipe(
+      map(response => Address.fromDto(response.data))
+    );
+  }
+
+  /**
+   * Delete user address
+   */
+  deleteUserAddress(addressId: string): Observable<void> {
+    return this.apiClient.delete<void>(`${this.baseEndpoint}/addresses/${addressId}`).pipe(
+      map(() => undefined)
+    );
+  }
+
+  /**
+   * Search users (admin/search functionality)
+   * Alias for listUsers with search params
+   */
+  searchUsers(params?: UserSearchParamsDto): Observable<PaginatedResponse<User>> {
+    return this.listUsers(params);
+  }
+
+  /**
+   * Get users (admin/search)
+   * Alias for listUsers for backward compatibility
+   */
+  getUsers(params?: UserSearchParamsDto): Observable<PaginatedResponse<User>> {
+    return this.listUsers(params);
   }
 }
 

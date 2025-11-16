@@ -99,7 +99,13 @@ describe('Migration Verification - Domain Services Integration', () => {
       'getProducts',
       'getTrendingProducts',
       'getRecommendedProducts',
-      'getMyProducts'
+      'getMyProducts',
+      'getProductReviews',
+      'addProductReview',
+      'upvoteReview',
+      'trackProductView',
+      'shareProduct',
+      'toggleWishlist'
     ]);
 
     cartService = jasmine.createSpyObj(
@@ -167,11 +173,6 @@ describe('Migration Verification - Domain Services Integration', () => {
     ]);
 
     apiService = jasmine.createSpyObj('ApiService', [
-      'getProductReviews',
-      'addProductReview',
-      'toggleWishlist',
-      'trackProductView',
-      'shareProduct',
       'updateOrderItemStatus',
       'trackOrder',
       'getUserAddresses',
@@ -196,6 +197,35 @@ describe('Migration Verification - Domain Services Integration', () => {
     marketplaceService.getTrendingProducts.and.returnValue(of([mockProduct]));
     marketplaceService.getRecommendedProducts.and.returnValue(of([mockProduct]));
     marketplaceService.getMyProducts.and.returnValue(of([mockProduct]));
+    marketplaceService.getProductReviews.and.returnValue(
+      of({
+        reviews: [],
+        items: [],
+        pagination: {
+          page: 1,
+          per_page: 10,
+          total_items: 0,
+          total_pages: 0,
+          first_page: 1,
+          last_page: 0,
+          previous_page: null,
+          next_page: null,
+          has_next: false,
+          has_prev: false,
+        },
+      } as any)
+    );
+    marketplaceService.addProductReview.and.returnValue(of({} as any));
+    marketplaceService.upvoteReview.and.returnValue(
+      of({ success: true, new_count: 1 } as any)
+    );
+    marketplaceService.trackProductView.and.returnValue(of(undefined));
+    marketplaceService.shareProduct.and.returnValue(
+      of({ status: 'success', share_url: 'https://markt.app/product/product1' })
+    );
+    marketplaceService.toggleWishlist.and.returnValue(
+      of({ success: true, is_wishlisted: true })
+    );
 
     cartService.getCart.and.returnValue(of({ items: [], total: 0 } as any));
     cartService.addToCart.and.returnValue(of({} as any));

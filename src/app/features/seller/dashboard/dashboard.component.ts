@@ -4,10 +4,15 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../../domains/orders/services/order.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiService } from '../../../core/services/api.service'; // Still needed for getSellerAnalytics (not yet migrated)
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { MarketplaceService } from '../../../domains/marketplace';
+import { OrderItemStatus } from '../../../domains/orders/models/order.model';
+import {
+  SellerAnalyticsService,
+  SellerStartCardsService,
+  StartCardsResponse,
+} from '../../../domains/authentication';
 import {
   faBell,
   faChartLine,
@@ -41,7 +46,7 @@ interface RecentOrder {
   customerName: string;
   customerAvatar: string;
   total: number;
-  status: 'pending' | 'shipped' | 'processing';
+  status: OrderItemStatus;
   date: string;
 }
 
@@ -77,7 +82,8 @@ interface SalesData {
 })
 export class DashboardComponent implements OnInit {
   private orderService = inject(OrderService);
-  private apiService = inject(ApiService); // Still needed for getSellerAnalytics (not yet migrated)
+  private analyticsService = inject(SellerAnalyticsService);
+  private startCardsService = inject(SellerStartCardsService);
   private marketplaceService = inject(MarketplaceService);
   private router = inject(Router);
 
@@ -100,13 +106,32 @@ export class DashboardComponent implements OnInit {
 
   // Signals for reactive state management
   stats = signal<DashboardStats>({
-    totalRevenue: 18432,
-    totalOrders: 156,
-    productViews: 3247,
-    conversionRate: 4.8,
-    todaysRevenue: 2847,
-    newOrders: 23,
+    totalRevenue: 0,
+    totalOrders: 0,
+    productViews: 0,
+    conversionRate: 0,
+    todaysRevenue: 0,
+    newOrders: 0,
   });
+
+  isLoading = signal<boolean>(false);
+  startCards = signal<StartCardsResponse | null>(null);
+
+  /**
+   * Get incomplete start cards for display
+   */
+  getIncompleteStartCards() {
+    const cards = this.startCards();
+    return cards?.getIncompleteCards() || [];
+  }
+
+  /**
+   * Check if seller has incomplete onboarding tasks
+   */
+  hasIncompleteTasks(): boolean {
+    const cards = this.startCards();
+    return cards ? cards.getCompletedCount() < cards.getTotalCount() : false;
+  }
 
   recentOrders = signal<RecentOrder[]>([
     {
@@ -216,27 +241,44 @@ export class DashboardComponent implements OnInit {
 
   /**
    * Load dashboard data from API
-   * This method fetches real data from the backend when available
+   * Uses domain services for analytics and start cards
    */
   private loadDashboardData(): void {
-    // TODO: getSellerAnalytics() not yet migrated to domain service - keeping ApiService for now
-    this.apiService.getSellerAnalytics().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          // Update stats with real data
-          this.stats.set({
-            totalRevenue: response.data.total_revenue || 18432,
-            totalOrders: response.data.total_orders || 156,
-            productViews: response.data.product_views || 3247,
-            conversionRate: response.data.conversion_rate || 4.8,
-            todaysRevenue: response.data.todays_revenue || 2847,
-            newOrders: response.data.new_orders || 23,
-          });
-        }
+    this.isLoading.set(true);
+
+    // Load analytics overview (30-day window by default)
+    this.analyticsService.getAnalyticsOverview({ window_days: 30 }).subscribe({
+      next: (overview) => {
+        // Map analytics overview to dashboard stats
+        // Note: The backend returns revenue_30d, orders_30d, views_30d, conversion_30d
+        // We'll use these for the main stats, and calculate today's values separately if needed
+        this.stats.set({
+          totalRevenue: overview.revenue30d,
+          totalOrders: overview.orders30d,
+          productViews: overview.views30d,
+          conversionRate: overview.conversion30d,
+          // For now, we'll use the 30-day values as placeholders
+          // In a real implementation, you might want separate "today" metrics
+          todaysRevenue: 0, // TODO: Add today-specific endpoint if needed
+          newOrders: 0, // TODO: Add today-specific endpoint if needed
+        });
+        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading seller analytics:', error);
-        // Keep mock data on error
+        this.isLoading.set(false);
+        // Keep default values on error
+      },
+    });
+
+    // Load start cards for onboarding
+    this.startCardsService.getStartCards().subscribe({
+      next: (cards) => {
+        this.startCards.set(cards);
+      },
+      error: (error) => {
+        console.error('Error loading start cards:', error);
+        // Start cards are optional, so we don't fail the whole dashboard
       },
     });
 
@@ -246,21 +288,22 @@ export class DashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           const sellerItems = this.orderService.sellerOrderItemsSnapshot ?? [];
-          const recentOrders: RecentOrder[] = sellerItems.slice(0, 3).map((item) => ({
-            id: item.orderId,
-            orderNumber: item.order.orderNumber,
-            customerName:
-              item.order.buyer?.buyername ||
-              item.order.buyer?.username ||
-              `Order ${item.orderId}`,
-            customerAvatar:
-              item.order.buyer?.profilePictureUrl ||
-              item.order.buyer?.profile_picture_url ||
-              '/assets/images/default-avatar.png',
-            total: item.price * item.quantity,
-            status: item.status,
-            date: item.order.createdAt,
-          }));
+          const recentOrders: RecentOrder[] = sellerItems
+            .slice(0, 3)
+            .map((item) => ({
+              id: item.orderId,
+              orderNumber: item.order.orderNumber,
+              customerName:
+                item.order.buyer?.buyername ||
+                item.order.buyer?.id ||
+                `Order ${item.orderId}`,
+              customerAvatar:
+                item.order.buyer?.profilePictureUrl ||
+                '/assets/images/default-avatar.png',
+              total: item.price * item.quantity,
+              status: item.status,
+              date: item.order.createdAt,
+            }));
           this.recentOrders.set(recentOrders);
         },
         error: (error) => {

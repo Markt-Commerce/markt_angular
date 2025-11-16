@@ -47,6 +47,7 @@ import { MediaOptimizationService } from '../../core/services/media-optimization
 import { TypeSafetyService } from '../../core/services/type-safety.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 import { SocialService } from '../../domains/social/services/social.service';
+import type { Post } from '../../domains/social';
 import { ROUTES_ABSOLUTE, buildPath } from '../../core/config/routes.config';
 
 type UnknownRecord = Record<string, unknown>;
@@ -753,7 +754,7 @@ export class MarketplaceComponent implements OnInit {
 
   // Search and filters
   searchQuery = '';
-  sortBy = 'newest'; // Default to 'newest' to match Figma design
+  sortBy: ProductSearchParamsDto['sort_by'] = 'newest'; // Default to 'newest' to match Figma design
   selectedCategory = 'all';
   selectedCategories: string[] = [];
   priceRange: { min: number | null; max: number | null } = {
@@ -1223,9 +1224,6 @@ export class MarketplaceComponent implements OnInit {
       case 'price_desc':
         filteredProducts.sort((a, b) => b.price - a.price);
         break;
-      case 'rating':
-        filteredProducts.sort((a, b) => b.rating - a.rating);
-        break;
       case 'newest':
         // For mock data, we'll just keep the original order
         break;
@@ -1515,7 +1513,15 @@ export class MarketplaceComponent implements OnInit {
   // Content Mixing Algorithm
   private loadSocialPosts(): void {
     this.observableUtils.createSafeObservable<SocialFeedResponse>({
-      source: this.socialService.getFeed({ type: 'trending', per_page: 20 }),
+      source: this.socialService
+        .getFeed({ type: 'trending', per_page: 20 })
+        .pipe(
+          map((response) => ({
+            items: response.items.map((post) =>
+              this.mapPostToSocialFeedItem(post)
+            ),
+          }))
+        ),
       successHandler: (response) => {
         this.socialPosts = this.resolveSocialPosts(response);
         this.mixContent();
@@ -1717,6 +1723,37 @@ export class MarketplaceComponent implements OnInit {
     return [];
   }
 
+  private mapPostToSocialFeedItem(post: Post): SocialFeedItem {
+    const author = post.user;
+    const media = post.social_media;
+
+    return {
+      id: post.id,
+      caption: post.caption,
+      created_at: post.created_at,
+      like_count: post.like_count,
+      comment_count: post.comment_count,
+      tags: post.tags,
+      user: author
+        ? {
+            id: author.id,
+            username: author.username,
+            profile_picture_url: author.profilePictureUrl,
+            display_name: author.displayName,
+          }
+        : null,
+      media: media.map((item) => ({
+        id: item.id,
+        url:
+          item.media?.social_post_url ||
+          item.media?.social_square_url ||
+          item.media?.thumbnail_url ||
+          item.media?.original_url ||
+          null,
+      })),
+    };
+  }
+
   private normalizeProductItems(items: unknown[]): MarketplaceProductListing[] {
     return items.map((item) => {
       if (
@@ -1732,6 +1769,15 @@ export class MarketplaceComponent implements OnInit {
   private mapDomainProductToListing(
     product: Product
   ): MarketplaceProductListing {
+    const sellerId =
+      product.sellerId !== null && product.sellerId !== undefined
+        ? String(product.sellerId)
+        : 'unknown';
+    const firstCategory =
+      product.categoryIds && product.categoryIds.length > 0
+        ? String(product.categoryIds[0])
+        : 'general';
+
     return {
       id: product.id,
       name: product.name,
@@ -1742,7 +1788,7 @@ export class MarketplaceComponent implements OnInit {
       distance: '',
       images: [],
       seller: {
-        id: product.sellerId,
+        id: sellerId,
         shop_name: '',
         profile_picture_url: '',
         is_verified: false,
@@ -1750,7 +1796,7 @@ export class MarketplaceComponent implements OnInit {
       },
       description: '',
       stock: typeof product.getStock === 'function' ? product.getStock() : 0,
-      category: product.categoryIds?.[0] ?? 'general',
+      category: firstCategory,
     };
   }
 

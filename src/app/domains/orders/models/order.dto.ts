@@ -90,7 +90,7 @@ export interface OrderShipmentDto {
 }
 
 export interface BuyerSummaryDto {
-  id: string;
+    id: string;
   buyername: string;
   email?: string | null;
   phone?: string | null;

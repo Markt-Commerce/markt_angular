@@ -45,7 +45,7 @@ export class MediaVariant {
    * Business Rule: Check if variant is optimized
    */
   isOptimized(): boolean {
-    return this.processingTime > 0;
+    return (this.processingTime ?? 0) > 0;
   }
 
   /**

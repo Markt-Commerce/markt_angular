@@ -9,6 +9,11 @@ import { CartService } from '../../../domains/cart/services/cart.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
+import {
+  BuyerRequest as BuyerRequestModel,
+  SellerOffer,
+} from '../../../domains/requests/models/request.model';
+import { SellerOfferCreateDto } from '../../../domains/requests/models/request.dto';
 
 interface Offer {
   id: string;
@@ -34,7 +39,7 @@ interface Offer {
   delivery_time: number;
   delivery_cost: number;
   total_price: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'expired';
   created_at: string;
   expires_at: string;
   message?: string;
@@ -60,7 +65,7 @@ interface Request {
   };
   created_at: string;
   expires_at: string;
-  status: 'open' | 'closed' | 'expired';
+  status: 'open' | 'closed' | 'fulfilled' | 'expired';
 }
 
 @Component({
@@ -872,8 +877,8 @@ export class OfferDetailComponent implements OnInit {
   private requestService = inject(RequestService);
   private cartService = inject(CartService);
 
-  offer?: Offer;
-  request?: Request;
+  offer: Offer | null = null;
+  request: Request | null = null;
   similarOffers: Offer[] = [];
   showCounterOffer = false;
   accepting = false;
@@ -911,56 +916,85 @@ export class OfferDetailComponent implements OnInit {
       if (requestId) {
         // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
         this.requestService.getRequestOffers(requestId).subscribe({
-        next: (response) => {
-            if (response.success && response.data && response.data.length > 0) {
-              // Find the offer by ID
-              const foundOffer = response.data.find((o: any) => o.id === offerId);
+          next: (offers) => {
+            const foundOffer = offers.find((offer) => offer.id === offerId);
               if (foundOffer) {
                 this.offer = this.mapOfferToComponentFormat(foundOffer);
             this.loadRequest();
-            this.loadSimilarOffers();
-              }
+              this.loadSimilarOffers(offers);
           }
         },
         error: (error) => {
           console.error('Error loading offer:', error);
-        }
+          },
       });
     }
     }
   }
 
-  private mapOfferToComponentFormat(apiOffer: any): Offer {
-    // Map SellerOffer from API to component's Offer interface
+  private mapOfferToComponentFormat(offer: SellerOffer): Offer {
+    const sellerName =
+      offer.seller?.shopName ?? offer.seller?.shopSlug ?? 'Unknown Seller';
+    const sellerAvatar = offer.seller?.profilePictureUrl ?? '/markt-text-logo.png';
+    const productName = offer.product?.name ?? 'Product';
+    const productImage = offer.product?.imageUrl;
+
     return {
-      id: apiOffer.id,
-      request_id: apiOffer.request_id,
+      id: offer.id,
+      request_id: offer.requestId,
       seller: {
-        id: apiOffer.seller_id,
-        name: '', // TODO: Get from seller data
-        avatar: '', // TODO: Get from seller data
-        username: '', // TODO: Get from seller data
-        rating: 0, // TODO: Get from seller data
-        review_count: 0, // TODO: Get from seller data
-        is_verified: false // TODO: Get from seller data
+        id: offer.sellerId,
+        name: sellerName,
+        avatar: sellerAvatar,
+        username: offer.seller?.shopSlug ?? sellerName.toLowerCase().replace(/\s+/g, ''),
+        rating: offer.seller?.rating ?? 0,
+        review_count: 0,
+        is_verified: offer.seller?.isVerified ?? false,
       },
       product: {
-        name: '', // TODO: Get from product data
-        description: '', // TODO: Get from product data
-        condition: '', // TODO: Get from product data
-        images: [] // TODO: Get from product data
+        name: productName,
+        description: offer.message ?? '',
+        condition: 'Not specified',
+        images: productImage ? [productImage] : [],
       },
-      price: apiOffer.price,
+      price: offer.price ?? 0,
       currency: 'NGN',
       quantity: 1, // TODO: Get from offer data if available
       delivery_time: 0, // TODO: Get from offer data if available
       delivery_cost: 0, // TODO: Get from offer data if available
-      total_price: apiOffer.price,
-      status: apiOffer.status as 'pending' | 'accepted' | 'rejected' | 'expired',
-      created_at: apiOffer.created_at,
+      total_price: offer.price ?? 0,
+      status: offer.status,
+      created_at: offer.createdAt,
       expires_at: '', // TODO: Get from offer data if available
-      message: apiOffer.message,
-      sellerId: apiOffer.seller_id
+      message: offer.message ?? '',
+      sellerId: offer.sellerId,
+      sellerName,
+      sellerAvatar,
+      productName,
+      productId: offer.product?.id,
+    };
+  }
+
+  private mapRequestToComponentFormat(request: BuyerRequestModel): Request {
+    const categoryName = request.categories.at(0)?.name ?? 'Uncategorized';
+    const buyerName = request.user?.username ?? 'Unknown Buyer';
+    const buyerAvatar = request.user?.profilePictureUrl ?? '/markt-text-logo.png';
+
+    return {
+      id: request.id,
+      title: request.title,
+      description: request.description,
+      category: categoryName,
+      budget_min: request.budget ?? 0,
+      budget_max: request.budget ?? 0,
+      buyer: {
+        id: request.user?.id ?? request.userId,
+        name: buyerName,
+        avatar: buyerAvatar,
+      },
+      created_at: request.createdAt,
+      expires_at: request.expiresAt ?? '',
+      status: request.status as Request['status'],
     };
   }
 
@@ -968,10 +1002,8 @@ export class OfferDetailComponent implements OnInit {
     if (this.offer?.request_id) {
       // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
       this.requestService.getRequest(this.offer.request_id).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-          this.request = response.data as any;
-          }
+        next: (buyerRequest) => {
+          this.request = this.mapRequestToComponentFormat(buyerRequest);
         },
         error: (error) => {
           console.error('Error loading request:', error);
@@ -980,22 +1012,28 @@ export class OfferDetailComponent implements OnInit {
     }
   }
 
-  private loadSimilarOffers(): void {
-    if (this.offer?.request_id) {
-      // Migrated to RequestService.getRequestOffers() - uses DDD pattern with RequestRepository
-      this.requestService.getRequestOffers(this.offer.request_id).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.similarOffers = response.data
-              .filter((o: any) => o.id !== this.offer?.id)
-              .map((o: any) => this.mapOfferToComponentFormat(o));
-          }
-        },
+  private loadSimilarOffers(existingOffers?: SellerOffer[]): void {
+    if (!this.offer?.request_id) {
+      return;
+    }
+
+    const handleOffers = (offers: SellerOffer[]) => {
+      this.similarOffers = offers
+        .filter((offer) => offer.id !== this.offer?.id)
+        .map((offer) => this.mapOfferToComponentFormat(offer));
+    };
+
+    if (existingOffers) {
+      handleOffers(existingOffers);
+      return;
+    }
+
+    this.requestService.getRequestOffers(this.offer.request_id).subscribe({
+      next: handleOffers,
         error: (error) => {
           console.error('Error loading similar offers:', error);
-        }
+      },
       });
-    }
   }
 
   getStatusText(status?: string): string {
@@ -1035,19 +1073,25 @@ export class OfferDetailComponent implements OnInit {
       if (this.offer?.id) {
         // Migrated to RequestService.acceptOffer() - uses DDD pattern with RequestRepository
         this.requestService.acceptOffer(this.offer.id).subscribe({
-          next: (response) => {
+          next: (updatedOffer) => {
             this.accepting = false;
-            if (response.success && response.data) {
-            this.offer!.status = 'accepted';
-              const productId = (response.data as any)?.product_id || (this.offer as any)?.productId || (this.offer as any)?.product_id;
+            this.offer = this.mapOfferToComponentFormat(updatedOffer);
+            const productId = updatedOffer.product?.id ?? this.offer?.productId;
             if (productId) {
               this.cartService.addToCart(String(productId), 1).subscribe({
-                next: () => this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } }),
-                error: () => this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } })
+                next: () =>
+                  this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], {
+                    queryParams: { source: 'offer', offerId: this.offer!.id },
+                  }),
+                error: () =>
+                  this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], {
+                    queryParams: { source: 'offer', offerId: this.offer!.id },
+                  }),
               });
             } else {
-              this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], { queryParams: { source: 'offer', offerId: this.offer!.id } });
-              }
+              this.router.navigate([ROUTES_ABSOLUTE.APP.CHECKOUT], {
+                queryParams: { source: 'offer', offerId: this.offer!.id },
+              });
             }
           },
           error: (error) => {
@@ -1066,13 +1110,13 @@ export class OfferDetailComponent implements OnInit {
       if (this.offer?.id) {
         // Migrated to RequestService.rejectOffer() - uses DDD pattern with RequestRepository
         this.requestService.rejectOffer(this.offer.id).subscribe({
-          next: (response) => {
+          next: (updatedOffer) => {
             this.rejecting = false;
-            if (response.success && response.data) {
-            this.offer!.status = 'rejected';
-            // Optionally navigate back to requests
-            this.router.navigate([ROUTES_ABSOLUTE.APP.REQUESTS.ROOT, this.request?.id]);
-            }
+            this.offer = this.mapOfferToComponentFormat(updatedOffer);
+            this.router.navigate([
+              ROUTES_ABSOLUTE.APP.REQUESTS.ROOT,
+              this.request?.id ?? updatedOffer.requestId,
+            ]);
           },
           error: (error) => {
             console.error('Error rejecting offer:', error);
@@ -1097,20 +1141,20 @@ export class OfferDetailComponent implements OnInit {
       if (this.offer?.request_id) {
         // Migrated to RequestService.addOffer() - uses DDD pattern with RequestRepository
         // RequestService.addOffer() expects SellerOfferCreate interface: { product_id?, price, message }
-        const sellerOfferCreate = {
+        const sellerOfferCreate: SellerOfferCreateDto = {
           product_id: formData.product_id || undefined,
-          price: formData.price,
-          message: formData.message || ''
+          price: Number(formData.price) || 0,
+          message: formData.message || '',
         };
         
         this.requestService.addOffer(this.offer.request_id, sellerOfferCreate).subscribe({
-          next: (response) => {
+          next: (createdOffer) => {
             this.submittingCounter = false;
-            if (response.success && response.data) {
             this.closeCounterOffer();
-            // Optionally navigate to the new offer
-            this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
-            }
+            this.router.navigate([
+              ROUTES_ABSOLUTE.APP.OFFERS.ROOT,
+              createdOffer.id,
+            ]);
           },
           error: (error) => {
             console.error('Error submitting counter offer:', error);

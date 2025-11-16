@@ -13,18 +13,23 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ProductRepository } from '../repositories/product.repository';
 import { Product } from '../models/product.model';
-import { CreateProductDto, UpdateProductDto, ProductSearchParamsDto } from '../models/product.dto';
-import { ApiResponse, PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
-import { CartService } from '../../cart';
-import { ApiService } from '../../../core/services/api.service';
+import {
+  CreateProductDto,
+  ProductReviewDto,
+  ProductReviewsResponseDto,
+  ProductSearchParamsDto,
+  ReviewUpvoteResponseDto,
+  ShareProductResponseDto,
+  UpdateProductDto,
+  WishlistToggleResponseDto,
+} from '../models/product.dto';
+import { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MarketplaceService {
   private productRepository = inject(ProductRepository);
-  private cartService = inject(CartService);
-  private apiService = inject(ApiService);
   
   // Reactive state using Angular signals
   private searchResultsSubject = new BehaviorSubject<PaginatedResponse<Product> | null>(null);
@@ -85,7 +90,7 @@ export class MarketplaceService {
       throw new Error('Product price must be greater than 0');
     }
 
-    if (productData.stock < 0) {
+    if (productData.stock !== undefined && productData.stock < 0) {
       throw new Error('Product stock cannot be negative');
     }
 
@@ -142,37 +147,37 @@ export class MarketplaceService {
 
   /**
    * Track a product view (analytics hook)
-   * TODO: Replace direct ApiService call when analytics repository exists
    */
-  trackProductView(productId: string): Observable<ApiResponse<void>> {
-    return this.apiService.trackProductView(productId);
+  trackProductView(productId: string): Observable<void> {
+    return this.productRepository.trackView(productId);
   }
 
   /**
    * Upvote a product review
-   * TODO: Move to review domain service once repository exists
    */
-  upvoteReview(
-    reviewId: string
-  ): Observable<ApiResponse<{ success: boolean; new_count: number }>> {
-    return this.apiService.upvoteReview(reviewId);
+  upvoteReview(reviewId: string): Observable<ReviewUpvoteResponseDto> {
+    return this.productRepository.upvoteReview(reviewId);
   }
 
   /**
    * Get seller's products
    */
   getMyProducts(params?: ProductSearchParamsDto): Observable<Product[]> {
-    return this.productRepository.findBySeller('current-seller-id', params);
-    // In real implementation, get seller ID from auth service
+    return this.productRepository
+      .findMyProducts(params)
+      .pipe(map((response) => response.items));
   }
 
   /**
-   * Get user's products (by user ID)
-   * TODO: Migrate to proper repository method when available
-   * Temporary: uses findBySeller with user ID
+   * Get user's products (by seller ID)
    */
-  getUserProducts(userId: string, params?: ProductSearchParamsDto): Observable<Product[]> {
-    return this.productRepository.findBySeller(userId, params);
+  getUserProducts(
+    sellerId: string,
+    params?: ProductSearchParamsDto
+  ): Observable<Product[]> {
+    return this.productRepository
+      .findPaginated({ ...(params ?? {}), seller_id: sellerId })
+      .pipe(map((response) => response.items));
   }
 
   /**
@@ -204,6 +209,46 @@ export class MarketplaceService {
         return product;
       })
     );
+  }
+
+  /**
+   * Retrieve product reviews
+   */
+  getProductReviews(
+    productId: string,
+    params?: ProductSearchParamsDto
+  ): Observable<ProductReviewsResponseDto> {
+    return this.productRepository.getReviews(productId, params).pipe(
+      map((response) => ({
+        reviews: response.reviews ?? response.items ?? [],
+        items: response.items ?? response.reviews ?? [],
+        pagination: response.pagination,
+      }))
+    );
+  }
+
+  /**
+   * Create product review
+   */
+  addProductReview(
+    productId: string,
+    review: { rating: number; title?: string; content: string }
+  ): Observable<ProductReviewDto> {
+    return this.productRepository.addReview(productId, review);
+  }
+
+  /**
+   * Share product socially
+   */
+  shareProduct(productId: string): Observable<ShareProductResponseDto> {
+    return this.productRepository.share(productId);
+  }
+
+  toggleWishlist(productId: string): Observable<WishlistToggleResponseDto> {
+    if (!productId) {
+      throw new Error('Product identifier is required to toggle wishlist state');
+    }
+    return this.productRepository.toggleWishlist(productId);
   }
 }
 

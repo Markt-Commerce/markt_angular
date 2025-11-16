@@ -8,8 +8,13 @@ import { InputComponent } from '../../../shared/components/input/input.component
 import { RequestService } from '../../../domains/requests/services/request.service';
 import { MediaService } from '../../../domains/media/services/media.service';
 import { ROUTES_ABSOLUTE, buildPath } from '../../../core/config/routes.config';
+import {
+  BuyerRequest as BuyerRequestModel,
+  SellerOffer,
+} from '../../../domains/requests/models/request.model';
+import { SellerOfferCreateDto } from '../../../domains/requests/models/request.dto';
 
-interface BuyerRequest {
+interface BuyerRequestSummary {
   id: string;
   title: string;
   description: string;
@@ -585,7 +590,7 @@ export class CreateOfferComponent implements OnInit {
 
   loading = true;
   submitting = false;
-  request: BuyerRequest | null = null;
+  request: BuyerRequestSummary | null = null;
   products: Product[] = [];
   filteredProducts: Product[] = [];
   selectedProduct: Product | null = null;
@@ -616,28 +621,8 @@ export class CreateOfferComponent implements OnInit {
       
       // Migrated to RequestService.getRequest() - uses DDD pattern with RequestRepository
       this.requestService.getRequest(requestId).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            // Convert API response to component's BuyerRequest interface
-            const apiRequest = response.data;
-            this.request = {
-              id: apiRequest.id,
-              title: apiRequest.title,
-              description: apiRequest.description,
-              budget: apiRequest.budget || 0,
-              buyerName: apiRequest.user?.username || 'Unknown',
-              category: apiRequest.categories?.[0]?.name || 'Uncategorized',
-              buyerAvatar: apiRequest.user?.profile_picture_url,
-              buyerId: apiRequest.user_id || apiRequest.user?.id || '',
-              status: apiRequest.status,
-              created_at: apiRequest.created_at,
-              updated_at: apiRequest.updated_at,
-              buyer: apiRequest.user,
-              category_ids: apiRequest.category_ids,
-              budget_min: apiRequest.budget,
-              budget_max: apiRequest.budget
-            };
-          }
+        next: (buyerRequest) => {
+          this.request = this.toRequestSummary(buyerRequest);
           this.loading = false;
         },
         error: (error) => {
@@ -778,23 +763,44 @@ export class CreateOfferComponent implements OnInit {
   private createOffer(offerData: any): void {
     // Migrated to RequestService.addOffer() - uses DDD pattern with RequestRepository
     // RequestService.addOffer() expects SellerOfferCreate interface: { product_id?, price, message }
-    const sellerOfferCreate = {
+    const sellerOfferCreate: SellerOfferCreateDto = {
       product_id: offerData.product_id || undefined,
       price: offerData.price,
       message: offerData.message || ''
     };
     
     this.requestService.addOffer(offerData.request_id, sellerOfferCreate).subscribe({
-      next: (response) => {
+      next: (offer: SellerOffer) => {
         this.submitting = false;
-        if (response.success && response.data) {
-          this.router.navigate([ROUTES_ABSOLUTE.APP.OFFERS.ROOT, response.data.id]);
-        }
+        this.router.navigate([
+          ROUTES_ABSOLUTE.APP.OFFERS.ROOT,
+          offer.id,
+        ]);
       },
       error: (error) => {
         console.error('Error creating offer:', error);
         this.submitting = false;
       }
     });
+  }
+
+  private toRequestSummary(request: BuyerRequestModel): BuyerRequestSummary {
+    return {
+      id: request.id,
+      title: request.title,
+      description: request.description,
+      budget: request.budget ?? 0,
+      buyerName: request.user?.username ?? 'Unknown',
+      category: request.categories.at(0)?.name ?? 'Uncategorized',
+      buyerAvatar: request.user?.profilePictureUrl ?? undefined,
+      buyerId: request.user?.id ?? request.userId,
+      status: request.status,
+      created_at: request.createdAt,
+      updated_at: request.updatedAt,
+      buyer: request.user,
+      category_ids: request.categoryIds.map((id) => id.toString()),
+      budget_min: request.budget ?? 0,
+      budget_max: request.budget ?? 0,
+    };
   }
 } 

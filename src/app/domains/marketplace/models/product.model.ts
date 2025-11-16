@@ -1,108 +1,179 @@
-/**
- * Product Domain Model
- * 
- * This is a DOMAIN ENTITY - it contains business logic and rules.
- * It's independent of how the API structures data.
- * 
- * Key principles:
- * - Contains business rules (e.g., canPurchase, isAvailable)
- * - Immutable where possible (readonly properties)
- * - Methods enforce business logic
- */
+import type {
+  ProductDto,
+  ProductCategoryDto,
+  ProductImageDto,
+  ProductSellerDto,
+  ProductSellerUserDto,
+  ProductStatusDto,
+  ProductVariantDto,
+  ProductMetadataDto,
+} from './product.dto';
+
+export type ProductStatus = ProductStatusDto;
 
 export class Product {
   constructor(
     public readonly id: string,
     public readonly name: string,
-    private _price: number,
-    private _stock: number,
-    public readonly status: 'active' | 'inactive' | 'draft',
-    public readonly sellerId: string,
-    public readonly categoryIds: string[],
-    public readonly averageRating: number = 0,
-    public readonly reviewCount: number = 0,
+    public readonly description: string | null,
+    private readonly priceValue: number,
+    public readonly compareAtPrice: number | null,
+    public readonly costPerItem: number | null,
+    public readonly sku: string | null,
+    public readonly barcode: string | null,
+    public readonly weight: number | null,
+    private readonly stockValue: number,
+    public readonly status: ProductStatus,
+    public readonly sellerId: number | string | null,
+    public readonly seller: ProductSellerDto | null,
+    public readonly sellerUser: ProductSellerUserDto | null,
+    public readonly categoryIds: Array<number | string>,
+    public readonly categories: ProductCategoryDto[],
+    public readonly tagIds: Array<number | string>,
+    public readonly mediaIds: number[],
+    public readonly variants: ProductVariantDto[],
+    public readonly images: ProductImageDto[],
+    public readonly productMetadata: ProductMetadataDto | null,
+    public readonly averageRating: number,
+    public readonly reviewCount: number,
+    public readonly viewCount: number,
     public readonly createdAt: string,
     public readonly updatedAt: string
   ) {}
 
-  /**
-   * Business Rule: Product is available if it has stock and is active
-   */
-  isAvailable(): boolean {
-    return this._stock > 0 && this.status === 'active';
+  static fromDto(dto: ProductDto): Product {
+    return new Product(
+      dto.id,
+      dto.name,
+      dto.description ?? null,
+      dto.price,
+      dto.compare_at_price ?? null,
+      dto.cost_per_item ?? null,
+      dto.sku ?? null,
+      dto.barcode ?? null,
+      dto.weight ?? null,
+      dto.stock ?? 0,
+      dto.status,
+      dto.seller_id ?? null,
+      dto.seller ?? null,
+      dto.seller_user ?? null,
+      Array.isArray(dto.category_ids) ? dto.category_ids : [],
+      dto.categories ?? [],
+      dto.tag_ids ?? [],
+      dto.media_ids ?? [],
+      dto.variants ?? [],
+      dto.images ?? [],
+      dto.product_metadata ?? null,
+      dto.average_rating ?? 0,
+      dto.review_count ?? 0,
+      dto.view_count ?? 0,
+      dto.created_at,
+      dto.updated_at
+    );
   }
 
-  /**
-   * Business Rule: Can purchase if available and has enough stock
-   */
+  isActive(): boolean {
+    return this.status === 'active';
+  }
+
+  isArchived(): boolean {
+    return this.status === 'archived' || this.status === 'deleted';
+  }
+
+  isOutOfStock(): boolean {
+    return this.stockValue === 0 || this.status === 'out_of_stock';
+  }
+
+  isAvailable(): boolean {
+    return this.isActive() && !this.isOutOfStock();
+  }
+
   canPurchase(quantity: number): boolean {
     if (quantity <= 0) return false;
-    return this.isAvailable() && this._stock >= quantity;
+    return this.isAvailable() && this.stockValue >= quantity;
   }
 
-  /**
-   * Business Rule: Get current price (could include discounts, etc.)
-   */
   getPrice(): number {
-    return this._price;
+    return this.priceValue;
   }
 
-  /**
-   * Business Rule: Calculate subtotal for a given quantity
-   */
+  hasDiscount(): boolean {
+    return (
+      typeof this.compareAtPrice === 'number' &&
+      this.compareAtPrice !== null &&
+      this.compareAtPrice > this.priceValue
+    );
+  }
+
   calculateSubtotal(quantity: number): number {
     if (quantity <= 0) return 0;
-    return this._price * quantity;
+    return this.priceValue * quantity;
   }
 
-  /**
-   * Business Rule: Check if product is low stock (threshold = 10)
-   */
-  isLowStock(): boolean {
-    return this._stock > 0 && this._stock <= 10;
+  getCompareAtPrice(): number | null {
+    return this.compareAtPrice;
   }
 
-  /**
-   * Business Rule: Check if product is out of stock
-   */
-  isOutOfStock(): boolean {
-    return this._stock === 0;
+  getCostPerItem(): number | null {
+    return this.costPerItem;
   }
 
-  /**
-   * Business Rule: Get stock status message
-   */
+  getSku(): string | null {
+    return this.sku;
+  }
+
+  getBarcode(): string | null {
+    return this.barcode;
+  }
+
+  getWeight(): number | null {
+    return this.weight;
+  }
+
+  getStock(): number {
+    return this.stockValue;
+  }
+
+  isLowStock(threshold = 10): boolean {
+    if (this.isOutOfStock()) return false;
+    return this.stockValue <= threshold;
+  }
+
   getStockStatus(): string {
     if (this.isOutOfStock()) return 'Out of stock';
-    if (this.isLowStock()) return `Only ${this._stock} left`;
+    if (this.isLowStock()) return `Only ${this.stockValue} left`;
     return 'In stock';
   }
 
-  /**
-   * Get current stock (read-only access)
-   */
-  getStock(): number {
-    return this._stock;
-  }
-
-  /**
-   * Create a new Product with updated stock (immutability)
-   */
   withUpdatedStock(newStock: number): Product {
     return new Product(
       this.id,
       this.name,
-      this._price,
+      this.description,
+      this.priceValue,
+      this.compareAtPrice,
+      this.costPerItem,
+      this.sku,
+      this.barcode,
+      this.weight,
       newStock,
       this.status,
       this.sellerId,
+      this.seller,
+      this.sellerUser,
       this.categoryIds,
+      this.categories,
+      this.tagIds,
+      this.mediaIds,
+      this.variants,
+      this.images,
+      this.productMetadata,
       this.averageRating,
       this.reviewCount,
+      this.viewCount,
       this.createdAt,
       this.updatedAt
     );
   }
 }
-
 

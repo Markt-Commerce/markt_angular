@@ -33,6 +33,13 @@ import {
   faComments
 } from '@fortawesome/free-solid-svg-icons';
 import { RequestService } from '../../domains/requests/services/request.service';
+import type {
+  BuyerRequestSearchParamsDto,
+  RequestStatisticsDto,
+  StatusUpdateDto,
+  BuyerRequestUpdateDto,
+} from '../../domains/requests/models/request.dto';
+import { BuyerRequest, RequestStatus } from '../../domains/requests/models/request.model';
 import { AuthService } from '../../domains/authentication/services/auth.service';
 import { CategoryService, Category as CategoryModel } from '../../domains/categories';
 import { AccessControlService } from '../../core/services/access-control.service';
@@ -154,10 +161,10 @@ import { AccessControlService } from '../../core/services/access-control.service
               class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-markt-primary focus:border-markt-primary sm:text-sm rounded-md"
             >
               <option value="">All Status</option>
-              <option value="OPEN">Open</option>
-              <option value="FULFILLED">Fulfilled</option>
-              <option value="CLOSED">Closed</option>
-              <option value="EXPIRED">Expired</option>
+              <option value="open">Open</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="closed">Closed</option>
+              <option value="expired">Expired</option>
             </select>
           </div>
 
@@ -248,19 +255,19 @@ import { AccessControlService } from '../../core/services/access-control.service
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <img 
-                  [src]="request.user?.profile_picture_url || '/markt-text-logo.png'" 
+                  [src]="request.user?.profilePictureUrl || '/markt-text-logo.png'" 
                   [alt]="request.user?.username"
                   class="w-10 h-10 rounded-full object-cover"
                 >
                 <div>
                   <div class="flex items-center space-x-2">
                     <h3 class="font-medium text-gray-900">{{ request.user?.username }}</h3>
-                    <span *ngIf="request.user?.email_verified" class="text-blue-500">
+                    <span *ngIf="request.user?.emailVerified" class="text-blue-500">
                       <fa-icon [icon]="faStar" class="w-4 h-4"></fa-icon>
                     </span>
                   </div>
                   <div class="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>{{ formatTimestamp(request.created_at) }}</span>
+                    <span>{{ formatTimestamp(request.createdAt) }}</span>
                     <span>•</span>
                     <span class="flex items-center">
                       <fa-icon [icon]="faMapMarkerAlt" class="w-3 h-3 mr-1"></fa-icon>
@@ -304,7 +311,7 @@ import { AccessControlService } from '../../core/services/access-control.service
               <div class="flex items-center space-x-2">
                 <fa-icon [icon]="faCalendar" class="w-4 h-4 text-gray-400"></fa-icon>
                 <span class="text-sm text-gray-600">
-                  Expires: <span class="font-medium text-gray-900">{{ formatDate(request.expires_at) }}</span>
+                  Expires: <span class="font-medium text-gray-900">{{ formatDate(request.expiresAt) }}</span>
                 </span>
               </div>
               <div class="flex items-center space-x-2">
@@ -332,7 +339,7 @@ import { AccessControlService } from '../../core/services/access-control.service
               <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <img 
                   *ngFor="let image of request.images.slice(0, 4)"
-                  [src]="image.url" 
+                  [src]="image.imageUrl || '/assets/images/placeholder.jpg'" 
                   [alt]="request.title"
                   class="w-full h-24 object-cover rounded-lg"
                 >
@@ -348,7 +355,7 @@ import { AccessControlService } from '../../core/services/access-control.service
                   (click)="upvoteRequest(request.id)"
                   [disabled]="upvotingRequest"
                   class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  [class.text-blue-500]="request.is_upvoted"
+                  [class.text-blue-500]="request.isUpvoted"
                 >
                   @if (upvotingRequest) {
                     <div class="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
@@ -369,7 +376,7 @@ import { AccessControlService } from '../../core/services/access-control.service
               
               <div class="flex items-center space-x-3">
                 <button 
-                  *ngIf="isSeller && request.status === 'OPEN'"
+                  *ngIf="isSeller && request.status === 'open'"
                   (click)="createOffer(request)"
                   class="bg-markt-primary text-white px-4 py-2 rounded-md hover:bg-markt-secondary transition-colors text-sm font-medium"
                 >
@@ -466,7 +473,7 @@ export class RequestsComponent implements OnInit {
   faMessageCircle = faComments;
 
   // Data
-  requests: any[] = [];
+  requests: BuyerRequest[] = [];
   categories: CategoryModel[] = [];
   user: any = null;
   isLoading = false;
@@ -475,7 +482,7 @@ export class RequestsComponent implements OnInit {
   // Filters and pagination
   searchQuery = '';
   categoryFilter = '';
-  statusFilter = '';
+  statusFilter: RequestStatus | '' = '';
   budgetFilter = '';
   sortBy = 'created_at_desc';
   currentPage = 1;
@@ -483,11 +490,12 @@ export class RequestsComponent implements OnInit {
   totalResults = 0;
   
   // Statistics
-  requestStats = {
+  requestStats: RequestStatisticsDto = {
     total: 0,
     open: 0,
     fulfilled: 0,
-    expired: 0
+    closed: 0,
+    expired: 0,
   };
 
   ngOnInit(): void {
@@ -505,43 +513,40 @@ export class RequestsComponent implements OnInit {
 
   private loadRequests(): void {
     this.isLoading = true;
-    
-    // Parse sortBy (e.g., 'created_at_desc') to extract field and order
-    const sortParts = this.sortBy.split('_');
-    const sortField = sortParts.slice(0, -1).join('_') as 'created_at' | 'budget' | 'expires_at';
-    const sortOrder = sortParts[sortParts.length - 1] as 'asc' | 'desc';
-    
-    const categoryId = this.categoryFilter
-      ? Number(this.categoryFilter)
-      : undefined;
 
-    const params: any = {
+    const sortParts = this.sortBy.split('_');
+    const sortField = sortParts.slice(0, -1).join('_') || 'created_at';
+    const sortOrder = (sortParts.at(-1) as 'asc' | 'desc') ?? 'desc';
+
+    const categoryId =
+      this.categoryFilter !== '' ? Number(this.categoryFilter) : undefined;
+    const { minBudget, maxBudget } = this.resolveBudgetRange(this.budgetFilter);
+
+    const params: BuyerRequestSearchParamsDto = {
       page: this.currentPage,
-      search: this.searchQuery,
+      search: this.searchQuery || undefined,
       category_ids:
         categoryId !== undefined && !Number.isNaN(categoryId)
           ? [categoryId]
           : undefined,
-      status: this.statusFilter as 'OPEN' | 'FULFILLED' | 'CLOSED' | 'EXPIRED' | undefined,
-      budget_range: this.budgetFilter,
+      status: this.statusFilter || undefined,
       sort_by: sortField,
-      sort_order: sortOrder
+      sort_order: sortOrder,
+      ...(minBudget !== undefined ? { min_budget: minBudget } : {}),
+      ...(maxBudget !== undefined ? { max_budget: maxBudget } : {}),
     };
 
-    // Migrated to RequestService.getRequests() - uses DDD pattern with RequestRepository
-    this.requestService.getRequests(params).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.requests = response.data.items;
-          this.totalResults = response.data.pagination.total_items;
-          this.totalPages = response.data.pagination.total_pages;
-        }
+    this.requestService.loadRequests(params).subscribe({
+      next: (result) => {
+        this.requests = result.items;
+        this.totalResults = result.pagination.total_items;
+        this.totalPages = result.pagination.total_pages;
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading requests:', error);
         this.isLoading = false;
-      }
+      },
     });
   }
 
@@ -621,6 +626,26 @@ export class RequestsComponent implements OnInit {
     this.loadRequests();
   }
 
+  private resolveBudgetRange(range: string): {
+    minBudget?: number;
+    maxBudget?: number;
+  } {
+    switch (range) {
+      case '0-1000':
+        return { maxBudget: 1000 };
+      case '1000-5000':
+        return { minBudget: 1000, maxBudget: 5000 };
+      case '5000-10000':
+        return { minBudget: 5000, maxBudget: 10000 };
+      case '10000-50000':
+        return { minBudget: 10000, maxBudget: 50000 };
+      case '50000+':
+        return { minBudget: 50000 };
+      default:
+        return {};
+    }
+  }
+
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisible = 5;
@@ -639,61 +664,65 @@ export class RequestsComponent implements OnInit {
   }
 
   getRequestStatusDisplay(status: string): string {
-    const statusMap: Record<string, string> = {
-      'OPEN': 'Open',
-      'FULFILLED': 'Fulfilled',
-      'CLOSED': 'Closed',
-      'EXPIRED': 'Expired'
+    const normalized = status?.toLowerCase() as RequestStatus;
+    const statusMap: Record<RequestStatus, string> = {
+      open: 'Open',
+      fulfilled: 'Fulfilled',
+      closed: 'Closed',
+      expired: 'Expired',
     };
-    return statusMap[status] || status;
+    return statusMap[normalized] ?? status;
   }
 
   getRequestStatusClasses(status: string): string {
-    const classMap: Record<string, string> = {
-      'OPEN': 'bg-green-100 text-green-800',
-      'FULFILLED': 'bg-blue-100 text-blue-800',
-      'CLOSED': 'bg-gray-100 text-gray-800',
-      'EXPIRED': 'bg-red-100 text-red-800'
+    const normalized = status?.toLowerCase() as RequestStatus;
+    const classMap: Record<RequestStatus, string> = {
+      open: 'bg-green-100 text-green-800',
+      fulfilled: 'bg-blue-100 text-blue-800',
+      closed: 'bg-gray-100 text-gray-800',
+      expired: 'bg-red-100 text-red-800',
     };
-    return classMap[status] || 'bg-gray-100 text-gray-800';
+    return classMap[normalized] || 'bg-gray-100 text-gray-800';
   }
 
   // Additional request endpoint integrations
   // Migrated to RequestService - uses DDD pattern with RequestRepository
   deleteRequest(requestId: string): void {
-    // Migrated to RequestService.deleteRequest() - uses RequestRepository for DDD pattern
     this.requestService.deleteRequest(requestId).subscribe({
-      next: (response) => {
-        this.loadRequests(); // Refresh requests list
+      next: () => {
+        this.requests = this.requests.filter((request) => request.id !== requestId);
+        this.totalResults = Math.max(this.totalResults - 1, 0);
       },
       error: (error) => {
         console.error('Error deleting request:', error);
-      }
+      },
     });
   }
 
-  updateRequest(requestId: string, requestData: any): void {
-    // Migrated to RequestService.updateRequest() - uses RequestRepository for DDD pattern
+  updateRequest(requestId: string, requestData: BuyerRequestUpdateDto): void {
     this.requestService.updateRequest(requestId, requestData).subscribe({
-      next: (response) => {
-        this.loadRequests(); // Refresh requests list
+      next: (updated) => {
+        this.requests = this.requests.map((request) =>
+          request.id === requestId ? updated : request
+        );
       },
       error: (error) => {
         console.error('Error updating request:', error);
-      }
+      },
     });
   }
 
-  updateRequestStatus(requestId: string, status: string): void {
-    // Migrated to RequestService.updateRequestStatus() - uses RequestRepository for DDD pattern
-    const statusData = { status: status as any };
+  updateRequestStatus(requestId: string, status: RequestStatus): void {
+    const statusData: StatusUpdateDto = { status };
     this.requestService.updateRequestStatus(requestId, statusData).subscribe({
-      next: (response) => {
-        this.loadRequests(); // Refresh requests list
+      next: (updated) => {
+        this.requests = this.requests.map((request) =>
+          request.id === requestId ? updated : request
+        );
       },
       error: (error) => {
         console.error('Error updating request status:', error);
-      }
+      },
     });
   }
 
@@ -703,18 +732,18 @@ export class RequestsComponent implements OnInit {
       return;
     }
 
-    // Migrated to RequestService.upvoteRequest() - uses RequestRepository for DDD pattern
     this.upvotingRequest = true;
     this.requestService.upvoteRequest(requestId).subscribe({
-      next: (response) => {
-        this.loadRequests(); // Refresh requests list
+      next: (updated) => {
+        this.requests = this.requests.map((request) =>
+          request.id === updated.id ? updated : request
+        );
         this.upvotingRequest = false;
       },
       error: (error) => {
         console.error('Error upvoting request:', error);
         this.upvotingRequest = false;
-        // Could show a toast notification here
-      }
+      },
     });
   }
 
@@ -763,7 +792,10 @@ export class RequestsComponent implements OnInit {
     }
   }
 
-  formatDate(dateString: string): string {
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) {
+      return 'No expiry';
+    }
     const date = new Date(dateString);
     return date.toLocaleDateString();
   }

@@ -29,18 +29,18 @@ import {
 import { CartService, Cart, CartItem } from '../../domains/cart';
 import {
   ProductDto,
-  SellerDto,
+  ProductSellerDto,
 } from '../../domains/marketplace/models/product.dto';
 
 import { AuthService } from '../../domains/authentication/services/auth.service';
-import { ApiService } from '../../core/services/api.service';
+import { MarketplaceService } from '../../domains/marketplace';
 import { Address } from '../../core/models';
 import { AccessControlService } from '../../core/services/access-control.service';
 import { MediaOptimizationService } from '../../core/services/media-optimization.service';
 import { RoleIntentService } from '../../core/services/role-intent.service';
 import { ObservableUtilsService } from '../../core/services/observable-utils.service';
 
-type SellerSummary = SellerDto | null;
+type SellerSummary = ProductSellerDto | null;
 
 interface CartItemView {
   id: string;
@@ -450,7 +450,7 @@ export class CartComponent implements OnInit, OnDestroy {
   private cartService = inject(CartService);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiService = inject(ApiService);
+  private marketplaceService = inject(MarketplaceService);
   public access = inject(AccessControlService);
   public media = inject(MediaOptimizationService);
   private roleIntent = inject(RoleIntentService);
@@ -601,11 +601,12 @@ export class CartComponent implements OnInit, OnDestroy {
     const sellerMap = new Map<string, SellerGroupSummary>();
 
     this.cartItems.forEach((item) => {
-      const sellerId = item.product?.seller?.id;
-      if (!sellerId) {
+      const sellerRecord = item.product?.seller;
+      if (!sellerRecord || sellerRecord.id === null || sellerRecord.id === undefined) {
         return;
       }
 
+      const sellerId = String(sellerRecord.id);
       const existing = sellerMap.get(sellerId);
 
       if (existing) {
@@ -613,8 +614,13 @@ export class CartComponent implements OnInit, OnDestroy {
         existing.subtotal += item.unitPrice * item.quantity;
         existing.itemCount += item.quantity;
       } else {
+        const sellerSummary: ProductSellerDto = {
+          ...sellerRecord,
+          id: sellerId,
+        };
+
         const group: SellerGroupSummary = {
-          seller: item.product?.seller ?? null,
+          seller: sellerSummary,
           items: [item],
           subtotal: item.unitPrice * item.quantity,
           shipping: 0,
@@ -738,10 +744,13 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   toggleWishlist(productId: string): void {
-    this.apiService
+    this.marketplaceService
       .toggleWishlist(productId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
+        next: () => {
+          // wishlist state handled elsewhere; no-op on success
+        },
         error: (error) => {
           this.errorMessage = 'Error updating wishlist. Please try again.';
           console.error('Error toggling wishlist:', error);

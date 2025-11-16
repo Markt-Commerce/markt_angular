@@ -16,10 +16,11 @@ import {
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../domains/authentication/services/auth.service';
 import { ROUTES_ABSOLUTE } from '../../core/config/routes.config';
-import { map } from 'rxjs/operators';
+import { map, finalize } from 'rxjs/operators';
 import { MarketplaceService } from '../../domains/marketplace';
 import { RequestService } from '../../domains/requests';
-import { SocialService } from '../../domains/social';
+import { SocialService, type Post } from '../../domains/social';
+import { BuyerRequest } from '../../domains/requests/models/request.model';
 
 @Component({
   selector: 'app-landing',
@@ -490,7 +491,7 @@ export class LandingComponent implements OnInit {
   // Data properties
   loading = false;
   featuredProducts: any[] = [];
-  trendingRequests: any[] = [];
+  trendingRequests: BuyerRequest[] = [];
   communityHighlights: any[] = [];
   errorMessage = '';
   
@@ -515,7 +516,7 @@ export class LandingComponent implements OnInit {
     this.errorMessage = '';
     
     // Load featured products
-    // TODO: getFeaturedProducts() not yet migrated to MarketplaceService - keeping ApiService for now
+    // Migrated to MarketplaceService.getTrendingProducts() - uses DDD pattern with ProductRepository
     this.loadingFeaturedProducts = true;
     this.marketplaceService.getTrendingProducts().subscribe({
       next: (products) => {
@@ -531,12 +532,10 @@ export class LandingComponent implements OnInit {
     });
 
     // Load trending requests
-    // TODO: getTrendingRequests() not yet migrated to RequestService - keeping ApiService for now
     this.loadingTrendingRequests = true;
-    this.requestService.getRequests({ per_page: 5 }).subscribe({
-      next: (response: any) => {
-        const items = response?.data?.items ?? response?.items ?? [];
-        this.trendingRequests = items as any;
+    this.requestService.loadRequests({ per_page: 5 }).subscribe({
+      next: (response) => {
+        this.trendingRequests = response.items;
         this.loadingTrendingRequests = false;
       },
       error: (error) => {
@@ -544,23 +543,24 @@ export class LandingComponent implements OnInit {
         this.trendingRequests = [];
         this.loadingTrendingRequests = false;
         this.errorMessage = 'Failed to load trending requests. Please try again.';
-      }
+      },
     });
 
     // Load community highlights
-    // TODO: getCommunityHighlights() not yet migrated to SocialService - keeping ApiService for now
     this.loadingCommunityHighlights = true;
-    this.socialService.getPosts().subscribe({
-      next: (posts) => {
-        this.communityHighlights = posts as any;
-        this.loadingCommunityHighlights = false;
+    this.socialService
+      .getPersonalizedFeed({ per_page: 4 })
+      .pipe(finalize(() => (this.loadingCommunityHighlights = false)))
+      .subscribe({
+        next: (response) => {
+          this.communityHighlights = response.items ?? [];
       },
       error: (error) => {
         console.error('Error loading community highlights:', error);
         this.communityHighlights = [];
-        this.loadingCommunityHighlights = false;
-        this.errorMessage = 'Failed to load community highlights. Please try again.';
-      }
+          this.errorMessage =
+            'Failed to load community highlights. Please try again.';
+        },
     });
   }
 } 

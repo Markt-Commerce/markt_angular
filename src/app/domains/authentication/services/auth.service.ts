@@ -1,6 +1,6 @@
 /**
  * Authentication Domain Service
- * 
+ *
  * Manages user authentication, session, and profile operations.
  */
 
@@ -8,7 +8,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { UserRepository } from '../repositories/user.repository';
-import { User, UserRole } from '../models/user.model';
+import { User, UserRole, Address } from '../models/user.model';
 import {
   LoginDto,
   RegisterDto,
@@ -16,9 +16,17 @@ import {
   BuyerAccountCreateDto,
   SellerAccountCreateDto,
   BuyerAccountUpdateDto,
-  SellerAccountUpdateDto
+  SellerAccountUpdateDto,
+  UserSearchParamsDto,
 } from '../models/user.dto';
 import { ApiService } from '../../../core/services/api.service';
+import { ReviewRepository } from '../../reviews/repositories/review.repository';
+import { Review, ReviewSearchParamsDto } from '../../reviews';
+import { PrivacySettingsRepository } from '../../privacy/repositories/privacy-settings.repository';
+import { PrivacySettings, PrivacySettingsUpdateDto } from '../../privacy';
+import { CategoryService } from '../../categories/services/category.service';
+import { CategorySummary } from '../../categories/models/category.model';
+import type { PaginatedResponse } from '../../../core/infrastructure/http/api-response.types';
 
 export interface AuthState {
   user: User | null;
@@ -28,17 +36,20 @@ export interface AuthState {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private userRepository = inject(UserRepository);
-  private apiService = inject(ApiService); // Temporary: for methods not yet migrated to repository
-  
+  private reviewRepository = inject(ReviewRepository);
+  private privacySettingsRepository = inject(PrivacySettingsRepository);
+  private categoryService = inject(CategoryService);
+  private apiService = inject(ApiService); // Temporary: for OAuth methods not yet migrated
+
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
     isAuthenticated: false,
     isLoading: false,
-    error: null
+    error: null,
   });
 
   public authState$ = this.authStateSubject.asObservable();
@@ -48,14 +59,18 @@ export class AuthService {
    * Get current user observable
    */
   get currentUser$(): Observable<User | null> {
-    return this.authStateSubject.asObservable().pipe(map(state => state.user));
+    return this.authStateSubject
+      .asObservable()
+      .pipe(map((state) => state.user));
   }
 
   /**
    * Get loading state observable
    */
   get loading$(): Observable<boolean> {
-    return this.authStateSubject.asObservable().pipe(map(state => state.isLoading));
+    return this.authStateSubject
+      .asObservable()
+      .pipe(map((state) => state.isLoading));
   }
 
   constructor() {
@@ -67,7 +82,7 @@ export class AuthService {
    */
   private initializeAuth(): void {
     const userData = localStorage.getItem('markt_user');
-    
+
     if (userData) {
       try {
         const userDto = JSON.parse(userData);
@@ -87,12 +102,12 @@ export class AuthService {
           userDto.buyer_account,
           userDto.seller_account
         );
-        
+
         this.authStateSubject.next({
           user,
           isAuthenticated: true,
           isLoading: false,
-          error: null
+          error: null,
         });
       } catch (error) {
         this.clearAuth();
@@ -148,7 +163,7 @@ export class AuthService {
    */
   register(data: RegisterDto): Observable<{ user: User; token: string }> {
     this.setLoading(true);
-    
+
     // Business validation
     if (!data.email || !data.email.includes('@')) {
       this.setError('Invalid email address');
@@ -180,7 +195,7 @@ export class AuthService {
         error: (error) => {
           this.setError(error.message || 'Registration failed');
           this.setLoading(false);
-        }
+        },
       })
     );
   }
@@ -207,7 +222,7 @@ export class AuthService {
         error: (error) => {
           this.setError(error.message || 'Login failed');
           this.setLoading(false);
-        }
+        },
       })
     );
   }
@@ -233,7 +248,7 @@ export class AuthService {
    */
   getProfile(): Observable<User> {
     this.setLoading(true);
-    
+
     return this.userRepository.getProfile().pipe(
       tap({
         next: (user) => {
@@ -243,7 +258,7 @@ export class AuthService {
         error: (error) => {
           this.setError(error.message || 'Failed to load profile');
           this.setLoading(false);
-        }
+        },
       })
     );
   }
@@ -264,7 +279,7 @@ export class AuthService {
         },
         error: (error) => {
           this.setError(error.message || 'Failed to update profile');
-        }
+        },
       })
     );
   }
@@ -280,7 +295,9 @@ export class AuthService {
     }
 
     if (!currentUser.canSwitchRole(targetRole)) {
-      throw new Error(`Cannot switch to ${targetRole} role. Account not set up.`);
+      throw new Error(
+        `Cannot switch to ${targetRole} role. Account not set up.`
+      );
     }
 
     return this.userRepository.switchRole(targetRole).pipe(
@@ -291,7 +308,7 @@ export class AuthService {
         },
         error: (error) => {
           this.setError(error.message || 'Failed to switch role');
-        }
+        },
       })
     );
   }
@@ -315,7 +332,7 @@ export class AuthService {
         },
         error: (error) => {
           this.setError(error.message || 'Failed to create buyer account');
-        }
+        },
       })
     );
   }
@@ -339,7 +356,7 @@ export class AuthService {
         },
         error: (error) => {
           this.setError(error.message || 'Failed to create seller account');
-        }
+        },
       })
     );
   }
@@ -358,12 +375,20 @@ export class AuthService {
   /**
    * Confirm password reset
    */
-  resetPassword(email: string, code: string, newPassword: string): Observable<{ message: string }> {
+  resetPassword(
+    email: string,
+    code: string,
+    newPassword: string
+  ): Observable<{ message: string }> {
     if (!newPassword || newPassword.length < 8) {
       throw new Error('Password must be at least 8 characters');
     }
 
-    return this.userRepository.passwordResetConfirm({ email, code, new_password: newPassword });
+    return this.userRepository.passwordResetConfirm({
+      email,
+      code,
+      new_password: newPassword,
+    });
   }
 
   /**
@@ -383,71 +408,94 @@ export class AuthService {
   /**
    * Check username availability
    */
-  checkUsername(username: string): Observable<{ available: boolean; message?: string }> {
+  checkUsername(
+    username: string
+  ): Observable<{ available: boolean; message?: string }> {
     return this.userRepository.checkUsernameAvailability(username);
   }
 
   /**
    * Get user addresses
-   * TODO: Migrate to UserRepository when address methods are added
-   * Temporary: delegates to ApiService
+   * Migrated to UserRepository address methods
    */
-  getUserAddresses(): Observable<any> {
-    return this.apiService.getUserAddresses();
+  getUserAddresses(): Observable<Address[]> {
+    return this.userRepository.getUserAddresses();
+  }
+
+  /**
+   * Get user settings
+   */
+  getUserSettings(): Observable<any> {
+    return this.userRepository.getUserSettings();
+  }
+
+  /**
+   * Update user settings
+   */
+  updateUserSettings(settings: any): Observable<any> {
+    return this.userRepository.updateUserSettings(settings);
+  }
+
+  /**
+   * Get public profile
+   */
+  getPublicProfile(userId: string): Observable<any> {
+    return this.userRepository.getPublicProfile(userId);
+  }
+
+  /**
+   * List users with pagination
+   */
+  listUsers(params?: any): Observable<any> {
+    return this.userRepository.listUsers(params);
   }
 
   /**
    * Get privacy settings
-   * TODO: Migrate to UserRepository when settings methods are added
-   * Temporary: delegates to ApiService
+   * Migrated to PrivacySettingsRepository
    */
-  getPrivacySettings(): Observable<any> {
-    return this.apiService.getPrivacySettings();
+  getPrivacySettings(): Observable<PrivacySettings> {
+    return this.privacySettingsRepository.find();
   }
 
   /**
    * Update privacy settings
-   * TODO: Migrate to UserRepository when settings methods are added
-   * Temporary: delegates to ApiService
+   * Migrated to PrivacySettingsRepository
    */
-  updatePrivacySettings(data: any): Observable<any> {
-    return this.apiService.updatePrivacySettings(data);
+  updatePrivacySettings(settings: PrivacySettingsUpdateDto): Observable<PrivacySettings> {
+    return this.privacySettingsRepository.update(settings);
   }
 
   /**
    * Get my reviews
-   * TODO: Migrate to ReviewRepository when created
-   * Temporary: delegates to ApiService
+   * Migrated to ReviewRepository
    */
-  getMyReviews(): Observable<any> {
-    return this.apiService.getMyReviews();
+  getMyReviews(params?: ReviewSearchParamsDto): Observable<PaginatedResponse<Review>> {
+    return this.reviewRepository.findMyReviews(params);
   }
 
   /**
    * Get user reviews
-   * TODO: Migrate to ReviewRepository when created
-   * Temporary: delegates to ApiService
+   * Migrated to ReviewRepository
    */
-  getUserReviews(userId: string): Observable<any> {
-    return this.apiService.getUserReviews(userId);
+  getUserReviews(userId: string, params?: ReviewSearchParamsDto): Observable<PaginatedResponse<Review>> {
+    return this.reviewRepository.findUserReviews(userId, params);
   }
 
   /**
    * Get users (admin/search)
-   * TODO: Migrate to UserRepository when search methods are added
-   * Temporary: delegates to ApiService
+   * Migrated to UserRepository search methods
    */
-  getUsers(params?: any): Observable<any> {
-    return this.apiService.getUsers(params);
+  getUsers(params?: UserSearchParamsDto): Observable<PaginatedResponse<User>> {
+    return this.userRepository.getUsers(params);
   }
 
   /**
    * Get shop categories
-   * TODO: Migrate to MarketplaceService or CategoryRepository when created
-   * Temporary: delegates to ApiService
+   * Migrated to CategoryRepository
    */
-  getShopCategories(): Observable<any> {
-    return this.apiService.getShopCategories();
+  getShopCategories(): Observable<CategorySummary[]> {
+    return this.categoryService.getCategorySummaries();
   }
 
   /**
@@ -459,7 +507,7 @@ export class AuthService {
       user,
       isAuthenticated: true,
       isLoading: false,
-      error: null
+      error: null,
     });
   }
 
@@ -470,7 +518,7 @@ export class AuthService {
   private setLoading(loading: boolean): void {
     this.authStateSubject.next({
       ...this.authStateSubject.value,
-      isLoading: loading
+      isLoading: loading,
     });
   }
 
@@ -478,7 +526,7 @@ export class AuthService {
     this.authStateSubject.next({
       ...this.authStateSubject.value,
       error,
-      isLoading: false
+      isLoading: false,
     });
   }
 
@@ -489,8 +537,7 @@ export class AuthService {
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      error: null
+      error: null,
     });
   }
 }
-

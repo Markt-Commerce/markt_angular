@@ -73,21 +73,21 @@
         <div class="time-range-buttons">
           <button 
             class="time-btn" 
-            [class.active]="selectedTimeRange === '30D'"
+            [class.active]="selectedTimeRange() === '30D'"
             (click)="setTimeRange('30D')"
           >
             30D
           </button>
           <button 
             class="time-btn" 
-            [class.active]="selectedTimeRange === '7D'"
+            [class.active]="selectedTimeRange() === '7D'"
             (click)="setTimeRange('7D')"
           >
             7D
           </button>
           <button 
             class="time-btn" 
-            [class.active]="selectedTimeRange === '90D'"
+            [class.active]="selectedTimeRange() === '90D'"
             (click)="setTimeRange('90D')"
           >
             90D
